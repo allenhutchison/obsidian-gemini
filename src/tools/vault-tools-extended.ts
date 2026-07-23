@@ -1,7 +1,7 @@
-import { Tool, ToolResult, ToolExecutionContext } from './types';
+import { Tool, ToolResult, ToolExecutionContext, ToolParams, DiffContext, ConfirmationResult } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
-import { resolvePathToFile } from './vault/utils';
+import { resolvePathToFile, safeReadFileForDiff } from './vault/utils';
 import { t } from '../i18n';
 import { getRawErrorMessageOr } from '../utils/error-utils';
 
@@ -158,6 +158,46 @@ class AppendContentTool implements Tool {
 			return `Appending to ${params.path}`;
 		}
 		return 'Appending content';
+	}
+
+	/**
+	 * Diff preview: original = current file content, proposed = original with the
+	 * appended text (mirroring execute()'s newline-insertion so the preview matches
+	 * what is written). Resolves the path with the same resolver as execute().
+	 */
+	async buildDiffContext(params: ToolParams, context: ToolExecutionContext): Promise<DiffContext | undefined> {
+		const plugin = context.plugin;
+		const path = typeof params.path === 'string' ? params.path : undefined;
+		const content = typeof params.content === 'string' ? params.content : undefined;
+		if (!path || content === undefined) return undefined;
+
+		const { file } = resolvePathToFile(path, plugin);
+		if (!file) return undefined; // Tool surfaces its own not-found error at execution time
+
+		const originalContent = await safeReadFileForDiff(plugin, file);
+		let contentToAppend = content;
+		if (originalContent.length > 0 && !originalContent.endsWith('\n') && !contentToAppend.startsWith('\n')) {
+			contentToAppend = '\n' + contentToAppend;
+		}
+		return {
+			filePath: file.path,
+			originalContent,
+			proposedContent: originalContent + contentToAppend,
+			isNewFile: false,
+		};
+	}
+
+	/**
+	 * The append diff shows the full file, so a user edit means "replace the whole
+	 * file with this", not "append this suffix" — flip to overwrite mode. An
+	 * unedited approval leaves params untouched so the original suffix appends.
+	 */
+	applyConfirmedEdit(params: ToolParams, result: ConfirmationResult): void {
+		if (result.userEdited) {
+			params.content = result.finalContent;
+			params._userEdited = true;
+			params._replaceFullContent = true;
+		}
 	}
 
 	async execute(

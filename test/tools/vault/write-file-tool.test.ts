@@ -347,3 +347,70 @@ describe('WriteFileTool', () => {
 		expect(tool.getProgressDescription({ path: '' })).toBe('Writing file');
 	});
 });
+
+describe('WriteFileTool - buildDiffContext', () => {
+	let tool: WriteFileTool;
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		tool = new WriteFileTool();
+	});
+
+	it('returns original + proposed content when the file exists', async () => {
+		mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
+		mockVault.read.mockResolvedValue('original content');
+
+		const diff = await tool.buildDiffContext({ path: 'test.md', content: 'new content' }, mockContext);
+
+		expect(diff).toBeDefined();
+		expect(diff!.filePath).toBe('test.md');
+		expect(diff!.originalContent).toBe('original content');
+		expect(diff!.proposedContent).toBe('new content');
+		expect(diff!.isNewFile).toBe(false);
+	});
+
+	it('returns empty original and isNewFile=true when the file does not exist', async () => {
+		mockVault.getAbstractFileByPath.mockReturnValue(null);
+
+		const diff = await tool.buildDiffContext({ path: 'brand-new.md', content: 'new file content' }, mockContext);
+
+		expect(diff).toBeDefined();
+		expect(diff!.originalContent).toBe('');
+		expect(diff!.proposedContent).toBe('new file content');
+		expect(diff!.isNewFile).toBe(true);
+	});
+
+	it('returns undefined for a path inside the excluded state folder', async () => {
+		const diff = await tool.buildDiffContext(
+			{ path: 'test-history-folder/History/log.md', content: 'content' },
+			mockContext
+		);
+
+		expect(diff).toBeUndefined();
+	});
+
+	it('returns undefined when content is missing', async () => {
+		const diff = await tool.buildDiffContext({ path: 'test.md' }, mockContext);
+		expect(diff).toBeUndefined();
+	});
+});
+
+describe('WriteFileTool - applyConfirmedEdit', () => {
+	let tool: WriteFileTool;
+
+	beforeEach(() => {
+		tool = new WriteFileTool();
+	});
+
+	it('replaces content with the user-edited body and records the edit', () => {
+		const params: Record<string, unknown> = { path: 'test.md', content: 'ai content' };
+		tool.applyConfirmedEdit(params, {
+			confirmed: true,
+			allowWithoutConfirmation: false,
+			finalContent: 'user edited',
+			userEdited: true,
+		});
+		expect(params.content).toBe('user edited');
+		expect(params._userEdited).toBe(true);
+	});
+});

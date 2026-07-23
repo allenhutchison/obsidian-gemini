@@ -29,6 +29,21 @@ export function isFileInAgentScope(file: TFile, plugin: ObsidianGemini, projectR
 	return true;
 }
 
+/**
+ * Read a file's content for diff-context construction, swallowing errors and
+ * returning an empty string. A read failure while previewing a confirmation
+ * diff must not block the tool — the tool surfaces its own error at execution
+ * time. Shared by the content-editing tools' `buildDiffContext` hooks.
+ */
+export async function safeReadFileForDiff(plugin: ObsidianGemini, file: TFile): Promise<string> {
+	try {
+		return await plugin.app.vault.read(file);
+	} catch (error) {
+		plugin.logger.warn(`Failed to read file for diff context: ${file.path}`, error);
+		return '';
+	}
+}
+
 /** Plain, serializable description of a vault file or folder. */
 export interface VaultFileEntry {
 	name: string;

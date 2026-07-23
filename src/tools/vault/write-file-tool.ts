@@ -1,9 +1,9 @@
-import { Tool, ToolResult, ToolExecutionContext } from '../types';
+import { Tool, ToolResult, ToolExecutionContext, ToolParams, DiffContext, ConfirmationResult } from '../types';
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
 import { TFile, normalizePath } from 'obsidian';
-import { ensureFolderExists } from '../../utils/file-utils';
-import { guardExcludedPath } from './utils';
+import { ensureFolderExists, shouldExcludePathForPlugin } from '../../utils/file-utils';
+import { guardExcludedPath, safeReadFileForDiff } from './utils';
 import { t } from '../../i18n';
 import { getRawErrorMessageOr } from '../../utils/error-utils';
 
@@ -51,6 +51,38 @@ export class WriteFileTool implements Tool {
 			return `Writing to ${params.path}`;
 		}
 		return 'Writing file';
+	}
+
+	/**
+	 * Diff preview: original = current file content (empty for a new file),
+	 * proposed = the content to be written. Skips the diff for excluded paths.
+	 */
+	async buildDiffContext(params: ToolParams, context: ToolExecutionContext): Promise<DiffContext | undefined> {
+		const plugin = context.plugin;
+		const path = typeof params.path === 'string' ? params.path : undefined;
+		const content = typeof params.content === 'string' ? params.content : undefined;
+		if (!path || content === undefined) return undefined;
+
+		const normalizedPath = normalizePath(path);
+		if (shouldExcludePathForPlugin(normalizedPath, plugin)) return undefined;
+
+		const file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
+		const originalContent = file instanceof TFile ? await safeReadFileForDiff(plugin, file) : '';
+		return {
+			filePath: path,
+			originalContent,
+			proposedContent: content,
+			isNewFile: !file,
+		};
+	}
+
+	/**
+	 * write_file treats `content` as the full editable body, so a user-edited
+	 * diff replaces it directly.
+	 */
+	applyConfirmedEdit(params: ToolParams, result: ConfirmationResult): void {
+		params.content = result.finalContent;
+		params._userEdited = result.userEdited;
 	}
 
 	async execute(

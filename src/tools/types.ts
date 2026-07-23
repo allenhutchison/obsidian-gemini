@@ -126,6 +126,23 @@ export interface Tool {
 
 	/** Get a human-friendly description of this tool execution for progress display */
 	getProgressDescription?(params: ToolParams): string;
+
+	/**
+	 * Build a diff-preview context for the confirmation UI when this tool
+	 * modifies file content. The engine calls this polymorphically before
+	 * requesting confirmation, so the engine never needs to know a tool's
+	 * private write contract. A tool without an editable diff omits this hook
+	 * and the engine falls back to a non-diff confirmation.
+	 */
+	buildDiffContext?(params: ToolParams, context: ToolExecutionContext): Promise<DiffContext | undefined>;
+
+	/**
+	 * Fold user-edited diff content back into this tool's own arguments after a
+	 * confirmation in which the user edited the proposed content. Called (with
+	 * `params` mutated in place) only when the confirmation returned
+	 * `finalContent`. A tool without an editable diff omits this hook.
+	 */
+	applyConfirmedEdit?(params: ToolParams, result: ConfirmationResult): void;
 }
 
 /**

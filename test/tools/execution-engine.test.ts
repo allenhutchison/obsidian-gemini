@@ -1,9 +1,10 @@
 import { ToolExecutionEngine } from '../../src/tools/execution-engine';
 import { ToolRegistry } from '../../src/tools/tool-registry';
 import { ReadFileTool, ListFilesTool, WriteFileTool } from '../../src/tools/vault';
+import { getExtendedVaultTools } from '../../src/tools/vault-tools-extended';
 import { ToolCategory } from '../../src/types/agent';
 import { ToolClassification } from '../../src/types/tool-policy';
-import { IConfirmationProvider } from '../../src/tools/types';
+import { IConfirmationProvider, Tool } from '../../src/tools/types';
 import { TFile } from 'obsidian';
 
 // Deny-by-default provider used when a test never reaches the confirmation branch.
@@ -610,7 +611,12 @@ describe('ToolExecutionEngine - executeToolCalls with stopOnToolError=false', ()
 	});
 });
 
-describe('ToolExecutionEngine - buildDiffContext for write_file', () => {
+describe('ToolExecutionEngine - diff/confirm hook dispatch', () => {
+	// The per-tool diff/re-apply logic now lives on each tool (WriteFileTool,
+	// AppendContentTool, CreateSkillTool, EditSkillTool) behind the optional
+	// Tool.buildDiffContext / Tool.applyConfirmedEdit hooks — those are covered
+	// in the per-tool test files. Here we only assert the engine dispatches to
+	// those hooks polymorphically, with a no-diff fallback when a tool omits them.
 	let plugin: any;
 	let registry: ToolRegistry;
 	let engine: ToolExecutionEngine;
@@ -645,341 +651,104 @@ describe('ToolExecutionEngine - buildDiffContext for write_file', () => {
 		vi.clearAllMocks();
 	});
 
-	it('returns original content with proposed content when file exists', async () => {
-		const mockFile = new TFile();
-		(mockFile as any).path = 'existing.md';
-		plugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
-		plugin.app.vault.read.mockResolvedValue('original content');
-
-		const tool = { name: 'write_file' } as any;
-		const params = { path: 'existing.md', content: 'new content' };
-
-		const diff = await (engine as any).buildDiffContext(tool, params);
-
-		expect(diff).toBeDefined();
-		expect(diff.filePath).toBe('existing.md');
-		expect(diff.originalContent).toBe('original content');
-		expect(diff.proposedContent).toBe('new content');
-		expect(diff.isNewFile).toBe(false);
-	});
-
-	it('returns empty original content with isNewFile=true when file does not exist', async () => {
-		plugin.app.vault.getAbstractFileByPath.mockReturnValue(null);
-
-		const tool = { name: 'write_file' } as any;
-		const params = { path: 'brand-new.md', content: 'new file content' };
-
-		const diff = await (engine as any).buildDiffContext(tool, params);
-
-		expect(diff).toBeDefined();
-		expect(diff.filePath).toBe('brand-new.md');
-		expect(diff.originalContent).toBe('');
-		expect(diff.proposedContent).toBe('new file content');
-		expect(diff.isNewFile).toBe(true);
-	});
-
-	it('returns undefined when path is in excluded history folder', async () => {
-		const tool = { name: 'write_file' } as any;
-		const params = { path: 'gemini-scribe/History/log.md', content: 'content' };
-
-		const diff = await (engine as any).buildDiffContext(tool, params);
-
-		expect(diff).toBeUndefined();
-	});
-});
-
-describe('ToolExecutionEngine - buildDiffContext for append_content', () => {
-	let plugin: any;
-	let registry: ToolRegistry;
-	let engine: ToolExecutionEngine;
-
-	beforeEach(() => {
-		plugin = {
-			settings: {
-				loopDetectionThreshold: 3,
-				loopDetectionTimeWindowSeconds: 60,
-				historyFolder: 'gemini-scribe',
-			},
-			app: {
-				vault: {
-					getAbstractFileByPath: vi.fn(),
-					read: vi.fn(),
-					getMarkdownFiles: vi.fn().mockReturnValue([]),
-					getFiles: vi.fn().mockReturnValue([]),
-					getRoot: vi.fn().mockReturnValue({ children: [] }),
-				},
-				metadataCache: {
-					getFirstLinkpathDest: vi.fn().mockReturnValue(null),
+	const context = () =>
+		({
+			plugin,
+			session: {
+				id: 'hook-session',
+				type: 'agent-session',
+				context: {
+					contextFiles: [],
+					contextDepth: 2,
+					enabledTools: [ToolCategory.VAULT_OPERATIONS],
+					requireConfirmation: ['modify_files'],
 				},
 			},
-			logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
+		}) as any;
+
+	function makeWriteTool(overrides: Partial<Tool> = {}): Tool {
+		return {
+			name: 'fake_write',
+			category: ToolCategory.VAULT_OPERATIONS,
+			classification: ToolClassification.WRITE,
+			description: 'fake write tool',
+			requiresConfirmation: true,
+			parameters: {
+				type: 'object' as const,
+				properties: { content: { type: 'string' as const, description: 'content' } },
+				required: [],
+			},
+			execute: vi.fn().mockResolvedValue({ success: true, data: {} }),
+			...overrides,
 		};
+	}
 
-		registry = new ToolRegistry(plugin);
-		engine = new ToolExecutionEngine(plugin, registry);
-	});
-
-	afterEach(() => {
-		vi.clearAllMocks();
-	});
-
-	it('returns proposed = original + content for normal append', async () => {
-		const mockFile = new TFile();
-		(mockFile as any).path = 'notes.md';
-		plugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
-		plugin.app.vault.read.mockResolvedValue('existing text\n');
-
-		const tool = { name: 'append_content' } as any;
-		const params = { path: 'notes.md', content: 'appended text' };
-
-		const diff = await (engine as any).buildDiffContext(tool, params);
-
-		expect(diff).toBeDefined();
-		expect(diff.filePath).toBe('notes.md');
-		expect(diff.originalContent).toBe('existing text\n');
-		expect(diff.proposedContent).toBe('existing text\nappended text');
-		expect(diff.isNewFile).toBe(false);
-	});
-
-	it('inserts newline when original does not end with one', async () => {
-		const mockFile = new TFile();
-		(mockFile as any).path = 'notes.md';
-		plugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
-		plugin.app.vault.read.mockResolvedValue('no trailing newline');
-
-		const tool = { name: 'append_content' } as any;
-		const params = { path: 'notes.md', content: 'suffix' };
-
-		const diff = await (engine as any).buildDiffContext(tool, params);
-
-		expect(diff).toBeDefined();
-		expect(diff.proposedContent).toBe('no trailing newline\nsuffix');
-	});
-
-	it('finds file via .md suffix fallback', async () => {
-		const mockFile = new TFile();
-		(mockFile as any).path = 'readme.md';
-		// First call (direct path) returns null, second call (.md suffix) returns the file
-		plugin.app.vault.getAbstractFileByPath.mockReturnValueOnce(null).mockReturnValueOnce(mockFile);
-		plugin.app.vault.read.mockResolvedValue('readme content\n');
-
-		const tool = { name: 'append_content' } as any;
-		const params = { path: 'readme', content: 'more text' };
-
-		const diff = await (engine as any).buildDiffContext(tool, params);
-
-		expect(diff).toBeDefined();
-		expect(diff.filePath).toBe('readme.md');
-		expect(plugin.app.vault.getAbstractFileByPath).toHaveBeenCalledWith('readme.md');
-	});
-
-	it('finds file via wikilink/metadataCache fallback', async () => {
-		const mockFile = new TFile();
-		(mockFile as any).path = 'resolved.md';
-		plugin.app.vault.getAbstractFileByPath.mockReturnValue(null);
-		plugin.app.metadataCache.getFirstLinkpathDest.mockReturnValue(mockFile);
-		plugin.app.vault.read.mockResolvedValue('resolved content\n');
-
-		const tool = { name: 'append_content' } as any;
-		const params = { path: '[[resolved]]', content: 'appended' };
-
-		const diff = await (engine as any).buildDiffContext(tool, params);
-
-		expect(diff).toBeDefined();
-		expect(diff.filePath).toBe('resolved.md');
-		expect(plugin.app.metadataCache.getFirstLinkpathDest).toHaveBeenCalledWith('resolved', '');
-	});
-
-	it('returns undefined when file not found (not a TFile instance)', async () => {
-		plugin.app.vault.getAbstractFileByPath.mockReturnValue(null);
-		plugin.app.metadataCache.getFirstLinkpathDest.mockReturnValue(null);
-
-		const tool = { name: 'append_content' } as any;
-		const params = { path: 'nonexistent.md', content: 'text' };
-
-		const diff = await (engine as any).buildDiffContext(tool, params);
-
-		expect(diff).toBeUndefined();
-	});
-
-	it('returns undefined when path is in excluded history folder', async () => {
-		const tool = { name: 'append_content' } as any;
-		const params = { path: 'gemini-scribe/sessions/log.md', content: 'text' };
-
-		const diff = await (engine as any).buildDiffContext(tool, params);
-
-		expect(diff).toBeUndefined();
-	});
-
-	it('returns undefined when wikilink resolves to a file inside the history folder', async () => {
-		// Regression for issue #910: the prior inline resolver only checked
-		// shouldExcludePath on the user-supplied input string, so a bare wikilink
-		// like "Foo" could resolve via metadataCache to gemini-scribe/Skills/Foo/SKILL.md
-		// and produce a diff preview for a file the tool would actually be blocked from writing.
-		const skillFile = new TFile();
-		(skillFile as any).path = 'gemini-scribe/Skills/Foo/SKILL.md';
-		plugin.app.vault.getAbstractFileByPath.mockReturnValue(null);
-		plugin.app.metadataCache.getFirstLinkpathDest.mockReturnValue(skillFile);
-
-		const tool = { name: 'append_content' } as any;
-		const params = { path: 'Foo', content: 'text' };
-
-		const diff = await (engine as any).buildDiffContext(tool, params);
-
-		expect(diff).toBeUndefined();
-	});
-});
-
-describe('ToolExecutionEngine - buildDiffContext for create_skill', () => {
-	let plugin: any;
-	let registry: ToolRegistry;
-	let engine: ToolExecutionEngine;
-
-	beforeEach(() => {
-		plugin = {
-			settings: {
-				loopDetectionThreshold: 3,
-				loopDetectionTimeWindowSeconds: 60,
-				historyFolder: 'gemini-scribe',
-			},
-			app: {
-				vault: {
-					getAbstractFileByPath: vi.fn(),
-					read: vi.fn(),
-				},
-				metadataCache: {
-					getFirstLinkpathDest: vi.fn().mockReturnValue(null),
-				},
-			},
-			logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
-			skillManager: {
-				getSkillsFolderPath: vi.fn().mockReturnValue('gemini-scribe/Skills'),
-				loadSkill: vi.fn(),
-			},
+	function provider(result: any): IConfirmationProvider {
+		return {
+			showConfirmationInChat: vi.fn().mockResolvedValue(result),
+			isToolAllowedWithoutConfirmation: vi.fn().mockReturnValue(false),
+			allowToolWithoutConfirmation: vi.fn(),
+			updateProgress: vi.fn(),
 		};
+	}
 
-		registry = new ToolRegistry(plugin);
-		engine = new ToolExecutionEngine(plugin, registry);
+	it("passes the tool's buildDiffContext result to the confirmation provider", async () => {
+		const diff = { filePath: 'x.md', originalContent: 'a', proposedContent: 'b', isNewFile: false };
+		const buildDiffContext = vi.fn().mockResolvedValue(diff);
+		const tool = makeWriteTool({ buildDiffContext });
+		registry.registerTool(tool);
+
+		const p = provider({ confirmed: false, allowWithoutConfirmation: false });
+		const ctx = context();
+		await engine.executeTool({ name: 'fake_write', arguments: { content: 'b' } }, ctx, p);
+
+		expect(buildDiffContext).toHaveBeenCalledWith({ content: 'b' }, ctx);
+		expect(p.showConfirmationInChat).toHaveBeenCalledWith(tool, { content: 'b' }, expect.any(String), diff);
 	});
 
-	afterEach(() => {
-		vi.clearAllMocks();
+	it('passes undefined diffContext when the tool has no buildDiffContext hook', async () => {
+		const tool = makeWriteTool();
+		registry.registerTool(tool);
+
+		const p = provider({ confirmed: false, allowWithoutConfirmation: false });
+		await engine.executeTool({ name: 'fake_write', arguments: { content: 'b' } }, context(), p);
+
+		expect(p.showConfirmationInChat).toHaveBeenCalledWith(tool, { content: 'b' }, expect.any(String), undefined);
 	});
 
-	it('returns isNewFile=true with empty original and trimmed proposed content', async () => {
-		const tool = { name: 'create_skill' } as any;
-		const params = { name: 'My-Skill', content: '  skill body content  ' };
+	it('invokes applyConfirmedEdit with the confirmation result and the edit reaches execute()', async () => {
+		const applyConfirmedEdit = vi.fn((params: any, result: any) => {
+			params.content = result.finalContent;
+		});
+		const execute = vi.fn().mockResolvedValue({ success: true, data: {} });
+		const tool = makeWriteTool({ applyConfirmedEdit, execute });
+		registry.registerTool(tool);
 
-		const diff = await (engine as any).buildDiffContext(tool, params);
+		const p = provider({
+			confirmed: true,
+			allowWithoutConfirmation: false,
+			finalContent: 'edited',
+			userEdited: true,
+		});
+		await engine.executeTool({ name: 'fake_write', arguments: { content: 'original' } }, context(), p);
 
-		expect(diff).toBeDefined();
-		expect(diff.filePath).toBe('gemini-scribe/Skills/my-skill/SKILL.md');
-		expect(diff.originalContent).toBe('');
-		expect(diff.proposedContent).toBe('skill body content');
-		expect(diff.isNewFile).toBe(true);
-	});
-});
-
-describe('ToolExecutionEngine - buildDiffContext for edit_skill', () => {
-	let plugin: any;
-	let registry: ToolRegistry;
-	let engine: ToolExecutionEngine;
-
-	beforeEach(() => {
-		plugin = {
-			settings: {
-				loopDetectionThreshold: 3,
-				loopDetectionTimeWindowSeconds: 60,
-				historyFolder: 'gemini-scribe',
-			},
-			app: {
-				vault: {
-					getAbstractFileByPath: vi.fn(),
-					read: vi.fn(),
-				},
-				metadataCache: {
-					getFirstLinkpathDest: vi.fn().mockReturnValue(null),
-				},
-			},
-			logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
-			skillManager: {
-				getSkillsFolderPath: vi.fn().mockReturnValue('gemini-scribe/Skills'),
-				loadSkill: vi.fn(),
-			},
-		};
-
-		registry = new ToolRegistry(plugin);
-		engine = new ToolExecutionEngine(plugin, registry);
+		expect(applyConfirmedEdit).toHaveBeenCalledWith(
+			expect.objectContaining({ content: 'edited' }),
+			expect.objectContaining({ finalContent: 'edited', userEdited: true })
+		);
+		// The mutation the hook made must reach execute()
+		expect(execute.mock.calls[0][0].content).toBe('edited');
 	});
 
-	afterEach(() => {
-		vi.clearAllMocks();
-	});
+	it('does not invoke applyConfirmedEdit when the confirmation returned no finalContent', async () => {
+		const applyConfirmedEdit = vi.fn();
+		const tool = makeWriteTool({ applyConfirmedEdit });
+		registry.registerTool(tool);
 
-	it('returns body diff when content edit is provided', async () => {
-		plugin.skillManager.loadSkill.mockResolvedValue('original skill body');
+		const p = provider({ confirmed: true, allowWithoutConfirmation: false });
+		await engine.executeTool({ name: 'fake_write', arguments: { content: 'original' } }, context(), p);
 
-		const tool = { name: 'edit_skill' } as any;
-		const params = { name: 'My-Skill', content: '  updated skill body  ' };
-
-		const diff = await (engine as any).buildDiffContext(tool, params);
-
-		expect(diff).toBeDefined();
-		expect(diff.filePath).toBe('gemini-scribe/Skills/my-skill/SKILL.md');
-		expect(diff.originalContent).toBe('original skill body');
-		expect(diff.proposedContent).toBe('updated skill body');
-		expect(diff.isNewFile).toBe(false);
-	});
-
-	it('returns proposed equals original body for description-only edit', async () => {
-		plugin.skillManager.loadSkill.mockResolvedValue('unchanged body');
-
-		const tool = { name: 'edit_skill' } as any;
-		const params = { name: 'My-Skill', description: 'new description' };
-
-		const diff = await (engine as any).buildDiffContext(tool, params);
-
-		expect(diff).toBeDefined();
-		expect(diff.originalContent).toBe('unchanged body');
-		expect(diff.proposedContent).toBe('unchanged body');
-	});
-
-	it('returns undefined when neither content nor description provided', async () => {
-		const tool = { name: 'edit_skill' } as any;
-		const params = { name: 'My-Skill' };
-
-		const diff = await (engine as any).buildDiffContext(tool, params);
-
-		expect(diff).toBeUndefined();
-	});
-
-	it('uses empty string when skillManager.loadSkill returns null', async () => {
-		plugin.skillManager.loadSkill.mockResolvedValue(null);
-
-		const tool = { name: 'edit_skill' } as any;
-		const params = { name: 'My-Skill', content: 'new content' };
-
-		const diff = await (engine as any).buildDiffContext(tool, params);
-
-		expect(diff).toBeDefined();
-		expect(diff.originalContent).toBe('');
-		expect(diff.proposedContent).toBe('new content');
-	});
-
-	it('uses empty string when skillManager is not available', async () => {
-		plugin.skillManager = undefined;
-
-		const tool = { name: 'edit_skill' } as any;
-		const params = { name: 'My-Skill', content: 'new content' };
-
-		// Re-create engine with updated plugin
-		engine = new ToolExecutionEngine(plugin, registry);
-
-		const diff = await (engine as any).buildDiffContext(tool, params);
-
-		expect(diff).toBeDefined();
-		expect(diff.originalContent).toBe('');
-		expect(diff.filePath).toBe('gemini-scribe/Skills/my-skill/SKILL.md');
+		expect(applyConfirmedEdit).not.toHaveBeenCalled();
 	});
 });
 
@@ -1349,27 +1118,10 @@ describe('ToolExecutionEngine - Confirmation Flow', () => {
 		expect(confirmProvider.allowToolWithoutConfirmation).toHaveBeenCalledWith('write_file');
 	});
 
-	it('sets _replaceFullContent on append_content when user edits the diff', async () => {
-		// Register a fake append_content tool so executeTool doesn't fail
-		const appendTool = {
-			name: 'append_content',
-			description: 'Append content',
-			category: ToolCategory.VAULT_OPERATIONS,
-			classification: ToolClassification.WRITE,
-			requiresConfirmation: true,
-			parameters: {
-				type: 'object' as const,
-				properties: {
-					path: { type: 'string' as const, description: 'Path' },
-					content: { type: 'string' as const, description: 'Content' },
-				},
-				required: ['path', 'content'],
-			},
-			execute: vi.fn().mockImplementation(async (params: any) => {
-				// Capture the params to verify _replaceFullContent was set
-				return { success: true, data: { params } };
-			}),
-		};
+	it('flips append_content to a full overwrite when the user edits the diff', async () => {
+		// The append→overwrite flip now lives in AppendContentTool.applyConfirmedEdit;
+		// register the real tool so the engine exercises that hook end-to-end.
+		const appendTool = getExtendedVaultTools().find((tt) => tt.name === 'append_content')!;
 		registry.registerTool(appendTool);
 
 		const context = {
@@ -1388,8 +1140,10 @@ describe('ToolExecutionEngine - Confirmation Flow', () => {
 
 		const mockFile = new TFile();
 		(mockFile as any).path = 'doc.md';
+		(mockFile as any).extension = 'md';
 		plugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 		plugin.app.vault.read.mockResolvedValue('original');
+		plugin.app.vault.modify = vi.fn().mockResolvedValue(undefined);
 
 		const confirmProvider: IConfirmationProvider = {
 			showConfirmationInChat: vi.fn().mockResolvedValue({
@@ -1410,11 +1164,14 @@ describe('ToolExecutionEngine - Confirmation Flow', () => {
 		);
 
 		expect(result.success).toBe(true);
-		// Verify the tool received the user-edited full content with _replaceFullContent flag
-		const calledArgs = appendTool.execute.mock.calls[0][0];
-		expect(calledArgs.content).toBe('full edited file');
-		expect(calledArgs._userEdited).toBe(true);
-		expect(calledArgs._replaceFullContent).toBe(true);
+		// A user edit means "replace the whole file", not "append the suffix":
+		// the tool overwrites with the edited content and reports a replace.
+		expect(result.data.action).toBe('replaced');
+		expect(result.data.userEdited).toBe(true);
+		expect(plugin.app.vault.modify).toHaveBeenCalledWith(
+			expect.objectContaining({ path: 'doc.md' }),
+			'full edited file'
+		);
 	});
 });
 

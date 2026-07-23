@@ -1,16 +1,19 @@
 import { TFile } from 'obsidian';
 import { getExtendedVaultTools } from '../../src/tools/vault-tools-extended';
 import { Tool, ToolExecutionContext } from '../../src/tools/types';
-import { resolvePathToFile } from '../../src/tools/vault/utils';
+import { resolvePathToFile, safeReadFileForDiff } from '../../src/tools/vault/utils';
 
 // The two extended vault tools resolve paths through resolvePathToFile; mock it
-// so the tests exercise the tools' own branching (JSON parsing, newline handling,
-// replace-vs-append) without depending on the full vault-resolution machinery.
+// (and the diff-preview read helper) so the tests exercise the tools' own
+// branching (JSON parsing, newline handling, replace-vs-append, diff building)
+// without depending on the full vault-resolution machinery.
 vi.mock('../../src/tools/vault/utils', () => ({
 	resolvePathToFile: vi.fn(),
+	safeReadFileForDiff: vi.fn(),
 }));
 
 const mockResolvePathToFile = vi.mocked(resolvePathToFile);
+const mockSafeReadFileForDiff = vi.mocked(safeReadFileForDiff);
 
 // Captures the frontmatter object handed to the processFrontMatter callback so
 // tests can assert the native value that was written.
@@ -250,6 +253,82 @@ describe('vault-tools-extended', () => {
 			expect(result.error).toContain('File not found');
 			expect(mockVault.append).not.toHaveBeenCalled();
 			expect(mockVault.modify).not.toHaveBeenCalled();
+		});
+
+		describe('buildDiffContext', () => {
+			it('builds proposed = original + content, mirroring the newline insertion', async () => {
+				const file = makeFile('notes/log.md');
+				mockResolvePathToFile.mockReturnValue({ file });
+				mockSafeReadFileForDiff.mockResolvedValue('existing content');
+
+				const diff = await getTools().appendContent.buildDiffContext!(
+					{ path: 'notes/log', content: 'new line' },
+					mockContext
+				);
+
+				expect(diff).toBeDefined();
+				expect(diff!.filePath).toBe('notes/log.md');
+				expect(diff!.originalContent).toBe('existing content');
+				expect(diff!.proposedContent).toBe('existing content\nnew line');
+				expect(diff!.isNewFile).toBe(false);
+			});
+
+			it('does not insert a newline when the original already ends with one', async () => {
+				const file = makeFile('notes/log.md');
+				mockResolvePathToFile.mockReturnValue({ file });
+				mockSafeReadFileForDiff.mockResolvedValue('existing content\n');
+
+				const diff = await getTools().appendContent.buildDiffContext!(
+					{ path: 'notes/log', content: 'new line' },
+					mockContext
+				);
+
+				expect(diff!.proposedContent).toBe('existing content\nnew line');
+			});
+
+			it('returns undefined when the file cannot be resolved', async () => {
+				mockResolvePathToFile.mockReturnValue({ file: null });
+
+				const diff = await getTools().appendContent.buildDiffContext!(
+					{ path: 'missing', content: 'text' },
+					mockContext
+				);
+
+				expect(diff).toBeUndefined();
+			});
+
+			it('returns undefined when content is missing', async () => {
+				const diff = await getTools().appendContent.buildDiffContext!({ path: 'notes/log' }, mockContext);
+				expect(diff).toBeUndefined();
+			});
+		});
+
+		describe('applyConfirmedEdit', () => {
+			it('flips to full-overwrite mode when the user edited the diff', () => {
+				const params: Record<string, unknown> = { path: 'notes/log', content: 'suffix' };
+				getTools().appendContent.applyConfirmedEdit!(params, {
+					confirmed: true,
+					allowWithoutConfirmation: false,
+					finalContent: 'full edited body',
+					userEdited: true,
+				});
+				expect(params.content).toBe('full edited body');
+				expect(params._userEdited).toBe(true);
+				expect(params._replaceFullContent).toBe(true);
+			});
+
+			it('leaves params untouched when the user approved without editing', () => {
+				const params: Record<string, unknown> = { path: 'notes/log', content: 'suffix' };
+				getTools().appendContent.applyConfirmedEdit!(params, {
+					confirmed: true,
+					allowWithoutConfirmation: false,
+					finalContent: 'suffix',
+					userEdited: false,
+				});
+				expect(params.content).toBe('suffix');
+				expect(params._userEdited).toBeUndefined();
+				expect(params._replaceFullContent).toBeUndefined();
+			});
 		});
 	});
 });
