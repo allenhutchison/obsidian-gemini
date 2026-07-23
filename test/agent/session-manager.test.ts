@@ -1,5 +1,6 @@
 import { SessionManager } from '../../src/agent/session-manager';
 import { SessionType } from '../../src/types/agent';
+import { PolicyPreset } from '../../src/types/tool-policy';
 
 // Import the mocked TFile class
 import { TFile } from 'obsidian';
@@ -135,6 +136,35 @@ describe('SessionManager', () => {
 			expect(mockPlugin.app.vault.getAbstractFileByPath).toHaveBeenCalledWith(
 				expect.stringContaining('Test-File Chat.md')
 			);
+		});
+	});
+
+	describe('parseContextFromFrontmatter tool policy', () => {
+		// parseContextFromFrontmatter resolves the session tool policy via the shared
+		// resolveFeatureToolPolicy using the session's snake_case key dialect, layering
+		// the NOTE_CHAT read-only default (cloned) when no policy keys are present.
+		const parse = (frontmatter: Record<string, unknown> | undefined) =>
+			(sessionManager as any).parseContextFromFrontmatter(frontmatter).toolPolicy;
+
+		it('parses the canonical snake_case tool_policy block', () => {
+			expect(parse({ tool_policy: { preset: 'edit_mode' } })).toEqual({ preset: PolicyPreset.EDIT_MODE });
+		});
+
+		it('falls back to the legacy snake_case enabled_tools array', () => {
+			expect(parse({ enabled_tools: ['read_only'] })).toEqual({ preset: PolicyPreset.READ_ONLY });
+		});
+
+		it('falls back to a clone of the NOTE_CHAT default when no policy keys are present', () => {
+			// The read-only default is the note-chat fallback; the result must equal it
+			// but be a distinct object so per-session mutations never leak into the shared default.
+			const defaultPolicy = { preset: PolicyPreset.READ_ONLY };
+			const resolved = parse({ session_id: 'x' });
+			expect(resolved).toEqual(defaultPolicy);
+			expect(resolved).not.toBe(defaultPolicy);
+		});
+
+		it('falls back to the clone default when frontmatter is undefined', () => {
+			expect(parse(undefined)).toEqual({ preset: PolicyPreset.READ_ONLY });
 		});
 	});
 

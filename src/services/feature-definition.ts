@@ -95,11 +95,20 @@ export function parseMaxIterations(raw: unknown): number | undefined {
 
 /**
  * Resolve the tool policy for a feature definition from its frontmatter:
- * prefer the canonical `toolPolicy:` block, falling back to the legacy
- * `enabledTools:` category array. `undefined` means "inherit the global policy".
+ * prefer the canonical policy block, falling back to the legacy category
+ * array. `undefined` means "inherit the global policy".
+ *
+ * The frontmatter key names are parameterized so callers with a different
+ * on-disk dialect can reach this one implementation instead of forking the
+ * whole resolver: hooks and scheduled tasks use the camelCase defaults
+ * (`toolPolicy` / `enabledTools`), while agent sessions pass their snake_case
+ * keys (`tool_policy` / `enabled_tools`).
  */
-export function resolveFeatureToolPolicy(frontmatter: Record<string, unknown>): FeatureToolPolicy | undefined {
-	return parseToolPolicyFrontmatter(frontmatter.toolPolicy) ?? migrateLegacyToolCategoryArray(frontmatter.enabledTools);
+export function resolveFeatureToolPolicy(
+	frontmatter: Record<string, unknown>,
+	{ policyKey = 'toolPolicy', legacyKey = 'enabledTools' }: { policyKey?: string; legacyKey?: string } = {}
+): FeatureToolPolicy | undefined {
+	return parseToolPolicyFrontmatter(frontmatter[policyKey]) ?? migrateLegacyToolCategoryArray(frontmatter[legacyKey]);
 }
 
 /**
