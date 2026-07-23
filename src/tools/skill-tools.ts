@@ -1,8 +1,22 @@
-import { Tool, ToolResult, ToolExecutionContext } from './types';
+import { Tool, ToolResult, ToolExecutionContext, ToolParams, DiffContext, ConfirmationResult } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import { getRawErrorMessage } from '../utils/error-utils';
 import { t } from '../i18n';
+import { normalizePath } from 'obsidian';
+import type { ObsidianGemini } from '../types/plugin';
+
+/**
+ * Build the SKILL.md file path for a skill name, matching SkillManager's layout
+ * (`{skillsFolder}/{name}/SKILL.md`, falling back to the historyFolder default
+ * when the manager is unavailable). Used for diff-context display only.
+ */
+function skillFilePath(plugin: ObsidianGemini, skillName: string): string {
+	if (plugin.skillManager) {
+		return normalizePath(`${plugin.skillManager.getSkillsFolderPath()}/${skillName}/SKILL.md`);
+	}
+	return normalizePath(`${plugin.settings.historyFolder}/Skills/${skillName}/SKILL.md`);
+}
 
 /**
  * Tool for activating (loading) a skill's full instructions or resources
@@ -165,6 +179,30 @@ export class CreateSkillTool implements Tool {
 		return `Creating skill: ${params.name}`;
 	}
 
+	/**
+	 * Diff preview for a new skill: original is empty, proposed is the trimmed
+	 * body, at the normalized SKILL.md path (matching execute()'s normalization).
+	 */
+	async buildDiffContext(params: ToolParams, context: ToolExecutionContext): Promise<DiffContext | undefined> {
+		const name = typeof params.name === 'string' ? params.name : undefined;
+		const content = typeof params.content === 'string' ? params.content : undefined;
+		if (!name || content === undefined) return undefined;
+
+		const normalizedName = name.trim().toLowerCase();
+		return {
+			filePath: skillFilePath(context.plugin, normalizedName),
+			originalContent: '',
+			proposedContent: content.trim(),
+			isNewFile: true,
+		};
+	}
+
+	/** The SKILL.md body is the editable `content`, so a user edit replaces it. */
+	applyConfirmedEdit(params: ToolParams, result: ConfirmationResult): void {
+		params.content = result.finalContent;
+		params._userEdited = result.userEdited;
+	}
+
 	async execute(
 		params: { name: string; description: string; content: string; _userEdited?: boolean },
 		context: ToolExecutionContext
@@ -280,6 +318,38 @@ export class EditSkillTool implements Tool {
 
 	getProgressDescription(params: { name: string }): string {
 		return `Editing skill: ${params.name}`;
+	}
+
+	/**
+	 * Diff preview for a skill edit: original = current SKILL.md body, proposed =
+	 * the edited body (or the unchanged body for a description-only edit, so the
+	 * confirmation still triggers). Skips the diff when neither field is provided.
+	 */
+	async buildDiffContext(params: ToolParams, context: ToolExecutionContext): Promise<DiffContext | undefined> {
+		const plugin = context.plugin;
+		const name = typeof params.name === 'string' ? params.name : undefined;
+		const content = typeof params.content === 'string' ? params.content : undefined;
+		const description = typeof params.description === 'string' ? params.description : undefined;
+		if (!name) return undefined;
+
+		const normalizedName = name.trim().toLowerCase();
+		const proposedContent = content?.trim();
+		const proposedDescription = description?.trim();
+		if (!proposedContent && !proposedDescription) return undefined;
+
+		const originalBody = plugin.skillManager ? ((await plugin.skillManager.loadSkill(normalizedName)) ?? '') : '';
+		return {
+			filePath: skillFilePath(plugin, normalizedName),
+			originalContent: originalBody,
+			proposedContent: proposedContent ?? originalBody,
+			isNewFile: false,
+		};
+	}
+
+	/** The SKILL.md body is the editable `content`, so a user edit replaces it. */
+	applyConfirmedEdit(params: ToolParams, result: ConfirmationResult): void {
+		params.content = result.finalContent;
+		params._userEdited = result.userEdited;
 	}
 
 	async execute(

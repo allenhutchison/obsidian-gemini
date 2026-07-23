@@ -6,16 +6,12 @@ import {
 	ToolExecution,
 	ToolParams,
 	IConfirmationProvider,
-	DiffContext,
 	ConfirmationResult,
 } from './types';
 import { getRawErrorMessageOr } from '../utils/error-utils';
 import { ToolRegistry } from './tool-registry';
 import { ToolLoopDetector } from './loop-detector';
-import { TFile, normalizePath } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
-import { shouldExcludePath } from '../utils/file-utils';
-import { resolvePathToFile } from './vault/utils';
 
 /**
  * Handles execution of tools with permission checks and UI feedback
@@ -121,7 +117,7 @@ export class ToolExecutionEngine {
 				const confirmationMessage = `Waiting for confirmation: ${toolDisplay}`;
 				confirmationProvider.updateProgress?.(confirmationMessage, 'waiting');
 
-				const result = await this.requestUserConfirmation(tool, toolCall.arguments, confirmationProvider);
+				const result = await this.requestUserConfirmation(tool, toolCall.arguments, confirmationProvider, context);
 
 				// Update progress back to tool execution
 				confirmationProvider.updateProgress?.(`Executing: ${toolDisplay}`, 'tool');
@@ -133,27 +129,14 @@ export class ToolExecutionEngine {
 					};
 				}
 
-				// If user edited the content in the diff view, use the edited content.
-				// write_file, create_skill, and edit_skill all use `arguments.content` as the
-				// full editable body, so a direct replacement works. append_content uses
-				// `arguments.content` for the suffix to append; when the user edits the
-				// diff we flip it into replace-mode so the tool overwrites the full file
-				// with the edited content instead of appending on top of it.
+				// If the user edited the content in the diff view, let the tool fold the
+				// edited content back into its own arguments — each content-editing tool
+				// owns its own write contract (write_file / create_skill / edit_skill
+				// replace the editable body; append_content flips to a full overwrite).
+				// Tools without an editable diff implement neither hook, so this is a
+				// no-op for them.
 				if (result.finalContent !== undefined) {
-					if (tool.name === 'write_file' || tool.name === 'create_skill' || tool.name === 'edit_skill') {
-						toolCall.arguments.content = result.finalContent;
-						toolCall.arguments._userEdited = result.userEdited;
-					} else if (tool.name === 'append_content') {
-						if (result.userEdited) {
-							// User edited the full-file diff, so we switch from append
-							// to full overwrite with the edited content.
-							toolCall.arguments.content = result.finalContent;
-							toolCall.arguments._userEdited = true;
-							toolCall.arguments._replaceFullContent = true;
-						}
-						// If user approved without editing, leave arguments unchanged
-						// so the tool appends the original suffix normally.
-					}
+					tool.applyConfirmedEdit?.(toolCall.arguments, result);
 				}
 
 				// If user allowed this action without future confirmation
@@ -220,136 +203,18 @@ export class ToolExecutionEngine {
 	private async requestUserConfirmation(
 		tool: Tool,
 		parameters: ToolParams,
-		confirmationProvider: IConfirmationProvider
+		confirmationProvider: IConfirmationProvider,
+		context: ToolExecutionContext
 	): Promise<ConfirmationResult> {
 		// Generate unique execution ID for tracking
 		const executionId = `tool-confirm-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 
-		// Build diff context based on the tool's shape
-		const diffContext = await this.buildDiffContext(tool, parameters);
+		// A content-editing tool builds its own diff-preview context; tools without
+		// an editable diff omit the hook and get a plain (non-diff) confirmation.
+		const diffContext = await tool.buildDiffContext?.(parameters, context);
 
 		// Show confirmation in chat instead of modal
 		return confirmationProvider.showConfirmationInChat(tool, parameters, executionId, diffContext);
-	}
-
-	/**
-	 * Build a diff context for the confirmation UI when the tool modifies file content.
-	 *
-	 * Supported tools:
-	 * - write_file: originalContent = current file (or empty for new), proposedContent = parameters.content
-	 * - append_content: originalContent = current file, proposedContent = current + parameters.content
-	 * - create_skill: originalContent = empty (new SKILL.md body), proposedContent = parameters.content
-	 * - edit_skill: originalContent = current SKILL.md body, proposedContent = parameters.content
-	 */
-	private async buildDiffContext(tool: Tool, parameters: ToolParams): Promise<DiffContext | undefined> {
-		const plugin = this.plugin;
-
-		// Narrow the dynamic, model-supplied fields this method reads to their
-		// expected string types once, so each branch works with concrete values.
-		const path = typeof parameters.path === 'string' ? parameters.path : undefined;
-		const content = typeof parameters.content === 'string' ? parameters.content : undefined;
-		const name = typeof parameters.name === 'string' ? parameters.name : undefined;
-		const description = typeof parameters.description === 'string' ? parameters.description : undefined;
-
-		if (tool.name === 'write_file' && path && content !== undefined) {
-			const normalizedPath = normalizePath(path);
-			if (shouldExcludePath(normalizedPath, plugin.settings.historyFolder, plugin.app.vault.configDir))
-				return undefined;
-
-			const file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
-			const originalContent = file instanceof TFile ? await this.safeReadFile(file) : '';
-			return {
-				filePath: path,
-				originalContent,
-				proposedContent: content,
-				isNewFile: !file,
-			};
-		}
-
-		if (tool.name === 'append_content' && path && content !== undefined) {
-			// Use the canonical resolver, same as AppendContentTool — applies
-			// system-folder exclusion at every resolution strategy (including
-			// the wikilink path), so the diff matches what will actually be written.
-			const { file } = resolvePathToFile(path, plugin);
-			if (!file) return undefined; // Tool will return its own error
-
-			const originalContent = await this.safeReadFile(file);
-			// Mirror the newline-insertion logic from AppendContentTool.execute()
-			let contentToAppend = content;
-			if (originalContent.length > 0 && !originalContent.endsWith('\n') && !contentToAppend.startsWith('\n')) {
-				contentToAppend = '\n' + contentToAppend;
-			}
-			return {
-				filePath: file.path,
-				originalContent,
-				proposedContent: originalContent + contentToAppend,
-				isNewFile: false,
-			};
-		}
-
-		if (tool.name === 'create_skill' && name && content !== undefined) {
-			// Normalize name the same way CreateSkillTool.execute() does
-			const normalizedName = name.trim().toLowerCase();
-			const proposedBody = content.trim();
-			return {
-				filePath: this.getSkillFilePath(normalizedName),
-				originalContent: '',
-				proposedContent: proposedBody,
-				isNewFile: true,
-			};
-		}
-
-		if (tool.name === 'edit_skill' && name) {
-			// Normalize name the same way EditSkillTool.execute() does
-			const normalizedName = name.trim().toLowerCase();
-			const proposedContent = content?.trim();
-			const proposedDescription = description?.trim();
-
-			// Skip diff if neither content nor description is provided
-			if (!proposedContent && !proposedDescription) return undefined;
-
-			// Read the current skill body (excluding frontmatter) for the original side
-			// of the diff. If the file can't be found, skip diff context — the tool will
-			// surface its own not-found error at execution time.
-			const originalBody = plugin.skillManager ? ((await plugin.skillManager.loadSkill(normalizedName)) ?? '') : '';
-
-			// For content edits, show the body diff. For description-only edits,
-			// show the body unchanged (diff will be empty, but confirmation still triggers).
-			return {
-				filePath: this.getSkillFilePath(normalizedName),
-				originalContent: originalBody,
-				proposedContent: proposedContent ?? originalBody,
-				isNewFile: false,
-			};
-		}
-
-		return undefined;
-	}
-
-	/**
-	 * Build the SKILL.md file path for a given skill name, matching the path
-	 * layout that SkillManager uses (`{historyFolder}/Skills/{name}/SKILL.md`).
-	 * Used for diff context display only.
-	 */
-	private getSkillFilePath(skillName: string): string {
-		const plugin = this.plugin;
-		if (plugin.skillManager) {
-			return normalizePath(`${plugin.skillManager.getSkillsFolderPath()}/${skillName}/SKILL.md`);
-		}
-		return normalizePath(`${plugin.settings.historyFolder}/Skills/${skillName}/SKILL.md`);
-	}
-
-	/**
-	 * Read a file's content, swallowing errors and returning empty string.
-	 * Used when building diff context where a read failure shouldn't block execution.
-	 */
-	private async safeReadFile(file: TFile): Promise<string> {
-		try {
-			return await this.plugin.app.vault.read(file);
-		} catch (error) {
-			this.plugin.logger.warn(`Failed to read file for diff context: ${file.path}`, error);
-			return '';
-		}
 	}
 
 	/**

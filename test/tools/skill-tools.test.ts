@@ -11,6 +11,7 @@ const mockSkillManager = {
 	createSkill: vi.fn(),
 	updateSkill: vi.fn(),
 	validateSkillName: vi.fn(),
+	getSkillsFolderPath: vi.fn().mockReturnValue('gemini-scribe/Skills'),
 };
 
 const mockPlugin = {
@@ -249,6 +250,37 @@ describe('Skill Tools', () => {
 
 			expect(mockSkillManager.createSkill).toHaveBeenCalledWith('my-skill', 'desc', 'content');
 		});
+
+		describe('buildDiffContext', () => {
+			it('returns a new-file diff with empty original and trimmed proposed body at the SKILL.md path', async () => {
+				const diff = await tool.buildDiffContext({ name: 'My-Skill', content: '  skill body  ' }, mockContext);
+
+				expect(diff).toBeDefined();
+				expect(diff!.filePath).toBe('gemini-scribe/Skills/my-skill/SKILL.md');
+				expect(diff!.originalContent).toBe('');
+				expect(diff!.proposedContent).toBe('skill body');
+				expect(diff!.isNewFile).toBe(true);
+			});
+
+			it('returns undefined when content is missing', async () => {
+				const diff = await tool.buildDiffContext({ name: 'My-Skill' }, mockContext);
+				expect(diff).toBeUndefined();
+			});
+		});
+
+		describe('applyConfirmedEdit', () => {
+			it('replaces the body with the user-edited content', () => {
+				const params: Record<string, unknown> = { name: 'my-skill', content: 'ai body' };
+				tool.applyConfirmedEdit(params, {
+					confirmed: true,
+					allowWithoutConfirmation: false,
+					finalContent: 'user body',
+					userEdited: true,
+				});
+				expect(params.content).toBe('user body');
+				expect(params._userEdited).toBe(true);
+			});
+		});
 	});
 
 	describe('EditSkillTool', () => {
@@ -415,6 +447,57 @@ describe('Skill Tools', () => {
 			expect(result.success).toBe(false);
 			expect(result.error).toContain('At least one of description or content must be provided');
 			expect(mockSkillManager.updateSkill).not.toHaveBeenCalled();
+		});
+
+		describe('buildDiffContext', () => {
+			it('returns the current body vs the edited body for a content edit', async () => {
+				mockSkillManager.loadSkill.mockResolvedValue('original body');
+
+				const diff = await tool.buildDiffContext({ name: 'My-Skill', content: '  updated body  ' }, mockContext);
+
+				expect(diff).toBeDefined();
+				expect(diff!.filePath).toBe('gemini-scribe/Skills/my-skill/SKILL.md');
+				expect(diff!.originalContent).toBe('original body');
+				expect(diff!.proposedContent).toBe('updated body');
+				expect(diff!.isNewFile).toBe(false);
+			});
+
+			it('shows the body unchanged for a description-only edit', async () => {
+				mockSkillManager.loadSkill.mockResolvedValue('unchanged body');
+
+				const diff = await tool.buildDiffContext({ name: 'My-Skill', description: 'new desc' }, mockContext);
+
+				expect(diff!.originalContent).toBe('unchanged body');
+				expect(diff!.proposedContent).toBe('unchanged body');
+			});
+
+			it('returns undefined when neither content nor description is provided', async () => {
+				const diff = await tool.buildDiffContext({ name: 'My-Skill' }, mockContext);
+				expect(diff).toBeUndefined();
+			});
+
+			it('falls back to an empty original body when the skill body cannot be loaded', async () => {
+				mockSkillManager.loadSkill.mockResolvedValue(null);
+
+				const diff = await tool.buildDiffContext({ name: 'My-Skill', content: 'new content' }, mockContext);
+
+				expect(diff!.originalContent).toBe('');
+				expect(diff!.proposedContent).toBe('new content');
+			});
+		});
+
+		describe('applyConfirmedEdit', () => {
+			it('replaces the body with the user-edited content', () => {
+				const params: Record<string, unknown> = { name: 'my-skill', content: 'ai body' };
+				tool.applyConfirmedEdit(params, {
+					confirmed: true,
+					allowWithoutConfirmation: false,
+					finalContent: 'user body',
+					userEdited: true,
+				});
+				expect(params.content).toBe('user body');
+				expect(params._userEdited).toBe(true);
+			});
 		});
 	});
 
