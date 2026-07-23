@@ -24,7 +24,6 @@ export { computeNextRunAt } from './scheduled-tasks/schedule';
 // ─── Folder / file layout ─────────────────────────────────────────────────────
 
 const SCHEDULED_TASKS_FOLDER = 'Scheduled-Tasks';
-const RUNS_SUBFOLDER = 'Runs';
 const STATE_FILE = 'scheduled-tasks-state.json';
 
 /** Milliseconds between scheduler ticks (60 s). Same cadence as ChatTimer. */
@@ -331,7 +330,7 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 		computeNextRunAt(params.schedule, new Date());
 
 		const filePath = normalizePath(`${this.scheduledTasksFolder}/${slug}.md`);
-		const defaultOutputPath = normalizePath(`${this.scheduledTasksFolder}/${RUNS_SUBFOLDER}/${slug}/{date}.md`);
+		const defaultOutputPath = normalizePath(`${this.runsFolder}/${slug}/{date}.md`);
 		// Normalize at the write boundary so an invalid value from a programmatic
 		// caller can't be persisted or held in memory — matches the read-path
 		// contract (parseTaskFile), where invalid values fall back to the default.
@@ -361,9 +360,9 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 	}
 
 	/**
-	 * Delete a scheduled task: remove the definition file and its state entry.
-	 * The metadata cache 'changed' handler will drop the task from the in-memory
-	 * map once Obsidian indexes the deletion; the state cleanup happens immediately.
+	 * Delete a scheduled task. Delegates to the base `deleteDefinition`, which
+	 * trashes the definition file and removes the task (and its sidecar state
+	 * entry) from the in-memory map synchronously in this call.
 	 */
 	async deleteTask(slug: string): Promise<void> {
 		await this.deleteDefinition(slug);
@@ -535,7 +534,7 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 		if (!prompt) return null;
 
 		const slug = file.basename;
-		const defaultOutputPath = `${this.scheduledTasksFolder}/${RUNS_SUBFOLDER}/${slug}/{date}.md`;
+		const defaultOutputPath = `${this.runsFolder}/${slug}/{date}.md`;
 
 		const task: ScheduledTask = {
 			slug,
@@ -587,8 +586,7 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 			lines.push(...policyLines);
 		}
 
-		const defaultOutputPath =
-			params.slug && normalizePath(`${this.scheduledTasksFolder}/${RUNS_SUBFOLDER}/${params.slug}/{date}.md`);
+		const defaultOutputPath = params.slug && normalizePath(`${this.runsFolder}/${params.slug}/{date}.md`);
 		if (params.outputPath && params.outputPath !== defaultOutputPath) {
 			lines.push(`outputPath: '${params.outputPath}'`);
 		}
