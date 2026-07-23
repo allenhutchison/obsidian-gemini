@@ -155,15 +155,21 @@ describe('SessionManager', () => {
 		});
 
 		it('falls back to a clone of the NOTE_CHAT default when no policy keys are present', () => {
-			// The read-only default is the note-chat fallback; the result must equal it
-			// but be a distinct object so per-session mutations never leak into the shared default.
-			const defaultPolicy = { preset: PolicyPreset.READ_ONLY };
-			const resolved = parse({ session_id: 'x' });
-			expect(resolved).toEqual(defaultPolicy);
-			expect(resolved).not.toBe(defaultPolicy);
+			// The read-only default is the note-chat fallback; each resolution must return a
+			// distinct object (a fresh clone) so per-session mutations never leak into the shared
+			// default. Comparing two resolutions — rather than a locally-built object — is what
+			// actually proves the clone: a locally-allocated object is trivially reference-distinct.
+			const first = parse({ session_id: 'x' });
+			const second = parse({ session_id: 'x' });
+			expect(first).toEqual({ preset: PolicyPreset.READ_ONLY });
+			expect(first).not.toBe(second);
 		});
 
-		it('falls back to the clone default when frontmatter is undefined', () => {
+		it('returns the read-only default when frontmatter is undefined', () => {
+			// Undefined frontmatter short-circuits to the shared DEFAULT_CONTEXTS.NOTE_CHAT via an
+			// early return that predates this change and does not route through the clone path, so
+			// only the resolved value is asserted here — not clone identity (two calls share the
+			// same reference on this path).
 			expect(parse(undefined)).toEqual({ preset: PolicyPreset.READ_ONLY });
 		});
 	});
