@@ -20,10 +20,10 @@ The reference below groups settings by topic for lookup, which doesn't always ma
 - [Basic Settings](#basic-settings) (UI: _General_ — provider, API key, models, plugin state folder)
 - [Model Configuration](#model-configuration) (UI: _General_ — chat/summary/completion/image model selection)
 - [Custom Prompts](#custom-prompts) (UI: _Agent config_ — advanced)
-- [UI Settings](#ui-settings) (UI: _User experience_ — streaming, diff view, identity, frontmatter key, session history)
+- [UI Settings](#ui-settings) (UI: _User experience_ — streaming, tool execution logging, diff view, identity, frontmatter key, session history)
 - [Automation Settings](#automation-settings) (UI: _Automation_ — scheduled task catch-up, lifecycle hooks toggle)
 - [Context management](#context-management) (UI: _Agent config_ — advanced)
-- [Developer Settings](#developer-settings) (UI: split across _Agent config_, _Tool permissions_, _MCP servers_, _Debug_)
+- [Developer Settings](#developer-settings) (UI: split across _Agent config_, _Tool permissions_, _MCP servers_, _Debug_ — including token usage display)
 - [Session-Level Settings](#session-level-settings)
 
 UI sections without a dedicated topic in this reference: _Vault search index_ (covered in [Semantic Search](/guide/semantic-search)). The _Automation_ section's task and hook management UI is covered in the [Scheduled tasks](/guide/scheduled-tasks) and [Lifecycle Hooks](/guide/lifecycle-hooks) guides; the two persistent settings (`autoRunCatchUp`, `hooksEnabled`) are documented in [Automation Settings](#automation-settings) below.
@@ -185,6 +185,25 @@ See the [Custom Prompts Guide](/guide/custom-prompts) for detailed instructions.
 - **Description**: Enable streaming responses in the chat interface for a more interactive experience
 - **Note**: When disabled, full responses are displayed at once
 
+### Log Tool Execution to Session History
+
+- **Setting**: `logToolExecution`
+- **Type**: Boolean
+- **Default**: `true`
+- **Description**: Append a summary of each tool execution to the session history file for auditing
+- **Format**: Collapsible callout blocks showing tool name, key parameters, status, and duration
+- **Note**: Takes effect immediately when toggled — no plugin reload needed
+
+### Always Show Diff view for File Writes
+
+- **Setting**: `alwaysShowDiffView`
+- **Type**: Boolean
+- **Default**: `false`
+- **Description**: Automatically open a diff view when the agent proposes file changes, instead of requiring a button click
+- **When off**: The confirmation card shows a summary and a "View changes" button. Click it to open the diff view
+- **When on**: The diff view opens automatically alongside the confirmation card
+- **Note**: The diff view lets you edit the proposed content before approving. If you modify content, the tool result reports `userEdited: true` so the agent knows
+
 ### Expanded Settings Sections
 
 - **Setting**: `expandedSettingsSections`
@@ -242,6 +261,18 @@ Re-issuing a tool call brings the full output back if the agent needs it. The be
 
 Compaction isn't only checked before the initial request — `AgentLoop` re-checks after every tool batch, so a long tool chain (many iterations in a single turn) can be compacted mid-flight instead of only at the start of the next user turn. Mid-loop compaction never touches the current tool chain's own turns (the ones carrying the in-flight `functionCall`/`thoughtSignature` continuity) — only turns from before the chain started are eligible, so an in-progress multi-step tool sequence is never summarized out from under itself.
 
+## Developer Settings
+
+Advanced settings for developers and power users. Access by clicking "Show advanced settings" in the plugin settings.
+
+### Debug mode
+
+- **Setting**: `debugMode`
+- **Type**: Boolean
+- **Default**: `false`
+- **Description**: Enable detailed console logging for troubleshooting
+- **Use case**: Debugging API issues, tool execution problems, or unexpected behavior
+
 ### Show Token Usage
 
 - **Setting**: `showTokenUsage`
@@ -254,37 +285,6 @@ Compaction isn't only checked before the initial request — `AgentLoop` re-chec
   - Normal (muted text) — well under threshold
   - Yellow — approaching compaction threshold (≥80% of threshold)
   - Orange/red — at or above compaction threshold
-
-### Log Tool Execution to Session History
-
-- **Setting**: `logToolExecution`
-- **Type**: Boolean
-- **Default**: `true`
-- **Description**: Append a summary of each tool execution to the session history file for auditing
-- **Format**: Collapsible callout blocks showing tool name, key parameters, status, and duration
-- **Note**: Takes effect immediately when toggled — no plugin reload needed
-
-### Always Show Diff view for File Writes
-
-- **Setting**: `alwaysShowDiffView`
-- **Type**: Boolean
-- **Default**: `false`
-- **Description**: Automatically open a diff view when the agent proposes file changes, instead of requiring a button click
-- **When off**: The confirmation card shows a summary and a "View changes" button. Click it to open the diff view
-- **When on**: The diff view opens automatically alongside the confirmation card
-- **Note**: The diff view lets you edit the proposed content before approving. If you modify content, the tool result reports `userEdited: true` so the agent knows
-
-## Developer Settings
-
-Advanced settings for developers and power users. Access by clicking "Show advanced settings" in the plugin settings.
-
-### Debug mode
-
-- **Setting**: `debugMode`
-- **Type**: Boolean
-- **Default**: `false`
-- **Description**: Enable detailed console logging for troubleshooting
-- **Use case**: Debugging API issues, tool execution problems, or unexpected behavior
 
 ### Log to File
 
