@@ -43,7 +43,6 @@ import {
 	InteractionStreamAccumulator,
 	type InteractionStep,
 } from './interactions-mapper';
-import { installObsidianFetch } from './obsidian-fetch';
 import { renderGroundingSources } from './grounding-render';
 
 /**
@@ -143,23 +142,10 @@ export class GeminiClient implements ModelApi {
 	}
 
 	/**
-	 * Route the Interactions (Next-Gen) client through Obsidian's requestUrl so its
-	 * requests bypass renderer CORS — the SDK otherwise uses the global fetch,
-	 * whose preflight to the Interactions endpoint fails in Obsidian (see #1023).
-	 */
-	private ensureInteractionsFetch(): void {
-		if (!installObsidianFetch(this.ai)) {
-			this.plugin?.logger.warn(
-				'[GeminiClient] Could not route Interactions client through Obsidian requestUrl; requests may fail due to CORS.'
-			);
-		}
-	}
-
-	/**
 	 * Typed accessor for the SDK's experimental Interactions surface. `interactions`
 	 * is marked experimental and omitted from `GoogleGenAI`'s public types, so we
-	 * narrow the `create` boundary here in one place instead of scattering `as any`
-	 * (mirrors the structural casts in obsidian-fetch.ts). The return type advertises
+	 * narrow the `create` boundary here in one place instead of scattering `as any`.
+	 * The return type advertises
 	 * both the non-streaming interaction record and the streaming async-iterable
 	 * shape; which the SDK actually returns depends on `params.stream`.
 	 */
@@ -186,7 +172,6 @@ export class GeminiClient implements ModelApi {
 	 */
 	private async generateViaInteractions(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
 		const params = await this.buildInteractionParams(request);
-		this.ensureInteractionsFetch();
 
 		try {
 			const interaction = await this.interactionsClient.create(params);
@@ -227,7 +212,6 @@ export class GeminiClient implements ModelApi {
 		const complete = (async (): Promise<ModelResponse> => {
 			const params = await this.buildInteractionParams(request);
 			params.stream = true;
-			this.ensureInteractionsFetch();
 
 			try {
 				const stream = await this.interactionsClient.create(params);
@@ -870,8 +854,6 @@ export class GeminiClient implements ModelApi {
 	 * the SDK provides it).
 	 */
 	private async generateImageViaInteractions(prompt: string, model: string): Promise<string> {
-		this.ensureInteractionsFetch();
-
 		try {
 			const interaction = await this.interactionsClient.create({
 				model,
