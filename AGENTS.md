@@ -7,7 +7,7 @@ Obsidian Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI 
 ## Project Structure & Module Organization
 
 - `src/` contains TypeScript plugin code; `src/main.ts` is the entry point with domain folders such as `agent/`, `api/`, `tools/`, `ui/`, and `services/`, plus shared utilities in `utils/`.
-- `docs/` hosts user and operator guides; `prompts/` ships default agent prompts; `test-scripts/` holds manual integration runners.
+- `docs/` hosts user and operator guides; `prompts/` ships default agent prompts; `evals/` holds the agent eval harness (task fixtures, runner, baselines).
 - Unit tests live in the `test/` directory mirroring `src/` structure as `*.test.ts`; generated artifacts (`main.js`, `manifest.json`, `styles.css`) stay in the repo root for Obsidian.
 
 ## Commands
@@ -35,7 +35,7 @@ npm run translate    # Regenerate AI translations in src/i18n/ (needs GOOGLE_API
 ### Testing
 
 - Run single test: `npm test -- path/to/test.ts`
-- Manual integration: `node test-scripts/test-sdk-tools.mjs` (and siblings) validate agent toolchains before shipping
+- Manual integration: `npm run eval` drives the eval harness against a real Obsidian instance to validate agent toolchains before shipping (see `evals/README.md` and the **eval-harness** skill)
 - **Typecheck test files before pushing test changes**: the CI lint job runs `npm run typecheck:test` (`tsc --project tsconfig.test.json`), which type-checks the `test/` tree and catches errors the production build misses — `npm run build` uses `tsc -skipLibCheck` and excludes tests. A green local `npm run build` does **not** guarantee CI passes; run `npm run typecheck:test` too. (Classic trap: an expression-bodied arrow like `(t) => arr.push(t)` returns `number`, not `void`, and only the test typecheck flags it.)
 
 ### Versioning & Releases

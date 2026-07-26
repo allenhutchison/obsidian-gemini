@@ -127,13 +127,13 @@ When you create a **new** agent session, the plugin inspects the session's initi
 
 ### What Changes When a Project is Active
 
-| Feature               | Behavior                                                                                    |
-| --------------------- | ------------------------------------------------------------------------------------------- |
-| **System prompt**     | Project instructions are injected between the base prompt and tool instructions             |
-| **Tool discovery**    | `list_files`, `find_files_by_name`, and `find_files_by_content` scope to the project root   |
-| **Read/write access** | Unrestricted — the agent can still access files outside the project when you reference them |
-| **Skills**            | Only skills listed in the project's `skills` array are available (empty = all)              |
-| **Tool policy**       | The project's `toolPolicy` is layered on top of the global plugin tool policy               |
+| Feature               | Behavior                                                                                                           |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **System prompt**     | Project instructions are injected between the base prompt and tool instructions                                    |
+| **Tool discovery**    | `list_files`, `find_files_by_name`, `find_files_by_content`, and `vault_semantic_search` scope to the project root |
+| **Read/write access** | Unrestricted — the agent can still access files outside the project when you reference them                        |
+| **Skills**            | Only skills listed in the project's `skills` array are available (empty = all)                                     |
+| **Tool policy**       | The project's `toolPolicy` is layered on top of the global plugin tool policy                                      |
 
 ### Tool Policy Resolution Order
 
@@ -146,7 +146,7 @@ When you create a **new** agent session, the plugin inspects the session's initi
 
 ### Switching Projects
 
-Click the **project badge** in the agent session header to open the project picker. You can also use the **"Switch project"** command from the command palette.
+Click the **project badge** in the agent session header to open the project picker. You can also use the **"Switch project"** command from the command palette, or **"Link project to agent session"** to jump straight to the picker without clicking the badge first.
 
 Select **"No project"** to unlink the session from any project and return to vault-wide scope.
 

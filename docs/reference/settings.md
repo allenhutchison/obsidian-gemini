@@ -166,6 +166,7 @@ Custom prompts allow you to create reusable AI instruction templates that modify
 - **Default**: `false`
 - **Description**: Allow custom prompts to completely replace the default system prompt
 - **Warning**: Enabling this may break expected functionality if custom prompts don't include essential instructions
+- **Note**: This toggle does not currently gate the override — any prompt with `override_system_prompt: true` in its frontmatter replaces the system prompt regardless of this setting
 
 ### Creating Custom Prompts
 
