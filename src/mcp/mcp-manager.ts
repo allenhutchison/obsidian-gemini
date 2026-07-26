@@ -45,7 +45,7 @@ type MCPTransport = StdioClientTransportType | StreamableHTTPClientTransport;
  * This polyfill wraps the return value so .unref() is a safe no-op.
  */
 function patchSetTimeoutForElectron(): void {
-	const origSetTimeout = window.setTimeout;
+	const origSetTimeout = window.setTimeout.bind(window);
 	if (typeof origSetTimeout === 'function') {
 		// Test if unref already works (true Node.js environment)
 		const testTimer = origSetTimeout(() => {}, 0);
@@ -81,7 +81,7 @@ function patchSetTimeoutForElectron(): void {
 		} as unknown as typeof window.setTimeout;
 
 		// Also patch clearTimeout to handle our wrapper objects
-		const origClearTimeout = window.clearTimeout;
+		const origClearTimeout = window.clearTimeout.bind(window);
 		window.clearTimeout = function patchedClearTimeout(id?: unknown): void {
 			if (id && typeof id === 'object' && '__timerId' in id) {
 				origClearTimeout((id as { __timerId?: number }).__timerId);
