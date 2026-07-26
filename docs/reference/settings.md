@@ -159,13 +159,13 @@ The active model list depends on the [`provider`](#provider) setting:
 
 Custom prompts allow you to create reusable AI instruction templates that modify how the AI behaves for specific sessions.
 
-### Allow System Prompt Override
+### Allow System Prompt Override (legacy, currently non-functional)
 
 - **Setting**: `allowSystemPromptOverride`
 - **Type**: Boolean
 - **Default**: `false`
-- **Description**: Allow custom prompts to completely replace the default system prompt
-- **Warning**: Enabling this may break expected functionality if custom prompts don't include essential instructions
+- **Description**: Intended to gate whether custom prompts can completely replace the default system prompt. **Currently has no effect**: any prompt with `override_system_prompt: true` in its frontmatter replaces the system prompt regardless of this setting. Toggling it on or off does not change that behavior.
+- **Warning**: Because the frontmatter flag alone controls the override, a custom prompt with `override_system_prompt: true` can break expected functionality if it doesn't include essential instructions — this setting will not prevent that.
 
 ### Creating Custom Prompts
 

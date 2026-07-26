@@ -163,8 +163,10 @@ When a custom prompt is active, you'll see a badge in the session header showing
 For advanced users who want complete control:
 
 1. Set `override_system_prompt: true` in your prompt file
-2. Enable "Allow system prompt override" in plugin settings
-3. Your prompt will completely replace the default system instructions
+2. Your prompt will completely replace the default system instructions
+
+The frontmatter field alone controls this — the "Allow system prompt override" toggle in
+plugin settings does not currently gate it.
 
 **Warning:** Use with caution as this removes built-in safety features and Obsidian-specific knowledge.
 
