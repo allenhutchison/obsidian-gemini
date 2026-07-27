@@ -232,7 +232,7 @@ if (this.plugin.settings.debugMode) {
 - Keep unit tests next to implementations and name them after the unit (`models.test.ts`, `main.test.ts`)
 - Assert observable behavior of prompts, services, and tool orchestration; add regression coverage for bugs
 - Extend shared fixtures under `__mocks__/` when mocking new APIs
-- Run `npm test` before each PR and execute relevant `test-scripts/*.mjs` after touching agent or tool code
+- Run `npm test` before each PR and run the relevant `evals/` eval harness tasks (see `npm run eval` and the **eval-harness** skill) after touching agent or tool code
 
 For manual testing procedures (desktop symlink setup, mobile testing, smoke test checklists), see [docs/contributing/testing.md](docs/contributing/testing.md). For runtime debugging and plugin inspection, use the **obsidian-cli** skill.
 

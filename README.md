@@ -136,7 +136,7 @@ _A large feature release — a full visual refresh plus smarter, more responsive
       - **Enable session history:** Toggle whether to save agent session history.
       - **Plugin state folder:** Choose the folder within your vault to store plugin data (agent sessions and custom prompts).
     - **Custom Prompts:**
-      - **Allow System Prompt Override:** Allow custom prompts to completely replace the system prompt (use with caution).
+      - **Allow System Prompt Override:** Legacy toggle, currently non-functional — a prompt's own `override_system_prompt: true` frontmatter controls the replacement regardless of this setting. See the [Custom Prompts Guide](docs/guide/custom-prompts.md#system-prompt-override).
     - **UI Settings:**
       - **Enable streaming:** Toggle streaming responses for a more interactive chat experience.
     - **Advanced Settings:** (Click "Show advanced settings" to reveal)
