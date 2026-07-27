@@ -104,8 +104,11 @@ export function unescapeWikiLinks(text: string): string {
 		let segment = parts[i];
 
 		// Strip single-backtick wrapping: `[[note]]` → [[note]]
-		// Negative lookbehind/lookahead prevent matching multi-backtick spans
-		segment = segment.replace(/(?<!`)`(\[\[[^\]]+\]\])`(?!`)/g, '$1');
+		// The leading (^|[^`]) group and the (?!`) lookahead prevent matching
+		// multi-backtick spans. A consuming group is used instead of a negative
+		// lookbehind because lookbehind is only supported on iOS 16.4+ (see
+		// .claude/guidelines/coding.md) and would crash plugin load on older iOS.
+		segment = segment.replace(/(^|[^`])`(\[\[[^\]]+\]\])`(?!`)/g, '$1$2');
 
 		// Fix fully backslash-escaped brackets: \[\[note\]\] → [[note]]
 		segment = segment.replace(/\\\[\\\[([^\]]+)\\\]\\\]/g, '[[$1]]');

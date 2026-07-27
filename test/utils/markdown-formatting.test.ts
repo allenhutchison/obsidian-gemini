@@ -156,4 +156,16 @@ describe('unescapeWikiLinks', () => {
 			unescapeWikiLinks('`[[2024-11-23 - Introducing Gemini Scribe Your AI Writing Assistant for Obsidian]]`')
 		).toBe('[[2024-11-23 - Introducing Gemini Scribe Your AI Writing Assistant for Obsidian]]');
 	});
+
+	// --- Lookbehind-free rewrite (#1242) ---
+	// The strip pattern uses a consuming (^|[^`]) group instead of a negative
+	// lookbehind (unsupported on iOS < 16.4). These assert the preceding character
+	// is preserved rather than consumed, and start-of-string is still handled.
+	it('preserves the character preceding a backtick-wrapped wikilink (no leading space)', () => {
+		expect(unescapeWikiLinks('see:`[[My Note]]`')).toBe('see:[[My Note]]');
+	});
+
+	it('strips a backtick-wrapped wikilink at the very start of the string', () => {
+		expect(unescapeWikiLinks('`[[My Note]]` follows')).toBe('[[My Note]] follows');
+	});
 });

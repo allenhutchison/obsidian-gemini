@@ -7,12 +7,18 @@ import { GeminiModel } from '../models';
  * known small models toward the completions role; everything else stays available
  * for chat / summary / rewrite. Patterns are matched with digit-aware boundaries
  * so e.g. `1b` does not bleed into `11b` and bias `llava:13b` toward completions.
+ *
+ * The leading (?:^|\D) consumes any preceding non-digit instead of using a
+ * negative lookbehind, which is only supported on iOS 16.4+ (see
+ * .claude/guidelines/coding.md) and would crash plugin load on older iOS.
+ * Consuming the boundary is safe here because these patterns feed `.test()`,
+ * so the extra matched character does not affect the boolean result.
  */
 const COMPLETION_NAME_HINT_PATTERNS = [
-	/(?<!\d)0\.5b(?!\d)/i,
-	/(?<!\d)1\.5b(?!\d)/i,
-	/(?<!\d)1b(?!\d)/i,
-	/(?<!\d)3b(?!\d)/i,
+	/(?:^|\D)0\.5b(?!\d)/i,
+	/(?:^|\D)1\.5b(?!\d)/i,
+	/(?:^|\D)1b(?!\d)/i,
+	/(?:^|\D)3b(?!\d)/i,
 	/\bmini\b/i,
 	/\btiny\b/i,
 	/\blite\b/i,
