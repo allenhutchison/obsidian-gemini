@@ -9,7 +9,6 @@ import { renderMCPSettings } from './settings-mcp';
 import { renderRAGSettings } from './settings-rag';
 import { renderDebugSettings } from './settings-debug';
 
-export type { SettingsSectionContext } from './settings-helpers';
 import type { SettingsSectionContext } from './settings-helpers';
 
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
