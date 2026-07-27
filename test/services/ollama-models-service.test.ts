@@ -231,4 +231,33 @@ describe('OllamaModelsService', () => {
 			expect(showCallCount).toBe(2); // fresh probe after invalidate
 		});
 	});
+
+	describe('completions-role name-hint boundaries (#1242)', () => {
+		const roles = async (names: string[]): Promise<Record<string, string[] | undefined>> => {
+			mockEndpoints(
+				names.map((name) => ({ name })),
+				() => ({ capabilities: ['completion'] })
+			);
+			const svc = new OllamaModelsService(buildPlugin());
+			const models = await svc.getModels();
+			return Object.fromEntries(models.map((m) => [m.value, m.defaultForRoles]));
+		};
+
+		it('biases genuine small models toward completions', async () => {
+			const result = await roles(['qwen2.5:0.5b', 'qwen2.5:1.5b', 'gemma:1b', 'llama3.2:3b']);
+			expect(result['qwen2.5:0.5b']).toEqual(['completions']);
+			expect(result['qwen2.5:1.5b']).toEqual(['completions']);
+			expect(result['gemma:1b']).toEqual(['completions']);
+			expect(result['llama3.2:3b']).toEqual(['completions']);
+		});
+
+		it('does not bias larger models whose size digits merely contain a small-model substring', async () => {
+			// The digit-aware boundaries must survive the lookbehind→consuming-group
+			// rewrite: `13b`/`11b`/`23b` must not match `3b`/`1b`.
+			const result = await roles(['llava:13b', 'model:11b', 'model:23b']);
+			expect(result['llava:13b']).toBeUndefined();
+			expect(result['model:11b']).toBeUndefined();
+			expect(result['model:23b']).toBeUndefined();
+		});
+	});
 });
