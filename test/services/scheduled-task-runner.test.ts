@@ -239,21 +239,6 @@ describe('ScheduledTaskRunner', () => {
 		);
 	});
 
-	it('exhausted error message reflects the per-task maxIterations', async () => {
-		const toolCalls = [{ name: 'list_files', arguments: { path: '/' } }];
-		(ModelClientFactory.createChatModel as Mock).mockReturnValue(createMockModelApi('', toolCalls));
-		mockAgentLoopRun.mockResolvedValue({
-			...successfulLoopResult(),
-			exhausted: true,
-			markdown: '',
-		});
-
-		const plugin = createMockPlugin();
-		const runner = new ScheduledTaskRunner(plugin, makeTask({ maxIterations: 50 }));
-
-		await expect(runner.run(() => false)).rejects.toThrow(/exhausted its tool-iteration budget \(cap 50, ran \d+\)/);
-	});
-
 	it('returns undefined when AgentLoop reports cancellation', async () => {
 		const toolCalls = [{ name: 'list_files', arguments: { path: '/' } }];
 		(ModelClientFactory.createChatModel as Mock).mockReturnValue(createMockModelApi('', toolCalls));
@@ -351,56 +336,11 @@ describe('ScheduledTaskRunner', () => {
 		});
 	});
 
-	describe('HeadlessConfirmationProvider', () => {
-		it('auto-approves confirmations and reports all tools allowed', async () => {
-			const plugin = createMockPlugin();
-			// Trigger the tool-call path so the runner constructs a HeadlessConfirmationProvider
-			const toolCalls = [{ name: 'list_files', arguments: { path: '/' } }];
-			(ModelClientFactory.createChatModel as Mock).mockReturnValue(createMockModelApi('', toolCalls));
-			mockAgentLoopRun.mockResolvedValue(successfulLoopResult('Tool output.'));
-
-			const runner = new ScheduledTaskRunner(plugin, makeTask());
-			await runner.run(() => false);
-
-			// Extract the confirmationProvider from the AgentLoop.run call
-			const options = mockAgentLoopRun.mock.calls[0][0].options;
-			const provider = options.confirmationProvider;
-
-			// Exercise the HeadlessConfirmationProvider methods (lines 30-33)
-			const confirmation = await provider.showConfirmationInChat({}, {}, 'exec-1');
-			expect(confirmation).toEqual({ confirmed: true, allowWithoutConfirmation: false });
-			expect(provider.isToolAllowedWithoutConfirmation('any_tool')).toBe(true);
-			// These are no-ops; just verify they don't throw
-			provider.allowToolWithoutConfirmation('any_tool');
-			provider.updateProgress('msg', 'status');
-		});
-	});
-
-	describe('missing agent services', () => {
-		it('throws when sessionManager is not initialised', async () => {
-			const plugin = createMockPlugin();
-			plugin.sessionManager = null;
-
-			const runner = new ScheduledTaskRunner(plugin, makeTask());
-			await expect(runner.run(() => false)).rejects.toThrow('Agent services not initialised');
-		});
-
-		it('throws when toolRegistry is not initialised', async () => {
-			const plugin = createMockPlugin();
-			plugin.toolRegistry = null;
-
-			const runner = new ScheduledTaskRunner(plugin, makeTask());
-			await expect(runner.run(() => false)).rejects.toThrow('Agent services not initialised');
-		});
-
-		it('throws when toolExecutionEngine is not initialised', async () => {
-			const plugin = createMockPlugin();
-			plugin.toolExecutionEngine = null;
-
-			const runner = new ScheduledTaskRunner(plugin, makeTask());
-			await expect(runner.run(() => false)).rejects.toThrow('Agent services not initialised');
-		});
-	});
+	// The headless-turn mechanics this runner delegates — the agent-services
+	// guard, HeadlessConfirmationProvider wiring, tool exposure, and the
+	// exhaustion-message format — are covered once in
+	// `headless-agent-turn.test.ts`. What stays here is this runner's own
+	// mapping and output-writing behavior.
 
 	describe('resolveUniquePath — Date.now() fallback', () => {
 		it('falls back to a timestamp suffix when all numeric suffixes 1-99 are taken', async () => {
