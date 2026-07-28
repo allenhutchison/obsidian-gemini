@@ -202,9 +202,9 @@ export const en = {
 		context: 'Description of the per-feature provider settings subsection.',
 	},
 	'settings.general.useProviderDefault': {
-		message: 'Default ({provider})',
+		message: 'Default — {provider}',
 		context:
-			'Dropdown option meaning "inherit the primary provider". {provider} is the primary provider name, e.g. "Google Gemini".',
+			'Dropdown option meaning "inherit the primary provider". {provider} is the primary provider name, which itself contains parentheses (e.g. "Google Gemini (cloud)"), so avoid wrapping it in more.',
 	},
 	'settings.general.useCaseUnavailableOption': {
 		message: 'Not available',
