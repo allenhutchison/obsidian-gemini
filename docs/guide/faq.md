@@ -96,7 +96,9 @@ A few Gemini-specific features are unavailable on Ollama — these all depend on
 - **URL Context** web-fetch tool
 - **Image generation** (Imagen API)
 
-Agent mode, tool calling, scheduled tasks, lifecycle hooks, custom prompts, completions, summarization, and rewriting all work with Ollama. ([#576](https://github.com/allenhutchison/obsidian-gemini/discussions/576))
+Agent mode, tool calling, scheduled tasks, lifecycle hooks, custom prompts, completions, summarization, and rewriting all work with Ollama.
+
+You can also mix the two: under **Settings → Gemini Scribe → Per-feature provider**, each feature can be pointed at its own provider, so you can keep chat local while still using Gemini for web search or image generation (an API key is needed for whichever features you route there). Nothing is sent to the cloud unless you explicitly route it — a feature Ollama can't serve stays off rather than falling back to Google. See [Provider Capabilities](../reference/provider-capabilities.md). ([#576](https://github.com/allenhutchison/obsidian-gemini/discussions/576))
 
 ## Language & Localization
 

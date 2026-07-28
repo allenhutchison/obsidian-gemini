@@ -84,6 +84,36 @@ describe('ToolRegistrar', () => {
 			expect(mockRegistry.registerTool).toHaveBeenCalledWith(expect.objectContaining({ name: 'save_memory' }));
 		});
 
+		// #704: the web/image tools call Google directly, so an override is all
+		// they need — they aren't bound to whatever serves chat.
+		it('registers web tools when webSearch is overridden to gemini under a local primary', async () => {
+			mockPlugin.settings.provider = 'ollama';
+			mockPlugin.settings.providerOverrides = { webSearch: 'gemini' };
+			await registrar.registerAll(mockRegistry, mockLogger, mockPlugin);
+
+			expect(mockRegistry.registerTool).toHaveBeenCalledWith(expect.objectContaining({ name: 'google_search' }));
+			// Image generation was not overridden, so it stays off.
+			expect(mockRegistry.registerTool).not.toHaveBeenCalledWith(expect.objectContaining({ name: 'generate_image' }));
+		});
+
+		it('registers image tools when imageGen is overridden to gemini under a local primary', async () => {
+			mockPlugin.settings.provider = 'ollama';
+			mockPlugin.settings.providerOverrides = { imageGen: 'gemini' };
+			await registrar.registerAll(mockRegistry, mockLogger, mockPlugin);
+
+			expect(mockRegistry.registerTool).toHaveBeenCalledWith(expect.objectContaining({ name: 'generate_image' }));
+			expect(mockRegistry.registerTool).not.toHaveBeenCalledWith(expect.objectContaining({ name: 'google_search' }));
+		});
+
+		it('skips cloud sources when an override points at a provider that cannot serve them', async () => {
+			mockPlugin.settings.provider = 'gemini';
+			mockPlugin.settings.providerOverrides = { webSearch: 'ollama', imageGen: 'ollama' };
+			await registrar.registerAll(mockRegistry, mockLogger, mockPlugin);
+
+			expect(mockRegistry.registerTool).not.toHaveBeenCalledWith(expect.objectContaining({ name: 'google_search' }));
+			expect(mockRegistry.registerTool).not.toHaveBeenCalledWith(expect.objectContaining({ name: 'generate_image' }));
+		});
+
 		it('should continue registering other sources if one fails', async () => {
 			// Make registerTool throw for a specific tool
 			mockRegistry.registerTool.mockImplementation((tool: any) => {

@@ -3,6 +3,7 @@ import { Setting, Notice } from 'obsidian';
 import { createCollapsibleSection, createDebouncedSave } from './settings-helpers';
 import { t } from '../i18n';
 import type { SettingsSectionContext } from './settings-helpers';
+import { isProviderActive } from '../api/provider-routing';
 
 let temperatureDebounceTimer: number | null = null;
 let temperatureRunId = 0;
@@ -58,9 +59,10 @@ export async function renderAgentConfigSettings(
 			})
 		);
 
-	// The Interactions API is a Gemini-only transport; hide the toggle entirely
-	// on Ollama, which has no equivalent.
-	if (plugin.settings.provider === 'gemini') {
+	// The Interactions API is a Gemini-only transport. Show the toggle whenever
+	// Gemini serves some use case — a mixed configuration still routes those
+	// requests through it — and hide it in a fully local setup.
+	if (isProviderActive(plugin.settings, 'gemini')) {
 		new Setting(sectionEl)
 			.setName(t('settings.agentConfig.useInteractionsApiName'))
 			.setDesc(t('settings.agentConfig.useInteractionsApiDesc'))
@@ -72,10 +74,10 @@ export async function renderAgentConfigSettings(
 			);
 	}
 
-	// Only the Gemini provider honours customBaseUrl — the Ollama path has its
-	// own ollamaBaseUrl setting and ignores this value. Hide the row entirely
-	// on Ollama so users don't type a URL that silently does nothing.
-	if (plugin.settings.provider === 'gemini') {
+	// Only the Gemini provider honours customBaseUrl — Ollama has its own
+	// ollamaBaseUrl setting and ignores this value. Hide the row when nothing is
+	// routed to Gemini, so users don't type a URL that silently does nothing.
+	if (isProviderActive(plugin.settings, 'gemini')) {
 		new Setting(sectionEl)
 			.setName(t('settings.agentConfig.customEndpointName'))
 			.setDesc(t('settings.agentConfig.customEndpointDesc'))

@@ -17,23 +17,17 @@ import { executeWithRetry } from '../utils/retry';
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
 import { truncateOldToolResults } from '../agent/agent-loop-helpers';
 import { getLegacyEntryTextTruthy } from '../utils/history-normalize';
-import { isInteractionsOnlyModel, resolveGenerateContentModel } from '../models';
+import { findModelProvider, isInteractionsOnlyModel, resolveGenerateContentModel } from '../models';
+import { isProviderActive, resolveProviderOrDefault } from '../api/provider-routing';
+import { getCapabilities } from '../api/providers/registry';
 
 import contextSummaryPromptContent from '../../prompts/contextSummaryPrompt.hbs';
 
 /** Aggressive compaction triggers at this % of total model context window */
 const AGGRESSIVE_COMPACTION_THRESHOLD_PERCENT = 80;
 
-/** Default model input token limit (1M for all current Gemini models) */
-const DEFAULT_INPUT_TOKEN_LIMIT = 1_000_000;
-
-/**
- * Conservative default input token limit for Ollama models. Local models vary
- * widely (4k–128k); we pick a safe middle so compaction triggers before
- * smaller models truncate. Users with larger-context models can let
- * compaction happen later without harm.
- */
-const OLLAMA_DEFAULT_INPUT_TOKEN_LIMIT = 32_000;
+// Per-provider input token limits now live in the capability registry
+// (`capabilities.defaultInputTokenLimit`) so they can be selected per model.
 
 /**
  * Starting chars-per-token ratio for providers that don't expose a countTokens
@@ -111,12 +105,24 @@ export class ContextManager {
 		private plugin: ObsidianGemini,
 		private logger: Logger
 	) {
-		// Only construct the Gemini SDK when the active provider is Gemini —
-		// Ollama runs locally and has no key, so the SDK is unused. Default
-		// missing `provider` to 'gemini' so legacy/upgraded users don't fall
-		// into the Ollama estimation path with `this.ai` left null.
-		const provider = plugin.settings.provider ?? 'gemini';
-		this.ai = provider === 'gemini' ? createGoogleGenAI(plugin) : null;
+		// Construct the Gemini SDK whenever Gemini serves *any* use case — with
+		// per-use-case routing (#704) a mixed configuration still needs it for
+		// token counting on the Gemini-served side. A fully local configuration
+		// leaves it null and falls back to the chars-per-token estimate.
+		this.ai = isProviderActive(plugin.settings, 'gemini') ? createGoogleGenAI(plugin) : null;
+	}
+
+	/**
+	 * The provider serving a model, for context-management decisions.
+	 *
+	 * Prefers the model's own entry in the (union) model list. An unknown model
+	 * falls back to whichever provider serves chat, because context management
+	 * runs on the chat path — this matters when Ollama's daemon was unreachable
+	 * at startup, since its tags never made it into the list and treating its
+	 * models as Gemini would mean a 1M-token limit and a doomed countTokens call.
+	 */
+	private providerForContextModel(modelName: string | null | undefined) {
+		return findModelProvider(modelName) ?? resolveProviderOrDefault(this.plugin.settings, 'chat');
 	}
 
 	/**
@@ -136,14 +142,14 @@ export class ContextManager {
 	 * unless beginTurn() was called (which allows one lower update to reset the baseline).
 	 * Use setUsageMetadata() to unconditionally force a value (e.g. after compaction).
 	 *
-	 * When `modelName` is provided and the active provider is Ollama, this also
-	 * calibrates that model's chars-per-token ratio against the real
-	 * `promptTokenCount` Ollama just reported (see calibrateOllamaRatio).
+	 * When `modelName` names a model whose provider has no token-counting
+	 * endpoint, this also calibrates that model's chars-per-token ratio against
+	 * the real `promptTokenCount` just reported (see calibrateOllamaRatio).
 	 */
 	updateUsageMetadata(metadata: UsageMetadata, modelName?: string): void {
 		if (!metadata) return;
 
-		if (modelName && this.plugin.settings.provider === 'ollama') {
+		if (modelName && !getCapabilities(this.providerForContextModel(modelName)).nativeTokenCount) {
 			this.calibrateOllamaRatio(modelName, metadata.promptTokenCount);
 		}
 
@@ -208,12 +214,14 @@ export class ContextManager {
 
 	/**
 	 * Get the input token limit for a given model.
+	 *
+	 * Keyed off the model's own provider rather than a global setting: with
+	 * per-use-case routing a single session can touch models from more than one
+	 * provider, and a 1M-token Gemini limit applied to a 32k local model would
+	 * let the context blow past the window before compaction ever fires.
 	 */
-	private async getInputTokenLimit(_modelName: string): Promise<number> {
-		if (this.plugin.settings.provider === 'ollama') {
-			return OLLAMA_DEFAULT_INPUT_TOKEN_LIMIT;
-		}
-		return DEFAULT_INPUT_TOKEN_LIMIT;
+	private async getInputTokenLimit(modelName: string): Promise<number> {
+		return getCapabilities(this.providerForContextModel(modelName)).defaultInputTokenLimit;
 	}
 
 	/**
@@ -307,19 +315,22 @@ export class ContextManager {
 	/**
 	 * Count tokens for a given set of contents.
 	 *
-	 * For Gemini, calls the SDK's countTokens endpoint. For Ollama (which has no
-	 * equivalent API) we fall back to a chars-per-token estimate, seeded at 4
-	 * and calibrated per-model from real promptTokenCount values as they arrive
+	 * Providers with a real counting endpoint (Gemini) are called directly. For
+	 * the rest we fall back to a chars-per-token estimate, seeded at 4 and
+	 * calibrated per-model from real promptTokenCount values as they arrive
 	 * (see calibrateOllamaRatio) — compaction precision improves as the session
 	 * progresses instead of staying pinned to the generic heuristic.
+	 *
+	 * The choice follows the *model*, not a global setting, so a mixed
+	 * configuration counts each model the right way.
 	 */
 	async countTokens(modelName: string, contents: Content[]): Promise<number> {
 		// Sanitize contents to only include text-compatible parts
 		const sanitizedContents = this.sanitizeContentsForTokenCount(contents);
 
-		if (this.plugin.settings.provider === 'ollama' || !this.ai) {
+		if (!getCapabilities(this.providerForContextModel(modelName)).nativeTokenCount || !this.ai) {
 			const estimate = this.estimateTokensFromContents(modelName, sanitizedContents);
-			this.logger.log(`[ContextManager] countTokens (Ollama estimate): ${estimate}`);
+			this.logger.log(`[ContextManager] countTokens (estimate): ${estimate}`);
 			return estimate;
 		}
 
@@ -378,7 +389,7 @@ export class ContextManager {
 		// the compaction path below, which only runs when over threshold) so
 		// calibrateOllamaRatio() has something to calibrate against on ordinary
 		// turns too. The returned estimate itself isn't needed here.
-		if (this.plugin.settings.provider === 'ollama') {
+		if (!getCapabilities(this.providerForContextModel(modelName)).nativeTokenCount) {
 			this.estimateTokensFromContents(modelName, this.sanitizeContentsForTokenCount(conversationHistory));
 		}
 
@@ -619,17 +630,18 @@ export class ContextManager {
 		const fullPrompt = `${summaryPrompt}\n\n---\n\nConversation to summarize:\n\n${conversationText}`;
 
 		try {
-			// Ollama has no SDK instance here; route through the factory so we use
-			// whichever provider the user has configured. An interactions-only
-			// model also goes through the factory (its summary client routes
-			// interactions-only models via the Interactions API) since the direct
-			// generateContent call below would 400.
-			if (this.plugin.settings.provider === 'ollama' || !this.ai || isInteractionsOnlyModel(modelName)) {
+			// The direct call below drives the SDK with the chat model, so it is
+			// only valid when that model is a Gemini one and the SDK exists.
+			// Anything else routes through the factory, which picks the right
+			// client for the summary use case. An interactions-only model also
+			// goes through the factory (its summary client routes those via the
+			// Interactions API) since the direct generateContent call would 400.
+			if (this.providerForContextModel(modelName) !== 'gemini' || !this.ai || isInteractionsOnlyModel(modelName)) {
 				// Pass ModelUseCase.SUMMARY to the factory and let its
 				// resolveModelName populate the request — overriding `model`
-				// here would route compaction through the chat model on Ollama
-				// (where the client honours request.model over config.model)
-				// instead of the user's configured `summaryModelName`.
+				// here would route compaction through the chat model on a
+				// provider whose client honours request.model over config.model
+				// instead of the user's configured summary model.
 				const summaryClient = ModelClientFactory.createFromPlugin(this.plugin, ModelUseCase.SUMMARY);
 				const response = await summaryClient.generateModelResponse({
 					kind: 'base',

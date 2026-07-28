@@ -8,8 +8,10 @@ import { ScribeFile } from './files';
 import { GeminiHistory } from './history/history';
 import { GeminiCompletions } from './completions';
 import { Notice } from 'obsidian';
-import { getDefaultModelForRole, migrateOllamaModelSetting, ModelProvider } from './models';
+import { getDefaultModelForRole, migrateOllamaModelSetting } from './models';
 import { migrateInteractionsApiDefault } from './utils/settings-migrations';
+import { isProviderActive, routingKey, sanitizeProviderOverrides } from './api/provider-routing';
+import { getCapabilities } from './api/providers/registry';
 import { ModelManager } from './services/model-manager';
 import { PromptManager, GeminiPrompts } from './prompts';
 import { SelectionRewriter } from './rewrite-selection';
@@ -56,6 +58,7 @@ import type { ObsidianGemini as ObsidianGeminiApi } from './types/plugin';
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	provider: 'gemini',
+	providerOverrides: {},
 	ollamaBaseUrl: 'http://localhost:11434',
 	customBaseUrl: '',
 	apiKeySecretName: '',
@@ -64,6 +67,10 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	completionsModelName: getDefaultModelForRole('completions'),
 	imageModelName: getDefaultModelForRole('image'),
 	ollamaModelName: getDefaultModelForRole('chat', 'ollama'),
+	// Empty = inherit ollamaModelName, so Ollama keeps one resident model (#1077)
+	// unless the user deliberately splits them.
+	ollamaSummaryModelName: '',
+	ollamaCompletionsModelName: '',
 	summaryFrontmatterKey: 'summary',
 	userName: 'User',
 	chatHistory: false,
@@ -120,9 +127,15 @@ const MIGRATION_SECRET_NAME = 'gemini-scribe-api-key';
 export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi {
 	settings!: ObsidianGeminiSettings;
 
+	/**
+	 * The configured Gemini API key, independent of which provider serves which
+	 * use case. Since #704 an Ollama-primary install can route individual cloud
+	 * features (search, RAG, image generation) to Gemini, and those call Google
+	 * directly — blanking the key on the Ollama path would break them. Whether a
+	 * key is *required* is a separate question, answered by
+	 * `capabilities.requiresApiKey` on the primary provider (see `hasCredentials`).
+	 */
 	get apiKey(): string {
-		// Ollama runs locally with no auth, so no key is required.
-		if (this.settings?.provider === 'ollama') return '';
 		const secretName = this.settings?.apiKeySecretName;
 		if (!secretName) return '';
 		return this.app.secretStorage.getSecret(secretName) ?? '';
@@ -173,7 +186,13 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	public isGeminiInitialized: boolean = false;
 	private previousApiKey: string = '';
 	private previousRagEnabled: boolean = false;
-	private previousProvider: ModelProvider = 'gemini';
+	/**
+	 * Serialized provider routing (primary + every use case's resolved provider).
+	 * Compared rather than `settings.provider` alone so that changing which
+	 * provider serves a single use case also triggers a re-init — tool
+	 * registration, RAG, and image generation all key off the resolved providers.
+	 */
+	private previousRoutingKey: string = '';
 	private previousOllamaBaseUrl: string = '';
 	private previousCustomBaseUrl: string = '';
 	private previousHooksEnabled: boolean = false;
@@ -208,7 +227,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 			this.lastInitError = null;
 			this.previousApiKey = this.apiKey;
 			this.previousRagEnabled = this.settings.ragIndexing.enabled;
-			this.previousProvider = this.settings.provider;
+			this.previousRoutingKey = routingKey(this.settings);
 			this.previousOllamaBaseUrl = this.settings.ollamaBaseUrl;
 			this.previousCustomBaseUrl = this.settings.customBaseUrl;
 			this.previousHooksEnabled = this.settings.hooksEnabled;
@@ -393,6 +412,12 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		const data = asRecord(rawData);
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
 
+		// Object.assign is shallow, so an install with no persisted overrides would
+		// alias DEFAULT_SETTINGS.providerOverrides and leak every later edit into
+		// the module-level default. sanitizeProviderOverrides always returns a
+		// fresh object, and drops anything a hand-edited data.json got wrong.
+		this.settings.providerOverrides = sanitizeProviderOverrides(this.settings.providerOverrides);
+
 		// One-time migration: split the Ollama model out of the shared chatModelName
 		// field so switching providers no longer clobbers either choice. See
 		// migrateOllamaModelSetting for the full rationale.
@@ -468,13 +493,20 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 
 		// Check if we need to re-initialize
 		const apiKeyChanged = this.previousApiKey !== this.apiKey;
-		const providerChanged = this.previousProvider !== this.settings.provider;
+		// Any change to *which provider serves which use case* re-inits: tool
+		// registration, RAG, and image generation are all keyed off the resolved
+		// providers, not just the primary.
+		const providerChanged = this.previousRoutingKey !== routingKey(this.settings);
+		// A base URL only matters when its provider is used somewhere — an Ollama
+		// URL edit is a no-op for an all-Gemini install and vice versa.
 		const ollamaUrlChanged =
-			this.settings.provider === 'ollama' && this.previousOllamaBaseUrl !== this.settings.ollamaBaseUrl;
+			isProviderActive(this.settings, 'ollama') && this.previousOllamaBaseUrl !== this.settings.ollamaBaseUrl;
 		const customBaseUrlChanged =
-			this.settings.provider === 'gemini' && this.previousCustomBaseUrl !== this.settings.customBaseUrl;
-		// Ollama needs no API key, so first-time init triggers on provider switch alone.
-		const hasCredentials = this.settings.provider === 'ollama' || !!this.apiKey;
+			isProviderActive(this.settings, 'gemini') && this.previousCustomBaseUrl !== this.settings.customBaseUrl;
+		// A primary that needs no key (Ollama) can initialize on the provider
+		// switch alone; overrides pointing at a cloud provider degrade gracefully
+		// without one rather than blocking init.
+		const hasCredentials = !getCapabilities(this.settings.provider).requiresApiKey || !!this.apiKey;
 		const needsInit = !this.isGeminiInitialized && hasCredentials;
 
 		if (apiKeyChanged || providerChanged || ollamaUrlChanged || customBaseUrlChanged || needsInit) {
@@ -484,7 +516,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 				this.lastInitError = null;
 				this.previousApiKey = this.apiKey;
 				this.previousRagEnabled = this.settings.ragIndexing.enabled;
-				this.previousProvider = this.settings.provider;
+				this.previousRoutingKey = routingKey(this.settings);
 				this.previousOllamaBaseUrl = this.settings.ollamaBaseUrl;
 				this.previousCustomBaseUrl = this.settings.customBaseUrl;
 				this.previousHooksEnabled = this.settings.hooksEnabled;

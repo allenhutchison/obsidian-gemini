@@ -6,6 +6,7 @@ import { RewriteInstructionsModal } from '../ui/rewrite-modal';
 import { UpdateNotificationModal } from '../ui/update-notification-modal';
 import { getErrorMessage } from '../utils/error-utils';
 import type { ObsidianGemini } from '../types/plugin';
+import { resolveProvider } from '../api/provider-routing';
 
 /**
  * Register all command-palette commands on the plugin instance.
@@ -302,17 +303,17 @@ export function registerCommands(plugin: ObsidianGemini): void {
 		},
 	});
 
-	// Image generation command (Gemini-only). Registered unconditionally so
-	// the palette entry stays stable across runtime provider switches; the
-	// callback gates on provider before touching the (potentially null)
-	// `imageGeneration` service.
+	// Image generation command. Registered unconditionally so the palette entry
+	// stays stable across runtime routing changes; the callback checks that some
+	// provider is routed to image generation before touching the (potentially
+	// null) `imageGeneration` service.
 	plugin.addCommand({
 		id: 'generate-image',
 		name: t('command.generateImage'),
 		callback: async () => {
 			if (!plugin.checkInitialized()) return;
-			if (plugin.settings.provider === 'ollama') {
-				new Notice(t('notice.main.imageGenOllama'));
+			if (resolveProvider(plugin.settings, 'imageGen') === null) {
+				new Notice(t('notice.main.imageGenUnavailableProvider'));
 				return;
 			}
 			if (!plugin.imageGeneration) {
@@ -328,14 +329,14 @@ export function registerCommands(plugin: ObsidianGemini): void {
 
 	// RAG indexing commands. Same pattern as image generation: register
 	// unconditionally and gate at execution time so the palette stays
-	// consistent and the user gets a clear "not available" notice on the
-	// Ollama path (RAG depends on Gemini's File Search Store in Phase 1).
+	// consistent and the user gets a clear "not available" notice when nothing
+	// is routed to RAG (it depends on a cloud file-search store).
 	plugin.addCommand({
 		id: 'rag-pause',
 		name: t('command.ragPause'),
 		callback: () => {
-			if (plugin.settings.provider === 'ollama') {
-				new Notice(t('notice.main.ragOllamaUnavailable'));
+			if (resolveProvider(plugin.settings, 'rag') === null) {
+				new Notice(t('notice.main.ragUnavailableProvider'));
 				return;
 			}
 			if (!plugin.ragIndexing) {
@@ -359,8 +360,8 @@ export function registerCommands(plugin: ObsidianGemini): void {
 		id: 'rag-resume',
 		name: t('command.ragResume'),
 		callback: () => {
-			if (plugin.settings.provider === 'ollama') {
-				new Notice(t('notice.main.ragOllamaUnavailable'));
+			if (resolveProvider(plugin.settings, 'rag') === null) {
+				new Notice(t('notice.main.ragUnavailableProvider'));
 				return;
 			}
 			if (!plugin.ragIndexing) {
@@ -380,8 +381,8 @@ export function registerCommands(plugin: ObsidianGemini): void {
 		id: 'rag-status',
 		name: t('command.ragStatus'),
 		callback: async () => {
-			if (plugin.settings.provider === 'ollama') {
-				new Notice(t('notice.main.ragOllamaUnavailable'));
+			if (resolveProvider(plugin.settings, 'rag') === null) {
+				new Notice(t('notice.main.ragUnavailableProvider'));
 				return;
 			}
 			if (!plugin.ragIndexing) {

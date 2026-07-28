@@ -1,4 +1,5 @@
 import type { GeminiModel, ModelProvider } from '../models';
+import type { ProviderUseCase } from '../api/providers/registry';
 import type { ToolPolicySettings } from './tool-policy';
 import type { MCPServerConfig } from '../mcp/types';
 
@@ -11,9 +12,23 @@ export interface RagIndexingSettings {
 }
 
 export interface ObsidianGeminiSettings {
-	/** Active model provider. 'gemini' is the cloud default; 'ollama' targets a local Ollama daemon. */
+	/**
+	 * Primary model provider — serves every use case without an explicit
+	 * override. 'gemini' is the cloud default; 'ollama' targets a local daemon.
+	 */
 	provider: ModelProvider;
-	/** Base URL for the Ollama HTTP API. Only used when provider === 'ollama'. */
+	/**
+	 * Sparse per-use-case provider overrides (#704). An absent key means "use the
+	 * primary", so an install that predates this feature keeps behaving exactly
+	 * as before with an empty map — no migration required.
+	 *
+	 * A use case is only ever routed to a provider that supports it; the
+	 * resolver never substitutes a different provider for one that can't serve a
+	 * feature (see `api/provider-routing.ts`), so enabling a cloud feature under
+	 * a local primary is always a deliberate choice.
+	 */
+	providerOverrides: Partial<Record<ProviderUseCase, ModelProvider>>;
+	/** Base URL for the Ollama HTTP API. Only used when Ollama serves some use case. */
 	ollamaBaseUrl: string;
 	/** Optional custom base URL to override the default Google Gemini API endpoint. */
 	customBaseUrl: string;
@@ -23,11 +38,19 @@ export interface ObsidianGeminiSettings {
 	completionsModelName: string;
 	imageModelName: string;
 	/**
-	 * Single model used for every use case under the Ollama provider (Ollama keeps
-	 * one model resident at a time). Stored separately from the Gemini fields above
-	 * so switching Gemini ↔ Ollama preserves each provider's model choice.
+	 * Default model for every Ollama-served use case (Ollama keeps one model
+	 * resident at a time). Stored separately from the Gemini fields above so
+	 * switching a use case between providers preserves each provider's choice.
 	 */
 	ollamaModelName: string;
+	/**
+	 * Optional per-use-case Ollama models. Empty string — the default — means
+	 * "inherit `ollamaModelName`", which keeps the single-resident-model
+	 * behaviour of #1077 out of the box. Set one only if the extra model swap is
+	 * worth the RAM/VRAM churn (e.g. a tiny completions model).
+	 */
+	ollamaSummaryModelName: string;
+	ollamaCompletionsModelName: string;
 	summaryFrontmatterKey: string;
 	userName: string;
 	chatHistory: boolean;

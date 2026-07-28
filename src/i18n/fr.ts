@@ -853,10 +853,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'notice.main.projectRemoved': 'Statut de projet retiré de : {name}',
 	'notice.main.projectRemoveFailed': 'Échec du retrait du statut de projet',
 	'notice.main.selectTextFirst': "Veuillez d'abord sélectionner du texte",
-	'notice.main.imageGenOllama': "La génération d'images n'est pas disponible avec le fournisseur Ollama.",
 	'notice.main.imageGenUnavailable': "La génération d'images n'est pas disponible.",
-	'notice.main.ragOllamaUnavailable':
-		"La synchronisation RAG n'est pas disponible avec le fournisseur Ollama en phase 1.",
 	'notice.main.ragNotEnabled': "L'indexation RAG n'est pas activée",
 	'notice.main.ragAlreadyPaused': 'La synchronisation RAG est déjà en pause',
 	'notice.main.ragCannotPauseWhileIndexing': "Impossible de mettre en pause pendant que l'indexation est en cours",

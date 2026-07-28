@@ -1,10 +1,12 @@
 /**
  * Regression tests for provider-specific model-picker rendering in the General
- * settings section (issue #1077).
+ * settings section (issues #1077, #704).
  *
- * Under Ollama a single model applies to every use case, so only one model
- * picker (bound to chatModelName) is shown; the summary / completions / image
- * pickers are hidden. Gemini keeps all four independent pickers.
+ * Each picker is bound to the settings field and filtered to the models of the
+ * provider that its own use case resolves to, so a mixed configuration shows
+ * the right models in every row. Ollama's summary/completions pickers default
+ * to inheriting the chat model (#1077); image generation has no picker at all
+ * when no provider serves it.
  */
 const { mockSelectModelSetting } = vi.hoisted(() => ({
 	mockSelectModelSetting: vi.fn(),
@@ -14,6 +16,7 @@ vi.mock('../../src/ui/settings-helpers', () => ({
 	selectModelSetting: mockSelectModelSetting,
 	// The General section is rendered directly into the element we pass in.
 	createAlwaysOpenSection: (containerEl: any) => containerEl,
+	createCollapsibleSection: (_plugin: any, containerEl: any) => containerEl,
 	createDebouncedSave: () => () => {},
 }));
 
@@ -46,6 +49,7 @@ vi.mock('obsidian', () => {
 			const c: any = {};
 			c.addOption = () => c;
 			c.setValue = () => c;
+			c.setDisabled = () => c;
 			c.onChange = () => c;
 			cb(c);
 			return this;
@@ -91,17 +95,22 @@ vi.mock('obsidian', () => {
 
 import { renderGeneralSettings } from '../../src/ui/settings-general';
 
-function createMockPlugin(provider: 'gemini' | 'ollama') {
+function createMockPlugin(provider: 'gemini' | 'ollama', providerOverrides: Record<string, string> = {}) {
 	return {
 		settings: {
 			provider,
+			providerOverrides,
 			chatModelName: 'chat-model',
 			summaryModelName: 'summary-model',
 			completionsModelName: 'completions-model',
 			imageModelName: 'image-model',
+			ollamaModelName: 'ollama-model',
+			ollamaSummaryModelName: '',
+			ollamaCompletionsModelName: '',
 			ollamaBaseUrl: 'http://localhost:11434',
 			apiKeySecretName: 'test-secret',
 			historyFolder: 'gemini-scribe',
+			expandedSettingsSections: [],
 		},
 		saveSettings: vi.fn().mockResolvedValue(undefined),
 		logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
@@ -117,15 +126,17 @@ function createContext() {
 	};
 }
 
-// selectModelSetting(containerEl, plugin, settingName, label, description, role?).
-// Capture the settingName (arg 2) plus the label/description i18n keys (args 3/4)
-// so a picker wired to the wrong i18n key is caught, not just the wrong setting.
-// `t()` is mocked to echo its key, so label/desc are the raw key strings.
-function renderedModelCalls(): Array<{ settingName: string; label: string; desc: string }> {
+// selectModelSetting(containerEl, plugin, settingName, label, description, role?, provider?).
+// Capture the settingName (arg 2), the label/description i18n keys (args 3/4), and
+// the provider the dropdown is filtered to (arg 6) — a picker wired to the wrong
+// i18n key or offering another provider's models is caught, not just the wrong
+// setting. `t()` is mocked to echo its key, so label/desc are the raw key strings.
+function renderedModelCalls(): Array<{ settingName: string; label: string; desc: string; provider: string }> {
 	return mockSelectModelSetting.mock.calls.map((call) => ({
 		settingName: call[2],
 		label: call[3],
 		desc: call[4],
+		provider: call[6],
 	}));
 }
 
@@ -134,15 +145,29 @@ describe('renderGeneralSettings — model pickers per provider', () => {
 		vi.clearAllMocks();
 	});
 
-	it('renders a single ollamaModelName picker with the Ollama label/description under Ollama', async () => {
+	it('routes every picker to Ollama, with summary/completions inheriting the chat model', async () => {
 		const plugin = createMockPlugin('ollama');
 		await renderGeneralSettings({} as any, plugin, {} as any, createContext());
 
+		// No image picker: nothing serves imageGen in a local-only configuration.
 		expect(renderedModelCalls()).toEqual([
 			{
 				settingName: 'ollamaModelName',
 				label: 'settings.general.ollamaModelName',
 				desc: 'settings.general.ollamaModelDesc',
+				provider: 'ollama',
+			},
+			{
+				settingName: 'ollamaSummaryModelName',
+				label: 'settings.general.summaryModelName',
+				desc: 'settings.general.ollamaSummaryModelDesc',
+				provider: 'ollama',
+			},
+			{
+				settingName: 'ollamaCompletionsModelName',
+				label: 'settings.general.completionModelName',
+				desc: 'settings.general.ollamaCompletionsModelDesc',
+				provider: 'ollama',
 			},
 		]);
 	});
@@ -156,21 +181,60 @@ describe('renderGeneralSettings — model pickers per provider', () => {
 				settingName: 'chatModelName',
 				label: 'settings.general.chatModelName',
 				desc: 'settings.general.chatModelDesc',
+				provider: 'gemini',
 			},
 			{
 				settingName: 'summaryModelName',
 				label: 'settings.general.summaryModelName',
 				desc: 'settings.general.summaryModelDesc',
+				provider: 'gemini',
 			},
 			{
 				settingName: 'completionsModelName',
 				label: 'settings.general.completionModelName',
 				desc: 'settings.general.completionModelDesc',
+				provider: 'gemini',
 			},
 			{
 				settingName: 'imageModelName',
 				label: 'settings.general.imageModelName',
 				desc: 'settings.general.imageModelDesc',
+				provider: 'gemini',
+			},
+		]);
+	});
+
+	// The point of #704: each row follows its own use case's provider.
+	it('binds each picker to its own use case provider in a mixed configuration', async () => {
+		const plugin = createMockPlugin('ollama', { summary: 'gemini', imageGen: 'gemini' });
+		await renderGeneralSettings({} as any, plugin, {} as any, createContext());
+
+		expect(renderedModelCalls()).toEqual([
+			{
+				settingName: 'ollamaModelName',
+				label: 'settings.general.ollamaModelName',
+				desc: 'settings.general.ollamaModelDesc',
+				provider: 'ollama',
+			},
+			// Summary is overridden to Gemini, so it gets the Gemini field and list.
+			{
+				settingName: 'summaryModelName',
+				label: 'settings.general.summaryModelName',
+				desc: 'settings.general.summaryModelDesc',
+				provider: 'gemini',
+			},
+			{
+				settingName: 'ollamaCompletionsModelName',
+				label: 'settings.general.completionModelName',
+				desc: 'settings.general.ollamaCompletionsModelDesc',
+				provider: 'ollama',
+			},
+			// Image generation only appears once a provider is routed to it.
+			{
+				settingName: 'imageModelName',
+				label: 'settings.general.imageModelName',
+				desc: 'settings.general.imageModelDesc',
+				provider: 'gemini',
 			},
 		]);
 	});

@@ -1,6 +1,13 @@
 import type { ObsidianGemini } from '../types/plugin';
 import * as modelsModule from '../models';
-import { GeminiModel, ModelUpdateResult, getUpdatedModelSettings, DEFAULT_GEMINI_MODELS } from '../models';
+import {
+	GeminiModel,
+	ModelProvider,
+	ModelUpdateResult,
+	getUpdatedModelSettings,
+	DEFAULT_GEMINI_MODELS,
+} from '../models';
+import { activeProviders, resolveProviderOrDefault } from '../api/provider-routing';
 import type { ObsidianGeminiSettings } from '../types/settings';
 import { ModelListProvider, RefreshResult } from './model-list-provider';
 import { OllamaModelsService } from './ollama-models-service';
@@ -24,23 +31,52 @@ export class ModelManager {
 	}
 
 	/**
-	 * Get current text/chat models (excludes image generation models). Provider-aware:
-	 * returns Ollama tags when provider === 'ollama', Gemini bundled+remote otherwise.
+	 * Text/chat models (excludes image generation models) for a given provider.
+	 * Defaults to the provider serving chat.
+	 *
+	 * Each settings dropdown asks for the provider its own use case resolves to,
+	 * so a config that runs chat on Ollama and summaries on Gemini offers the
+	 * right models in each row (#704).
 	 */
-	async getAvailableModels(options: ModelUpdateOptions = {}): Promise<GeminiModel[]> {
-		if (this.plugin.settings.provider === 'ollama') {
+	async getAvailableModels(options: ModelUpdateOptions = {}, provider?: ModelProvider): Promise<GeminiModel[]> {
+		const target = provider ?? resolveProviderOrDefault(this.plugin.settings, 'chat');
+		if (target === 'ollama') {
 			return this.ollamaModelsService.getModels(options.forceRefresh);
 		}
 		return this.listProvider.getTextModels();
 	}
 
 	/**
-	 * Get image generation models. Phase-1 Ollama support omits image generation, so
-	 * this always returns the Gemini list — the image-model dropdown is hidden in the
-	 * UI when Ollama is the active provider.
+	 * Get image generation models. Only Gemini serves image generation today
+	 * (`capabilities.imageGen`), so this is always the Gemini list; the picker is
+	 * hidden entirely when no provider is routed to image generation.
 	 */
 	async getImageGenerationModels(): Promise<GeminiModel[]> {
 		return this.listProvider.getImageModels();
+	}
+
+	/**
+	 * The union of every active provider's models — what the global
+	 * `GEMINI_MODELS` list holds since #704, so that a mixed configuration can
+	 * look up models for either provider at the same time. Ollama tags are
+	 * best-effort: a daemon that's down contributes nothing rather than failing
+	 * the whole list.
+	 */
+	private async collectActiveModels(forceRefresh?: boolean): Promise<GeminiModel[]> {
+		const providers = activeProviders(this.plugin.settings);
+		const models: GeminiModel[] = [];
+
+		if (providers.includes('gemini')) {
+			models.push(...this.listProvider.getModels());
+		}
+		if (providers.includes('ollama')) {
+			try {
+				models.push(...(await this.ollamaModelsService.getModels(forceRefresh)));
+			} catch (error) {
+				this.plugin.logger.warn('[ModelManager] Could not load Ollama models:', error);
+			}
+		}
+		return models;
 	}
 
 	/**
@@ -51,13 +87,10 @@ export class ModelManager {
 	}
 
 	/**
-	 * Update the global GEMINI_MODELS list from the active provider and fix any stale settings.
+	 * Update the global GEMINI_MODELS list from every active provider and fix any stale settings.
 	 */
 	async updateModels(options: ModelUpdateOptions = {}): Promise<ModelUpdateResult<ObsidianGeminiSettings>> {
-		const allModels =
-			this.plugin.settings.provider === 'ollama'
-				? await this.ollamaModelsService.getModels(options.forceRefresh)
-				: this.listProvider.getModels();
+		const allModels = await this.collectActiveModels(options.forceRefresh);
 		const previousModels = this.getCurrentGeminiModels();
 
 		const hasChanges = this.detectModelChanges(allModels, previousModels);
@@ -80,15 +113,11 @@ export class ModelManager {
 	async initialize(): Promise<void> {
 		this.listProvider.initialize();
 
-		if (this.plugin.settings.provider === 'ollama') {
-			// Populate GEMINI_MODELS with Ollama tags (best-effort; daemon may be down).
-			const ollamaModels = await this.ollamaModelsService.getModels();
-			this.updateGlobalModelsList(ollamaModels);
-		} else {
-			// Sync global GEMINI_MODELS with the bundled/remote Gemini list
-			const allModels = this.listProvider.getModels();
-			this.updateGlobalModelsList(allModels);
+		// Seed the global list with every active provider's models, so a mixed
+		// configuration can resolve models for both at once.
+		this.updateGlobalModelsList(await this.collectActiveModels());
 
+		if (activeProviders(this.plugin.settings).includes('gemini')) {
 			// Start non-blocking remote fetch for updates
 			this.listProvider.startRemoteFetch();
 		}
@@ -110,7 +139,9 @@ export class ModelManager {
 	async refreshRemoteModels(): Promise<RefreshResult> {
 		const result = await this.listProvider.refresh();
 		if (result.fetched) {
-			this.updateGlobalModelsList(this.listProvider.getModels());
+			// Rebuild the whole union rather than replacing it with the Gemini
+			// list alone — an Ollama-served use case still needs its models.
+			this.updateGlobalModelsList(await this.collectActiveModels());
 		}
 		return result;
 	}
@@ -123,12 +154,13 @@ export class ModelManager {
 	}
 
 	/**
-	 * Returns the active provider's full model list (text + image) for the parameter helpers.
-	 * Provider-aware so e.g. Ollama models are validated against their own metadata
-	 * rather than the bundled Gemini list.
+	 * Full model list (text + image) for the parameter helpers. Temperature/topP
+	 * are chat-request parameters, so the ranges come from the chat provider's
+	 * models rather than the union — mixing in another provider's metadata would
+	 * widen the range beyond what chat actually accepts.
 	 */
 	private async getModelsForActiveProvider(): Promise<GeminiModel[]> {
-		if (this.plugin.settings.provider === 'ollama') {
+		if (resolveProviderOrDefault(this.plugin.settings, 'chat') === 'ollama') {
 			return this.ollamaModelsService.getModels();
 		}
 		return this.listProvider.getModels();

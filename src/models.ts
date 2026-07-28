@@ -1,8 +1,13 @@
 import modelData from './data/models.json';
+import { resolveProviderOrDefault, type ProviderRoutingSlice } from './api/provider-routing';
 
 export type ModelRole = 'chat' | 'summary' | 'completions' | 'rewrite' | 'image';
 
-export type ModelProvider = 'gemini' | 'ollama';
+// `ModelProvider` now lives with the capability registry (a leaf module) so the
+// router can depend on it without cycling back through this file. Re-exported
+// here because most of the codebase imports it from `models`.
+export type { ModelProvider } from './api/providers/registry';
+import type { ModelProvider } from './api/providers/registry';
 
 export interface GeminiModel {
 	value: string;
@@ -95,6 +100,36 @@ export function getDefaultModelForRole(role: ModelRole, provider: ModelProvider 
 }
 
 /**
+ * The provider that serves a given model, or `null` when the model isn't in any
+ * known list.
+ *
+ * Since per-use-case routing (#704) the global list is a *union* of every active
+ * provider's models, so a model name usually identifies its provider on its own.
+ * That lets provider-sensitive code (token counting, context limits, cost
+ * reporting) branch on the model actually in hand rather than on a global
+ * setting that may not apply to this request.
+ *
+ * `null` is a real case, not just paranoia: Ollama tags only enter the list once
+ * the daemon answers, so a model configured while it was unreachable is
+ * genuinely unidentifiable. Callers that can should fall back to the provider
+ * their use case resolves to rather than guessing.
+ */
+export function findModelProvider(modelValue: string | null | undefined): ModelProvider | null {
+	if (!modelValue) return null;
+	const entry =
+		GEMINI_MODELS.find((m) => m.value === modelValue) ?? DEFAULT_GEMINI_MODELS.find((m) => m.value === modelValue);
+	return entry ? getModelProvider(entry) : null;
+}
+
+/**
+ * Like `findModelProvider`, but defaults an unknown model to Gemini. Only for
+ * callers with no use case to fall back on.
+ */
+export function providerForModel(modelValue: string | null | undefined): ModelProvider {
+	return findModelProvider(modelValue) ?? 'gemini';
+}
+
+/**
  * Whether a model is served exclusively by the Interactions API (see
  * `GeminiModel.interactionsOnly`). Checks the live model list first (which may
  * be a newer remote list), then the bundled defaults — a stale remote cache
@@ -120,21 +155,45 @@ export function resolveGenerateContentModel(preferred: string | null | undefined
 	return getDefaultModelForRole(role, 'gemini');
 }
 
-/**
- * Resolve the chat model for the *active* provider. Gemini and Ollama each keep
- * their own persisted model (`chatModelName` vs `ollamaModelName`), so switching
- * providers back and forth never clobbers the other's choice. Use this anywhere
- * the "current chat model" is needed for a request or for history metadata; the
- * Gemini-cloud tools (search grounding, URL context, RAG) intentionally keep
- * reading `chatModelName` directly since they always call Google's API.
- */
-export function getActiveChatModel(settings: {
-	provider?: ModelProvider;
-	chatModelName?: string;
+/** The settings fields that hold Ollama model choices, per use case. */
+export interface OllamaModelSettingsSlice {
 	ollamaModelName?: string;
-}): string {
-	if ((settings.provider ?? 'gemini') === 'ollama') {
-		return settings.ollamaModelName || getDefaultModelForRole('chat', 'ollama');
+	ollamaSummaryModelName?: string;
+	ollamaCompletionsModelName?: string;
+}
+
+/**
+ * Resolve the Ollama model for a use case.
+ *
+ * Ollama keeps a single model resident, so diverging models across use cases
+ * thrashes RAM/VRAM on every switch (#1077). The per-use-case fields therefore
+ * default to empty, meaning "inherit `ollamaModelName`" — a user who wants a
+ * dedicated (say) completions model opts into the swap explicitly.
+ */
+export function getOllamaModelForRole(settings: OllamaModelSettingsSlice, role: ModelRole): string {
+	const specific =
+		role === 'summary'
+			? settings.ollamaSummaryModelName
+			: role === 'completions'
+				? settings.ollamaCompletionsModelName
+				: undefined;
+	return specific || settings.ollamaModelName || getDefaultModelForRole('chat', 'ollama');
+}
+
+/**
+ * Resolve the chat model for whichever provider currently serves chat. Each
+ * provider keeps its own persisted model (`chatModelName` vs `ollamaModelName`),
+ * so re-routing chat back and forth never clobbers the other's choice. Use this
+ * anywhere the "current chat model" is needed for a request or for history
+ * metadata; the Gemini-cloud tools (search grounding, URL context, RAG)
+ * intentionally keep reading `chatModelName` directly since they always call
+ * Google's API.
+ */
+export function getActiveChatModel(
+	settings: ProviderRoutingSlice & { chatModelName?: string } & OllamaModelSettingsSlice
+): string {
+	if (resolveProviderOrDefault(settings, 'chat') === 'ollama') {
+		return getOllamaModelForRole(settings, 'chat');
 	}
 	return settings.chatModelName || getDefaultModelForRole('chat', 'gemini');
 }
@@ -156,6 +215,12 @@ export interface ModelSettingsSlice {
 	 * known, and callers (tests, partial fixtures) may omit the field entirely.
 	 */
 	ollamaModelName?: string;
+	/**
+	 * Optional per-use-case Ollama models. Empty means "inherit
+	 * `ollamaModelName`" and is left alone by reconciliation.
+	 */
+	ollamaSummaryModelName?: string;
+	ollamaCompletionsModelName?: string;
 }
 
 export interface ModelUpdateResult<T extends ModelSettingsSlice = ModelSettingsSlice> {
@@ -255,6 +320,20 @@ export function getUpdatedModelSettings<T extends ModelSettingsSlice>(currentSet
 				settingsChanged = true;
 			}
 		}
+
+		// The optional per-use-case Ollama models are only reset when they name a
+		// model the daemon no longer serves. Empty is the default and means
+		// "inherit the chat model" (#1077), so it is never backfilled — doing so
+		// would silently opt the user into an extra model swap.
+		const clearStaleOllamaOverride = (key: 'ollamaSummaryModelName' | 'ollamaCompletionsModelName', label: string) => {
+			const value = modelFields[key];
+			if (!value || ollamaModelValues.has(value)) return;
+			modelFields[key] = '';
+			changedSettingsInfo.push(`${label}: '${value}' -> '' (model no longer available, inheriting chat model)`);
+			settingsChanged = true;
+		};
+		clearStaleOllamaOverride('ollamaSummaryModelName', 'Ollama summary model');
+		clearStaleOllamaOverride('ollamaCompletionsModelName', 'Ollama completions model');
 	}
 
 	return {

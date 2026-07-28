@@ -852,10 +852,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'notice.main.projectRemoved': 'Projektstatus entfernt von: {name}',
 	'notice.main.projectRemoveFailed': 'Projektstatus konnte nicht entfernt werden',
 	'notice.main.selectTextFirst': 'Bitte wähle zuerst einen Text aus',
-	'notice.main.imageGenOllama': 'Bildgenerierung ist mit dem Ollama-Anbieter nicht verfügbar.',
 	'notice.main.imageGenUnavailable': 'Bildgenerierung ist nicht verfügbar.',
-	'notice.main.ragOllamaUnavailable':
-		'Die RAG-Synchronisierung ist mit dem Ollama-Anbieter in Phase 1 nicht verfügbar.',
 	'notice.main.ragNotEnabled': 'RAG-Indizierung ist nicht aktiviert',
 	'notice.main.ragAlreadyPaused': 'RAG-Synchronisierung ist bereits pausiert',
 	'notice.main.ragCannotPauseWhileIndexing': 'Pausieren während einer laufenden Indizierung nicht möglich',

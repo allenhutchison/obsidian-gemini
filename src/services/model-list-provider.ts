@@ -1,6 +1,7 @@
 import { requestUrl } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { GeminiModel } from '../models';
+import { isProviderActive } from '../api/provider-routing';
 
 import bundledModelData from '../data/models.json';
 
@@ -62,9 +63,8 @@ export class ModelListProvider {
 	 *      on airplane mode too, not just Ollama.
 	 */
 	startRemoteFetch(): void {
-		const provider = this.plugin.settings?.provider ?? 'gemini';
-		if (provider !== 'gemini') {
-			this.plugin.logger.debug(`[ModelListProvider] Skipping remote fetch (provider=${provider})`);
+		if (!isProviderActive(this.plugin.settings, 'gemini')) {
+			this.plugin.logger.debug('[ModelListProvider] Skipping remote fetch (no use case is routed to Gemini)');
 			return;
 		}
 
@@ -93,9 +93,8 @@ export class ModelListProvider {
 	 * can show the message.
 	 */
 	async refresh(): Promise<RefreshResult> {
-		const provider = this.plugin.settings?.provider ?? 'gemini';
-		if (provider !== 'gemini') {
-			this.plugin.logger.debug(`[ModelListProvider] refresh skipped (provider=${provider})`);
+		if (!isProviderActive(this.plugin.settings, 'gemini')) {
+			this.plugin.logger.debug('[ModelListProvider] refresh skipped (no use case is routed to Gemini)');
 			return { fetched: false, modelCount: this.getModels().length, skippedReason: 'provider' };
 		}
 

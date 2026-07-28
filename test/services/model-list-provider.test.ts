@@ -4,7 +4,7 @@ import { ModelListProvider } from '../../src/services/model-list-provider';
 
 const mockedRequestUrl = requestUrl as unknown as Mock;
 
-const buildPlugin = (overrides: Partial<{ provider: string }> = {}) =>
+const buildPlugin = (overrides: Partial<{ provider: string; providerOverrides: Record<string, string> }> = {}) =>
 	({
 		logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
 		settings: {
@@ -41,7 +41,7 @@ describe('ModelListProvider.startRemoteFetch', () => {
 		});
 	};
 
-	it('skips the remote fetch when the active provider is not gemini', () => {
+	it('skips the remote fetch when no use case is routed to gemini', () => {
 		const plugin = buildPlugin({ provider: 'ollama' });
 		setOnline(true);
 
@@ -50,7 +50,21 @@ describe('ModelListProvider.startRemoteFetch', () => {
 
 		expect(mockedRequestUrl).not.toHaveBeenCalled();
 		expect(plugin.logger.debug).toHaveBeenCalledWith(
-			expect.stringContaining('Skipping remote fetch (provider=ollama)')
+			expect.stringContaining('Skipping remote fetch (no use case is routed to Gemini)')
+		);
+	});
+
+	// A single Gemini-served feature makes the list worth fetching, even though
+	// the primary provider is local (#704).
+	it('fetches when an override routes one use case to gemini under a local primary', () => {
+		const plugin = buildPlugin({ provider: 'ollama', providerOverrides: { rag: 'gemini' } });
+		setOnline(true);
+
+		const provider = new ModelListProvider(plugin);
+		provider.startRemoteFetch();
+
+		expect(plugin.logger.debug).not.toHaveBeenCalledWith(
+			expect.stringContaining('Skipping remote fetch (no use case is routed to Gemini)')
 		);
 	});
 

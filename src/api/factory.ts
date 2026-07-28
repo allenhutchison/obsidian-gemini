@@ -1,9 +1,10 @@
 /**
  * Factory for creating model API clients.
  *
- * Branches on `settings.provider` to instantiate either a GeminiClient or an
- * OllamaClient, then wraps the result in a RetryDecorator. This is the single
- * creation entry point for the agent and all role-specific use cases.
+ * Resolves the provider *per use case* (#704) — chat may run on Ollama while
+ * summaries run on Gemini — then instantiates the matching client and wraps it
+ * in a RetryDecorator. This is the single creation entry point for the agent
+ * and all role-specific use cases.
  */
 
 import { GeminiClient } from './providers/gemini/client';
@@ -13,9 +14,29 @@ import type { OllamaClientConfig } from './providers/ollama/config';
 import { ModelApi } from './interfaces/model-api';
 import { GeminiPrompts } from '../prompts';
 import { RetryDecorator } from './retry-decorator';
-import { getDefaultModelForRole } from '../models';
+import { getDefaultModelForRole, getOllamaModelForRole } from '../models';
 import type { ObsidianGemini } from '../types/plugin';
 import { ModelUseCase } from './model-use-case';
+import { resolveProviderOrDefault } from './provider-routing';
+import type { ProviderUseCase } from './providers/registry';
+
+/**
+ * Which routable use case each model-client use case is billed to.
+ *
+ * Mapped explicitly rather than reusing the enum's string values: they overlap
+ * by coincidence, not by design. `ModelUseCase.SEARCH` is a *thinking-level
+ * tier* for query-understanding calls on the chat path — not the `webSearch`
+ * capability, which gates the Google Search / URL-context tools. Routing it to
+ * `webSearch` would send a local-only install's chat calls looking for a
+ * provider that serves web search and find none.
+ */
+const ROUTING_USE_CASE: Record<ModelUseCase, ProviderUseCase> = {
+	[ModelUseCase.CHAT]: 'chat',
+	[ModelUseCase.SUMMARY]: 'summary',
+	[ModelUseCase.COMPLETIONS]: 'completions',
+	[ModelUseCase.REWRITE]: 'rewrite',
+	[ModelUseCase.SEARCH]: 'chat',
+};
 
 // Re-exported so existing `import { ModelUseCase } from '.../api/factory'` call
 // sites keep working after the enum moved to its own (import-free) module.
@@ -39,7 +60,10 @@ export class ModelClientFactory {
 		overrides?: Partial<GeminiClientConfig> & Partial<OllamaClientConfig>
 	): ModelApi {
 		const settings = plugin.settings;
-		const provider = settings.provider ?? 'gemini';
+		// Every ModelUseCase maps to a use case that all providers support, so the
+		// `null` branch of resolveProvider is unreachable here — capability-gated
+		// features (RAG, image generation) never reach the client factory.
+		const provider = resolveProviderOrDefault(settings, ROUTING_USE_CASE[useCase]);
 
 		const modelName = this.resolveModelName(plugin, useCase);
 
@@ -77,30 +101,38 @@ export class ModelClientFactory {
 		return new RetryDecorator(client, retryConfig, plugin.logger);
 	}
 
+	/** The model role a use case reads its configured model from. */
+	private static roleForUseCase(useCase: ModelUseCase): 'chat' | 'summary' | 'completions' {
+		switch (useCase) {
+			case ModelUseCase.SUMMARY:
+				return 'summary';
+			case ModelUseCase.COMPLETIONS:
+				return 'completions';
+			// Rewrite and search deliberately reuse the chat model rather than
+			// carrying their own setting.
+			default:
+				return 'chat';
+		}
+	}
+
 	private static resolveModelName(plugin: ObsidianGemini, useCase: ModelUseCase): string {
 		const settings = plugin.settings;
-		const provider = settings.provider ?? 'gemini';
-		// Ollama keeps a single model resident at a time, so diverging models
-		// across use cases just thrashes RAM/VRAM on every switch for no benefit.
-		// Collapse every use case to the one configured chat model; the
-		// per-use-case summary/completions settings are ignored under Ollama. (#1077)
+		const provider = resolveProviderOrDefault(settings, ROUTING_USE_CASE[useCase]);
+		const role = this.roleForUseCase(useCase);
+
 		if (provider === 'ollama') {
-			return settings.ollamaModelName || getDefaultModelForRole('chat', 'ollama');
+			// Ollama keeps one model resident, so the per-use-case fields default
+			// to inheriting the chat model rather than forcing a swap (#1077).
+			return getOllamaModelForRole(settings, role);
 		}
-		switch (useCase) {
-			case ModelUseCase.CHAT:
-				return settings.chatModelName || getDefaultModelForRole('chat', provider);
-			case ModelUseCase.SUMMARY:
-				return settings.summaryModelName || getDefaultModelForRole('summary', provider);
-			case ModelUseCase.COMPLETIONS:
-				return settings.completionsModelName || getDefaultModelForRole('completions', provider);
-			case ModelUseCase.REWRITE:
-				return settings.chatModelName || getDefaultModelForRole('chat', provider);
-			case ModelUseCase.SEARCH:
-				return settings.chatModelName || getDefaultModelForRole('chat', provider);
-			default:
-				return getDefaultModelForRole('chat', provider);
-		}
+
+		const configured =
+			role === 'summary'
+				? settings.summaryModelName
+				: role === 'completions'
+					? settings.completionsModelName
+					: settings.chatModelName;
+		return configured || getDefaultModelForRole(role, provider);
 	}
 
 	/**

@@ -281,7 +281,63 @@ describe('ContextManager', () => {
 			expect(result).toBeGreaterThan(0);
 			expect(Number.isInteger(result)).toBe(true);
 			expect(mockCountTokens).not.toHaveBeenCalled();
-			expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('countTokens (Ollama estimate)'));
+			expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('countTokens (estimate)'));
+		});
+
+		// #704: a session can span providers, so the counting strategy follows the
+		// *model*, not a global setting.
+		test('mixed routing: counts a Gemini model natively even when chat runs on Ollama', async () => {
+			const { setGeminiModels, GEMINI_MODELS } = await import('../../src/models');
+			const original = [...GEMINI_MODELS];
+			setGeminiModels([
+				{ value: 'gemini-2.5-flash', label: 'Flash' },
+				{ value: 'llama3.2', label: 'Llama', provider: 'ollama' as const },
+			]);
+
+			try {
+				const mixedPlugin = {
+					...mockPlugin,
+					settings: { ...mockPlugin.settings, provider: 'ollama', providerOverrides: { summary: 'gemini' } },
+				};
+				const ctx = new ContextManager(mixedPlugin, mockLogger);
+				const contents = [{ role: 'user', parts: [{ text: 'hello world' }] }];
+
+				// The Gemini-served model goes through the SDK...
+				await ctx.countTokens('gemini-2.5-flash', contents);
+				expect(mockCountTokens).toHaveBeenCalled();
+
+				// ...while the Ollama-served one is still estimated locally.
+				mockCountTokens.mockClear();
+				await ctx.countTokens('llama3.2', contents);
+				expect(mockCountTokens).not.toHaveBeenCalled();
+			} finally {
+				setGeminiModels(original);
+			}
+		});
+
+		// Ollama tags only reach the model list once the daemon answers. Treating an
+		// unrecognized model as Gemini would mean a doomed countTokens call and a
+		// 1M-token context limit on a model that may only hold 8k.
+		test('falls back to the chat provider for a model missing from the list', async () => {
+			const { setGeminiModels, GEMINI_MODELS } = await import('../../src/models');
+			const original = [...GEMINI_MODELS];
+			// Daemon was down: no Ollama entries were ever registered.
+			setGeminiModels([{ value: 'gemini-2.5-flash', label: 'Flash' }]);
+
+			try {
+				const ollamaPlugin = {
+					...mockPlugin,
+					apiKey: 'test-api-key',
+					settings: { ...mockPlugin.settings, provider: 'ollama' },
+				};
+				const ctx = new ContextManager(ollamaPlugin, mockLogger);
+
+				await ctx.countTokens('mistral-nemo', [{ role: 'user', parts: [{ text: 'hello world' }] }]);
+
+				expect(mockCountTokens).not.toHaveBeenCalled();
+			} finally {
+				setGeminiModels(original);
+			}
 		});
 
 		test('Ollama provider: calibrates the chars-per-token ratio from real usage metadata', async () => {
