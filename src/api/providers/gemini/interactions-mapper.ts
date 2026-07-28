@@ -402,6 +402,10 @@ export class InteractionStreamAccumulator {
 		const pending = this.pending.get(index);
 		if (!pending) return;
 		this.pending.delete(index);
+		// Claim unconditionally: a step-level signature takes precedence below, but
+		// the buffered one is still spent here so it can't leak to a later call.
+		// (Non-function_call steps return above, so a thought step's own stop is a no-op.)
+		const bufferedSignature = this.takeSignature();
 
 		let args: Record<string, unknown> = pending.seedArgs ?? {};
 		if (pending.argsBuffer) {
@@ -416,7 +420,7 @@ export class InteractionStreamAccumulator {
 			name: pending.name,
 			arguments: args,
 			id: pending.id,
-			thoughtSignature: pending.signature ?? this.takeSignature(),
+			thoughtSignature: pending.signature ?? bufferedSignature,
 		});
 	}
 

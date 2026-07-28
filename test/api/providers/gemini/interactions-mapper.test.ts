@@ -186,9 +186,25 @@ describe('InteractionStreamAccumulator', () => {
 				step: { type: 'function_call', id: 'c1', name: 'read_file', signature: 'on-step' },
 			},
 			{ event_type: 'step.stop', index: 1 },
+			// The step-level signature wins, but the buffered one is spent rather than
+			// left behind — otherwise this next unsigned call inherits a stale signature.
+			{ event_type: 'step.start', index: 2, step: { type: 'function_call', id: 'c2', name: 'list_files' } },
+			{ event_type: 'step.stop', index: 2 },
 		]);
 
-		expect(response.toolCalls?.[0].thoughtSignature).toBe('on-step');
+		expect(response.toolCalls?.map((c) => c.thoughtSignature)).toEqual(['on-step', undefined]);
+	});
+
+	test('a thought step stopping does not consume the signature meant for the call after it', () => {
+		const { response } = run([
+			{ event_type: 'step.start', index: 0, step: { type: 'thought' } },
+			{ event_type: 'step.delta', index: 0, delta: { type: 'thought_signature', signature: 'sig-abc' } },
+			{ event_type: 'step.stop', index: 0 },
+			{ event_type: 'step.start', index: 1, step: { type: 'function_call', id: 'c1', name: 'read_file' } },
+			{ event_type: 'step.stop', index: 1 },
+		]);
+
+		expect(response.toolCalls?.[0].thoughtSignature).toBe('sig-abc');
 	});
 });
 
