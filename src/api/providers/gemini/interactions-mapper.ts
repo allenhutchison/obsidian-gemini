@@ -287,11 +287,17 @@ interface PendingToolCall {
  * Accumulates Interactions streaming events into a final `ModelResponse`.
  *
  * The step-based stream interleaves: `step.start` (carries the full `Step`, so a
- * `function_call` step's id/name/signature land here), `step.delta` (incremental
- * `text`, `thought_summary`, or `arguments_delta`), `step.stop` (finalizes a
- * step), and `interaction.completed` (final `usage`). Function-call arguments
- * arrive as `arguments_delta` string fragments keyed by step `index` and are
- * JSON-parsed once the step stops.
+ * `function_call` step's id/name land here), `step.delta` (incremental `text`,
+ * `thought_summary`, `thought_signature`, or `arguments_delta`), `step.stop`
+ * (finalizes a step), and `interaction.completed` (final `usage`). Function-call
+ * arguments arrive as `arguments_delta` string fragments keyed by step `index`
+ * and are JSON-parsed once the step stops.
+ *
+ * Thought signatures are *not* carried on the `function_call` step. They stream
+ * as a `thought_signature` delta on the preceding `thought` step, and Gemini
+ * thinking models reject a replayed tool turn whose `functionCall` lacks one
+ * (an opaque 400). So the signature is buffered when it arrives and attached to
+ * the next function call that finalizes — see {@link takeSignature}.
  *
  * Kept free of SDK/DOM dependencies so it is unit-testable with plain event
  * objects. `handleEvent` returns the chunk to emit (or null); `finalize` builds
@@ -304,6 +310,8 @@ export class InteractionStreamAccumulator {
 	private readonly pending = new Map<number, PendingToolCall>();
 	private readonly toolCalls: ToolCall[] = [];
 	private readonly sources = new Map<string, GroundingSource>();
+	/** Latest `thought_signature` delta, awaiting the function call it belongs to. */
+	private unclaimedSignature: string | undefined;
 
 	/** Process one streamed event; returns a chunk to emit, or null if nothing to surface. */
 	handleEvent(event: InteractionStreamEvent): InteractionStreamChunk | null {
@@ -371,6 +379,14 @@ export class InteractionStreamAccumulator {
 				}
 				return null;
 			}
+			case 'thought_signature': {
+				// Arrives on the `thought` step, not the `function_call` step it
+				// authorizes, so it can't be keyed by `event.index` into `pending`.
+				if (typeof delta.signature === 'string' && delta.signature) {
+					this.unclaimedSignature = delta.signature;
+				}
+				return null;
+			}
 			case 'text_annotation_delta': {
 				// Grounding sources stream as url_citation annotations (#1016).
 				collectUrlCitations(delta.annotations, this.sources);
@@ -386,6 +402,10 @@ export class InteractionStreamAccumulator {
 		const pending = this.pending.get(index);
 		if (!pending) return;
 		this.pending.delete(index);
+		// Claim unconditionally: a step-level signature takes precedence below, but
+		// the buffered one is still spent here so it can't leak to a later call.
+		// (Non-function_call steps return above, so a thought step's own stop is a no-op.)
+		const bufferedSignature = this.takeSignature();
 
 		let args: Record<string, unknown> = pending.seedArgs ?? {};
 		if (pending.argsBuffer) {
@@ -400,8 +420,20 @@ export class InteractionStreamAccumulator {
 			name: pending.name,
 			arguments: args,
 			id: pending.id,
-			thoughtSignature: pending.signature,
+			thoughtSignature: pending.signature ?? bufferedSignature,
 		});
+	}
+
+	/**
+	 * Claim the buffered thought signature for one function call, clearing it so a
+	 * later call doesn't reuse it. A parallel tool batch is preceded by a single
+	 * thought step, so only the first call in the batch carries a signature —
+	 * matching what the `generateContent` path produces (and what the API accepts).
+	 */
+	private takeSignature(): string | undefined {
+		const signature = this.unclaimedSignature;
+		this.unclaimedSignature = undefined;
+		return signature;
 	}
 
 	/** Build the final response once the stream is exhausted (flushing any unstopped steps). */

@@ -143,6 +143,69 @@ describe('InteractionStreamAccumulator', () => {
 			{ name: 'list_files', arguments: { dir: '.' }, id: 'b', thoughtSignature: undefined },
 		]);
 	});
+
+	// The event order below mirrors a real gemini-3.x stream: the signature arrives
+	// as a `thought_signature` delta on the *thought* step, and the `function_call`
+	// step.start carries none. Dropping it made the replayed tool turn fail with an
+	// opaque 400 for every agent turn that called a tool.
+	test('claims a thought_signature delta from the thought step for the following tool call', () => {
+		const { response } = run([
+			{ event_type: 'step.start', index: 0, step: { type: 'thought' } },
+			{ event_type: 'step.delta', index: 0, delta: { type: 'thought_signature', signature: 'sig-abc' } },
+			{ event_type: 'step.stop', index: 0 },
+			{ event_type: 'step.start', index: 1, step: { type: 'function_call', id: 'c1', name: 'read_file' } },
+			{ event_type: 'step.delta', index: 1, delta: { type: 'arguments_delta', arguments: '{"path":"a.md"}' } },
+			{ event_type: 'step.stop', index: 1 },
+		]);
+
+		expect(response.toolCalls).toEqual([
+			{ name: 'read_file', arguments: { path: 'a.md' }, id: 'c1', thoughtSignature: 'sig-abc' },
+		]);
+	});
+
+	test('a signature is claimed by only the first call of a parallel batch', () => {
+		const { response } = run([
+			{ event_type: 'step.start', index: 0, step: { type: 'thought' } },
+			{ event_type: 'step.delta', index: 0, delta: { type: 'thought_signature', signature: 'sig-abc' } },
+			{ event_type: 'step.stop', index: 0 },
+			{ event_type: 'step.start', index: 1, step: { type: 'function_call', id: 'a', name: 'read_file' } },
+			{ event_type: 'step.start', index: 2, step: { type: 'function_call', id: 'b', name: 'list_files' } },
+			{ event_type: 'step.stop', index: 1 },
+			{ event_type: 'step.stop', index: 2 },
+		]);
+
+		expect(response.toolCalls?.map((c) => c.thoughtSignature)).toEqual(['sig-abc', undefined]);
+	});
+
+	test('a signature on the function_call step itself still wins over a buffered one', () => {
+		const { response } = run([
+			{ event_type: 'step.delta', index: 0, delta: { type: 'thought_signature', signature: 'buffered' } },
+			{
+				event_type: 'step.start',
+				index: 1,
+				step: { type: 'function_call', id: 'c1', name: 'read_file', signature: 'on-step' },
+			},
+			{ event_type: 'step.stop', index: 1 },
+			// The step-level signature wins, but the buffered one is spent rather than
+			// left behind — otherwise this next unsigned call inherits a stale signature.
+			{ event_type: 'step.start', index: 2, step: { type: 'function_call', id: 'c2', name: 'list_files' } },
+			{ event_type: 'step.stop', index: 2 },
+		]);
+
+		expect(response.toolCalls?.map((c) => c.thoughtSignature)).toEqual(['on-step', undefined]);
+	});
+
+	test('a thought step stopping does not consume the signature meant for the call after it', () => {
+		const { response } = run([
+			{ event_type: 'step.start', index: 0, step: { type: 'thought' } },
+			{ event_type: 'step.delta', index: 0, delta: { type: 'thought_signature', signature: 'sig-abc' } },
+			{ event_type: 'step.stop', index: 0 },
+			{ event_type: 'step.start', index: 1, step: { type: 'function_call', id: 'c1', name: 'read_file' } },
+			{ event_type: 'step.stop', index: 1 },
+		]);
+
+		expect(response.toolCalls?.[0].thoughtSignature).toBe('sig-abc');
+	});
 });
 
 describe('grounding sources (rendered)', () => {
