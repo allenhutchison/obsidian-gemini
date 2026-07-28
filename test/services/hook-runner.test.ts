@@ -690,23 +690,9 @@ describe('HookRunner agent-task: exhausted iterations', () => {
 		);
 	});
 
-	it('exhausted error message reflects the per-hook maxIterations', async () => {
-		const generateModelResponse = vi.fn().mockResolvedValue({
-			markdown: '',
-			toolCalls: [{ name: 'some_tool', arguments: {} }],
-		});
-		(ModelClientFactory.createChatModel as any).mockReturnValue({ generateModelResponse });
-		mockAgentLoopRun.mockResolvedValue({
-			...successfulLoopResult(),
-			exhausted: true,
-			markdown: '',
-		});
-
-		const plugin = createMockPlugin();
-		const runner = new HookRunner(plugin as any, makeContext(makeHook({ maxIterations: 50 })));
-
-		await expect(runner.run()).rejects.toThrow(/exhausted its tool-iteration budget \(cap 50, ran \d+\)/);
-	});
+	// The exhaustion-message *format* (prefix, subject noun, cap vs actual) is
+	// asserted once in `headless-agent-turn.test.ts`; what matters here is that
+	// this runner's own `maxIterations` reaches the shared driver, covered above.
 });
 
 // ─── Rewrite non-markdown skip ───────────────────────────────────────────────

@@ -1,27 +1,20 @@
 import { App, TFile } from 'obsidian';
-import { getActiveChatModel } from '../models';
 import type { ObsidianGemini } from '../types/plugin';
-import { DestructiveAction } from '../types/agent';
-import { ToolExecutionContext } from '../tools/types';
-import { ModelClientFactory } from '../api';
-import { ExtendedModelRequest } from '../api/interfaces/model-api';
 import { resolveOutputPath, writeHeadlessOutput } from './headless-run-output';
-import { formatLocalDate, formatLocalTimestamp } from '../utils/format-utils';
-import { buildTurnPreamble } from '../utils/turn-preamble';
-import { AgentLoop, DEFAULT_HEADLESS_MAX_ITERATIONS } from '../agent/agent-loop';
+import { formatLocalDate } from '../utils/format-utils';
 import { GeminiSummary } from '../summary';
 import { SelectionRewriter } from '../rewrite-selection';
 import { renderPrompt } from './hook-types';
 import type { HookFireContext } from './hook-types';
-import { HeadlessConfirmationProvider } from './headless-confirmation-provider';
+import { runHeadlessAgentTurn } from './headless-agent-turn';
 
 /**
  * Runs a single hook fire headlessly:
  *  1. Renders the prompt template with the trigger context
- *  2. Creates a temporary agent session scoped to the hook's tool/skill list
- *  3. Sends the rendered prompt to the model
- *  4. Hands off any tool calls to AgentLoop
- *  5. Optionally writes the final response to the resolved outputPath
+ *  2. Drives one headless agent turn via `runHeadlessAgentTurn` (temporary
+ *     session scoped to the hook's tool/skill list, one model request, and the
+ *     AgentLoop tool-execution loop)
+ *  3. Optionally writes the final response to the resolved outputPath
  */
 export class HookRunner {
 	constructor(
@@ -50,93 +43,29 @@ export class HookRunner {
 	// ── agent-task action ────────────────────────────────────────────────────
 
 	private async runAgentTask(isCancelled: () => boolean): Promise<string | undefined> {
-		if (!this.plugin.sessionManager || !this.plugin.toolRegistry || !this.plugin.toolExecutionEngine) {
-			throw new Error('[HookRunner] Agent services not initialised');
-		}
-
 		const { hook } = this.ctx;
 
-		const session = await this.plugin.sessionManager.createAgentSession(`Hook: ${hook.slug}`, {
-			toolPolicy: hook.toolPolicy,
-			requireConfirmation: [] as DestructiveAction[],
-		});
+		const finalText = await runHeadlessAgentTurn(
+			this.plugin,
+			{
+				sessionLabel: `Hook: ${hook.slug}`,
+				logPrefix: '[HookRunner]',
+				subjectNoun: 'Hook',
+				subjectName: hook.slug,
+				// The hook's prompt is a template — render it against the trigger
+				// context before the shared driver sends it.
+				prompt: renderPrompt(hook.prompt, this.promptVars()),
+				toolPolicy: hook.toolPolicy,
+				model: hook.model,
+				maxIterations: hook.maxIterations,
+				// Apply the hook's enabledSkills as a skill filter.
+				projectSkills: hook.enabledSkills,
+			},
+			isCancelled
+		);
 
-		if (hook.model) {
-			session.modelConfig = { model: hook.model };
-		}
-
-		const toolContext: ToolExecutionContext = {
-			plugin: this.plugin,
-			session,
-			featureToolPolicy: hook.toolPolicy,
-		};
-		const modelApi = ModelClientFactory.createChatModel(this.plugin);
-		// Headless hook fires auto-approve confirmations, so only expose
-		// APPROVE tools — ASK_USER tools would otherwise execute unattended.
-		// To allow an ASK_USER tool in a hook, the hook's toolPolicy must
-		// explicitly upgrade it (preset or per-tool override).
-		const availableTools = this.plugin.toolRegistry.getAutoApprovedTools(toolContext);
-
-		const renderedPrompt = renderPrompt(hook.prompt, this.promptVars());
-		const startedAt = formatLocalTimestamp(session.created);
-		const userMessage = buildTurnPreamble(formatLocalTimestamp(new Date())) + renderedPrompt;
-		const model = hook.model ?? getActiveChatModel(this.plugin.settings);
-
-		const initialRequest: ExtendedModelRequest = {
-			kind: 'extended',
-			userMessage,
-			conversationHistory: [],
-			model,
-			temperature: this.plugin.settings.temperature,
-			topP: this.plugin.settings.topP,
-			prompt: '',
-			availableTools,
-			renderContent: false,
-			sessionStartedAt: startedAt,
-			// Apply the hook's enabledSkills as a skill filter — the model API
-			// uses projectSkills as its include-list when filtering the registered
-			// skill set. Empty list ⇒ no filter, so the hook sees every available
-			// skill (matches the documented "leave blank to inherit" semantics).
-			projectSkills: hook.enabledSkills.length > 0 ? hook.enabledSkills : undefined,
-		};
-
-		if (isCancelled()) return undefined;
-		const initialResponse = await modelApi.generateModelResponse(initialRequest);
-		if (isCancelled()) return undefined;
-
-		let finalText: string;
-		if (initialResponse.toolCalls?.length) {
-			// Per-hook override falls back to the shared headless default when unset.
-			const maxIterations = hook.maxIterations ?? DEFAULT_HEADLESS_MAX_ITERATIONS;
-			const loop = new AgentLoop();
-			const result = await loop.run({
-				initialResponse,
-				initialUserMessage: userMessage,
-				initialHistory: [],
-				options: {
-					plugin: this.plugin,
-					session,
-					isCancelled,
-					confirmationProvider: new HeadlessConfirmationProvider(),
-					maxIterations,
-					featureToolPolicy: hook.toolPolicy,
-					headless: true,
-				},
-			});
-			if (result.cancelled) return undefined;
-			if (result.exhausted) {
-				// Exhaustion now fires only after the soft budget's one-shot
-				// extension was also spent, so the actual iteration count exceeds
-				// the configured cap — report both.
-				throw new Error(
-					`[HookRunner] Hook "${hook.slug}" exhausted its tool-iteration budget ` +
-						`(cap ${maxIterations}, ran ${result.iterations}) without producing a response`
-				);
-			}
-			finalText = result.markdown;
-		} else {
-			finalText = initialResponse.markdown ?? '';
-		}
+		// `undefined` means the run was cancelled mid-turn — nothing to write.
+		if (finalText === undefined) return undefined;
 
 		if (isCancelled()) return undefined;
 		if (!hook.outputPath) return undefined;
