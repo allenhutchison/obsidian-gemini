@@ -1,16 +1,16 @@
 import type { ObsidianGemini } from '../types/plugin';
 import { HandlerPriority } from '../types/agent-events';
 import { extractAccessedPaths } from '../utils/accessed-files';
+import { EventBusSubscriber } from './event-bus-subscriber';
 
 /**
  * Subscribes to toolChainComplete to track which files the agent
  * accessed during tool execution. Updates session.accessedFiles
  * and persists to frontmatter.
  */
-export class AccessedFilesSubscriber {
-	private unsubscribers: (() => void)[] = [];
-
+export class AccessedFilesSubscriber extends EventBusSubscriber {
 	constructor(plugin: ObsidianGemini) {
+		super();
 		this.unsubscribers.push(
 			plugin.agentEventBus.on(
 				'toolChainComplete',
@@ -40,12 +40,5 @@ export class AccessedFilesSubscriber {
 				HandlerPriority.INTERNAL
 			)
 		);
-	}
-
-	destroy(): void {
-		for (const unsub of this.unsubscribers) {
-			unsub();
-		}
-		this.unsubscribers = [];
 	}
 }

@@ -3,6 +3,7 @@ import type { ObsidianGemini } from '../types/plugin';
 import { HandlerPriority } from '../types/agent-events';
 import { ToolResult } from '../tools/types';
 import { ChatSession } from '../types/agent';
+import { EventBusSubscriber } from './event-bus-subscriber';
 
 /** Map tool names to the key parameter to display in summaries. undefined = no args to display. */
 const KEY_PARAM_MAP: Record<string, string | undefined> = {
@@ -38,12 +39,12 @@ interface ToolLogEntry {
  * Subscribes to agent event bus hooks and logs tool execution summaries
  * to session history files as collapsible callout blocks.
  */
-export class ToolExecutionLogger {
+export class ToolExecutionLogger extends EventBusSubscriber {
 	private plugin: ObsidianGemini;
 	private pendingLogs: ToolLogEntry[] = [];
-	private unsubscribers: (() => void)[] = [];
 
 	constructor(plugin: ObsidianGemini) {
+		super();
 		this.plugin = plugin;
 
 		this.unsubscribers.push(
@@ -89,13 +90,11 @@ export class ToolExecutionLogger {
 	}
 
 	/**
-	 * Unsubscribe from event bus.
+	 * Unsubscribe from the event bus and drop any tool entries that were queued
+	 * but never flushed to a history file.
 	 */
-	destroy(): void {
-		for (const unsub of this.unsubscribers) {
-			unsub();
-		}
-		this.unsubscribers = [];
+	override destroy(): void {
+		super.destroy();
 		this.pendingLogs = [];
 	}
 

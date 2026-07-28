@@ -1,5 +1,6 @@
 import type { ObsidianGemini } from '../types/plugin';
 import { HandlerPriority } from '../types/agent-events';
+import { EventBusSubscriber } from './event-bus-subscriber';
 
 /**
  * Subscribes to session lifecycle events to auto-detect and link projects.
@@ -9,10 +10,9 @@ import { HandlerPriority } from '../types/agent-events';
  *
  * On sessionLoaded: verify the linked project still exists.
  */
-export class ProjectActivationSubscriber {
-	private unsubscribers: (() => void)[] = [];
-
+export class ProjectActivationSubscriber extends EventBusSubscriber {
 	constructor(plugin: ObsidianGemini) {
+		super();
 		this.unsubscribers.push(
 			plugin.agentEventBus.on(
 				'sessionCreated',
@@ -62,12 +62,5 @@ export class ProjectActivationSubscriber {
 				HandlerPriority.INTERNAL
 			)
 		);
-	}
-
-	destroy(): void {
-		for (const unsub of this.unsubscribers) {
-			unsub();
-		}
-		this.unsubscribers = [];
 	}
 }
