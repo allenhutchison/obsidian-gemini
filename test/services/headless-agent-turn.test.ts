@@ -26,16 +26,25 @@ vi.mock('../../src/api', () => ({
 	},
 }));
 
-/** Mock AgentLoop so tests don't pull in the real agent infrastructure. */
+/**
+ * Stub out `AgentLoop` so tests don't pull in the real agent infrastructure,
+ * but keep every other export — notably `DEFAULT_HEADLESS_MAX_ITERATIONS` —
+ * pointing at the real module. Hard-coding the default here would let the
+ * driver's actual default drift while the assertions below still passed.
+ */
 const mockAgentLoopRun = vi.fn();
-vi.mock('../../src/agent/agent-loop', () => ({
-	AgentLoop: vi.fn().mockImplementation(function () {
-		return { run: mockAgentLoopRun };
-	}),
-	DEFAULT_HEADLESS_MAX_ITERATIONS: 20,
-}));
+vi.mock('../../src/agent/agent-loop', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('../../src/agent/agent-loop')>();
+	return {
+		...actual,
+		AgentLoop: vi.fn().mockImplementation(function () {
+			return { run: mockAgentLoopRun };
+		}),
+	};
+});
 
 import { ModelClientFactory } from '../../src/api';
+import { DEFAULT_HEADLESS_MAX_ITERATIONS } from '../../src/agent/agent-loop';
 
 function createMockModelApi(responseText = 'Model answer.', toolCalls: any[] = []) {
 	return {
@@ -218,7 +227,7 @@ describe('runHeadlessAgentTurn', () => {
 						plugin,
 						headless: true,
 						isCancelled: expect.any(Function),
-						maxIterations: 20,
+						maxIterations: DEFAULT_HEADLESS_MAX_ITERATIONS,
 						// Regression guard: headless runs must supply their own
 						// confirmation provider so AgentLoop never has to fall back.
 						confirmationProvider: expect.objectContaining({
@@ -243,14 +252,17 @@ describe('runHeadlessAgentTurn', () => {
 			mockAgentLoopRun.mockResolvedValue({
 				...successfulLoopResult(),
 				exhausted: true,
-				iterations: 21,
+				iterations: 8,
 				markdown: '',
 			});
 
+			// A deliberately non-default cap, so the message is proven to report
+			// the *configured* value rather than coincidentally matching the
+			// shared default.
 			await expect(
-				runHeadlessAgentTurn(createMockPlugin(), makeSpec({ maxIterations: 20 }), () => false)
+				runHeadlessAgentTurn(createMockPlugin(), makeSpec({ maxIterations: 7 }), () => false)
 			).rejects.toThrow(
-				'[TestRunner] Task "test-task" exhausted its tool-iteration budget (cap 20, ran 21) without producing a response'
+				'[TestRunner] Task "test-task" exhausted its tool-iteration budget (cap 7, ran 8) without producing a response'
 			);
 		});
 
