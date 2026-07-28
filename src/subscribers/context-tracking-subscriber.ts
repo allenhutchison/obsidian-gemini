@@ -1,5 +1,6 @@
 import type { ObsidianGemini } from '../types/plugin';
 import { HandlerPriority } from '../types/agent-events';
+import { EventBusSubscriber } from './event-bus-subscriber';
 
 /**
  * Subscribes to agent lifecycle events to manage context tracking:
@@ -7,10 +8,9 @@ import { HandlerPriority } from '../types/agent-events';
  * - Updates usage metadata from API responses
  * - Resets context manager on session changes
  */
-export class ContextTrackingSubscriber {
-	private unsubscribers: (() => void)[] = [];
-
+export class ContextTrackingSubscriber extends EventBusSubscriber {
 	constructor(plugin: ObsidianGemini) {
+		super();
 		this.unsubscribers.push(
 			plugin.agentEventBus.on(
 				'turnStart',
@@ -40,12 +40,5 @@ export class ContextTrackingSubscriber {
 		this.unsubscribers.push(plugin.agentEventBus.on('sessionCreated', resetContext, HandlerPriority.INTERNAL));
 
 		this.unsubscribers.push(plugin.agentEventBus.on('sessionLoaded', resetContext, HandlerPriority.INTERNAL));
-	}
-
-	destroy(): void {
-		for (const unsub of this.unsubscribers) {
-			unsub();
-		}
-		this.unsubscribers = [];
 	}
 }
