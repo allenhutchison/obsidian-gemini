@@ -229,14 +229,24 @@ async function renderPerFeatureProviders(
 						})
 					: t('settings.general.useCaseUnavailableOption')
 			);
-			for (const id of candidates) {
+			// Skip the primary — the default option above already represents it.
+			// Listing it again would show the same provider label twice, and
+			// picking the second copy would persist an override equal to the
+			// primary: inert today, but it defeats the sparse-override design.
+			const explicit = candidates.filter((id) => id !== primary);
+			for (const id of explicit) {
 				dropdown.addOption(id, t(PROVIDERS[id].labelKey as TranslationKey));
 			}
 
-			dropdown.setValue(plugin.settings.providerOverrides[useCase] ?? '');
+			// Fall back to the default option for any stored value with no
+			// matching option (an override equal to the primary, or one left
+			// behind by a hand-edited data.json). A `select` given an unknown
+			// value renders blank, which reads as a broken row.
+			const stored = plugin.settings.providerOverrides[useCase];
+			dropdown.setValue(stored && explicit.includes(stored) ? stored : '');
 
 			// Nothing to choose when the primary is the only candidate.
-			if (candidates.length === 0 || (candidates.length === 1 && primarySupports)) {
+			if (explicit.length === 0) {
 				dropdown.setDisabled(true);
 			}
 

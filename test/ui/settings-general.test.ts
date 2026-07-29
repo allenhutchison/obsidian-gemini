@@ -8,8 +8,11 @@
  * to inheriting the chat model (#1077); image generation has no picker at all
  * when no provider serves it.
  */
-const { mockSelectModelSetting } = vi.hoisted(() => ({
+const { mockSelectModelSetting, capturedDropdowns } = vi.hoisted(() => ({
 	mockSelectModelSetting: vi.fn(),
+	// Records each rendered dropdown as { name, options, value, disabled } so
+	// tests can assert on the options a row actually offers.
+	capturedDropdowns: [] as Array<{ name: string; options: string[]; value: string; disabled: boolean }>,
 }));
 
 vi.mock('../../src/ui/settings-helpers', () => ({
@@ -34,8 +37,10 @@ vi.mock('../../src/utils/error-utils', () => ({
 
 vi.mock('obsidian', () => {
 	class Setting {
+		name = '';
 		constructor(public containerEl: any) {}
-		setName() {
+		setName(n?: string) {
+			this.name = n ?? '';
 			return this;
 		}
 		setDesc() {
@@ -46,12 +51,23 @@ vi.mock('obsidian', () => {
 			return this;
 		}
 		addDropdown(cb: (c: any) => void) {
+			const record = { name: this.name, options: [] as string[], value: '', disabled: false };
 			const c: any = {};
-			c.addOption = () => c;
-			c.setValue = () => c;
-			c.setDisabled = () => c;
+			c.addOption = (v: string) => {
+				record.options.push(v);
+				return c;
+			};
+			c.setValue = (v: string) => {
+				record.value = v;
+				return c;
+			};
+			c.setDisabled = (d: boolean) => {
+				record.disabled = d !== false;
+				return c;
+			};
 			c.onChange = () => c;
 			cb(c);
+			capturedDropdowns.push(record);
 			return this;
 		}
 		addText(cb: (c: any) => void) {
@@ -143,7 +159,10 @@ function renderedModelCalls(): Array<{ settingName: string; label: string; desc:
 describe('renderGeneralSettings — model pickers per provider', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		capturedDropdowns.length = 0;
 	});
+
+	const dropdownFor = (name: string) => capturedDropdowns.find((d) => d.name === name);
 
 	it('routes every picker to Ollama, with summary/completions inheriting the chat model', async () => {
 		const plugin = createMockPlugin('ollama');
@@ -237,5 +256,62 @@ describe('renderGeneralSettings — model pickers per provider', () => {
 				provider: 'gemini',
 			},
 		]);
+	});
+});
+
+describe('renderGeneralSettings — per-feature provider dropdowns', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		capturedDropdowns.length = 0;
+	});
+
+	const dropdownFor = (name: string) => capturedDropdowns.find((d) => d.name === name);
+
+	// The default option already means "use the primary", so listing the primary
+	// again showed the same provider label twice and let the user persist an
+	// override equal to the primary — inert, but it defeats the sparse-override
+	// design (#1266 review).
+	it('offers the primary only once, via the default option', async () => {
+		const plugin = createMockPlugin('gemini');
+		await renderGeneralSettings({} as any, plugin, {} as any, createContext());
+
+		const chat = dropdownFor('settings.general.useCaseChatName');
+		expect(chat?.options).toEqual(['', 'ollama']);
+		expect(chat?.disabled).toBe(false);
+	});
+
+	it('disables a row whose only candidate is the primary', async () => {
+		const plugin = createMockPlugin('gemini');
+		await renderGeneralSettings({} as any, plugin, {} as any, createContext());
+
+		// Gemini is the only provider that serves image generation.
+		const imageGen = dropdownFor('settings.general.useCaseImageGenName');
+		expect(imageGen?.options).toEqual(['']);
+		expect(imageGen?.disabled).toBe(true);
+	});
+
+	it('offers a capability-gated provider when the primary cannot serve it', async () => {
+		const plugin = createMockPlugin('ollama');
+		await renderGeneralSettings({} as any, plugin, {} as any, createContext());
+
+		const imageGen = dropdownFor('settings.general.useCaseImageGenName');
+		expect(imageGen?.options).toEqual(['', 'gemini']);
+		expect(imageGen?.disabled).toBe(false);
+	});
+
+	it('selects an override that differs from the primary', async () => {
+		const plugin = createMockPlugin('ollama', { imageGen: 'gemini' });
+		await renderGeneralSettings({} as any, plugin, {} as any, createContext());
+
+		expect(dropdownFor('settings.general.useCaseImageGenName')?.value).toBe('gemini');
+	});
+
+	// A stored value with no matching option would render the row blank, which
+	// reads as broken. Both cases fall back to the default option instead.
+	it('falls back to the default option for an override equal to the primary', async () => {
+		const plugin = createMockPlugin('gemini', { chat: 'gemini' });
+		await renderGeneralSettings({} as any, plugin, {} as any, createContext());
+
+		expect(dropdownFor('settings.general.useCaseChatName')?.value).toBe('');
 	});
 });
