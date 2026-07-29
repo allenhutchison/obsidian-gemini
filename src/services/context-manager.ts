@@ -17,7 +17,7 @@ import { executeWithRetry } from '../utils/retry';
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
 import { truncateOldToolResults } from '../agent/agent-loop-helpers';
 import { getLegacyEntryTextTruthy } from '../utils/history-normalize';
-import { findModelProvider, isInteractionsOnlyModel, resolveGenerateContentModel } from '../models';
+import { findModelProvider, resolveGenerateContentModel } from '../models';
 import { isProviderActive, resolveProviderOrDefault } from '../api/provider-routing';
 import { getCapabilities } from '../api/providers/registry';
 
@@ -480,7 +480,7 @@ export class ContextManager {
 
 		const aggressiveThreshold = await this.getAggressiveThreshold(modelName);
 		const isAggressive = postPhase1Tokens >= aggressiveThreshold;
-		const result = await this.compactHistory(truncatedHistory, modelName, isAggressive, protectFromIndex);
+		const result = await this.compactHistory(truncatedHistory, isAggressive, protectFromIndex);
 
 		if (!result) {
 			// Nothing old enough to summarize — the protected suffix (e.g. the
@@ -517,7 +517,6 @@ export class ContextManager {
 	 */
 	private async compactHistory(
 		conversationHistory: Content[],
-		modelName: string,
 		aggressive: boolean,
 		protectFromIndex?: number
 	): Promise<{ compactedHistory: Content[]; summaryText: string } | null> {
@@ -561,7 +560,7 @@ export class ContextManager {
 		);
 
 		// Generate summary of old turns
-		const summaryText = await this.summarizeConversation(oldTurns, modelName);
+		const summaryText = await this.summarizeConversation(oldTurns);
 
 		// Build compacted history: summary entry + recent turns
 		const summaryEntry = {
@@ -592,9 +591,16 @@ export class ContextManager {
 	}
 
 	/**
-	 * Generate a summary of conversation turns using Gemini.
+	 * Generate a summary of conversation turns.
+	 *
+	 * Always routed through `ModelClientFactory` with `ModelUseCase.SUMMARY`, so
+	 * the provider and model come from the *summary* routing — never from
+	 * whatever is serving chat. This used to short-circuit to a direct
+	 * `this.ai.models.generateContent` call whenever the chat model was a Gemini
+	 * one, which silently sent conversation content to Google even when the user
+	 * had deliberately routed `summary` to a local provider (#1266 review).
 	 */
-	private async summarizeConversation(turns: Content[], modelName: string): Promise<string> {
+	private async summarizeConversation(turns: Content[]): Promise<string> {
 		// Convert turns to readable text for summarization
 		const conversationText = turns
 			.map((turn) => {
@@ -630,56 +636,24 @@ export class ContextManager {
 		const fullPrompt = `${summaryPrompt}\n\n---\n\nConversation to summarize:\n\n${conversationText}`;
 
 		try {
-			// The direct call below drives the SDK with the chat model, so it is
-			// only valid when that model is a Gemini one and the SDK exists.
-			// Anything else routes through the factory, which picks the right
-			// client for the summary use case. An interactions-only model also
-			// goes through the factory (its summary client routes those via the
-			// Interactions API) since the direct generateContent call would 400.
-			if (this.providerForContextModel(modelName) !== 'gemini' || !this.ai || isInteractionsOnlyModel(modelName)) {
-				// Pass ModelUseCase.SUMMARY to the factory and let its
-				// resolveModelName populate the request — overriding `model`
-				// here would route compaction through the chat model on a
-				// provider whose client honours request.model over config.model
-				// instead of the user's configured summary model.
-				const summaryClient = ModelClientFactory.createFromPlugin(this.plugin, ModelUseCase.SUMMARY);
-				const response = await summaryClient.generateModelResponse({
-					kind: 'base',
-					prompt: fullPrompt,
-					temperature: 0.3,
-				});
-				const summary = response.markdown?.trim();
-				if (!summary) {
-					this.logger.warn('[ContextManager] Summary generation returned empty result');
-					return 'Previous conversation context could not be summarized. The conversation continues below.';
-				}
-				return summary;
-			}
-
-			const response = await executeWithRetry(
-				() =>
-					this.ai!.models.generateContent({
-						model: modelName,
-						contents: fullPrompt,
-						config: {
-							temperature: 0.3, // Low temperature for factual summarization
-							maxOutputTokens: 4096,
-						},
-					}),
-				undefined,
-				{ operationName: 'ContextManager.generateSummaryContent', logger: this.logger }
-			);
-
-			const summary = response.candidates?.[0]?.content?.parts
-				?.map((part) => ('text' in part && part.text ? part.text : ''))
-				.join('');
-
-			if (!summary?.trim()) {
+			// Pass ModelUseCase.SUMMARY and let the factory's resolveModelName
+			// populate the request — overriding `model` here would route
+			// compaction through the chat model on a provider whose client
+			// honours request.model over config.model, instead of the user's
+			// configured summary model. The factory also handles the
+			// interactions-only case, which a direct generateContent would 400 on.
+			const summaryClient = ModelClientFactory.createFromPlugin(this.plugin, ModelUseCase.SUMMARY);
+			const response = await summaryClient.generateModelResponse({
+				kind: 'base',
+				prompt: fullPrompt,
+				temperature: 0.3,
+			});
+			const summary = response.markdown?.trim();
+			if (!summary) {
 				this.logger.warn('[ContextManager] Summary generation returned empty result');
 				return 'Previous conversation context could not be summarized. The conversation continues below.';
 			}
-
-			return summary.trim();
+			return summary;
 		} catch (error) {
 			this.logger.error('[ContextManager] Failed to generate summary:', error);
 			return 'Previous conversation context could not be summarized due to an error. The conversation continues below.';
