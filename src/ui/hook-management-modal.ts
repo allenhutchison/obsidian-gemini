@@ -1,5 +1,5 @@
 import { Notice, Setting, setIcon } from 'obsidian';
-import type { Hook, HookAction, HookState, HookTrigger, HooksState } from '../services/hook-manager';
+import type { Hook, HookAction, HookCreateParams, HookState, HookTrigger, HooksState } from '../services/hook-manager';
 import type { FeatureToolPolicy } from '../types/tool-policy';
 import { DEFAULT_HEADLESS_MAX_ITERATIONS } from '../agent/agent-loop';
 import { ManagementModalBase } from './components/management-modal-base';
@@ -464,47 +464,34 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			return;
 		}
 
+		// Create and update send the identical field set; only `slug` differs
+		// (it is immutable after creation). Built once so a new form field can't
+		// be added to one branch and forgotten in the other.
+		const params: Omit<HookCreateParams, 'slug'> = {
+			trigger: this.form.trigger,
+			action,
+			prompt: this.form.prompt,
+			pathGlob: this.form.pathGlob || undefined,
+			debounceMs: this.form.debounceMs,
+			cooldownMs: this.form.cooldownMs,
+			maxRunsPerHour: this.form.maxRunsPerHour > 0 ? this.form.maxRunsPerHour : undefined,
+			toolPolicy: this.form.toolPolicy,
+			enabledSkills: this.form.enabledSkills,
+			model: this.form.model || undefined,
+			maxIterations,
+			outputPath: this.form.outputPath || undefined,
+			enabled: this.form.enabled,
+			desktopOnly: this.form.desktopOnly,
+			commandId: this.form.commandId || undefined,
+			focusFile: this.form.focusFile === true ? true : undefined,
+		};
+
 		try {
 			if (isEdit && this.editingSlug) {
-				await manager.updateHook(this.editingSlug, {
-					trigger: this.form.trigger,
-					action,
-					pathGlob: this.form.pathGlob || undefined,
-					debounceMs: this.form.debounceMs,
-					cooldownMs: this.form.cooldownMs,
-					maxRunsPerHour: this.form.maxRunsPerHour > 0 ? this.form.maxRunsPerHour : undefined,
-					toolPolicy: this.form.toolPolicy,
-					enabledSkills: this.form.enabledSkills,
-					model: this.form.model || undefined,
-					maxIterations,
-					outputPath: this.form.outputPath || undefined,
-					enabled: this.form.enabled,
-					desktopOnly: this.form.desktopOnly,
-					prompt: this.form.prompt,
-					commandId: this.form.commandId || undefined,
-					focusFile: this.form.focusFile === true ? true : undefined,
-				});
+				await manager.updateHook(this.editingSlug, params);
 				new Notice(t('hooks.hookUpdated', { slug: this.editingSlug }));
 			} else {
-				await manager.createHook({
-					slug: this.form.slug,
-					trigger: this.form.trigger,
-					action,
-					prompt: this.form.prompt,
-					pathGlob: this.form.pathGlob || undefined,
-					debounceMs: this.form.debounceMs,
-					cooldownMs: this.form.cooldownMs,
-					maxRunsPerHour: this.form.maxRunsPerHour > 0 ? this.form.maxRunsPerHour : undefined,
-					toolPolicy: this.form.toolPolicy,
-					enabledSkills: this.form.enabledSkills,
-					model: this.form.model || undefined,
-					maxIterations,
-					outputPath: this.form.outputPath || undefined,
-					enabled: this.form.enabled,
-					desktopOnly: this.form.desktopOnly,
-					commandId: this.form.commandId || undefined,
-					focusFile: this.form.focusFile === true ? true : undefined,
-				});
+				await manager.createHook({ slug: this.form.slug, ...params });
 				new Notice(t('hooks.hookCreated', { slug: this.form.slug }));
 			}
 			this.view = 'list';
