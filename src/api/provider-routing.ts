@@ -102,12 +102,19 @@ export function overriddenUseCases(settings: ProviderRoutingSlice | null | undef
 }
 
 /**
- * Coerce persisted data into a valid override map: drops unknown use cases and
- * unknown provider ids, and always returns a fresh object.
+ * Coerce persisted data into a valid override map: drops unknown use cases,
+ * unknown provider ids, and providers that can't serve the use case they're
+ * mapped to. Always returns a fresh object.
  *
  * Called on load because `Object.assign({}, DEFAULT_SETTINGS, data)` is shallow
  * — without a clone, an install with no persisted overrides would alias the
  * module-level default and leak every later edit into it.
+ *
+ * The capability check matters beyond tidiness: `resolveProvider` already
+ * treats an unsupported pairing as `null`, so keeping it would persist a
+ * setting that does nothing while the settings dropdown — which only offers
+ * `providersSupporting(useCase)` — has no matching option to select, leaving
+ * the row looking blank. Dropping it keeps stored state and UI in agreement.
  */
 export function sanitizeProviderOverrides(value: unknown): Partial<Record<ProviderUseCase, ModelProvider>> {
 	const result: Partial<Record<ProviderUseCase, ModelProvider>> = {};
@@ -115,7 +122,11 @@ export function sanitizeProviderOverrides(value: unknown): Partial<Record<Provid
 	const raw = value as Record<string, unknown>;
 	for (const useCase of PROVIDER_USE_CASES) {
 		const provider = raw[useCase];
-		if (typeof provider === 'string' && (PROVIDER_IDS as readonly string[]).includes(provider)) {
+		if (
+			typeof provider === 'string' &&
+			(PROVIDER_IDS as readonly string[]).includes(provider) &&
+			providerSupports(provider as ModelProvider, useCase)
+		) {
 			result[useCase] = provider as ModelProvider;
 		}
 	}

@@ -154,6 +154,20 @@ describe('sanitizeProviderOverrides', () => {
 		expect(sanitizeProviderOverrides({ chat: 'openai', bogus: 'gemini', rag: 'gemini' })).toEqual({ rag: 'gemini' });
 	});
 
+	// A pairing resolveProvider would treat as null must not survive in storage:
+	// the settings dropdown only offers providersSupporting(useCase), so a stored
+	// value with no matching option renders the row blank.
+	it('drops a provider that cannot serve the use case it is mapped to', () => {
+		expect(sanitizeProviderOverrides({ rag: 'ollama', imageGen: 'ollama', webSearch: 'ollama' })).toEqual({});
+	});
+
+	it('keeps supported pairings alongside dropped ones', () => {
+		expect(sanitizeProviderOverrides({ rag: 'ollama', summary: 'ollama', imageGen: 'gemini' })).toEqual({
+			summary: 'ollama',
+			imageGen: 'gemini',
+		});
+	});
+
 	it('coerces non-object input to an empty map', () => {
 		expect(sanitizeProviderOverrides(undefined)).toEqual({});
 		expect(sanitizeProviderOverrides(null)).toEqual({});
