@@ -1093,6 +1093,22 @@ describe('LifecycleService', () => {
 			expect(plugin.ragIndexing).toBeNull();
 		});
 
+		// The override is what enables RAG; the primary staying local is not a veto.
+		it('initializes RAG when rag is overridden to gemini under a local primary', async () => {
+			const plugin = createMockPlugin();
+			plugin.settings.provider = 'ollama';
+			plugin.settings.providerOverrides = { rag: 'gemini' };
+			plugin.settings.ragIndexing = { enabled: true };
+			plugin.ragIndexing = null;
+			plugin.toolRegistry = { unregisterTool: vi.fn(), registerTool: vi.fn() };
+
+			const service = new LifecycleService(plugin);
+			await service.initializeRagIndexing();
+
+			expect(RagIndexingServiceMock).toHaveBeenCalledTimes(1);
+			expect(plugin.ragIndexing).not.toBeNull();
+		});
+
 		it('early returns when provider is ollama and no existing ragIndexing', async () => {
 			const plugin = createMockPlugin();
 			plugin.settings.provider = 'ollama';
@@ -1255,6 +1271,22 @@ describe('LifecycleService', () => {
 
 			expect(ImageGeneration).not.toHaveBeenCalled();
 			expect(plugin.imageGeneration).toBeUndefined();
+		});
+
+		// #704: image generation follows its own use case, so it can be switched
+		// on under a local primary without moving anything else to the cloud.
+		it('should call ImageGeneration constructor when imageGen is overridden to gemini', async () => {
+			const { ImageGeneration } = await import('../../src/services/image-generation');
+			(ImageGeneration as unknown as Mock).mockClear();
+
+			const plugin = createMockPlugin();
+			plugin.settings.provider = 'ollama';
+			plugin.settings.providerOverrides = { imageGen: 'gemini' };
+			const service = new LifecycleService(plugin);
+			await service.setup();
+
+			expect(ImageGeneration).toHaveBeenCalledTimes(1);
+			expect(plugin.imageGeneration).toBeDefined();
 		});
 	});
 

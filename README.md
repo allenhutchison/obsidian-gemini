@@ -99,7 +99,7 @@ _A large feature release — a full visual refresh plus smarter, more responsive
 5. Manage sessions directly with command palette actions: "New agent session", "Browse agent sessions", "Link project to agent session", and "Agent session settings"
 6. Start using the AI agent to work with your vault!
 
-**Prefer running models locally?** Gemini Scribe also supports [Ollama](https://ollama.com) — install Ollama, pull a model with `ollama pull llama3.2`, and switch the **Provider** in settings to "Ollama (local)". A few Gemini-built-in features (Google Search, Google Maps, URL Context, Deep Research, image generation, RAG) are unavailable on Ollama; see [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) for details.
+**Prefer running models locally?** Gemini Scribe also supports [Ollama](https://ollama.com) — install Ollama, pull a model with `ollama pull llama3.2`, and switch the **Provider** in settings to "Ollama (local)". A few Gemini-built-in features (Google Search, Google Maps, URL Context, Deep Research, image generation, RAG) have no local equivalent — but you can point those individually at Gemini under **Per-feature provider** while chat stays local. Nothing is sent to the cloud unless you route it there. See [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) for details.
 
 ## Installation
 
@@ -125,7 +125,8 @@ _A large feature release — a full visual refresh plus smarter, more responsive
 2.  **Configure Plugin Settings:**
     - Open Obsidian Settings.
     - Go to "Gemini Scribe" under "Community plugins".
-    - **Provider:** Choose `Google Gemini (cloud)` (default) or `Ollama (local)`. The Ollama option exposes a base-URL field and refreshes the model list from `GET /api/tags`.
+    - **Provider:** Choose `Google Gemini (cloud)` (default) or `Ollama (local)`. This is the default for every feature; the Ollama option exposes a base-URL field and refreshes the model list from `GET /api/tags`.
+    - **Per-feature provider:** Route individual features (chat, summaries, completions, rewrite, web & search, vault search index, image generation) to a different provider. Each dropdown lists only the providers that support that feature. A feature your default provider can't serve stays off unless you explicitly assign it one — the plugin never falls back to the cloud on its own.
     - **API Key:** (Gemini only) Paste your Gemini API key here. Your key is stored securely using Obsidian's SecretStorage.
     - **Chat model:** Select the preferred Gemini model for chat interactions (default: `gemini-flash-latest`).
     - **Summary model:** Select the preferred Gemini model for generating summaries (default: `gemini-flash-latest`).
@@ -142,7 +143,7 @@ _A large feature release — a full visual refresh plus smarter, more responsive
     - **Advanced Settings:** (Click "Show advanced settings" to reveal)
       - **Temperature:** Control AI creativity and randomness (0-2.0, automatically adjusted based on available models).
       - **Top P:** Control response diversity and focus (0-1.0).
-      - **Model Discovery:** Gemini models are automatically fetched on startup (cached for 24h); click **Refresh model list** in General settings or run the "Gemini Scribe: Refresh model list" command to fetch a newly-published model immediately. Ollama users can click the same **Refresh model list** button after pulling new models.
+      - **Model Discovery:** Gemini models are automatically fetched on startup (cached for 24h); click **Refresh model list** in General settings or run the "Gemini Scribe: Refresh model list" command to fetch a newly-published model immediately. Ollama users get a separate **Refresh Ollama model list** button to re-query the daemon after pulling new models. Each model dropdown lists the models of the provider serving that feature.
       - **API configuration:** Configure retry behavior, backoff delays, and the Use Interactions API transport (Gemini provider only; on by default, with `generateContent` retained as a fallback).
       - **Tool Execution:** Control whether to stop agent execution on tool errors.
       - **Tool loop detection:** Prevent infinite tool execution loops.
@@ -347,7 +348,7 @@ The plugin UI follows **Obsidian's interface language** (Settings → About → 
 - **Parameter/Advanced Settings Issues:**
   - Check if your model supports the temperature range you're using
   - Reset temperature and Top P to defaults if getting unexpected responses
-  - Restart Obsidian to trigger a fresh model list fetch (for Gemini), or click **Refresh model list** (for Ollama)
+  - Restart Obsidian to trigger a fresh model list fetch (for Gemini), or click **Refresh Ollama model list** (for Ollama)
   - See the [Advanced Settings Guide](docs/reference/advanced-settings.md) for detailed configuration help
 - **Agent mode / Tool Issues:**
   - Verify your Gemini model supports function calling (all Gemini 2.0+ models do)

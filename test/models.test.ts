@@ -1,12 +1,15 @@
 import {
 	DEFAULT_GEMINI_MODELS,
 	GEMINI_MODELS,
+	findModelProvider,
 	getActiveChatModel,
 	getDefaultModelForRole,
+	getOllamaModelForRole,
 	GeminiModel,
 	getUpdatedModelSettings,
 	isInteractionsOnlyModel,
 	migrateOllamaModelSetting,
+	providerForModel,
 	resolveGenerateContentModel,
 	RETIRED_MODEL_SUCCESSORS,
 	setGeminiModels,
@@ -581,5 +584,127 @@ describe('resolveGenerateContentModel', () => {
 
 	it('resolves against the requested role', () => {
 		expect(resolveGenerateContentModel('gemini-omni-flash-preview', 'completions')).toBe('gemini-flash-lite-latest');
+	});
+});
+
+describe('findModelProvider / providerForModel', () => {
+	let originalModels: GeminiModel[];
+
+	beforeEach(() => {
+		originalModels = [...GEMINI_MODELS];
+		setTestModels([
+			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
+			{ value: 'llama3.2', label: 'Llama 3.2', provider: 'ollama' as const },
+		]);
+	});
+
+	afterEach(() => {
+		setTestModels(originalModels);
+	});
+
+	it('identifies each provider from the union model list', () => {
+		expect(findModelProvider('gemini-chat-default')).toBe('gemini');
+		expect(findModelProvider('llama3.2')).toBe('ollama');
+	});
+
+	// Ollama tags only enter the list once the daemon answers, so an unknown
+	// model is a real state — callers need to tell it apart from "it's Gemini".
+	it('returns null for a model that is in no known list', () => {
+		expect(findModelProvider('mistral-nemo')).toBeNull();
+		expect(findModelProvider('')).toBeNull();
+		expect(findModelProvider(undefined)).toBeNull();
+	});
+
+	it('falls back to the bundled list when the global list has been narrowed', () => {
+		const bundled = DEFAULT_GEMINI_MODELS[0].value;
+		setTestModels([{ value: 'llama3.2', label: 'Llama 3.2', provider: 'ollama' as const }]);
+		expect(findModelProvider(bundled)).toBe('gemini');
+	});
+
+	it('providerForModel defaults an unknown model to gemini', () => {
+		expect(providerForModel('mistral-nemo')).toBe('gemini');
+		expect(providerForModel('llama3.2')).toBe('ollama');
+	});
+});
+
+describe('getOllamaModelForRole', () => {
+	let originalModels: GeminiModel[];
+
+	beforeEach(() => {
+		originalModels = [...GEMINI_MODELS];
+		setTestModels([{ value: 'llama3.2', label: 'Llama 3.2', provider: 'ollama' as const, defaultForRoles: ['chat'] }]);
+	});
+
+	afterEach(() => {
+		setTestModels(originalModels);
+	});
+
+	// Empty per-use-case fields are the default: Ollama keeps one model resident,
+	// so summary/completions inherit the chat model rather than forcing a swap.
+	it('inherits ollamaModelName when the per-use-case field is empty', () => {
+		const settings = { ollamaModelName: 'ollama-chat', ollamaSummaryModelName: '', ollamaCompletionsModelName: '' };
+		expect(getOllamaModelForRole(settings, 'chat')).toBe('ollama-chat');
+		expect(getOllamaModelForRole(settings, 'summary')).toBe('ollama-chat');
+		expect(getOllamaModelForRole(settings, 'completions')).toBe('ollama-chat');
+	});
+
+	it('uses a per-use-case model when one is configured', () => {
+		const settings = {
+			ollamaModelName: 'ollama-chat',
+			ollamaSummaryModelName: 'ollama-summary',
+			ollamaCompletionsModelName: 'ollama-tiny',
+		};
+		expect(getOllamaModelForRole(settings, 'chat')).toBe('ollama-chat');
+		expect(getOllamaModelForRole(settings, 'summary')).toBe('ollama-summary');
+		expect(getOllamaModelForRole(settings, 'completions')).toBe('ollama-tiny');
+	});
+
+	// Rewrite has no field of its own and deliberately reuses the chat model.
+	it('resolves roles without a dedicated field to the chat model', () => {
+		expect(getOllamaModelForRole({ ollamaModelName: 'ollama-chat' }, 'rewrite')).toBe('ollama-chat');
+	});
+
+	it('falls back to the Ollama chat default when nothing is configured', () => {
+		expect(getOllamaModelForRole({}, 'summary')).toBe('llama3.2');
+	});
+});
+
+describe('getActiveChatModel under per-use-case routing', () => {
+	let originalModels: GeminiModel[];
+
+	beforeEach(() => {
+		originalModels = [...GEMINI_MODELS];
+		setTestModels([
+			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
+			{ value: 'gemini-flash-lite', label: 'Flash Lite' },
+			{ value: 'llama3.2', label: 'Llama 3.2', provider: 'ollama' as const, defaultForRoles: ['chat'] },
+		]);
+	});
+
+	afterEach(() => {
+		setTestModels(originalModels);
+	});
+
+	it('follows a chat override rather than the primary provider', () => {
+		expect(
+			getActiveChatModel({
+				provider: 'gemini',
+				providerOverrides: { chat: 'ollama' },
+				chatModelName: 'gemini-flash-lite',
+				ollamaModelName: 'llama3.2',
+			})
+		).toBe('llama3.2');
+	});
+
+	// Overriding an unrelated use case must not move chat.
+	it('ignores overrides for other use cases', () => {
+		expect(
+			getActiveChatModel({
+				provider: 'gemini',
+				providerOverrides: { summary: 'ollama' },
+				chatModelName: 'gemini-flash-lite',
+				ollamaModelName: 'llama3.2',
+			})
+		).toBe('gemini-flash-lite');
 	});
 });

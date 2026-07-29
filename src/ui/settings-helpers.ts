@@ -1,7 +1,7 @@
 import { Setting, Notice, debounce } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import type { ObsidianGeminiSettings } from '../types/settings';
-import { GEMINI_MODELS } from '../models';
+import { GEMINI_MODELS, type ModelProvider } from '../models';
 import { getErrorMessage } from '../utils/error-utils';
 import { t } from '../i18n';
 
@@ -218,7 +218,20 @@ export async function selectModelSetting(
 	>,
 	label: string,
 	description: string,
-	role: 'text' | 'image' = 'text'
+	role: 'text' | 'image' = 'text',
+	/**
+	 * The provider whose models this dropdown offers. Since #704 each use case
+	 * can be served by a different provider, so a picker must list the models of
+	 * *its own* use case's provider — otherwise a chat-on-Ollama install would be
+	 * offered Gemini models for chat. Defaults to the chat provider.
+	 */
+	provider?: ModelProvider,
+	/**
+	 * Label for an extra option that stores the empty string, used by the
+	 * optional per-use-case Ollama models where empty means "inherit the chat
+	 * model". Omitted for pickers where a real value is always required.
+	 */
+	inheritOptionLabel?: string
 ) {
 	let availableModels: import('../models').GeminiModel[];
 
@@ -227,14 +240,16 @@ export async function selectModelSetting(
 		if (role === 'image') {
 			availableModels = await manager.getImageGenerationModels();
 		} else {
-			availableModels = await manager.getAvailableModels();
+			availableModels = await manager.getAvailableModels({}, provider);
 		}
 	} else {
-		// Fallback: role-aware filter on the bundled GEMINI_MODELS
+		// Fallback: role-aware filter on the bundled GEMINI_MODELS, narrowed to
+		// the requested provider so a mixed configuration never crosses lists.
+		const forProvider = provider ? GEMINI_MODELS.filter((m) => (m.provider ?? 'gemini') === provider) : GEMINI_MODELS;
 		availableModels =
 			role === 'image'
-				? GEMINI_MODELS.filter((m) => m.supportsImageGeneration)
-				: GEMINI_MODELS.filter((m) => !m.supportsImageGeneration);
+				? forProvider.filter((m) => m.supportsImageGeneration)
+				: forProvider.filter((m) => !m.supportsImageGeneration);
 	}
 
 	plugin.logger.debug(
@@ -246,6 +261,12 @@ export async function selectModelSetting(
 		.setName(label)
 		.setDesc(description)
 		.addDropdown((dropdown) => {
+			// The "inherit" option stores '' and must come first so it reads as
+			// the default rather than an afterthought.
+			if (inheritOptionLabel !== undefined) {
+				dropdown.addOption('', inheritOptionLabel);
+			}
+
 			// Add all models from the available list
 			availableModels.forEach((model) => {
 				dropdown.addOption(model.value, model.label);
@@ -253,6 +274,17 @@ export async function selectModelSetting(
 
 			// Get current setting value
 			const currentValue = String(plugin.settings[settingName]);
+
+			// Empty is a real, selectable value when the picker offers "inherit";
+			// leave it alone instead of auto-correcting it to a concrete model.
+			if (inheritOptionLabel !== undefined && currentValue === '') {
+				dropdown.setValue('');
+				dropdown.onChange(async (value) => {
+					plugin.settings[settingName] = value;
+					await plugin.saveSettings();
+				});
+				return dropdown;
+			}
 
 			// Check if current value exists in available models
 			const valueExists = availableModels.some((m) => m.value === currentValue);

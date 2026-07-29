@@ -34,6 +34,7 @@ import { BackgroundTaskManager } from './background-task-manager';
 import { BackgroundStatusBar } from './background-status-bar';
 import { ScheduledTaskManager } from './scheduled-task-manager';
 import { HookManager } from './hook-manager';
+import { resolveProvider } from '../api/provider-routing';
 
 import agentsMemoryTemplateContent from '../../prompts/agentsMemoryTemplate.hbs';
 
@@ -272,8 +273,10 @@ export class LifecycleService {
 	async initializeRagIndexing(): Promise<void> {
 		const plugin = this.plugin;
 
-		// RAG uses Gemini's File Search Store cloud API — not available on Ollama in Phase 1.
-		if (plugin.settings.provider === 'ollama') {
+		// RAG needs a provider with a cloud file-search store. Only Gemini has one,
+		// so a local-only configuration leaves it off unless the user explicitly
+		// routes `rag` to Gemini (#704).
+		if (resolveProvider(plugin.settings, 'rag') === null) {
 			await this.disposeRagIndexing();
 			return;
 		}
@@ -510,12 +513,12 @@ export class LifecycleService {
 		// Deep research
 		plugin.deepResearch = new DeepResearchService(plugin);
 
-		// Image generation service is Gemini-only — Ollama has no image-gen API.
-		// The command-palette entry is registered unconditionally in main.ts so
-		// it shows a clear "not available" notice on the Ollama path instead of
-		// silently disappearing or pointing at an orphaned closure after a
-		// runtime provider switch.
-		if (plugin.settings.provider !== 'ollama') {
+		// Image generation needs a provider that offers it (Gemini today). The
+		// command-palette entry is registered unconditionally in main.ts so it
+		// shows a clear "not available" notice when nothing is routed here,
+		// instead of silently disappearing or pointing at an orphaned closure
+		// after a runtime routing change.
+		if (resolveProvider(plugin.settings, 'imageGen') !== null) {
 			plugin.imageGeneration = new ImageGeneration(plugin);
 		}
 

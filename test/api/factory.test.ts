@@ -366,4 +366,72 @@ describe('ModelClientFactory', () => {
 			expect(config.model).toBe('search-model');
 		});
 	});
+	// Per-use-case provider selection (#704): one session can span providers.
+	describe('per-use-case provider overrides', () => {
+		it('builds an Ollama client for an overridden use case and Gemini for the rest', () => {
+			const plugin = createMockPlugin({
+				provider: 'gemini',
+				providerOverrides: { summary: 'ollama' },
+				chatModelName: 'gemini-chat',
+				ollamaModelName: 'ollama-local',
+			});
+
+			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SUMMARY);
+			expect(MockOllamaClient).toHaveBeenCalledTimes(1);
+			expect(MockOllamaClient.mock.calls[0][0].model).toBe('ollama-local');
+
+			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
+			expect(MockGeminiClient).toHaveBeenCalledTimes(1);
+			expect(MockGeminiClient.mock.calls[0][0].model).toBe('gemini-chat');
+		});
+
+		it('builds a Gemini client for a use case overridden away from a local primary', () => {
+			const plugin = createMockPlugin({
+				provider: 'ollama',
+				providerOverrides: { summary: 'gemini' },
+				summaryModelName: 'gemini-summary',
+				ollamaModelName: 'ollama-local',
+			});
+
+			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SUMMARY);
+			expect(MockGeminiClient).toHaveBeenCalledTimes(1);
+			expect(MockGeminiClient.mock.calls[0][0].model).toBe('gemini-summary');
+			expect(MockOllamaClient).not.toHaveBeenCalled();
+		});
+
+		// ModelUseCase.SEARCH is a thinking-level tier on the chat path, not the
+		// `webSearch` capability — it must follow chat's provider, and never be
+		// gated off just because the primary can't serve web search.
+		it('routes the SEARCH use case with chat, not with the webSearch capability', () => {
+			const plugin = createMockPlugin({ provider: 'ollama', ollamaModelName: 'ollama-local' });
+
+			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SEARCH);
+
+			expect(MockOllamaClient).toHaveBeenCalledTimes(1);
+			expect(MockGeminiClient).not.toHaveBeenCalled();
+			expect(MockOllamaClient.mock.calls[0][0].model).toBe('ollama-local');
+		});
+
+		it('inherits the Ollama chat model unless a per-use-case model is set', () => {
+			const plugin = createMockPlugin({
+				provider: 'ollama',
+				ollamaModelName: 'ollama-chat',
+				ollamaCompletionsModelName: '',
+			});
+
+			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.COMPLETIONS);
+			expect(MockOllamaClient.mock.calls[0][0].model).toBe('ollama-chat');
+		});
+
+		it('uses a per-use-case Ollama model when one is configured', () => {
+			const plugin = createMockPlugin({
+				provider: 'ollama',
+				ollamaModelName: 'ollama-chat',
+				ollamaCompletionsModelName: 'ollama-tiny',
+			});
+
+			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.COMPLETIONS);
+			expect(MockOllamaClient.mock.calls[0][0].model).toBe('ollama-tiny');
+		});
+	});
 });

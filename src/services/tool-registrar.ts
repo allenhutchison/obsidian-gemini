@@ -3,12 +3,17 @@ import { Tool } from '../tools/types';
 import { Logger } from '../utils/logger';
 import { getVaultTools } from '../tools/vault';
 import type { ObsidianGemini } from '../types/plugin';
-import type { ModelProvider } from '../models';
+import { resolveProvider } from '../api/provider-routing';
+import type { ProviderUseCase } from '../api/providers/registry';
 
 interface ToolSource {
 	name: string;
-	/** Providers this tool source supports. Defaults to all providers if omitted. */
-	providers?: ModelProvider[];
+	/**
+	 * The use case this source's tools belong to. When set, the source is only
+	 * registered if some provider is routed to that use case. Omitted means the
+	 * tools are provider-independent (vault, memory, skills) and always register.
+	 */
+	useCase?: ProviderUseCase;
 	getTools: () => Tool[] | Promise<Tool[]>;
 }
 
@@ -17,8 +22,11 @@ interface ToolSource {
  * registration/unregistration. Eliminates duplication between
  * setupGeminiScribe() and teardownGeminiScribe().
  *
- * Provider-coupled sources (web tools backed by Gemini search/URL-context,
- * image generation) are skipped when the active provider is Ollama.
+ * Capability-coupled sources (web tools backed by Gemini search/URL-context,
+ * image generation) register only when their use case resolves to a provider
+ * that supports it. Since #704 that is a per-use-case question: an
+ * Ollama-primary install that routes `search` to Gemini gets the web tools,
+ * while one that doesn't stays fully local.
  *
  * RAG tools are excluded — they have independent lifecycle
  * (toggled without full re-init).
@@ -32,13 +40,13 @@ export class ToolRegistrar {
 		},
 		{
 			name: 'web',
-			providers: ['gemini'],
+			useCase: 'webSearch',
 			getTools: () => import('../tools/web-tools').then((m) => m.getWebTools()),
 		},
 		{ name: 'memory', getTools: () => import('../tools/memory-tool').then((m) => m.getMemoryTools()) },
 		{
 			name: 'image',
-			providers: ['gemini'],
+			useCase: 'imageGen',
 			getTools: () => import('../tools/image-tools').then((m) => m.getImageTools()),
 		},
 		{ name: 'skill', getTools: () => import('../tools/skill-tools').then((m) => m.getSkillTools()) },
@@ -49,8 +57,7 @@ export class ToolRegistrar {
 	];
 
 	private static activeSources(plugin: ObsidianGemini): ToolSource[] {
-		const provider = plugin.settings.provider ?? 'gemini';
-		return ToolRegistrar.CORE_SOURCES.filter((s) => !s.providers || s.providers.includes(provider));
+		return ToolRegistrar.CORE_SOURCES.filter((s) => !s.useCase || resolveProvider(plugin.settings, s.useCase) !== null);
 	}
 
 	async registerAll(registry: ToolRegistry, logger: Logger, plugin: ObsidianGemini): Promise<void> {
@@ -67,8 +74,8 @@ export class ToolRegistrar {
 	}
 
 	async unregisterAll(registry: ToolRegistry, logger: Logger): Promise<void> {
-		// Unregister every known source, regardless of provider, so a provider
-		// switch cleanly removes the tools that were registered under the old one.
+		// Unregister every known source, regardless of routing, so a provider
+		// change cleanly removes the tools that were registered under the old one.
 		for (const source of ToolRegistrar.CORE_SOURCES) {
 			try {
 				const tools = await source.getTools();

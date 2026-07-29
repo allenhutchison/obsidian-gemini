@@ -148,8 +148,12 @@ export const en = {
 	},
 	'settings.general.refreshModelListName': {
 		message: 'Refresh model list',
+		context: 'Settings field name for the button that re-fetches the available Gemini models.',
+	},
+	'settings.general.refreshOllamaModelListName': {
+		message: 'Refresh Ollama model list',
 		context:
-			'Settings field name for the button that re-fetches available models. Used for both Gemini and Ollama providers.',
+			'Settings field name for the button that re-fetches available models from the local Ollama daemon. Distinct from the Gemini refresh row, since both can now appear at once. "Ollama" is a product name.',
 	},
 	'settings.general.refreshModelListOllamaDesc': {
 		message: 'Re-query the Ollama daemon for available models.',
@@ -178,13 +182,130 @@ export const en = {
 	},
 	'settings.general.localOnlyNoticeName': {
 		message: 'Local-only feature notice',
-		context: 'Settings field name of an informational row shown when the local Ollama provider is selected.',
+		context:
+			'Settings field name of an informational row shown when every feature runs on a local provider and nothing is sent to the cloud.',
 	},
 	'settings.general.localOnlyNoticeDesc': {
 		message:
-			'Google Search, URL Context (web fetch), Deep Research, image generation, and RAG indexing are unavailable when using Ollama. They rely on Gemini built-in services.',
+			'Everything runs on your machine. Google Search, URL Context (web fetch), Deep Research, image generation, and the vault search index rely on Gemini cloud services and are turned off. To enable one, give it a provider under "Per-feature provider" — that feature\'s data will then be sent to the cloud.',
 		context:
-			'Informational description listing cloud-only features unavailable with the local Ollama provider. Feature names are plugin features.',
+			'Informational description shown when all features run locally. Lists the cloud-only features that are switched off and how to enable one. "Per-feature provider" is the title of a settings section — translate it the same way there. Feature names are plugin features.',
+	},
+	'settings.general.perFeatureProviderTitle': {
+		message: 'Per-feature provider',
+		context:
+			'Title of the settings subsection where each feature (chat, summaries, image generation, …) can be assigned its own provider.',
+	},
+	'settings.general.perFeatureProviderDesc': {
+		message:
+			'Choose a different provider for individual features. Anything left as the default uses the provider selected above.',
+		context: 'Description of the per-feature provider settings subsection.',
+	},
+	'settings.general.useProviderDefault': {
+		message: 'Default — {provider}',
+		context:
+			'Dropdown option meaning "inherit the primary provider". {provider} is the primary provider name, which itself contains parentheses (e.g. "Google Gemini (cloud)"), so avoid wrapping it in more.',
+	},
+	'settings.general.useCaseUnavailableOption': {
+		message: 'Not available',
+		context:
+			'Dropdown option shown for a feature that no configured provider supports; the dropdown is disabled in this state.',
+	},
+	'settings.general.useCaseChatName': {
+		message: 'Chat and agent',
+		context: 'Row label for the provider that serves interactive chat and agent sessions.',
+	},
+	'settings.general.useCaseChatDesc': {
+		message: 'Interactive chat, agent sessions, scheduled tasks, and hooks.',
+		context: 'Description of what the chat provider covers.',
+	},
+	'settings.general.useCaseSummaryName': {
+		message: 'Summaries',
+		context: 'Row label for the provider that serves document summarization.',
+	},
+	'settings.general.useCaseSummaryDesc': {
+		message: 'The "Summarize active file" command and conversation compaction.',
+		context:
+			'Description of what the summary provider covers. "Summarize active file" is a command name in the plugin.',
+	},
+	'settings.general.useCaseCompletionsName': {
+		message: 'Completions',
+		context: 'Row label for the provider that serves inline text completions while typing.',
+	},
+	'settings.general.useCaseCompletionsDesc': {
+		message: 'IDE-style inline suggestions while you type.',
+		context: 'Description of what the completions provider covers.',
+	},
+	'settings.general.useCaseRewriteName': {
+		message: 'Rewrite',
+		context: 'Row label for the provider that serves text rewriting.',
+	},
+	'settings.general.useCaseRewriteDesc': {
+		message: 'Rewriting selected text. Uses the chat model.',
+		context: 'Description of what the rewrite provider covers.',
+	},
+	'settings.general.useCaseWebSearchName': {
+		message: 'Web and search',
+		context: 'Row label for the provider that serves web search and page fetching tools.',
+	},
+	'settings.general.useCaseWebSearchDesc': {
+		message: 'Google Search, Google Maps, URL Context (web fetch), and Deep Research tools.',
+		context: 'Description of what the search provider covers. The listed names are Google product features.',
+	},
+	'settings.general.useCaseRagName': {
+		message: 'Vault search index',
+		context: 'Row label for the provider that serves semantic search over the vault (RAG).',
+	},
+	'settings.general.useCaseRagDesc': {
+		message: 'Semantic search across your vault. Uploads note content to a cloud search index.',
+		context: 'Description of what the RAG provider covers, including that it uploads content.',
+	},
+	'settings.general.useCaseImageGenName': {
+		message: 'Image generation',
+		context: 'Row label for the provider that generates images.',
+	},
+	'settings.general.useCaseImageGenDesc': {
+		message: 'Generating images from a text prompt.',
+		context: 'Description of what the image generation provider covers.',
+	},
+	'settings.general.missingKeyNoticeName': {
+		message: 'API key required',
+		context:
+			'Settings field name of a warning shown when a feature is routed to a provider that needs an API key, but none is configured.',
+	},
+	'settings.general.missingKeyNoticeDesc': {
+		message:
+			'Some features are set to use {providers}, which needs an API key. Enter one above, or those features will fail when you use them.',
+		context:
+			'Warning that a configured provider is missing its API key. {providers} is a comma-separated list of provider names.',
+	},
+	'settings.general.mixedProviderNoticeName': {
+		message: 'Some features use a different provider',
+		context:
+			'Settings field name of a notice shown when one or more features are routed away from the primary provider.',
+	},
+	'settings.general.mixedProviderNoticeDesc': {
+		message:
+			'These features do not use your default provider: {features}. Their requests — including any note content they send — go to the provider you chose for them.',
+		context:
+			'Description warning that overridden features send data elsewhere. {features} is a comma-separated list of feature names from the rows above.',
+	},
+	'settings.general.inheritOllamaChatModel': {
+		message: 'Same as chat model',
+		context:
+			'Dropdown option meaning this Ollama feature reuses the chat model instead of loading a second one. This is the default.',
+	},
+	'settings.general.ollamaSummaryModelDesc': {
+		message:
+			'Model used for summaries. Leave as "Same as chat model" unless you need a different one — Ollama keeps one model loaded at a time, so a second model is reloaded on every switch.',
+		context:
+			'Settings field description for the Ollama summary model dropdown, explaining the performance cost of choosing a distinct model. "Same as chat model" is the default dropdown option — translate it the same way.',
+	},
+	'settings.general.ollamaCompletionsModelDesc': {
+		message:
+			'Model used for inline completions. Leave as "Same as chat model" unless you need a different one — Ollama keeps one model loaded at a time, so a second model is reloaded on every switch. A small model here can be worth the trade-off.',
+		context:
+			'Settings field description for the Ollama completions model dropdown, explaining the performance trade-off. "Same as chat model" is the default dropdown option — translate it the same way.',
 	},
 	'settings.general.apiKeyName': {
 		message: 'API key',
@@ -226,9 +347,9 @@ export const en = {
 		context: 'Settings field name for the single model Ollama uses for every use case.',
 	},
 	'settings.general.ollamaModelDesc': {
-		message: 'Model used for all Ollama use cases: chat, summarization, completions, and rewriting.',
+		message: 'Model used for chat and rewriting, and for any other Ollama feature left set to "Same as chat model".',
 		context:
-			'Settings field description for the single Ollama model dropdown shown when the Ollama provider is selected.',
+			'Settings field description for the main Ollama model dropdown. "Same as chat model" is a dropdown option elsewhere in these settings — translate it the same way.',
 	},
 	'settings.general.imageModelName': {
 		message: 'Image model',
@@ -272,8 +393,9 @@ export const en = {
 		context: 'Notice when a model list refresh was skipped because the device is offline.',
 	},
 	'settings.general.refreshSkippedNotGemini': {
-		message: 'Skipped: provider is not Gemini',
-		context: 'Notice when a model list refresh was skipped because the selected provider is not Gemini.',
+		message: 'Skipped: no feature is set to use Gemini',
+		context:
+			'Notice when a Gemini model list refresh was skipped because no feature is routed to the Gemini provider, so the list would go unused.',
 	},
 	'settings.general.refreshModelListFailed': {
 		message: 'Failed to refresh model list: {error}',
@@ -2876,18 +2998,21 @@ export const en = {
 		message: 'Please select some text first',
 		context: 'Notice when the user invokes a selection-based AI action without any text selected in the editor.',
 	},
-	'notice.main.imageGenOllama': {
-		message: 'Image generation is not available with the Ollama provider.',
+	'notice.main.imageGenUnavailableProvider': {
+		message:
+			'No provider is set up for image generation. Choose one under Settings → Gemini Scribe → Per-feature provider.',
 		context:
-			'Notice when the Generate Image command is used while the local Ollama provider is active (feature is Gemini-only).',
+			'Notice when the Generate Image command is used but the provider serving image generation does not support it (e.g. a local-only setup). Keep the settings path recognizable to users of the translated UI.',
 	},
 	'notice.main.imageGenUnavailable': {
 		message: 'Image generation is not available.',
 		context: 'Notice when the image generation service is not initialized.',
 	},
-	'notice.main.ragOllamaUnavailable': {
-		message: 'RAG sync is not available with the Ollama provider in phase 1.',
-		context: 'Notice when a RAG (vault search index) command is used while the Ollama provider is active.',
+	'notice.main.ragUnavailableProvider': {
+		message:
+			'No provider is set up for the vault search index. Choose one under Settings → Gemini Scribe → Per-feature provider.',
+		context:
+			'Notice when a RAG (vault search index) command is used but the provider serving RAG does not support it (e.g. a local-only setup). Keep the settings path recognizable to users of the translated UI.',
 	},
 	'notice.main.ragNotEnabled': {
 		message: 'RAG indexing is not enabled',

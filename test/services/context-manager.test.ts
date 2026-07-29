@@ -4,6 +4,7 @@ import {
 	CompactionResult,
 	TokenUsageInfo,
 } from '../../src/services/context-manager';
+import { ModelClientFactory, ModelUseCase } from '../../src/api';
 
 // Mock @google/genai
 const mockCountTokens = vi.fn();
@@ -281,7 +282,63 @@ describe('ContextManager', () => {
 			expect(result).toBeGreaterThan(0);
 			expect(Number.isInteger(result)).toBe(true);
 			expect(mockCountTokens).not.toHaveBeenCalled();
-			expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('countTokens (Ollama estimate)'));
+			expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('countTokens (estimate)'));
+		});
+
+		// #704: a session can span providers, so the counting strategy follows the
+		// *model*, not a global setting.
+		test('mixed routing: counts a Gemini model natively even when chat runs on Ollama', async () => {
+			const { setGeminiModels, GEMINI_MODELS } = await import('../../src/models');
+			const original = [...GEMINI_MODELS];
+			setGeminiModels([
+				{ value: 'gemini-2.5-flash', label: 'Flash' },
+				{ value: 'llama3.2', label: 'Llama', provider: 'ollama' as const },
+			]);
+
+			try {
+				const mixedPlugin = {
+					...mockPlugin,
+					settings: { ...mockPlugin.settings, provider: 'ollama', providerOverrides: { summary: 'gemini' } },
+				};
+				const ctx = new ContextManager(mixedPlugin, mockLogger);
+				const contents = [{ role: 'user', parts: [{ text: 'hello world' }] }];
+
+				// The Gemini-served model goes through the SDK...
+				await ctx.countTokens('gemini-2.5-flash', contents);
+				expect(mockCountTokens).toHaveBeenCalled();
+
+				// ...while the Ollama-served one is still estimated locally.
+				mockCountTokens.mockClear();
+				await ctx.countTokens('llama3.2', contents);
+				expect(mockCountTokens).not.toHaveBeenCalled();
+			} finally {
+				setGeminiModels(original);
+			}
+		});
+
+		// Ollama tags only reach the model list once the daemon answers. Treating an
+		// unrecognized model as Gemini would mean a doomed countTokens call and a
+		// 1M-token context limit on a model that may only hold 8k.
+		test('falls back to the chat provider for a model missing from the list', async () => {
+			const { setGeminiModels, GEMINI_MODELS } = await import('../../src/models');
+			const original = [...GEMINI_MODELS];
+			// Daemon was down: no Ollama entries were ever registered.
+			setGeminiModels([{ value: 'gemini-2.5-flash', label: 'Flash' }]);
+
+			try {
+				const ollamaPlugin = {
+					...mockPlugin,
+					apiKey: 'test-api-key',
+					settings: { ...mockPlugin.settings, provider: 'ollama' },
+				};
+				const ctx = new ContextManager(ollamaPlugin, mockLogger);
+
+				await ctx.countTokens('mistral-nemo', [{ role: 'user', parts: [{ text: 'hello world' }] }]);
+
+				expect(mockCountTokens).not.toHaveBeenCalled();
+			} finally {
+				setGeminiModels(original);
+			}
 		});
 
 		test('Ollama provider: calibrates the chars-per-token ratio from real usage metadata', async () => {
@@ -575,6 +632,72 @@ describe('ContextManager', () => {
 			expect(result.summaryText).toBeTruthy();
 			// Phase 2 ran (countTokens fired post-summarization to size the result).
 			expect(mockCountTokens).toHaveBeenCalled();
+		});
+
+		// Compaction must follow the *summary* routing, never the chat model's
+		// provider. The original code short-circuited to a direct
+		// `this.ai.models.generateContent` call whenever the chat model was a
+		// Gemini one — so with chat on Gemini and summary deliberately routed to a
+		// local provider, conversation content was still sent to Google (#1266
+		// review). Under that code the factory was never reached, so asserting it
+		// *is* reached with ModelUseCase.SUMMARY is a real regression guard.
+		test('routes compaction through the summary provider, not the chat model', async () => {
+			const factorySpy = vi.spyOn(ModelClientFactory, 'createFromPlugin').mockReturnValue({
+				generateModelResponse: vi.fn().mockResolvedValue({ markdown: 'local summary' }),
+			});
+
+			try {
+				const mixedPlugin = {
+					...mockPlugin,
+					settings: { ...mockPlugin.settings, provider: 'gemini', providerOverrides: { summary: 'ollama' } },
+				};
+				const ctx = new ContextManager(mixedPlugin, mockLogger);
+				ctx.updateUsageMetadata({ promptTokenCount: 250_000, totalTokenCount: 300_000 });
+				mockCountTokens.mockResolvedValue({ totalTokens: 50_000 });
+				mockGenerateContent.mockClear();
+
+				const history = Array.from({ length: 20 }, (_, i) => ({
+					role: i % 2 === 0 ? 'user' : 'model',
+					parts: [{ text: `Message ${i}` }],
+				}));
+
+				const result = await ctx.prepareHistory(history, 'gemini-2.5-flash');
+
+				expect(result.wasCompacted).toBe(true);
+				expect(result.summaryText).toBe('local summary');
+				expect(factorySpy).toHaveBeenCalledWith(mixedPlugin, ModelUseCase.SUMMARY);
+				// The Gemini SDK must not have been asked to summarize.
+				expect(mockGenerateContent).not.toHaveBeenCalled();
+			} finally {
+				factorySpy.mockRestore();
+			}
+		});
+
+		// The direct-SDK shortcut is gone for every configuration, not just the
+		// overridden one, so summaryModelName governs compaction as documented.
+		test('routes compaction through the factory on an all-Gemini setup too', async () => {
+			const factorySpy = vi.spyOn(ModelClientFactory, 'createFromPlugin').mockReturnValue({
+				generateModelResponse: vi.fn().mockResolvedValue({ markdown: 'cloud summary' }),
+			});
+
+			try {
+				contextManager.updateUsageMetadata({ promptTokenCount: 250_000, totalTokenCount: 300_000 });
+				mockCountTokens.mockResolvedValue({ totalTokens: 50_000 });
+				mockGenerateContent.mockClear();
+
+				const history = Array.from({ length: 20 }, (_, i) => ({
+					role: i % 2 === 0 ? 'user' : 'model',
+					parts: [{ text: `Message ${i}` }],
+				}));
+
+				const result = await contextManager.prepareHistory(history, 'gemini-2.5-flash');
+
+				expect(result.summaryText).toBe('cloud summary');
+				expect(factorySpy).toHaveBeenCalledWith(mockPlugin, ModelUseCase.SUMMARY);
+				expect(mockGenerateContent).not.toHaveBeenCalled();
+			} finally {
+				factorySpy.mockRestore();
+			}
 		});
 
 		test('handles empty Gemini summary result with fallback message', async () => {

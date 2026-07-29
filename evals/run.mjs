@@ -308,13 +308,28 @@ function getGitSha() {
 	}
 }
 
+/**
+ * The provider serving *chat*, which is what eval tasks exercise. Since #704
+ * that may differ from `settings.provider` — an install can route chat to one
+ * provider and summaries or search to another — so resolve the override the
+ * same way the plugin does. Cost and cache metrics below key off this value.
+ */
+const CHAT_PROVIDER_EXPR =
+	"(app.plugins.plugins['gemini-scribe'].settings.providerOverrides || {}).chat || " +
+	"app.plugins.plugins['gemini-scribe'].settings.provider || 'gemini'";
+
 async function getModelName() {
-	const result = await obsidianEval("app.plugins.plugins['gemini-scribe'].settings.chatModelName || 'unknown'");
+	// The chat model lives in a different settings field per provider, so read
+	// the one that matches whichever provider actually serves chat.
+	const result = await obsidianEval(
+		`(function () { const s = app.plugins.plugins['gemini-scribe'].settings; ` +
+			`return (${CHAT_PROVIDER_EXPR}) === 'ollama' ? (s.ollamaModelName || 'unknown') : (s.chatModelName || 'unknown'); })()`
+	);
 	return result.replace(/^["']|["']$/g, '');
 }
 
 async function getProvider() {
-	const result = await obsidianEval("app.plugins.plugins['gemini-scribe'].settings.provider || 'gemini'");
+	const result = await obsidianEval(CHAT_PROVIDER_EXPR);
 	return result.replace(/^["']|["']$/g, '');
 }
 
