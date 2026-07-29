@@ -81,12 +81,24 @@ body {
 	/* Accent */
 	--gs-accent: var(--interactive-accent);
 	--gs-accent-hover: var(--interactive-accent-hover);
-	--gs-on-accent: var(--text-on-accent);
+	/* The literal fallbacks below are the ones that used to be repeated at each
+	 * call site. They belong here, not there: a custom theme that never defines
+	 * --text-on-accent / --color-green / --color-red makes the alias
+	 * guaranteed-invalid, and var() then treats the token as undefined — so a
+	 * fallback on the token definition still fires, while one on a consumer's
+	 * var(--gs-error, …) is the only thing that ever kept those sites styled. */
+	--gs-on-accent: var(--text-on-accent, #ffffff);
 
 	/* Semantic status — separate from the accent hue */
-	--gs-success: var(--color-green);
+	--gs-success: var(--color-green, #10b981);
 	--gs-warning: var(--color-orange);
-	--gs-error: var(--color-red);
+	--gs-error: var(--color-red, #dc3545);
+	/* Text drawn on a --gs-error surface. Deliberately NOT --gs-on-accent:
+	 * that aliases --text-on-accent, which the theme computes for the accent
+	 * hue, so a light accent yields dark text — unreadable on red. --gs-error
+	 * is always a red, so a near-white literal is correct here, and the token
+	 * layer is where literals belong. */
+	--gs-on-error: #fff;
 	--gs-info: var(--color-blue);
 }
 
@@ -1533,7 +1545,7 @@ body.theme-dark {
 }
 
 .gemini-agent-stop-btn svg {
-	fill: var(--gs-error, #dc3545);
+	fill: var(--gs-error);
 }
 
 .gemini-agent-send-btn:disabled {
@@ -1559,20 +1571,22 @@ body.theme-dark {
 }
 
 .gemini-agent-plan-decision-approve {
-	color: var(--gs-success, #10b981);
+	color: var(--gs-success);
 }
 
-/* Stop button styling - red/warning color scheme
- * Uses Obsidian's --color-red variable which adapts to light/dark themes
- * Fallback colors provided for custom themes that may not define these variables
+/* Stop button styling - red/warning color scheme.
+ * --gs-error tracks Obsidian's --color-red, which adapts to light/dark themes;
+ * --gs-on-error keeps the label readable on it regardless of the theme accent.
+ * Both tokens are defined unconditionally in the body block at the top of this
+ * file, so no per-consumer fallback is needed.
  */
 .gemini-agent-stop-btn {
-	background-color: var(--gs-error, #dc3545);
-	color: var(--gs-on-accent, #ffffff);
+	background-color: var(--gs-error);
+	color: var(--gs-on-error);
 }
 
 .gemini-agent-stop-btn:hover:not(:disabled) {
-	background-color: color-mix(in srgb, var(--gs-error, #dc3545) 85%, black);
+	background-color: color-mix(in srgb, var(--gs-error) 85%, #000);
 }
 
 /* Session Modal Styles */
@@ -5097,7 +5111,7 @@ body.theme-dark {
 .gemini-scheduler-modal .gemini-scheduler-action--delete {
 	background: var(--gs-error);
 	border-color: var(--gs-error);
-	color: #fff;
+	color: var(--gs-on-error);
 	font-weight: 600;
 }
 
@@ -5124,7 +5138,7 @@ body.theme-dark {
 	cursor: pointer;
 	border: 1px solid var(--gs-error);
 	background: var(--gs-error);
-	color: #fff;
+	color: var(--gs-on-error);
 	font-weight: 600;
 }
 

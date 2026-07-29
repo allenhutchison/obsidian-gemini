@@ -30,6 +30,7 @@ writing or migrating styles.
 | Accent    | `--gs-accent`, `--gs-accent-hover`                                  | `--interactive-accent`, `--interactive-accent-hover`                            |
 | Brand     | `--gs-brand-gradient` (+ `--gs-brand-1/-2/-3`)                      | Gemini gradient — **primary action & brand only**                               |
 | Status    | `--gs-success`, `--gs-warning`, `--gs-error`, `--gs-info`           | `--color-green/-orange/-red/-blue`                                              |
+| On-status | `--gs-on-error`                                                     | near-white literal — text drawn **on** a `--gs-error` fill (see below)          |
 | Spacing   | `--gs-space-1..8`                                                   | 4 / 8 / 12 / 16 / 24 / 32 / 48 px                                               |
 | Radius    | `--gs-radius-sm/-md/-lg/-pill`                                      | `--radius-s/-m/-l`                                                              |
 | Elevation | `--gs-shadow-sm/-md/-lg`                                            | custom 3-step scale, theme-aware (dark override on `body.theme-dark`)           |
@@ -44,6 +45,17 @@ writing or migrating styles.
   only. Everyday interactive elements use `--gs-accent` (the user's theme accent).
 - **Status is semantic, not accent.** Use `--gs-success/-warning/-error/-info` for
   state; never repurpose the accent for meaning.
+- **Text on an error fill uses `--gs-on-error`, never `--gs-on-accent`.**
+  `--gs-on-accent` aliases `--text-on-accent`, which the theme computes for the
+  _accent_ hue — a light accent makes it dark, which is unreadable on red. Because
+  `--gs-error` is always a red, `--gs-on-error` is a near-white literal. That is the
+  one place a color literal is correct: the token layer.
+- **Fallbacks live on the token definition, never on the consumer.** A theme that
+  omits an Obsidian variable makes the alias guaranteed-invalid, and `var()` then
+  treats the token as undefined — so both `--gs-error: var(--color-red, #dc3545)`
+  and a consumer's `var(--gs-error, #dc3545)` do fire. Only the first is worth
+  writing: it covers every call site at once, and it keeps consumers free of color
+  literals. `--gs-on-accent`, `--gs-success`, and `--gs-error` carry such fallbacks.
 - **Stay on the scales.** Spacing, radius, and icon sizes come from tokens — no magic
   numbers. The `--gs-space-*` scale covers the 4px grid (4/8/12/16/24/32/48);
   sub-grid micro-spacing (Obsidian's 2px-based `--size-2-*`: 2/4/6px) has no token
