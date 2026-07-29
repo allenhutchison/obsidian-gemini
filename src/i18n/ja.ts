@@ -40,6 +40,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.general.ollamaBaseUrlDesc':
 		'ローカルのOllamaデーモンのHTTPエンドポイント。デフォルトは http://localhost:11434 です。',
 	'settings.general.refreshModelListName': 'モデルリストを更新',
+	'settings.general.refreshOllamaModelListName': 'Ollamaモデルリストを更新',
 	'settings.general.refreshModelListOllamaDesc': '利用可能なモデルについてOllamaデーモンに再問い合わせします。',
 	'settings.general.refreshModelListGeminiDesc':
 		'24時間のキャッシュをバイパスして、GitHubから最新のGeminiモデルリストを今すぐ取得します。新しいモデルが公開された後に使用してください。',
@@ -47,9 +48,42 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.general.ollamaModelsFoundSingular': '{count} 個のOllamaモデルが見つかりました。',
 	'settings.general.ollamaModelsFound': '{count} 個のOllamaモデルが見つかりました。',
 	'settings.general.refreshFailedNotice': '更新に失敗しました: {error}',
-	'settings.general.localOnlyNoticeName': 'ローカル限定機能に関する注意',
+	'settings.general.localOnlyNoticeName': 'ローカル専用機能の通知',
 	'settings.general.localOnlyNoticeDesc':
-		'Ollamaを使用している場合、Google検索、URLコンテキスト（ウェブ取得）、Deep Research、画像生成、およびRAGインデックス作成は利用できません。これらはGeminiの組み込みサービスに依存しています。',
+		'すべての処理はローカルマシン上で実行されます。Google Search、URL Context（ウェブ取得）、Deep Research、画像生成、およびvault検索インデックスはGeminiクラウドサービスに依存しているため、オフになっています。これらを有効にするには、「機能ごとのプロバイダー」でプロバイダーを割り当ててください。その機能のデータはクラウドに送信されるようになります。',
+	'settings.general.perFeatureProviderTitle': '機能ごとのプロバイダー',
+	'settings.general.perFeatureProviderDesc':
+		'個々の機能に対して異なるプロバイダーを選択します。デフォルトのままにされた機能は、上記で選択されたプロバイダーを使用します。',
+	'settings.general.useProviderDefault': 'デフォルト — {provider}',
+	'settings.general.useCaseUnavailableOption': '利用不可',
+	'settings.general.useCaseChatName': 'チャットとエージェント',
+	'settings.general.useCaseChatDesc':
+		'インタラクティブなチャット、エージェントセッション、スケジュールされたタスク、およびフック。',
+	'settings.general.useCaseSummaryName': '要約',
+	'settings.general.useCaseSummaryDesc': '「アクティブファイルを要約」コマンドおよび会話の圧縮。',
+	'settings.general.useCaseCompletionsName': '補完',
+	'settings.general.useCaseCompletionsDesc': '入力中のIDEスタイルのインライン提案。',
+	'settings.general.useCaseRewriteName': '再執筆',
+	'settings.general.useCaseRewriteDesc': '選択したテキストの再執筆。チャットモデルを使用します。',
+	'settings.general.useCaseWebSearchName': 'ウェブと検索',
+	'settings.general.useCaseWebSearchDesc':
+		'Google Search、Google Maps、URL Context（ウェブ取得）、およびDeep Researchツール。',
+	'settings.general.useCaseRagName': 'vault検索インデックス',
+	'settings.general.useCaseRagDesc':
+		'vault全体のセマンティック検索。ノートのコンテンツをクラウドの検索インデックスにアップロードします。',
+	'settings.general.useCaseImageGenName': '画像生成',
+	'settings.general.useCaseImageGenDesc': 'テキストプロンプトからの画像生成。',
+	'settings.general.missingKeyNoticeName': 'APIキーが必要です',
+	'settings.general.missingKeyNoticeDesc':
+		'一部の機能がAPIキーを必要とする {providers} を使用するように設定されています。上にキーを入力してください。入力しない場合、それらの機能を使用する際にエラーが発生します。',
+	'settings.general.mixedProviderNoticeName': '一部の機能で異なるプロバイダーが使用されています',
+	'settings.general.mixedProviderNoticeDesc':
+		'以下の機能はデフォルトのプロバイダーを使用しません: {features}。送信されるノートのコンテンツを含むリクエストは、それぞれの機能に選択されたプロバイダーに送信されます。',
+	'settings.general.inheritOllamaChatModel': 'チャットモデルと同じ',
+	'settings.general.ollamaSummaryModelDesc':
+		'要約に使用するモデル。別のモデルが必要な場合を除き、「チャットモデルと同じ」のままにしてください。Ollamaは一度に1つのモデルのみをロードするため、別のモデルを使用すると切り替えのたびに再ロードが発生します。',
+	'settings.general.ollamaCompletionsModelDesc':
+		'インライン補完に使用するモデル。別のモデルが必要な場合を除き、「チャットモデルと同じ」のままにしてください。Ollamaは一度に1つのモデルのみをロードするため、別のモデルを使用すると切り替えのたびに再ロードが発生します。ここでは軽量なモデルを使用する価値があるかもしれません。',
 	'settings.general.apiKeyName': 'APIキー',
 	'settings.general.apiKeyDesc':
 		'Google GeminiのAPIキーを連携します。「Link...」をクリックすると、Obsidianがシークレット名（「gemini-api」などの任意のラベル名）とシークレット値（ここにAPIキーを貼り付けます）の入力を求めます。キーは https://aistudio.google.com/apikey から無料で取得できます。',
@@ -63,7 +97,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.general.completionModelDesc': 'ノートに入力する際のIDEスタイルのインライン補完に使用されるモデル。',
 	'settings.general.ollamaModelName': 'Ollamaモデル',
 	'settings.general.ollamaModelDesc':
-		'チャット、要約、補完、書き換えなど、すべてのOllamaのユースケースで使用されるモデル。',
+		'チャットと再執筆、および「チャットモデルと同じ」に設定されたその他のOllama機能に使用されるモデル。',
 	'settings.general.imageModelName': '画像モデル',
 	'settings.general.imageModelDesc': '画像生成に使用されるモデル。',
 	'settings.general.stateFolderName': 'プラグインのステートフォルダ',
@@ -75,7 +109,8 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.general.modelListUpdatedSingular': 'モデルリストが更新されました: {count} 個のモデル。',
 	'settings.general.modelListUpdated': 'モデルリストが更新されました: {count} 個のモデル。',
 	'settings.general.refreshSkippedOffline': 'スキップされました: オフライン',
-	'settings.general.refreshSkippedNotGemini': 'スキップされました: プロバイダーがGeminiではありません',
+	'settings.general.refreshSkippedNotGemini':
+		'スキップされました: Geminiを使用するように設定されている機能がありません',
 	'settings.general.refreshModelListFailed': 'モデルリストの更新に失敗しました: {error}',
 	'settings.ui.sectionTitle': 'ユーザーエクスペリエンス',
 	'settings.ui.sectionDesc':
@@ -835,7 +870,11 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'notice.main.projectRemoved': 'プロジェクトのステータスを削除しました: {name}',
 	'notice.main.projectRemoveFailed': 'プロジェクトステータスの削除に失敗しました',
 	'notice.main.selectTextFirst': '最初にテキストを選択してください',
+	'notice.main.imageGenUnavailableProvider':
+		'画像生成用のプロバイダーが設定されていません。設定 → Gemini Scribe → 機能ごとのプロバイダー でプロバイダーを選択してください。',
 	'notice.main.imageGenUnavailable': '画像生成は利用できません。',
+	'notice.main.ragUnavailableProvider':
+		'vault検索インデックス用のプロバイダーが設定されていません。設定 → Gemini Scribe → 機能ごとのプロバイダー でプロバイダーを選択してください。',
 	'notice.main.ragNotEnabled': 'RAGインデックス作成が有効になっていません',
 	'notice.main.ragAlreadyPaused': 'RAG同期はすでに一時停止されています',
 	'notice.main.ragCannotPauseWhileIndexing': 'インデックス作成の実行中は一時停止できません',

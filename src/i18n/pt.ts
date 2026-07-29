@@ -39,6 +39,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'settings.general.ollamaBaseUrlDesc':
 		'Endpoint HTTP do seu daemon local do Ollama. O predefinido é http://localhost:11434.',
 	'settings.general.refreshModelListName': 'Atualizar lista de modelos',
+	'settings.general.refreshOllamaModelListName': 'Atualizar lista de modelos do Ollama',
 	'settings.general.refreshModelListOllamaDesc':
 		'Consultar novamente o daemon do Ollama para obter os modelos disponíveis.',
 	'settings.general.refreshModelListGeminiDesc':
@@ -47,9 +48,41 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'settings.general.ollamaModelsFoundSingular': 'Encontrado {count} modelo do Ollama.',
 	'settings.general.ollamaModelsFound': 'Encontrados {count} modelos do Ollama.',
 	'settings.general.refreshFailedNotice': 'Falha ao atualizar: {error}',
-	'settings.general.localOnlyNoticeName': 'Aviso de funcionalidades apenas locais',
+	'settings.general.localOnlyNoticeName': 'Aviso de funcionalidades exclusivamente locais',
 	'settings.general.localOnlyNoticeDesc':
-		'A Pesquisa Google, Contexto de URL (obtenção web), Deep Research, geração de imagens e indexação RAG não estão disponíveis ao utilizar o Ollama. Estas dependem dos serviços integrados do Gemini.',
+		'Tudo é executado na sua máquina. O Google Search, URL Context (obtenção web), Deep Research, a geração de imagens e o índice de pesquisa do vault dependem dos serviços de nuvem do Gemini e estão desativados. Para ativar um deles, atribua-lhe um fornecedor em "Fornecedor por funcionalidade" — os dados dessa funcionalidade serão então enviados para a nuvem.',
+	'settings.general.perFeatureProviderTitle': 'Fornecedor por funcionalidade',
+	'settings.general.perFeatureProviderDesc':
+		'Escolha um fornecedor diferente para funcionalidades individuais. Qualquer opção deixada como predefinida utilizará o fornecedor selecionado acima.',
+	'settings.general.useProviderDefault': 'Predefinido — {provider}',
+	'settings.general.useCaseUnavailableOption': 'Não disponível',
+	'settings.general.useCaseChatName': 'Chat e agente',
+	'settings.general.useCaseChatDesc': 'Chat interativo, sessões de agente, tarefas agendadas e hooks.',
+	'settings.general.useCaseSummaryName': 'Resumos',
+	'settings.general.useCaseSummaryDesc': 'O comando "Resumir ficheiro ativo" e a compactação de conversas.',
+	'settings.general.useCaseCompletionsName': 'Conclusões',
+	'settings.general.useCaseCompletionsDesc': 'Sugestões em linha ao estilo IDE enquanto escreve.',
+	'settings.general.useCaseRewriteName': 'Reescrever',
+	'settings.general.useCaseRewriteDesc': 'Reescrever o texto selecionado. Utiliza o modelo de chat.',
+	'settings.general.useCaseWebSearchName': 'Web e pesquisa',
+	'settings.general.useCaseWebSearchDesc':
+		'Ferramentas do Google Search, Google Maps, URL Context (obtenção web) e Deep Research.',
+	'settings.general.useCaseRagName': 'Índice de pesquisa do vault',
+	'settings.general.useCaseRagDesc':
+		'Pesquisa semântica no seu vault. Carrega o conteúdo das notas para um índice de pesquisa na nuvem.',
+	'settings.general.useCaseImageGenName': 'Geração de imagens',
+	'settings.general.useCaseImageGenDesc': 'Geração de imagens a partir de uma instrução de texto.',
+	'settings.general.missingKeyNoticeName': 'Chave de API necessária',
+	'settings.general.missingKeyNoticeDesc':
+		'Algumas funcionalidades estão configuradas para utilizar o {providers}, que necessita de uma chave de API. Introduza uma acima, caso contrário essas funcionalidades irão falhar quando as utilizar.',
+	'settings.general.mixedProviderNoticeName': 'Algumas funcionalidades utilizam um fornecedor diferente',
+	'settings.general.mixedProviderNoticeDesc':
+		'Estas funcionalidades não utilizam o seu fornecedor predefinido: {features}. Os seus pedidos — incluindo qualquer conteúdo de notas que enviem — vão para o fornecedor que escolheu para elas.',
+	'settings.general.inheritOllamaChatModel': 'Igual ao modelo de chat',
+	'settings.general.ollamaSummaryModelDesc':
+		'Modelo utilizado para resumos. Deixe como "Igual ao modelo de chat" a menos que precise de um diferente — o Ollama mantém um modelo carregado de cada vez, pelo que um segundo modelo é recarregado a cada alternância.',
+	'settings.general.ollamaCompletionsModelDesc':
+		'Modelo utilizado para conclusões em linha. Deixe como "Igual ao modelo de chat" a menos que precise de um diferente — o Ollama mantém um modelo carregado de cada vez, pelo que um segundo modelo é recarregado a cada alternância. Um modelo pequeno aqui pode valer a pena.',
 	'settings.general.apiKeyName': 'Chave de API',
 	'settings.general.apiKeyDesc':
 		'Associe a sua chave de API do Google Gemini. Clique em "Associar..." e o Obsidian irá pedir um nome secreto (isto é apenas uma etiqueta — use qualquer nome como "gemini-api") e um valor secreto (cole a sua chave de API aqui). Obtenha uma chave gratuita em https://aistudio.google.com/apikey',
@@ -64,7 +97,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 		'Modelo utilizado para conclusões em linha ao estilo de IDE enquanto escreve nas notas.',
 	'settings.general.ollamaModelName': 'Modelo Ollama',
 	'settings.general.ollamaModelDesc':
-		'Modelo utilizado para todos os casos de uso do Ollama: chat, sumarização, completamentos e reescrita.',
+		'Modelo utilizado para chat e reescrita, e para qualquer outra funcionalidade do Ollama que esteja definida como "Igual ao modelo de chat".',
 	'settings.general.imageModelName': 'Modelo de imagem',
 	'settings.general.imageModelDesc': 'Modelo utilizado para a geração de imagens.',
 	'settings.general.stateFolderName': 'Pasta de estado do plugin',
@@ -76,7 +109,8 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'settings.general.modelListUpdatedSingular': 'Lista de modelos atualizada: {count} modelo.',
 	'settings.general.modelListUpdated': 'Lista de modelos atualizada: {count} modelos.',
 	'settings.general.refreshSkippedOffline': 'Ignorado: offline',
-	'settings.general.refreshSkippedNotGemini': 'Ignorado: o fornecedor não é o Gemini',
+	'settings.general.refreshSkippedNotGemini':
+		'Ignorado: nenhuma funcionalidade está configurada para utilizar o Gemini',
 	'settings.general.refreshModelListFailed': 'Falha ao atualizar a lista de modelos: {error}',
 	'settings.ui.sectionTitle': 'Experiência do utilizador',
 	'settings.ui.sectionDesc':
@@ -846,7 +880,11 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'notice.main.projectRemoved': 'Estado de projeto removido de: {name}',
 	'notice.main.projectRemoveFailed': 'Falha ao remover o estado de projeto',
 	'notice.main.selectTextFirst': 'Por favor, selecione primeiro algum texto',
+	'notice.main.imageGenUnavailableProvider':
+		'Nenhum fornecedor está configurado para a geração de imagens. Escolha um em Definições → Gemini Scribe → Fornecedor por funcionalidade.',
 	'notice.main.imageGenUnavailable': 'A geração de imagens não está disponível.',
+	'notice.main.ragUnavailableProvider':
+		'Nenhum fornecedor está configurado para o índice de pesquisa do vault. Escolha um em Definições → Gemini Scribe → Fornecedor por funcionalidade.',
 	'notice.main.ragNotEnabled': 'A indexação de RAG não está ativada',
 	'notice.main.ragAlreadyPaused': 'A sincronização de RAG já está pausada',
 	'notice.main.ragCannotPauseWhileIndexing': 'Não é possível pausar enquanto a indexação está em curso',

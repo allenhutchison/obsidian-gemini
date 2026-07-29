@@ -39,6 +39,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'settings.general.ollamaBaseUrlDesc':
 		'Endpoint HTTP dari daemon Ollama lokal Anda. Defaultnya adalah http://localhost:11434.',
 	'settings.general.refreshModelListName': 'Segarkan daftar model',
+	'settings.general.refreshOllamaModelListName': 'Segarkan daftar model Ollama',
 	'settings.general.refreshModelListOllamaDesc': 'Kueri ulang daemon Ollama untuk model yang tersedia.',
 	'settings.general.refreshModelListGeminiDesc':
 		'Ambil daftar model Gemini terbaru dari GitHub sekarang, melewati cache 24 jam. Gunakan ini setelah model baru dirilis.',
@@ -48,7 +49,39 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'settings.general.refreshFailedNotice': 'Gagal menyegarkan: {error}',
 	'settings.general.localOnlyNoticeName': 'Pemberitahuan fitur khusus lokal',
 	'settings.general.localOnlyNoticeDesc':
-		'Google Search, URL Context (web fetch), Deep Research, pembuatan gambar, dan pengindeksan RAG tidak tersedia saat menggunakan Ollama. Fitur-fitur tersebut bergantung pada layanan bawaan Gemini.',
+		'Semua berjalan di mesin Anda. Google Search, URL Context (web fetch), Deep Research, pembuatan gambar, dan indeks pencarian vault bergantung pada layanan cloud Gemini dan dinonaktifkan. Untuk mengaktifkannya, tentukan penyedia di bawah "Penyedia per fitur" — data fitur tersebut kemudian akan dikirim ke cloud.',
+	'settings.general.perFeatureProviderTitle': 'Penyedia per fitur',
+	'settings.general.perFeatureProviderDesc':
+		'Pilih penyedia yang berbeda untuk fitur individual. Apa pun yang dibiarkan sebagai default akan menggunakan penyedia yang dipilih di atas.',
+	'settings.general.useProviderDefault': 'Default — {provider}',
+	'settings.general.useCaseUnavailableOption': 'Tidak tersedia',
+	'settings.general.useCaseChatName': 'Obrolan dan agen',
+	'settings.general.useCaseChatDesc': 'Obrolan interaktif, sesi agen, tugas terjadwal, dan hook.',
+	'settings.general.useCaseSummaryName': 'Ringkasan',
+	'settings.general.useCaseSummaryDesc': 'Perintah "Ringkas file aktif" dan pemadatan percakapan.',
+	'settings.general.useCaseCompletionsName': 'Pelengkapan',
+	'settings.general.useCaseCompletionsDesc': 'Saran sebaris gaya IDE saat Anda mengetik.',
+	'settings.general.useCaseRewriteName': 'Tulis ulang',
+	'settings.general.useCaseRewriteDesc': 'Menulis ulang teks yang dipilih. Menggunakan model obrolan.',
+	'settings.general.useCaseWebSearchName': 'Web dan pencarian',
+	'settings.general.useCaseWebSearchDesc':
+		'Alat Google Search, Google Maps, URL Context (web fetch), dan Deep Research.',
+	'settings.general.useCaseRagName': 'Indeks pencarian vault',
+	'settings.general.useCaseRagDesc':
+		'Pencarian semantik di seluruh vault Anda. Mengunggah konten catatan ke indeks pencarian cloud.',
+	'settings.general.useCaseImageGenName': 'Pembuatan gambar',
+	'settings.general.useCaseImageGenDesc': 'Menghasilkan gambar dari perintah teks.',
+	'settings.general.missingKeyNoticeName': 'Kunci API diperlukan',
+	'settings.general.missingKeyNoticeDesc':
+		'Beberapa fitur diatur untuk menggunakan {providers}, yang memerlukan kunci API. Masukkan kunci API di atas, atau fitur tersebut akan gagal saat Anda menggunakannya.',
+	'settings.general.mixedProviderNoticeName': 'Beberapa fitur menggunakan penyedia yang berbeda',
+	'settings.general.mixedProviderNoticeDesc':
+		'Fitur-fitur ini tidak menggunakan penyedia default Anda: {features}. Permintaan mereka — termasuk konten catatan apa pun yang mereka kirim — akan dikirim ke penyedia yang Anda pilih untuk mereka.',
+	'settings.general.inheritOllamaChatModel': 'Sama dengan model obrolan',
+	'settings.general.ollamaSummaryModelDesc':
+		'Model yang digunakan untuk ringkasan. Biarkan sebagai "Sama dengan model obrolan" kecuali Anda memerlukan model yang berbeda — Ollama hanya memuat satu model pada satu waktu, sehingga model kedua akan dimuat ulang pada setiap pergantian.',
+	'settings.general.ollamaCompletionsModelDesc':
+		'Model yang digunakan untuk pelengkapan sebaris. Biarkan sebagai "Sama dengan model obrolan" kecuali Anda memerlukan model yang berbeda — Ollama hanya memuat satu model pada satu waktu, sehingga model kedua akan dimuat ulang pada setiap pergantian. Model kecil di sini bisa sepadan dengan konsekuensinya.',
 	'settings.general.apiKeyName': 'Kunci API',
 	'settings.general.apiKeyDesc':
 		'Tautkan kunci API Google Gemini Anda. Klik "Tautkan..." dan Obsidian akan meminta nama rahasia (ini hanya label — gunakan nama apa saja seperti "gemini-api") dan nilai rahasia (tempel kunci API Anda di sini). Dapatkan kunci gratis di https://aistudio.google.com/apikey',
@@ -63,7 +96,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 		'Model yang digunakan untuk pelengkapan sebaris gaya IDE saat Anda mengetik di catatan.',
 	'settings.general.ollamaModelName': 'Model Ollama',
 	'settings.general.ollamaModelDesc':
-		'Model yang digunakan untuk semua kegunaan Ollama: obrolan, peringkasan, pelengkapan, dan penulisan ulang.',
+		'Model yang digunakan untuk obrolan dan penulisan ulang, serta untuk fitur Ollama lainnya yang dibiarkan diatur ke "Sama dengan model obrolan".',
 	'settings.general.imageModelName': 'Model gambar',
 	'settings.general.imageModelDesc': 'Model yang digunakan untuk pembuatan gambar.',
 	'settings.general.stateFolderName': 'Folder status plugin',
@@ -75,7 +108,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'settings.general.modelListUpdatedSingular': 'Daftar model diperbarui: {count} model.',
 	'settings.general.modelListUpdated': 'Daftar model diperbarui: {count} model.',
 	'settings.general.refreshSkippedOffline': 'Dilewati: offline',
-	'settings.general.refreshSkippedNotGemini': 'Dilewati: penyedia bukan Gemini',
+	'settings.general.refreshSkippedNotGemini': 'Dilewati: tidak ada fitur yang diatur untuk menggunakan Gemini',
 	'settings.general.refreshModelListFailed': 'Gagal menyegarkan daftar model: {error}',
 	'settings.ui.sectionTitle': 'Pengalaman pengguna',
 	'settings.ui.sectionDesc':
@@ -831,7 +864,11 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'notice.main.projectRemoved': 'Menghapus status proyek dari: {name}',
 	'notice.main.projectRemoveFailed': 'Gagal menghapus status proyek',
 	'notice.main.selectTextFirst': 'Silakan pilih beberapa teks terlebih dahulu',
+	'notice.main.imageGenUnavailableProvider':
+		'Tidak ada penyedia yang disiapkan untuk pembuatan gambar. Pilih salah satu di bawah Pengaturan → Gemini Scribe → Penyedia per fitur.',
 	'notice.main.imageGenUnavailable': 'Pembuatan gambar tidak tersedia.',
+	'notice.main.ragUnavailableProvider':
+		'Tidak ada penyedia yang disiapkan untuk indeks pencarian vault. Pilih salah satu di bawah Pengaturan → Gemini Scribe → Penyedia per fitur.',
 	'notice.main.ragNotEnabled': 'Pengindeksan RAG tidak diaktifkan',
 	'notice.main.ragAlreadyPaused': 'Sinkronisasi RAG sudah dijeda',
 	'notice.main.ragCannotPauseWhileIndexing': 'Tidak dapat menjeda saat pengindeksan sedang berlangsung',

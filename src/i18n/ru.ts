@@ -39,6 +39,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.general.ollamaBaseUrlDesc':
 		'HTTP-эндпоинт вашего локального демона Ollama. По умолчанию: http://localhost:11434.',
 	'settings.general.refreshModelListName': 'Обновить список моделей',
+	'settings.general.refreshOllamaModelListName': 'Обновить список моделей Ollama',
 	'settings.general.refreshModelListOllamaDesc': 'Повторно запросить доступные модели у демона Ollama.',
 	'settings.general.refreshModelListGeminiDesc':
 		'Получить актуальный список моделей Gemini с GitHub прямо сейчас, минуя 24-часовой кэш. Используйте это после выхода новой модели.',
@@ -48,7 +49,39 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.general.refreshFailedNotice': 'Не удалось обновить: {error}',
 	'settings.general.localOnlyNoticeName': 'Уведомление о локальных функциях',
 	'settings.general.localOnlyNoticeDesc':
-		'Поиск Google, контекст URL (веб-запросы), Deep Research, генерация изображений и RAG-индексация недоступны при использовании Ollama. Они зависят от встроенных сервисов Gemini.',
+		'Всё работает на вашем компьютере. Google Search, URL Context (веб-запросы), Deep Research, генерация изображений и поисковый индекс хранилища зависят от облачных служб Gemini и отключены. Чтобы включить любую из них, укажите для неё провайдера в разделе «Провайдер для каждой функции» — тогда данные этой функции будут отправляться в облако.',
+	'settings.general.perFeatureProviderTitle': 'Провайдер для каждой функции',
+	'settings.general.perFeatureProviderDesc':
+		'Выберите отдельного провайдера для конкретных функций. Все функции, оставленные по умолчанию, используют провайдера, выбранного выше.',
+	'settings.general.useProviderDefault': 'По умолчанию — {provider}',
+	'settings.general.useCaseUnavailableOption': 'Недоступно',
+	'settings.general.useCaseChatName': 'Чат и агент',
+	'settings.general.useCaseChatDesc': 'Интерактивный чат, сессии агентов, запланированные задачи и хуки.',
+	'settings.general.useCaseSummaryName': 'Сводки',
+	'settings.general.useCaseSummaryDesc': 'Команда «Создать сводку активного файла» и сжатие диалогов.',
+	'settings.general.useCaseCompletionsName': 'Автодополнение',
+	'settings.general.useCaseCompletionsDesc': 'Встроенные подсказки при вводе текста в стиле сред разработки (IDE).',
+	'settings.general.useCaseRewriteName': 'Перефразирование',
+	'settings.general.useCaseRewriteDesc': 'Перефразирование выделенного текста. Использует модель чата.',
+	'settings.general.useCaseWebSearchName': 'Веб и поиск',
+	'settings.general.useCaseWebSearchDesc':
+		'Инструменты Google Search, Google Maps, URL Context (веб-запросы) и Deep Research.',
+	'settings.general.useCaseRagName': 'Поисковый индекс хранилища',
+	'settings.general.useCaseRagDesc':
+		'Семантический поиск по вашему хранилищу. Загружает содержимое заметок в облачный поисковый индекс.',
+	'settings.general.useCaseImageGenName': 'Генерация изображений',
+	'settings.general.useCaseImageGenDesc': 'Генерация изображений по текстовому описанию.',
+	'settings.general.missingKeyNoticeName': 'Требуется API-ключ',
+	'settings.general.missingKeyNoticeDesc':
+		'Некоторые функции настроены на использование {providers}, для которых требуется API-ключ. Введите его выше, иначе эти функции не будут работать.',
+	'settings.general.mixedProviderNoticeName': 'Некоторые функции используют другого провайдера',
+	'settings.general.mixedProviderNoticeDesc':
+		'Эти функции не используют провайдера по умолчанию: {features}. Их запросы (включая отправляемое содержимое заметок) направляются провайдеру, которого вы для них выбрали.',
+	'settings.general.inheritOllamaChatModel': 'Как у модели чата',
+	'settings.general.ollamaSummaryModelDesc':
+		'Модель для создания сводок. Оставьте значение «Как у модели чата», если вам не нужна другая модель — Ollama держит загруженной только одну модель одновременно, поэтому вторая модель будет перезагружаться при каждом переключении.',
+	'settings.general.ollamaCompletionsModelDesc':
+		'Модель для автодополнения. Оставьте значение «Как у модели чата», если вам не нужна другая модель — Ollama держит загруженной только одну модель одновременно, поэтому вторая модель будет перезагружаться при каждом переключении. Использование небольшой модели здесь может оправдать эти издержки.',
 	'settings.general.apiKeyName': 'API-ключ',
 	'settings.general.apiKeyDesc':
 		'Привяжите свой API-ключ Google Gemini. Нажмите «Link...», и Obsidian запросит секретное имя (это просто ярлык — используйте любое имя, например «gemini-api») и секретное значение (вставьте сюда свой API-ключ). Получите ключ бесплатно на https://aistudio.google.com/apikey',
@@ -63,7 +96,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 		'Модель, используемая для встроенного автодополнения в стиле IDE при вводе текста в заметках.',
 	'settings.general.ollamaModelName': 'Модель Ollama',
 	'settings.general.ollamaModelDesc':
-		'Модель, используемая для всех сценариев Ollama: чат, суммаризация, автодополнение и переписывание.',
+		'Модель для чата и перефразирования, а также для любых других функций Ollama, для которых оставлено значение «Как у модели чата».',
 	'settings.general.imageModelName': 'Модель генерации изображений',
 	'settings.general.imageModelDesc': 'Модель, используемая для генерации изображений.',
 	'settings.general.stateFolderName': 'Папка состояния плагина',
@@ -75,7 +108,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.general.modelListUpdatedSingular': 'Список моделей обновлен: {count} модель.',
 	'settings.general.modelListUpdated': 'Список моделей обновлен: {count} моделей.',
 	'settings.general.refreshSkippedOffline': 'Пропущено: нет сети',
-	'settings.general.refreshSkippedNotGemini': 'Пропущено: провайдер не Gemini',
+	'settings.general.refreshSkippedNotGemini': 'Пропущено: ни одна функция не настроена на использование Gemini',
 	'settings.general.refreshModelListFailed': 'Не удалось обновить список моделей: {error}',
 	'settings.ui.sectionTitle': 'Удобство использования',
 	'settings.ui.sectionDesc':
@@ -846,7 +879,11 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'notice.main.projectRemoved': 'Статус проекта удален для: {name}',
 	'notice.main.projectRemoveFailed': 'Не удалось удалить статус проекта',
 	'notice.main.selectTextFirst': 'Сначала выделите текст',
+	'notice.main.imageGenUnavailableProvider':
+		'Не настроен провайдер для генерации изображений. Выберите его в меню Настройки → Gemini Scribe → Провайдер для каждой функции.',
 	'notice.main.imageGenUnavailable': 'Генерация изображений недоступна.',
+	'notice.main.ragUnavailableProvider':
+		'Не настроен провайдер для поискового индекса хранилища. Выберите его в меню Настройки → Gemini Scribe → Провайдер для каждой функции.',
 	'notice.main.ragNotEnabled': 'Индексирование RAG не включено',
 	'notice.main.ragAlreadyPaused': 'Синхронизация RAG уже приостановлена',
 	'notice.main.ragCannotPauseWhileIndexing': 'Невозможно приостановить во время процесса индексирования',

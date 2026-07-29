@@ -40,6 +40,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.general.ollamaBaseUrlDesc':
 		"Yerel Ollama arka plan programınızın (daemon) HTTP uç noktası. Varsayılan değer http://localhost:11434'tür.",
 	'settings.general.refreshModelListName': 'Model listesini yenile',
+	'settings.general.refreshOllamaModelListName': 'Ollama model listesini yenile',
 	'settings.general.refreshModelListOllamaDesc': 'Mevcut modeller için Ollama arka plan programını yeniden sorgulayın.',
 	'settings.general.refreshModelListGeminiDesc':
 		"24 saatlik önbelleği atlayarak en güncel Gemini model listesini şimdi GitHub'dan çekin. Bunu yeni bir model yayınlandıktan sonra kullanın.",
@@ -49,7 +50,39 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.general.refreshFailedNotice': 'Yenileme başarısız oldu: {error}',
 	'settings.general.localOnlyNoticeName': 'Yalnızca yerel özellik bildirimi',
 	'settings.general.localOnlyNoticeDesc':
-		"Ollama kullanılırken Google Arama, URL Bağlamı (web getirme), Deep Research, görsel oluşturma ve RAG dizine ekleme özellikleri kullanılamaz. Bunlar Gemini'ın yerleşik servislerine dayanır.",
+		'Her şey makinenizde çalışır. Google Search, URL Context (web getirme), Deep Research, görsel oluşturma ve vault arama dizini Gemini bulut hizmetlerine dayanır ve kapalıdır. Bunlardan birini etkinleştirmek için "Özellik başına sağlayıcı" altından ona bir sağlayıcı atayın — bu durumda ilgili özelliğin verileri buluta gönderilecektir.',
+	'settings.general.perFeatureProviderTitle': 'Özellik başına sağlayıcı',
+	'settings.general.perFeatureProviderDesc':
+		'Bireysel özellikler için farklı bir sağlayıcı seçin. Varsayılan olarak bırakılan her şey yukarıda seçilen sağlayıcıyı kullanır.',
+	'settings.general.useProviderDefault': 'Varsayılan — {provider}',
+	'settings.general.useCaseUnavailableOption': 'Kullanılamıyor',
+	'settings.general.useCaseChatName': 'Sohbet ve temsilci',
+	'settings.general.useCaseChatDesc': 'Etkileşimli sohbet, temsilci oturumları, planlanmış görevler ve kancalar.',
+	'settings.general.useCaseSummaryName': 'Özetler',
+	'settings.general.useCaseSummaryDesc': '"Aktif dosyayı özetle" komutu ve konuşma sıkıştırma.',
+	'settings.general.useCaseCompletionsName': 'Tamamlamalar',
+	'settings.general.useCaseCompletionsDesc': 'Siz yazarken IDE tarzı satır içi öneriler.',
+	'settings.general.useCaseRewriteName': 'Yeniden Yaz',
+	'settings.general.useCaseRewriteDesc': 'Seçili metni yeniden yazma. Sohbet modelini kullanır.',
+	'settings.general.useCaseWebSearchName': 'Web ve arama',
+	'settings.general.useCaseWebSearchDesc':
+		'Google Search, Google Maps, URL Context (web getirme) ve Deep Research araçları.',
+	'settings.general.useCaseRagName': 'Vault arama dizini',
+	'settings.general.useCaseRagDesc':
+		"Vault'unuz genelinde anlamsal arama. Not içeriğini bir bulut arama dizinine yükler.",
+	'settings.general.useCaseImageGenName': 'Görsel oluşturma',
+	'settings.general.useCaseImageGenDesc': 'Bir metin isteminden görseller oluşturma.',
+	'settings.general.missingKeyNoticeName': 'API anahtarı gerekli',
+	'settings.general.missingKeyNoticeDesc':
+		'Bazı özellikler, bir API anahtarı gerektiren {providers} sağlayıcısını kullanacak şekilde ayarlanmış. Yukarıya bir anahtar girin, aksi takdirde bu özellikler kullanıldığında hata verecektir.',
+	'settings.general.mixedProviderNoticeName': 'Bazı özellikler farklı bir sağlayıcı kullanıyor',
+	'settings.general.mixedProviderNoticeDesc':
+		'Bu özellikler varsayılan sağlayıcınızı kullanmıyor: {features}. İstekleri — gönderdikleri not içerikleri de dahil olmak üzere — onlar için seçtiğiniz sağlayıcıya gider.',
+	'settings.general.inheritOllamaChatModel': 'Sohbet modeliyle aynı',
+	'settings.general.ollamaSummaryModelDesc':
+		'Özetler için kullanılan model. Farklı bir modele ihtiyacınız yoksa "Sohbet modeliyle aynı" olarak bırakın — Ollama tek seferde yalnızca bir model yüklü tutar, bu nedenle her geçişte ikinci bir model yeniden yüklenir.',
+	'settings.general.ollamaCompletionsModelDesc':
+		'Satır içi tamamlamalar için kullanılan model. Farklı bir modele ihtiyacınız yoksa "Sohbet modeliyle aynı" olarak bırakın — Ollama tek seferde yalnızca bir model yüklü tutar, bu nedenle her geçişte ikinci bir model yeniden yüklenir. Burada küçük bir model kullanmak bu ödünleşime değebilir.',
 	'settings.general.apiKeyName': 'API anahtarı',
 	'settings.general.apiKeyDesc':
 		'Google Gemini API anahtarınızı bağlayın. "Bağla..." seçeneğine tıklayın; Obsidian sizden bir gizli ad (bu sadece bir etikettir — "gemini-api" gibi herhangi bir ad kullanın) ve bir gizli değer (API anahtarınızı buraya yapıştırın) isteyecektir. https://aistudio.google.com/apikey adresinden ücretsiz bir anahtar edinin.',
@@ -64,7 +97,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 		'Siz notlara yazarken IDE tarzı satır içi tamamlamalar için kullanılan model.',
 	'settings.general.ollamaModelName': 'Ollama modeli',
 	'settings.general.ollamaModelDesc':
-		'Tüm Ollama kullanım durumları için kullanılan model: sohbet, özetleme, tamamlama ve yeniden yazma.',
+		'Sohbet ve yeniden yazma için ve "Sohbet modeliyle aynı" olarak bırakılan diğer tüm Ollama özellikleri için kullanılan model.',
 	'settings.general.imageModelName': 'Görsel modeli',
 	'settings.general.imageModelDesc': 'Görsel oluşturma için kullanılan model.',
 	'settings.general.stateFolderName': 'Eklenti durum klasörü',
@@ -76,7 +109,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.general.modelListUpdatedSingular': 'Model listesi güncellendi: {count} model.',
 	'settings.general.modelListUpdated': 'Model listesi güncellendi: {count} model.',
 	'settings.general.refreshSkippedOffline': 'Atlandı: çevrimdışı',
-	'settings.general.refreshSkippedNotGemini': 'Atlandı: sağlayıcı Gemini değil',
+	'settings.general.refreshSkippedNotGemini': 'Atlandı: Hiçbir özellik Gemini kullanacak şekilde ayarlanmamış',
 	'settings.general.refreshModelListFailed': 'Model listesi yenilenemedi: {error}',
 	'settings.ui.sectionTitle': 'Kullanıcı deneyimi',
 	'settings.ui.sectionDesc':
@@ -844,7 +877,11 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'notice.main.projectRemoved': 'Şu ögeden proje durumu kaldırıldı: {name}',
 	'notice.main.projectRemoveFailed': 'Proje durumu kaldırılamadı',
 	'notice.main.selectTextFirst': 'Lütfen önce bir metin seçin',
+	'notice.main.imageGenUnavailableProvider':
+		'Görsel oluşturma için ayarlanmış bir sağlayıcı yok. Ayarlar → Gemini Scribe → Özellik başına sağlayıcı altundan birini seçin.',
 	'notice.main.imageGenUnavailable': 'Görsel oluşturma kullanılamıyor.',
+	'notice.main.ragUnavailableProvider':
+		'Vault arama dizini için ayarlanmış bir sağlayıcı yok. Ayarlar → Gemini Scribe → Özellik başına sağlayıcı altundan birini seçin.',
 	'notice.main.ragNotEnabled': 'RAG indeksleme etkinleştirilmemiş',
 	'notice.main.ragAlreadyPaused': 'RAG senkronizasyonu zaten duraklatılmış',
 	'notice.main.ragCannotPauseWhileIndexing': 'İndeksleme devam ederken duraklatılamaz',

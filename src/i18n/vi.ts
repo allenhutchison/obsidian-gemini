@@ -40,6 +40,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.general.ollamaBaseUrlDesc':
 		'Điểm cuối HTTP (endpoint) của tiến trình Ollama cục bộ. Mặc định là http://localhost:11434.',
 	'settings.general.refreshModelListName': 'Làm mới danh sách mô hình',
+	'settings.general.refreshOllamaModelListName': 'Làm mới danh sách mô hình Ollama',
 	'settings.general.refreshModelListOllamaDesc': 'Truy vấn lại tiến trình Ollama để tìm các mô hình hiện có.',
 	'settings.general.refreshModelListGeminiDesc':
 		'Tải danh sách mô hình Gemini mới nhất từ GitHub ngay bây giờ, bỏ qua bộ nhớ đệm 24 giờ. Sử dụng tính năng này sau khi một mô hình mới được phát hành.',
@@ -47,9 +48,41 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.general.ollamaModelsFoundSingular': 'Tìm thấy {count} mô hình Ollama.',
 	'settings.general.ollamaModelsFound': 'Tìm thấy {count} mô hình Ollama.',
 	'settings.general.refreshFailedNotice': 'Không thể làm mới: {error}',
-	'settings.general.localOnlyNoticeName': 'Lưu ý về tính năng chỉ hoạt động cục bộ',
+	'settings.general.localOnlyNoticeName': 'Thông báo tính năng chỉ chạy cục bộ',
 	'settings.general.localOnlyNoticeDesc':
-		'Tìm kiếm Google, Ngữ cảnh URL (tải web), Deep Research, tạo hình ảnh và lập chỉ mục RAG không khả dụng khi sử dụng Ollama. Các tính năng này phụ thuộc vào các dịch vụ tích hợp của Gemini.',
+		'Mọi thứ đều chạy trên máy của bạn. Google Tìm kiếm, URL Context (tải trang web), Deep Research, tạo hình ảnh và chỉ mục tìm kiếm vault phụ thuộc vào dịch vụ đám mây Gemini và đã bị tắt. Để bật một tính năng, hãy chỉ định nhà cung cấp cho nó trong mục "Nhà cung cấp cho từng tính năng" — dữ liệu của tính năng đó sau đó sẽ được gửi lên đám mây.',
+	'settings.general.perFeatureProviderTitle': 'Nhà cung cấp cho từng tính năng',
+	'settings.general.perFeatureProviderDesc':
+		'Chọn một nhà cung cấp khác cho các tính năng riêng lẻ. Bất kỳ tính năng nào để mặc định sẽ sử dụng nhà cung cấp được chọn ở trên.',
+	'settings.general.useProviderDefault': 'Mặc định — {provider}',
+	'settings.general.useCaseUnavailableOption': 'Không khả dụng',
+	'settings.general.useCaseChatName': 'Trò chuyện và agent',
+	'settings.general.useCaseChatDesc': 'Trò chuyện tương tác, phiên làm việc của agent, tác vụ được lên lịch và hook.',
+	'settings.general.useCaseSummaryName': 'Tóm tắt',
+	'settings.general.useCaseSummaryDesc': 'Lệnh "Tóm tắt tệp đang hoạt động" và nén cuộc trò chuyện.',
+	'settings.general.useCaseCompletionsName': 'Tự động hoàn thành',
+	'settings.general.useCaseCompletionsDesc': 'Gợi ý nội dòng kiểu IDE khi bạn nhập.',
+	'settings.general.useCaseRewriteName': 'Viết lại',
+	'settings.general.useCaseRewriteDesc': 'Viết lại văn bản được chọn. Sử dụng mô hình trò chuyện.',
+	'settings.general.useCaseWebSearchName': 'Web và tìm kiếm',
+	'settings.general.useCaseWebSearchDesc':
+		'Các công cụ Google Tìm kiếm, Google Maps, URL Context (tải trang web) và Deep Research.',
+	'settings.general.useCaseRagName': 'Chỉ mục tìm kiếm vault',
+	'settings.general.useCaseRagDesc':
+		'Tìm kiếm ngữ nghĩa trên toàn bộ vault của bạn. Tải nội dung ghi chú lên chỉ mục tìm kiếm đám mây.',
+	'settings.general.useCaseImageGenName': 'Tạo hình ảnh',
+	'settings.general.useCaseImageGenDesc': 'Tạo hình ảnh từ lời nhắc văn bản.',
+	'settings.general.missingKeyNoticeName': 'Yêu cầu khóa API',
+	'settings.general.missingKeyNoticeDesc':
+		'Một số tính năng được thiết lập để sử dụng {providers}, vốn yêu cầu khóa API. Hãy nhập khóa ở trên, nếu không các tính năng đó sẽ bị lỗi khi bạn sử dụng.',
+	'settings.general.mixedProviderNoticeName': 'Một số tính năng sử dụng nhà cung cấp khác',
+	'settings.general.mixedProviderNoticeDesc':
+		'Các tính năng này không sử dụng nhà cung cấp mặc định của bạn: {features}. Các yêu cầu của chúng — bao gồm cả nội dung ghi chú được gửi đi — sẽ chuyển đến nhà cung cấp mà bạn đã chọn cho chúng.',
+	'settings.general.inheritOllamaChatModel': 'Giống như mô hình trò chuyện',
+	'settings.general.ollamaSummaryModelDesc':
+		'Mô hình được sử dụng cho tóm tắt. Hãy để là "Giống như mô hình trò chuyện" trừ khi bạn cần một mô hình khác — Ollama chỉ tải một mô hình tại một thời điểm, vì vậy mô hình thứ hai sẽ được tải lại mỗi khi chuyển đổi.',
+	'settings.general.ollamaCompletionsModelDesc':
+		'Mô hình được sử dụng cho tự động hoàn thành nội dòng. Hãy để là "Giống như mô hình trò chuyện" trừ khi bạn cần một mô hình khác — Ollama chỉ tải một mô hình tại một thời điểm, vì vậy mô hình thứ hai sẽ được tải lại mỗi khi chuyển đổi. Sử dụng một mô hình nhỏ ở đây có thể là một sự đánh đổi xứng đáng.',
 	'settings.general.apiKeyName': 'API key',
 	'settings.general.apiKeyDesc':
 		'Liên kết API key Google Gemini của bạn. Nhấp vào "Liên kết..." và Obsidian sẽ yêu cầu nhập tên khóa bí mật (đây chỉ là nhãn — sử dụng bất kỳ tên nào như "gemini-api") và giá trị bí mật (dán API key của bạn vào đây). Nhận key miễn phí tại https://aistudio.google.com/apikey',
@@ -64,7 +97,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 		'Mô hình được sử dụng để tự động hoàn thành nội dung trực tiếp (inline) kiểu IDE khi bạn nhập trong ghi chú.',
 	'settings.general.ollamaModelName': 'Mô hình Ollama',
 	'settings.general.ollamaModelDesc':
-		'Mô hình được sử dụng cho tất cả các tác vụ của Ollama: trò chuyện, tóm tắt, hoàn thành và viết lại.',
+		'Mô hình được sử dụng cho trò chuyện và viết lại, và cho bất kỳ tính năng Ollama nào khác được để là "Giống như mô hình trò chuyện".',
 	'settings.general.imageModelName': 'Mô hình hình ảnh',
 	'settings.general.imageModelDesc': 'Mô hình được sử dụng để tạo hình ảnh.',
 	'settings.general.stateFolderName': 'Thư mục trạng thái plugin',
@@ -76,7 +109,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.general.modelListUpdatedSingular': 'Đã cập nhật danh sách mô hình: {count} mô hình.',
 	'settings.general.modelListUpdated': 'Đã cập nhật danh sách mô hình: {count} mô hình.',
 	'settings.general.refreshSkippedOffline': 'Đã bỏ qua: ngoại tuyến',
-	'settings.general.refreshSkippedNotGemini': 'Đã bỏ qua: nhà cung cấp không phải là Gemini',
+	'settings.general.refreshSkippedNotGemini': 'Đã bỏ qua: không có tính năng nào được thiết lập để sử dụng Gemini',
 	'settings.general.refreshModelListFailed': 'Không thể làm mới danh sách mô hình: {error}',
 	'settings.ui.sectionTitle': 'Trải nghiệm người dùng',
 	'settings.ui.sectionDesc':
@@ -833,7 +866,11 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'notice.main.projectRemoved': 'Đã gỡ bỏ trạng thái dự án khỏi: {name}',
 	'notice.main.projectRemoveFailed': 'Gỡ bỏ trạng thái dự án thất bại',
 	'notice.main.selectTextFirst': 'Vui lòng chọn một đoạn văn bản trước',
+	'notice.main.imageGenUnavailableProvider':
+		'Chưa có nhà cung cấp nào được thiết lập cho việc tạo hình ảnh. Hãy chọn một nhà cung cấp trong Cài đặt → Gemini Scribe → Nhà cung cấp cho từng tính năng.',
 	'notice.main.imageGenUnavailable': 'Tính năng tạo ảnh không khả dụng.',
+	'notice.main.ragUnavailableProvider':
+		'Chưa có nhà cung cấp nào được thiết lập cho chỉ mục tìm kiếm vault. Hãy chọn một nhà cung cấp trong Cài đặt → Gemini Scribe → Nhà cung cấp cho từng tính năng.',
 	'notice.main.ragNotEnabled': 'Chỉ mục RAG chưa được bật',
 	'notice.main.ragAlreadyPaused': 'Đồng bộ RAG đã được tạm dừng',
 	'notice.main.ragCannotPauseWhileIndexing': 'Không thể tạm dừng khi đang trong quá trình lập chỉ mục',

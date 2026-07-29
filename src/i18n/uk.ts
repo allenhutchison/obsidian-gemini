@@ -39,6 +39,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'settings.general.ollamaBaseUrlDesc':
 		'HTTP-ендпоінт вашого локального демона Ollama. За замовчуванням: http://localhost:11434.',
 	'settings.general.refreshModelListName': 'Оновити список моделей',
+	'settings.general.refreshOllamaModelListName': 'Оновити список моделей Ollama',
 	'settings.general.refreshModelListOllamaDesc': 'Повторно запитати у демона Ollama доступні моделі.',
 	'settings.general.refreshModelListGeminiDesc':
 		'Отримати найновіший список моделей Gemini з GitHub прямо зараз, минаючи 24-годинний кеш. Використовуйте це після публікації нової моделі.',
@@ -46,9 +47,41 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'settings.general.ollamaModelsFoundSingular': 'Знайдено {count} модель Ollama.',
 	'settings.general.ollamaModelsFound': 'Знайдено {count} моделей Ollama.',
 	'settings.general.refreshFailedNotice': 'Не вдалося оновити: {error}',
-	'settings.general.localOnlyNoticeName': 'Повідомлення про локальні функції',
+	'settings.general.localOnlyNoticeName': 'Повідомлення про роботу лише локально',
 	'settings.general.localOnlyNoticeDesc':
-		'Пошук Google, контекст URL (веб-завантаження), Deep Research, генерація зображень та індексація RAG недоступні при використанні Ollama. Вони покладаються на вбудовані сервіси Gemini.',
+		"Усе працює на вашому комп'ютері. Google Search, URL Context (веб-запит), Deep Research, генерація зображень та пошуковий індекс сховища покладаються на хмарні сервіси Gemini й наразі вимкнені. Щоб увімкнути якусь із них, призначте їй провайдера у розділі «Провайдер для кожної функції» — тоді дані цієї функції надсилатимуться у хмару.",
+	'settings.general.perFeatureProviderTitle': 'Провайдер для кожної функції',
+	'settings.general.perFeatureProviderDesc':
+		'Виберіть іншого провайдера для окремих функцій. Усі функції, для яких залишено значення за замовчуванням, використовуватимуть провайдера, вибраного вище.',
+	'settings.general.useProviderDefault': 'За замовчуванням — {provider}',
+	'settings.general.useCaseUnavailableOption': 'Недоступно',
+	'settings.general.useCaseChatName': 'Чат та агент',
+	'settings.general.useCaseChatDesc': 'Інтерактивний чат, сесії агентів, заплановані завдання та хуки.',
+	'settings.general.useCaseSummaryName': 'Підсумки',
+	'settings.general.useCaseSummaryDesc': 'Команда «Summarize active file» та стиснення діалогу.',
+	'settings.general.useCaseCompletionsName': 'Автодоповнення',
+	'settings.general.useCaseCompletionsDesc': 'Вбудовані підказки в стилі IDE під час введення тексту.',
+	'settings.general.useCaseRewriteName': 'Переписування',
+	'settings.general.useCaseRewriteDesc': 'Переписування виділеного тексту. Використовує модель чату.',
+	'settings.general.useCaseWebSearchName': 'Веб та пошук',
+	'settings.general.useCaseWebSearchDesc':
+		'Інструменти Google Search, Google Maps, URL Context (веб-запит) та Deep Research.',
+	'settings.general.useCaseRagName': 'Пошуковий індекс сховища',
+	'settings.general.useCaseRagDesc':
+		'Семантичний пошук по вашому сховищу. Завантажує вміст нотаток до хмарного пошукового індексу.',
+	'settings.general.useCaseImageGenName': 'Генерація зображень',
+	'settings.general.useCaseImageGenDesc': 'Генерація зображень за текстовим запитом.',
+	'settings.general.missingKeyNoticeName': 'Потрібен API-ключ',
+	'settings.general.missingKeyNoticeDesc':
+		'Деякі функції налаштовані на використання {providers}, для яких потрібен API-ключ. Введіть його вище, інакше ці функції не працюватимуть під час використання.',
+	'settings.general.mixedProviderNoticeName': 'Деякі функції використовують іншого провайдера',
+	'settings.general.mixedProviderNoticeDesc':
+		'Ці функції не використовують вашого провайдера за замовчуванням: {features}. Їхні запити (включаючи будь-який вміст нотаток, який вони надсилають) спрямовуються до провайдера, якого ви для них вибрали.',
+	'settings.general.inheritOllamaChatModel': 'Так само, як модель чату',
+	'settings.general.ollamaSummaryModelDesc':
+		'Модель, що використовується для підсумків. Залиште «Так само, як модель чату», якщо вам не потрібна інша — Ollama тримає завантаженою лише одну модель одночасно, тому друга модель буде перезавантажуватися при кожному перемиканні.',
+	'settings.general.ollamaCompletionsModelDesc':
+		'Модель, що використовується для вбудованого автодоповнення. Залиште «Так само, як модель чату», якщо вам не потрібна інша — Ollama тримає завантаженою лише одну модель одночасно, тому друга модель буде перезавантажуватися при кожному перемиканні. Використання невеликої моделі тут може бути виправданим компромісом.',
 	'settings.general.apiKeyName': 'Ключ API',
 	'settings.general.apiKeyDesc':
 		"Прив'яжіть свій API-ключ Google Gemini. Натисніть «Link...», і Obsidian запитає секретне ім'я (це просто мітка — використовуйте будь-яку назву, наприклад «gemini-api») та секретне значення (вставте сюди свій API-ключ). Отримайте безкоштовний ключ на https://aistudio.google.com/apikey",
@@ -63,7 +96,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 		'Модель, що використовується для вбудованого автодоповнення в стилі IDE під час введення тексту в нотатках.',
 	'settings.general.ollamaModelName': 'Модель Ollama',
 	'settings.general.ollamaModelDesc':
-		'Модель, що використовується для всіх сценаріїв Ollama: чат, резюмування, автодоповнення та переписування.',
+		'Модель, що використовується для чату та переписування, а також для будь-яких інших функцій Ollama, для яких залишено значення «Так само, як модель чату».',
 	'settings.general.imageModelName': 'Модель зображень',
 	'settings.general.imageModelDesc': 'Модель, що використовується для генерації зображень.',
 	'settings.general.stateFolderName': 'Папка стану плагіну',
@@ -75,7 +108,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'settings.general.modelListUpdatedSingular': 'Список моделей оновлено: {count} модель.',
 	'settings.general.modelListUpdated': 'Список моделей оновлено: {count} моделей.',
 	'settings.general.refreshSkippedOffline': 'Пропущено: офлайн',
-	'settings.general.refreshSkippedNotGemini': 'Пропущено: постачальник не Gemini',
+	'settings.general.refreshSkippedNotGemini': 'Пропущено: жодна функція не налаштована на використання Gemini',
 	'settings.general.refreshModelListFailed': 'Не вдалося оновити список моделей: {error}',
 	'settings.ui.sectionTitle': 'Досвід користувача',
 	'settings.ui.sectionDesc':
@@ -840,7 +873,11 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'notice.main.projectRemoved': 'Вилучено статус проєкту з: {name}',
 	'notice.main.projectRemoveFailed': 'Не вдалося вилучити статус проєкту',
 	'notice.main.selectTextFirst': 'Будь ласка, спочатку виділіть текст',
+	'notice.main.imageGenUnavailableProvider':
+		'Не налаштовано провайдера для генерації зображень. Виберіть його у меню Налаштування → Gemini Scribe → Провайдер для кожної функції.',
 	'notice.main.imageGenUnavailable': 'Генерація зображень недоступна.',
+	'notice.main.ragUnavailableProvider':
+		'Не налаштовано провайдера для пошукового індексу сховища. Виберіть його у меню Налаштування → Gemini Scribe → Провайдер для кожної функції.',
 	'notice.main.ragNotEnabled': 'Індексацію RAG не увімкнено',
 	'notice.main.ragAlreadyPaused': 'Синхронізацію RAG уже призупинено',
 	'notice.main.ragCannotPauseWhileIndexing': 'Неможливо призупинити під час індексації',
