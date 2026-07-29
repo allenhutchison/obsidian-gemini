@@ -371,7 +371,7 @@ What do you remember about my vault?
 
 ### Web & Research Operations
 
-> All four tools in this section (`google_search`, `google_maps`, `fetch_url`, `deep_research`) are available on the Gemini provider only — they're hidden when Ollama is the active provider. See the [Provider Capabilities reference](/reference/provider-capabilities) for the full matrix.
+> All four tools in this section (`google_search`, `google_maps`, `fetch_url`, `deep_research`) require Gemini — they're registered only when the **Web and search** feature (Settings → Gemini Scribe → Per-feature provider) resolves to Gemini, whether that's your default provider or a per-feature override on an otherwise-Ollama setup. See the [Provider Capabilities reference](/reference/provider-capabilities) for the full matrix.
 
 #### google_search
 
@@ -411,7 +411,7 @@ Research the latest developments in quantum error correction and save it to Rese
 
 #### generate_image
 
-Generate an image from a prompt and save it to your vault. The agent picks a default attachment path if you don't specify one. Like `deep_research`, it defaults to running as a background task — the agent only generates inline when the image needs to appear in the same turn. Available on the Gemini provider only.
+Generate an image from a prompt and save it to your vault. The agent picks a default attachment path if you don't specify one. Like `deep_research`, it defaults to running as a background task — the agent only generates inline when the image needs to appear in the same turn. Requires the **Image generation** feature to be routed to Gemini (the only provider that supports it today).
 
 ```text
 Generate a watercolor diagram of a Zettelkasten workflow and embed it in my notes

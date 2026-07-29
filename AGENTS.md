@@ -51,7 +51,7 @@ repo-specific release gates live in `.claude/guidelines/release.md`).
 src/main.ts → ModelClientFactory.createFromPlugin() → GeminiClient | OllamaClient → RetryDecorator → ModelApi
 ```
 
-The plugin uses a factory pattern (`ModelClientFactory` in `src/api/factory.ts`) to create model API clients, wrapped with a retry decorator (`RetryDecorator`) for resilience. The factory branches on `settings.provider` to instantiate either a `GeminiClient` or an `OllamaClient`. All API implementations follow the `ModelApi` interface. The factory supports different use cases (chat, summary, completions, rewrite) and provides retry logic with exponential backoff for handling transient API failures. Each provider lives in its own package under `src/api/providers/{gemini,ollama}/`.
+The plugin uses a factory pattern (`ModelClientFactory` in `src/api/factory.ts`) to create model API clients, wrapped with a retry decorator (`RetryDecorator`) for resilience. Since per-use-case provider selection (#704), the factory resolves each call's provider independently — via `resolveProviderOrDefault(settings, useCase)` in `src/api/provider-routing.ts`, which checks `settings.providerOverrides[useCase]` before falling back to the primary `settings.provider` — then instantiates the matching `GeminiClient` or `OllamaClient`. All API implementations follow the `ModelApi` interface. The factory supports different use cases (chat, summary, completions, rewrite) and provides retry logic with exponential backoff for handling transient API failures. Each provider lives in its own package under `src/api/providers/{gemini,ollama}/`; the capability matrix and routing helpers live in the leaf modules `src/api/providers/registry.ts` and `src/api/provider-routing.ts`.
 
 ### Key Components
 
