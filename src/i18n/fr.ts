@@ -41,6 +41,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'settings.general.ollamaBaseUrlDesc':
 		'Point de terminaison HTTP de votre démon Ollama local. Par défaut : http://localhost:11434.',
 	'settings.general.refreshModelListName': 'Actualiser la liste des modèles',
+	'settings.general.refreshOllamaModelListName': 'Actualiser la liste des modèles Ollama',
 	'settings.general.refreshModelListOllamaDesc':
 		'Interroger à nouveau le démon Ollama pour obtenir les modèles disponibles.',
 	'settings.general.refreshModelListGeminiDesc':
@@ -49,9 +50,42 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'settings.general.ollamaModelsFoundSingular': '{count} modèle Ollama trouvé.',
 	'settings.general.ollamaModelsFound': '{count} modèles Ollama trouvés.',
 	'settings.general.refreshFailedNotice': "Échec de l'actualisation : {error}",
-	'settings.general.localOnlyNoticeName': 'Notification de fonctionnalités uniquement locales',
+	'settings.general.localOnlyNoticeName': 'Avis sur les fonctionnalités locales uniquement',
 	'settings.general.localOnlyNoticeDesc':
-		"La recherche Google, le contexte d'URL (récupération web), Deep Research, la génération d'images et l'indexation RAG ne sont pas disponibles avec Ollama. Ils dépendent des services intégrés de Gemini.",
+		"Tout s'exécute sur votre machine. Google Search, URL Context (récupération web), Deep Research, la génération d'images et l'index de recherche du coffre dépendent des services cloud de Gemini et sont désactivés. Pour en activer un, attribuez-lui un fournisseur sous « Fournisseur par fonctionnalité » — les données de cette fonctionnalité seront alors envoyées vers le cloud.",
+	'settings.general.perFeatureProviderTitle': 'Fournisseur par fonctionnalité',
+	'settings.general.perFeatureProviderDesc':
+		'Choisissez un fournisseur différent pour chaque fonctionnalité. Tout ce qui est laissé par défaut utilise le fournisseur sélectionné ci-dessus.',
+	'settings.general.useProviderDefault': 'Par défaut — {provider}',
+	'settings.general.useCaseUnavailableOption': 'Non disponible',
+	'settings.general.useCaseChatName': 'Chat et agent',
+	'settings.general.useCaseChatDesc': "Chat interactif, sessions d'agent, tâches planifiées et hooks.",
+	'settings.general.useCaseSummaryName': 'Résumés',
+	'settings.general.useCaseSummaryDesc':
+		'La commande « Résumer le fichier actif » et la compression de la conversation.',
+	'settings.general.useCaseCompletionsName': 'Complétions',
+	'settings.general.useCaseCompletionsDesc': 'Suggestions en ligne de style IDE pendant la saisie.',
+	'settings.general.useCaseRewriteName': 'Réécriture',
+	'settings.general.useCaseRewriteDesc': 'Réécriture du texte sélectionné. Utilise le modèle de chat.',
+	'settings.general.useCaseWebSearchName': 'Web et recherche',
+	'settings.general.useCaseWebSearchDesc':
+		'Outils Google Search, Google Maps, URL Context (récupération web) et Deep Research.',
+	'settings.general.useCaseRagName': 'Index de recherche du coffre',
+	'settings.general.useCaseRagDesc':
+		'Recherche sémantique dans votre coffre. Téléverse le contenu des notes vers un index de recherche cloud.',
+	'settings.general.useCaseImageGenName': "Génération d'images",
+	'settings.general.useCaseImageGenDesc': "Génération d'images à partir d'un prompt.",
+	'settings.general.missingKeyNoticeName': 'Clé API requise',
+	'settings.general.missingKeyNoticeDesc':
+		'Certaines fonctionnalités sont configurées pour utiliser {providers}, qui nécessite une clé API. Saisissez-en une ci-dessus, sinon ces fonctionnalités échoueront lors de leur utilisation.',
+	'settings.general.mixedProviderNoticeName': 'Certaines fonctionnalités utilisent un fournisseur différent',
+	'settings.general.mixedProviderNoticeDesc':
+		"Ces fonctionnalités n'utilisent pas votre fournisseur par défaut : {features}. Leurs requêtes — y compris tout contenu de note envoyé — vont vers le fournisseur que vous avez choisi pour elles.",
+	'settings.general.inheritOllamaChatModel': 'Identique au modèle de chat',
+	'settings.general.ollamaSummaryModelDesc':
+		"Modèle utilisé pour les résumés. Laissez sur « Identique au modèle de chat » sauf si vous en avez besoin d'un autre — Ollama ne garde qu'un seul modèle chargé à la fois, donc un second modèle est rechargé à chaque changement.",
+	'settings.general.ollamaCompletionsModelDesc':
+		"Modèle utilisé pour les complétions en ligne. Laissez sur « Identique au modèle de chat » sauf si vous en avez besoin d'un autre — Ollama ne garde qu'un seul modèle chargé à la fois, donc un second modèle est rechargé à chaque changement. Un petit modèle ici peut valoir le coup.",
 	'settings.general.apiKeyName': 'Clé API',
 	'settings.general.apiKeyDesc':
 		"Liez votre clé API Google Gemini. Cliquez sur « Lier... » et Obsidian vous demandera un nom de secret (ce n'est qu'une étiquette — utilisez le nom de votre choix comme « gemini-api ») et une valeur de secret (collez votre clé API ici). Obtenez une clé gratuitement sur https://aistudio.google.com/apikey",
@@ -66,7 +100,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 		'Modèle utilisé pour les complétions en ligne de style IDE lors de la saisie dans les notes.',
 	'settings.general.ollamaModelName': 'Modèle Ollama',
 	'settings.general.ollamaModelDesc':
-		"Modèle utilisé pour tous les cas d'utilisation d'Ollama : discussion, résumé, complétion et réécriture.",
+		'Modèle utilisé pour le chat et la réécriture, ainsi que pour toute autre fonctionnalité Ollama laissée sur « Identique au modèle de chat ».',
 	'settings.general.imageModelName': "Modèle d'image",
 	'settings.general.imageModelDesc': "Modèle utilisé pour la génération d'images.",
 	'settings.general.stateFolderName': "Dossier d'état du plugin",
@@ -78,7 +112,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'settings.general.modelListUpdatedSingular': 'Liste des modèles mise à jour : {count} modèle.',
 	'settings.general.modelListUpdated': 'Liste des modèles mise à jour : {count} modèles.',
 	'settings.general.refreshSkippedOffline': 'Ignoré : hors ligne',
-	'settings.general.refreshSkippedNotGemini': "Ignoré : le fournisseur n'est pas Gemini",
+	'settings.general.refreshSkippedNotGemini': "Ignoré : aucune fonctionnalité n'est configurée pour utiliser Gemini",
 	'settings.general.refreshModelListFailed': "Échec de l'actualisation de la liste des modèles : {error}",
 	'settings.ui.sectionTitle': 'Expérience utilisateur',
 	'settings.ui.sectionDesc':
@@ -853,7 +887,11 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'notice.main.projectRemoved': 'Statut de projet retiré de : {name}',
 	'notice.main.projectRemoveFailed': 'Échec du retrait du statut de projet',
 	'notice.main.selectTextFirst': "Veuillez d'abord sélectionner du texte",
+	'notice.main.imageGenUnavailableProvider':
+		"Aucun fournisseur n'est configuré pour la génération d'images. Choisissez-en un sous Paramètres → Gemini Scribe → Fournisseur par fonctionnalité.",
 	'notice.main.imageGenUnavailable': "La génération d'images n'est pas disponible.",
+	'notice.main.ragUnavailableProvider':
+		"Aucun fournisseur n'est configuré pour l'index de recherche du coffre. Choisissez-en un sous Paramètres → Gemini Scribe → Fournisseur par fonctionnalité.",
 	'notice.main.ragNotEnabled': "L'indexation RAG n'est pas activée",
 	'notice.main.ragAlreadyPaused': 'La synchronisation RAG est déjà en pause',
 	'notice.main.ragCannotPauseWhileIndexing': "Impossible de mettre en pause pendant que l'indexation est en cours",

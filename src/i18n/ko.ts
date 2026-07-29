@@ -39,6 +39,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'settings.general.ollamaBaseUrlDesc':
 		'로컬 Ollama 데몬의 HTTP 엔드포인트입니다. 기본값은 http://localhost:11434 입니다.',
 	'settings.general.refreshModelListName': '모델 목록 새로고침',
+	'settings.general.refreshOllamaModelListName': 'Ollama 모델 목록 새로고침',
 	'settings.general.refreshModelListOllamaDesc': '사용 가능한 모델을 확인하기 위해 Ollama 데몬을 다시 쿼리합니다.',
 	'settings.general.refreshModelListGeminiDesc':
 		'24시간 캐시를 우회하여 지금 GitHub에서 최신 Gemini 모델 목록을 가져옵니다. 새 모델이 출시된 후에 사용하세요.',
@@ -48,7 +49,39 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'settings.general.refreshFailedNotice': '새로고침 실패: {error}',
 	'settings.general.localOnlyNoticeName': '로컬 전용 기능 안내',
 	'settings.general.localOnlyNoticeDesc':
-		'Ollama를 사용할 때는 Google Search, URL Context (웹 가져오기), Deep Research, 이미지 생성 및 RAG 인덱싱을 사용할 수 없습니다. 이 기능들은 Gemini 내장 서비스에 의존합니다.',
+		'모든 기능이 사용자의 기기에서 실행됩니다. Google Search, URL Context (웹 가져오기), Deep Research, 이미지 생성 및 보관소 검색 인덱스는 Gemini 클라우드 서비스에 의존하므로 비활성화되어 있습니다. 이 중 하나를 활성화하려면 "기능별 프로바이더"에서 프로바이더를 지정하세요. 해당 기능의 데이터는 클라우드로 전송됩니다.',
+	'settings.general.perFeatureProviderTitle': '기능별 프로바이더',
+	'settings.general.perFeatureProviderDesc':
+		'개별 기능에 대해 다른 프로바이더를 선택합니다. 기본값으로 설정된 기능은 위에서 선택한 프로바이더를 사용합니다.',
+	'settings.general.useProviderDefault': '기본값 — {provider}',
+	'settings.general.useCaseUnavailableOption': '사용할 수 없음',
+	'settings.general.useCaseChatName': '채팅 및 에이전트',
+	'settings.general.useCaseChatDesc': '대화형 채팅, 에이전트 세션, 예약된 작업 및 훅.',
+	'settings.general.useCaseSummaryName': '요약',
+	'settings.general.useCaseSummaryDesc': '"활성 파일 요약" 명령 및 대화 압축.',
+	'settings.general.useCaseCompletionsName': '자동 완성',
+	'settings.general.useCaseCompletionsDesc': '입력하는 동안 IDE 스타일의 인라인 제안을 제공합니다.',
+	'settings.general.useCaseRewriteName': '재작성',
+	'settings.general.useCaseRewriteDesc': '선택한 텍스트를 재작성합니다. 채팅 모델을 사용합니다.',
+	'settings.general.useCaseWebSearchName': '웹 및 검색',
+	'settings.general.useCaseWebSearchDesc':
+		'Google Search, Google Maps, URL Context (웹 가져오기) 및 Deep Research 도구.',
+	'settings.general.useCaseRagName': '보관소 검색 인덱스',
+	'settings.general.useCaseRagDesc':
+		'보관소 전체에 대한 의미론적 검색입니다. 노트 콘텐츠를 클라우드 검색 인덱스에 업로드합니다.',
+	'settings.general.useCaseImageGenName': '이미지 생성',
+	'settings.general.useCaseImageGenDesc': '텍스트 프롬프트에서 이미지를 생성합니다.',
+	'settings.general.missingKeyNoticeName': 'API 키 필요',
+	'settings.general.missingKeyNoticeDesc':
+		'일부 기능이 API 키가 필요한 {providers}을(를) 사용하도록 설정되어 있습니다. 위에 키를 입력하지 않으면 해당 기능을 사용할 때 오류가 발생합니다.',
+	'settings.general.mixedProviderNoticeName': '일부 기능이 다른 프로바이더를 사용 중입니다',
+	'settings.general.mixedProviderNoticeDesc':
+		'다음 기능은 기본 프로바이더를 사용하지 않습니다: {features}. 전송되는 노트 콘텐츠를 포함한 요청은 해당 기능에 대해 선택한 프로바이더로 전송됩니다.',
+	'settings.general.inheritOllamaChatModel': '채팅 모델과 동일',
+	'settings.general.ollamaSummaryModelDesc':
+		'요약에 사용할 모델입니다. 다른 모델이 꼭 필요한 경우가 아니라면 "채팅 모델과 동일"로 유지하세요. Ollama는 한 번에 하나의 모델만 로드해 두므로, 다른 모델을 사용하면 전환할 때마다 모델을 다시 로드하게 됩니다.',
+	'settings.general.ollamaCompletionsModelDesc':
+		'인라인 자동 완성에 사용할 모델입니다. 다른 모델이 꼭 필요한 경우가 아니라면 "채팅 모델과 동일"로 유지하세요. Ollama는 한 번에 하나의 모델만 로드해 두므로, 다른 모델을 사용하면 전환할 때마다 모델을 다시 로드하게 됩니다. 여기서는 가벼운 모델을 사용하는 것이 성능 면에서 유리할 수 있습니다.',
 	'settings.general.apiKeyName': 'API 키',
 	'settings.general.apiKeyDesc':
 		'Google Gemini API 키를 연결합니다. "Link..."를 클릭하면 Obsidian에서 비밀 이름(단순한 레이블이므로 "gemini-api"와 같이 원하는 이름을 사용하세요)과 비밀 값(여기에 API 키를 붙여넣으세요)을 요청합니다. https://aistudio.google.com/apikey 에서 무료로 키를 발급받을 수 있습니다.',
@@ -60,7 +93,8 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'settings.general.completionModelDesc':
 		'노트에 입력할 때 IDE 스타일의 인라인 자동 완성을 제공하는 데 사용되는 모델입니다.',
 	'settings.general.ollamaModelName': 'Ollama 모델',
-	'settings.general.ollamaModelDesc': '채팅, 요약, 완성, 재작성 등 모든 Ollama 사용 사례에 사용되는 모델입니다.',
+	'settings.general.ollamaModelDesc':
+		'채팅 및 재작성, 그리고 "채팅 모델과 동일"로 설정된 다른 모든 Ollama 기능에 사용할 모델입니다.',
 	'settings.general.imageModelName': '이미지 모델',
 	'settings.general.imageModelDesc': '이미지 생성에 사용되는 모델입니다.',
 	'settings.general.stateFolderName': '플러그인 상태 폴더',
@@ -72,7 +106,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'settings.general.modelListUpdatedSingular': '모델 목록이 업데이트되었습니다: {count}개 모델.',
 	'settings.general.modelListUpdated': '모델 목록이 업데이트되었습니다: {count}개 모델.',
 	'settings.general.refreshSkippedOffline': '건너뜀: 오프라인 상태',
-	'settings.general.refreshSkippedNotGemini': '건너뜀: 제공자가 Gemini가 아님',
+	'settings.general.refreshSkippedNotGemini': '건너뜀: Gemini를 사용하도록 설정된 기능이 없습니다',
 	'settings.general.refreshModelListFailed': '모델 목록을 새로고침하지 못했습니다: {error}',
 	'settings.ui.sectionTitle': '사용자 경험',
 	'settings.ui.sectionDesc':
@@ -817,7 +851,11 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'notice.main.projectRemoved': '다음에서 프로젝트 상태 제거됨: {name}',
 	'notice.main.projectRemoveFailed': '프로젝트 상태 제거 실패',
 	'notice.main.selectTextFirst': '먼저 텍스트를 선택해 주세요',
+	'notice.main.imageGenUnavailableProvider':
+		'이미지 생성을 위한 프로바이더가 설정되어 있지 않습니다. 설정 → Gemini Scribe → 기능별 프로바이더에서 프로바이더를 선택하세요.',
 	'notice.main.imageGenUnavailable': '이미지 생성을 사용할 수 없습니다.',
+	'notice.main.ragUnavailableProvider':
+		'보관소 검색 인덱스를 위한 프로바이더가 설정되어 있지 않습니다. 설정 → Gemini Scribe → 기능별 프로바이더에서 프로바이더를 선택하세요.',
 	'notice.main.ragNotEnabled': 'RAG 인덱싱이 활성화되어 있지 않습니다',
 	'notice.main.ragAlreadyPaused': 'RAG 동기화가 이미 일시 중지되었습니다',
 	'notice.main.ragCannotPauseWhileIndexing': '인덱싱이 진행 중인 동안에는 일시 중지할 수 없습니다',

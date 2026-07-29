@@ -38,7 +38,8 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'settings.general.ollamaBaseUrlName': 'Ollama basis-URL',
 	'settings.general.ollamaBaseUrlDesc':
 		'HTTP-endpoint van je lokale Ollama-daemon. Standaard is http://localhost:11434.',
-	'settings.general.refreshModelListName': 'Modellijst vernieuwen',
+	'settings.general.refreshModelListName': 'Modellenlijst vernieuwen',
+	'settings.general.refreshOllamaModelListName': 'Ollama-modellenlijst vernieuwen',
 	'settings.general.refreshModelListOllamaDesc': 'Vraag de Ollama-daemon opnieuw om beschikbare modellen.',
 	'settings.general.refreshModelListGeminiDesc':
 		'Haal nu de nieuwste Gemini-modellijst op van GitHub, waarbij de 24-uurs cache wordt omzeild. Gebruik dit nadat een nieuw model is gepubliceerd.',
@@ -46,9 +47,41 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'settings.general.ollamaModelsFoundSingular': '{count} Ollama-model gevonden.',
 	'settings.general.ollamaModelsFound': '{count} Ollama-modellen gevonden.',
 	'settings.general.refreshFailedNotice': 'Vernieuwen mislukt: {error}',
-	'settings.general.localOnlyNoticeName': 'Melding over lokaal-exclusieve functies',
+	'settings.general.localOnlyNoticeName': 'Melding over uitsluitend lokale functies',
 	'settings.general.localOnlyNoticeDesc':
-		'Google Search, URL Context (web ophalen), Deep Research, afbeeldingengeneratie en RAG-indexering zijn niet beschikbaar bij het gebruik van Ollama. Deze zijn afhankelijk van ingebouwde Gemini-diensten.',
+		'Alles wordt op uw machine uitgevoerd. Google Search, URL Context (web fetch), Deep Research, afbeeldingengeneratie en de vault-zoekindex zijn afhankelijk van Gemini-clouddiensten en zijn uitgeschakeld. Om een functie in te schakelen, wijst u een provider toe onder "Provider per functie" — de gegevens van die functie worden dan naar de cloud verzonden.',
+	'settings.general.perFeatureProviderTitle': 'Provider per functie',
+	'settings.general.perFeatureProviderDesc':
+		'Kies een andere provider voor afzonderlijke functies. Alles wat op de standaardwaarde blijft staan, gebruikt de hierboven geselecteerde provider.',
+	'settings.general.useProviderDefault': 'Standaard — {provider}',
+	'settings.general.useCaseUnavailableOption': 'Niet beschikbaar',
+	'settings.general.useCaseChatName': 'Chat en agent',
+	'settings.general.useCaseChatDesc': 'Interactieve chat, agentsessies, geplande taken en hooks.',
+	'settings.general.useCaseSummaryName': 'Samenvattingen',
+	'settings.general.useCaseSummaryDesc': 'De opdracht "Actief bestand samenvatten" en conversatiecompressie.',
+	'settings.general.useCaseCompletionsName': 'Aanvullingen',
+	'settings.general.useCaseCompletionsDesc': 'Inline suggesties in IDE-stijl tijdens het typen.',
+	'settings.general.useCaseRewriteName': 'Herschrijven',
+	'settings.general.useCaseRewriteDesc': 'Geselecteerde tekst herschrijven. Maakt gebruik van het chatmodel.',
+	'settings.general.useCaseWebSearchName': 'Web en zoeken',
+	'settings.general.useCaseWebSearchDesc':
+		'Google Search, Google Maps, URL Context (web fetch) en Deep Research-tools.',
+	'settings.general.useCaseRagName': 'Vault-zoekindex',
+	'settings.general.useCaseRagDesc':
+		'Semantisch zoeken in uw vault. Uploadt de inhoud van notities naar een cloud-zoekindex.',
+	'settings.general.useCaseImageGenName': 'Afbeeldingengeneratie',
+	'settings.general.useCaseImageGenDesc': 'Afbeeldingen genereren op basis van een tekstprompt.',
+	'settings.general.missingKeyNoticeName': 'API-sleutel vereist',
+	'settings.general.missingKeyNoticeDesc':
+		'Sommige functies zijn ingesteld om {providers} te gebruiken, waarvoor een API-sleutel vereist is. Voer hierboven een sleutel in, anders zullen deze functies mislukken wanneer u ze gebruikt.',
+	'settings.general.mixedProviderNoticeName': 'Sommige functies gebruiken een andere provider',
+	'settings.general.mixedProviderNoticeDesc':
+		'Deze functies gebruiken niet uw standaardprovider: {features}. Hun verzoeken — inclusief eventuele notitie-inhoud die ze verzenden — gaan naar de provider die u voor hen hebt gekozen.',
+	'settings.general.inheritOllamaChatModel': 'Hetzelfde als chatmodel',
+	'settings.general.ollamaSummaryModelDesc':
+		'Model dat wordt gebruikt voor samenvattingen. Laat dit op "Hetzelfde als chatmodel" staan, tenzij u een ander model nodig hebt — Ollama houdt één model tegelijk geladen, dus een tweede model wordt bij elke wisseling opnieuw geladen.',
+	'settings.general.ollamaCompletionsModelDesc':
+		'Model dat wordt gebruikt voor inline aanvullingen. Laat dit op "Hetzelfde als chatmodel" staan, tenzij u een ander model nodig hebt — Ollama houdt één model tegelijk geladen, dus een tweede model wordt bij elke wisseling opnieuw geladen. Een klein model kan hier de afweging waard zijn.',
 	'settings.general.apiKeyName': 'API-sleutel',
 	'settings.general.apiKeyDesc':
 		'Koppel je Google Gemini API-sleutel. Klik op "Koppelen..." en Obsidian zal vragen om een geheime naam (dit is slechts een label — gebruik een willekeurige naam zoals "gemini-api") en een geheime waarde (plak hier je API-sleutel). Krijg gratis een sleutel op https://aistudio.google.com/apikey',
@@ -63,7 +96,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 		'Model dat wordt gebruikt voor inline aanvullingen in IDE-stijl terwijl je in notities typt.',
 	'settings.general.ollamaModelName': 'Ollama-model',
 	'settings.general.ollamaModelDesc':
-		'Model gebruikt voor alle Ollama-toepassingen: chat, samenvatten, aanvullen en herschrijven.',
+		'Model dat wordt gebruikt voor chatten en herschrijven, en voor elke andere Ollama-functie die is ingesteld op "Hetzelfde als chatmodel".',
 	'settings.general.imageModelName': 'Afbeeldingsmodel',
 	'settings.general.imageModelDesc': 'Model dat wordt gebruikt voor het genereren van afbeeldingen.',
 	'settings.general.stateFolderName': 'Plugin-statusmap',
@@ -75,7 +108,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'settings.general.modelListUpdatedSingular': 'Modellijst bijgewerkt: {count} model.',
 	'settings.general.modelListUpdated': 'Modellijst bijgewerkt: {count} modellen.',
 	'settings.general.refreshSkippedOffline': 'Overgeslagen: offline',
-	'settings.general.refreshSkippedNotGemini': 'Overgeslagen: provider is niet Gemini',
+	'settings.general.refreshSkippedNotGemini': 'Overgeslagen: er is geen functie ingesteld om Gemini te gebruiken',
 	'settings.general.refreshModelListFailed': 'Bijwerken van modellijst mislukt: {error}',
 	'settings.ui.sectionTitle': 'Gebruikerservaring',
 	'settings.ui.sectionDesc':
@@ -841,7 +874,11 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'notice.main.projectRemoved': 'Projectstatus verwijderd van: {name}',
 	'notice.main.projectRemoveFailed': 'Verwijderen van projectstatus mislukt',
 	'notice.main.selectTextFirst': 'Selecteer eerst wat tekst',
+	'notice.main.imageGenUnavailableProvider':
+		'Er is geen provider ingesteld voor afbeeldingengeneratie. Kies er een onder Instellingen → Gemini Scribe → Provider per functie.',
 	'notice.main.imageGenUnavailable': 'Afbeeldingsgeneratie is niet beschikbaar.',
+	'notice.main.ragUnavailableProvider':
+		'Er is geen provider ingesteld voor de vault-zoekindex. Kies er een onder Instellingen → Gemini Scribe → Provider per functie.',
 	'notice.main.ragNotEnabled': 'RAG-indexering is niet ingeschakeld',
 	'notice.main.ragAlreadyPaused': 'RAG-synchronisatie is al gepauzeerd',
 	'notice.main.ragCannotPauseWhileIndexing': 'Kan niet pauzeren terwijl indexering bezig is',

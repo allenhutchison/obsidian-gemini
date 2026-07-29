@@ -39,6 +39,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'settings.general.ollamaBaseUrlDesc':
 		'HTTP-endpoint for din lokale Ollama-daemon. Standard er http://localhost:11434.',
 	'settings.general.refreshModelListName': 'Opdater modelliste',
+	'settings.general.refreshOllamaModelListName': 'Opdater Ollama-modelliste',
 	'settings.general.refreshModelListOllamaDesc': 'Forespørg Ollama-daemonen igen for tilgængelige modeller.',
 	'settings.general.refreshModelListGeminiDesc':
 		'Hent den seneste Gemini-modelliste fra GitHub nu, og gå udenom 24-timers cachen. Brug dette, efter en ny model er udgivet.',
@@ -46,9 +47,40 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'settings.general.ollamaModelsFoundSingular': 'Fandt {count} Ollama-model.',
 	'settings.general.ollamaModelsFound': 'Fandt {count} Ollama-modeller.',
 	'settings.general.refreshFailedNotice': 'Kunne ikke opdatere: {error}',
-	'settings.general.localOnlyNoticeName': 'Meddelelse om funktioner, der kun er lokale',
+	'settings.general.localOnlyNoticeName': 'Meddelelse om rent lokale funktioner',
 	'settings.general.localOnlyNoticeDesc':
-		'Google-søgning, URL-kontekst (web-hentning), Deep Research, billedgenerering og RAG-indeksering er utilgængelige, når du bruger Ollama. De afhænger af indbyggede Gemini-tjenester.',
+		'Alt kører på din maskine. Google Search, URL Context (webhentning), Deep Research, billedgenerering og vault-søgeindekset afhænger af Gemini-skytjenester og er deaktiveret. For at aktivere en af dem skal du tildele den en udbyder under "Udbyder pr. funktion" — data for den pågældende funktion vil derefter blive sendt til skyen.',
+	'settings.general.perFeatureProviderTitle': 'Udbyder pr. funktion',
+	'settings.general.perFeatureProviderDesc':
+		'Vælg en anden udbyder til de enkelte funktioner. Alt, der efterlades som standard, bruger den udbyder, der er valgt ovenfor.',
+	'settings.general.useProviderDefault': 'Standard — {provider}',
+	'settings.general.useCaseUnavailableOption': 'Ikke tilgængelig',
+	'settings.general.useCaseChatName': 'Chat og agent',
+	'settings.general.useCaseChatDesc': 'Interaktiv chat, agentsessioner, planlagte opgaver og hooks.',
+	'settings.general.useCaseSummaryName': 'Resuméer',
+	'settings.general.useCaseSummaryDesc': 'Kommandoen "Opsummer aktiv fil" og sammentrækning af samtaler.',
+	'settings.general.useCaseCompletionsName': 'Fuldførelser',
+	'settings.general.useCaseCompletionsDesc': 'Indlejrede forslag i IDE-stil, mens du skriver.',
+	'settings.general.useCaseRewriteName': 'Omskrivning',
+	'settings.general.useCaseRewriteDesc': 'Omskrivning af markeret tekst. Bruger chatmodellen.',
+	'settings.general.useCaseWebSearchName': 'Web og søgning',
+	'settings.general.useCaseWebSearchDesc':
+		'Værktøjer til Google Search, Google Maps, URL Context (webhentning) og Deep Research.',
+	'settings.general.useCaseRagName': 'Vault-søgeindeks',
+	'settings.general.useCaseRagDesc': 'Semantisk søgning i din vault. Uploader noteindhold til et søgeindeks i skyen.',
+	'settings.general.useCaseImageGenName': 'Billedgenerering',
+	'settings.general.useCaseImageGenDesc': 'Generering af billeder ud fra en tekstprompt.',
+	'settings.general.missingKeyNoticeName': 'API-nøgle påkrævet',
+	'settings.general.missingKeyNoticeDesc':
+		'Nogle funktioner er indstillet til at bruge {providers}, som kræver en API-nøgle. Indtast en ovenfor, ellers vil disse funktioner mislykkes, når du bruger dem.',
+	'settings.general.mixedProviderNoticeName': 'Nogle funktioner bruger en anden udbyder',
+	'settings.general.mixedProviderNoticeDesc':
+		'Disse funktioner bruger ikke din standardudbyder: {features}. Deres anmodninger — herunder eventuelt noteindhold, de sender — går til den udbyder, du har valgt til dem.',
+	'settings.general.inheritOllamaChatModel': 'Samme som chatmodel',
+	'settings.general.ollamaSummaryModelDesc':
+		'Model, der bruges til resuméer. Lad den stå som "Samme som chatmodel", medmindre du har brug for en anden — Ollama holder kun én model indlæst ad gangen, så en anden model genindlæses ved hvert skift.',
+	'settings.general.ollamaCompletionsModelDesc':
+		'Model, der bruges til indlejrede fuldførelser. Lad den stå som "Samme som chatmodel", medmindre du har brug for en anden — Ollama holder kun én model indlæst ad gangen, så en anden model genindlæses ved hvert skift. En lille model her kan være værd at overveje trods kompromiset.',
 	'settings.general.apiKeyName': 'API-nøgle',
 	'settings.general.apiKeyDesc':
 		'Tilknyt din Google Gemini API-nøgle. Klik på "Link...", og Obsidian vil bede om et hemmeligt navn (dette er blot en etiket — brug et vilkårligt navn som "gemini-api") og en hemmelig værdi (indsæt din API-nøgle her). Få en gratis nøgle på https://aistudio.google.com/apikey',
@@ -63,7 +95,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 		'Model, der bruges til inline-fuldførelser i IDE-stil, mens du skriver i noter.',
 	'settings.general.ollamaModelName': 'Ollama-model',
 	'settings.general.ollamaModelDesc':
-		'Model, der bruges til alle Ollama-anvendelser: chat, opsummering, autofuldførelse og omskrivning.',
+		'Model, der bruges til chat og omskrivning, samt til enhver anden Ollama-funktion, der er indstillet til "Samme som chatmodel".',
 	'settings.general.imageModelName': 'Billedmodel',
 	'settings.general.imageModelDesc': 'Model, der bruges til billedgenerering.',
 	'settings.general.stateFolderName': 'Plugin-statusmappe',
@@ -75,7 +107,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'settings.general.modelListUpdatedSingular': 'Modelliste opdateret: {count} model.',
 	'settings.general.modelListUpdated': 'Modelliste opdateret: {count} modeller.',
 	'settings.general.refreshSkippedOffline': 'Sprunget over: offline',
-	'settings.general.refreshSkippedNotGemini': 'Sprunget over: udbyder er ikke Gemini',
+	'settings.general.refreshSkippedNotGemini': 'Sprunget over: ingen funktion er indstillet til at bruge Gemini',
 	'settings.general.refreshModelListFailed': 'Kunne ikke opdatere modelliste: {error}',
 	'settings.ui.sectionTitle': 'Brugeroplevelse',
 	'settings.ui.sectionDesc':
@@ -835,7 +867,11 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'notice.main.projectRemoved': 'Fjernede projektstatus fra: {name}',
 	'notice.main.projectRemoveFailed': 'Kunne ikke fjerne projektstatus',
 	'notice.main.selectTextFirst': 'Vælg venligst noget tekst først',
+	'notice.main.imageGenUnavailableProvider':
+		'Der er ikke konfigureret nogen udbyder til billedgenerering. Vælg en under Indstillinger → Gemini Scribe → Udbyder pr. funktion.',
 	'notice.main.imageGenUnavailable': 'Billedgenerering er ikke tilgængelig.',
+	'notice.main.ragUnavailableProvider':
+		'Der er ikke konfigureret nogen udbyder til vault-søgeindekset. Vælg en under Indstillinger → Gemini Scribe → Udbyder pr. funktion.',
 	'notice.main.ragNotEnabled': 'RAG-indeksering er ikke aktiveret',
 	'notice.main.ragAlreadyPaused': 'RAG-synkronisering er allerede sat på pause',
 	'notice.main.ragCannotPauseWhileIndexing': 'Kan ikke sætte på pause, mens indeksering er i gang',

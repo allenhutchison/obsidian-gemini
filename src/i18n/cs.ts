@@ -39,6 +39,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.general.ollamaBaseUrlDesc':
 		'HTTP koncový bod (endpoint) vašeho lokálního démona Ollama. Výchozí je http://localhost:11434.',
 	'settings.general.refreshModelListName': 'Obnovit seznam modelů',
+	'settings.general.refreshOllamaModelListName': 'Obnovit seznam modelů Ollama',
 	'settings.general.refreshModelListOllamaDesc': 'Znovu se dotázat démona Ollama na dostupné modely.',
 	'settings.general.refreshModelListGeminiDesc':
 		'Stáhnout nejnovější seznam modelů Gemini z GitHubu hned a obejít 24hodinovou mezipaměť. Použijte po vydání nového modelu.',
@@ -46,9 +47,41 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.general.ollamaModelsFoundSingular': 'Nalezen {count} model Ollama.',
 	'settings.general.ollamaModelsFound': 'Nalezeno {count} modelů Ollama.',
 	'settings.general.refreshFailedNotice': 'Nepodařilo se obnovit: {error}',
-	'settings.general.localOnlyNoticeName': 'Upozornění na funkce pouze pro lokální režim',
+	'settings.general.localOnlyNoticeName': 'Upozornění na pouze lokální funkce',
 	'settings.general.localOnlyNoticeDesc':
-		'Vyhledávání Google, URL kontext (stahování z webu), Deep Research, generování obrázků a indexování RAG nejsou při použití Ollama k dispozici. Spoléhají na vestavěné služby Gemini.',
+		'Vše běží na vašem počítači. Vyhledávání Google, URL Context (načítání webu), Deep Research, generování obrázků a vyhledávací index vaultu závisí na cloudových službách Gemini a jsou vypnuté. Chcete-li některou z nich povolit, přiřaďte jí poskytovatele v sekci „Poskytovatel pro jednotlivé funkce“ — data této funkce pak budou odesílána do cloudu.',
+	'settings.general.perFeatureProviderTitle': 'Poskytovatel pro jednotlivé funkce',
+	'settings.general.perFeatureProviderDesc':
+		'Vyberte jiného poskytovatele pro jednotlivé funkce. Vše, co ponecháte jako výchozí, bude používat poskytovatele vybraného výše.',
+	'settings.general.useProviderDefault': 'Výchozí — {provider}',
+	'settings.general.useCaseUnavailableOption': 'Není k dispozici',
+	'settings.general.useCaseChatName': 'Chat a agent',
+	'settings.general.useCaseChatDesc': 'Interaktivní chat, relace agentů, plánované úlohy a hooky.',
+	'settings.general.useCaseSummaryName': 'Shrnutí',
+	'settings.general.useCaseSummaryDesc': 'Příkaz „Summarize active file“ a zkracování konverzace.',
+	'settings.general.useCaseCompletionsName': 'Doplňování',
+	'settings.general.useCaseCompletionsDesc': 'Řádkové návrhy ve stylu IDE během psaní.',
+	'settings.general.useCaseRewriteName': 'Přepisování',
+	'settings.general.useCaseRewriteDesc': 'Přepisování vybraného textu. Používá model chatu.',
+	'settings.general.useCaseWebSearchName': 'Web a vyhledávání',
+	'settings.general.useCaseWebSearchDesc':
+		'Nástroje Vyhledávání Google, Mapy Google, URL Context (načítání webu) a Deep Research.',
+	'settings.general.useCaseRagName': 'Vyhledávací index vaultu',
+	'settings.general.useCaseRagDesc':
+		'Sémantické vyhledávání ve vašem vaultu. Nahrává obsah poznámek do cloudového vyhledávacího indexu.',
+	'settings.general.useCaseImageGenName': 'Generování obrázků',
+	'settings.general.useCaseImageGenDesc': 'Generování obrázků z textového zadání.',
+	'settings.general.missingKeyNoticeName': 'Vyžadován klíč API',
+	'settings.general.missingKeyNoticeDesc':
+		'Některé funkce jsou nastaveny na používání {providers}, což vyžaduje klíč API. Zadejte jej výše, jinak tyto funkce při použití selžou.',
+	'settings.general.mixedProviderNoticeName': 'Některé funkce používají jiného poskytovatele',
+	'settings.general.mixedProviderNoticeDesc':
+		'Tyto funkce nepoužívají vašeho výchozího poskytovatele: {features}. Jejich požadavky — včetně jakéhokoli obsahu poznámek, který odesílají — směřují k poskytovateli, kterého jste pro ně vybrali.',
+	'settings.general.inheritOllamaChatModel': 'Stejný jako model chatu',
+	'settings.general.ollamaSummaryModelDesc':
+		'Model používaný pro shrnutí. Ponechte možnost „Stejný jako model chatu“, pokud nepotřebujete jiný — Ollama udržuje v paměti vždy pouze jeden model, takže druhý model se při každém přepnutí znovu načítá.',
+	'settings.general.ollamaCompletionsModelDesc':
+		'Model používaný pro řádkové doplňování. Ponechte možnost „Stejný jako model chatu“, pokud nepotřebujete jiný — Ollama udržuje v paměti vždy pouze jeden model, takže druhý model se při každém přepnutí znovu načítá. Malý model zde může za tento kompromis stát.',
 	'settings.general.apiKeyName': 'API klíč',
 	'settings.general.apiKeyDesc':
 		'Propojte svůj API klíč pro Google Gemini. Klikněte na "Propojit..." a Obsidian vás požádá o název tajného klíče (jedná se pouze o štítek – použijte jakýkoli název, např. "gemini-api") a tajnou hodnotu (sem vložte svůj API klíč). Klíč získáte zdarma na adrese https://aistudio.google.com/apikey',
@@ -63,7 +96,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 		'Model používaný pro řádkové doplňování (ve stylu IDE) během psaní v poznámkách.',
 	'settings.general.ollamaModelName': 'Model Ollama',
 	'settings.general.ollamaModelDesc':
-		'Model používaný pro všechny případy použití Ollama: chat, sumarizace, doplňování a přepisování.',
+		'Model používaný pro chat a přepisování a pro jakékoli další funkce Ollama, které jsou ponechány na nastavení „Stejný jako model chatu“.',
 	'settings.general.imageModelName': 'Model pro obrázky',
 	'settings.general.imageModelDesc': 'Model používaný pro generování obrázků.',
 	'settings.general.stateFolderName': 'Složka stavu pluginu',
@@ -75,7 +108,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.general.modelListUpdatedSingular': 'Seznam modelů aktualizován: {count} model.',
 	'settings.general.modelListUpdated': 'Seznam modelů aktualizován: {count} modelů.',
 	'settings.general.refreshSkippedOffline': 'Přeskočeno: offline',
-	'settings.general.refreshSkippedNotGemini': 'Přeskočeno: poskytovatel není Gemini',
+	'settings.general.refreshSkippedNotGemini': 'Přeskočeno: žádná funkce není nastavena na používání Gemini',
 	'settings.general.refreshModelListFailed': 'Nepodařilo se aktualizovat seznam modelů: {error}',
 	'settings.ui.sectionTitle': 'Uživatelské prostředí',
 	'settings.ui.sectionDesc':
@@ -830,7 +863,11 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'notice.main.projectRemoved': 'Stav projektu byl odebrán z: {name}',
 	'notice.main.projectRemoveFailed': 'Nepodařilo se odebrat stav projektu',
 	'notice.main.selectTextFirst': 'Nejprve prosím vyberte nějaký text',
+	'notice.main.imageGenUnavailableProvider':
+		'Není nastaven žádný poskytovatel pro generování obrázků. Vyberte jej v Nastavení → Gemini Scribe → Poskytovatel pro jednotlivé funkce.',
 	'notice.main.imageGenUnavailable': 'Generování obrázků není k dispozici.',
+	'notice.main.ragUnavailableProvider':
+		'Není nastaven žádný poskytovatel pro vyhledávací index vaultu. Vyberte jej v Nastavení → Gemini Scribe → Poskytovatel pro jednotlivé funkce.',
 	'notice.main.ragNotEnabled': 'Indexování RAG není povoleno',
 	'notice.main.ragAlreadyPaused': 'Synchronizace RAG je již pozastavena',
 	'notice.main.ragCannotPauseWhileIndexing': 'Nelze pozastavit během probíhajícího indexování',
