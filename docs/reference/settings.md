@@ -331,7 +331,7 @@ Advanced settings for developers and power users. Access by clicking "Show advan
 - **Setting**: `useInteractionsApi`
 - **Type**: Boolean
 - **Default**: `true`
-- **Only applies when**: Provider is `gemini`
+- **Only applies when**: Gemini serves at least one use case (the toggle is hidden in an all-Ollama setup, shown whenever chat, summary, or any other feature is routed to Gemini)
 - **Description**: Routes Gemini requests through Google's GA [Interactions API](https://ai.google.dev/gemini-api/docs/interactions) (`interactions.create`) instead of the legacy `generateContent` API. This is now the default transport; existing installs are migrated to it automatically (a one-time flip you can reverse by turning the toggle off).
 - **Privacy**: Runs statelessly (`store: false`) — conversation history is replayed with each request, and the plugin does not persist Interactions state on Google's side between turns. (Requests are still sent to Google to generate each response, subject to Google's standard API data-handling terms.)
 - **Status**: Default-on. Responses stream incrementally (text, reasoning, and tool calls); turn it off to fall back to the legacy `generateContent` path if you hit issues.
@@ -343,7 +343,7 @@ Advanced settings for developers and power users. Access by clicking "Show advan
 - **Setting**: `customBaseUrl`
 - **Type**: String
 - **Default**: `""` (empty)
-- **Only applies when**: Provider is `gemini`
+- **Only applies when**: Gemini serves at least one use case (Ollama has its own `ollamaBaseUrl` setting and ignores this value; the field is hidden in an all-Ollama setup)
 - **Description**: Overrides the default Google API base URL for all SDK calls. Use this to route requests through a corporate proxy, local gateway, or regional mirror.
 - **Example**: `https://my-proxy.example.com`
 - **Scope**: Applies to every Google API call site in the plugin (chat, streaming, image generation, web fetch, Google Search/Maps grounding, RAG indexing, deep research, context management).
