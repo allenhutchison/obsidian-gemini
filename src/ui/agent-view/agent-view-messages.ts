@@ -157,6 +157,9 @@ export class AgentViewMessages {
 					// Create collapsible tool execution block
 					const toolDiv = content.createDiv({ cls: 'gemini-agent-tool-execution' });
 					const toolHeader = toolDiv.createDiv({ cls: 'gemini-agent-tool-header' });
+					toolHeader.setAttribute('role', 'button');
+					toolHeader.setAttribute('tabindex', '0');
+					toolHeader.setAttribute('aria-expanded', 'false');
 
 					// Add expand/collapse icon
 					const icon = toolHeader.createSpan({ cls: 'gemini-agent-tool-icon' });
@@ -181,24 +184,21 @@ export class AgentViewMessages {
 						});
 					}
 
-					// Tool content (initially hidden)
-					const toolContentDiv = toolDiv.createDiv({
-						cls: 'gemini-agent-tool-content gemini-agent-tool-content-collapsed',
-					});
+					// Tool content (collapsed until the header is toggled)
+					const toolContentDiv = toolDiv.createDiv({ cls: 'gemini-agent-tool-content' });
+					toolContentDiv.hide();
 
 					// Render the tool content
 					await MarkdownRenderer.render(this.app, toolContent, toolContentDiv, sourcePath, this.viewContext);
 
-					// Toggle handler
-					toolHeader.addEventListener('click', () => {
-						const isCollapsed = toolContentDiv.hasClass('gemini-agent-tool-content-collapsed');
-						if (isCollapsed) {
-							toolContentDiv.removeClass('gemini-agent-tool-content-collapsed');
-							setIcon(icon, 'chevron-down');
-						} else {
-							toolContentDiv.addClass('gemini-agent-tool-content-collapsed');
-							setIcon(icon, 'chevron-right');
-						}
+					// Share the collapsible wiring used by tool rows and reasoning rows so
+					// keyboard toggling and aria-expanded stay consistent across surfaces.
+					wireCollapsibleToggle({
+						control: toolHeader,
+						body: toolContentDiv,
+						chevron: icon,
+						host: toolDiv,
+						expandedClass: 'gemini-agent-tool-execution-expanded',
 					});
 				}
 			} else {
