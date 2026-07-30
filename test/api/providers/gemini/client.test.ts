@@ -1223,6 +1223,28 @@ describe('GeminiClient', () => {
 			]);
 		});
 
+		test('maps multiple inline attachments in order', async () => {
+			const client = makeInteractionsClient();
+			await client.generateModelResponse({
+				prompt: '',
+				userMessage: 'what are these?',
+				kind: 'extended',
+				conversationHistory: [],
+				inlineAttachments: [
+					{ base64: 'AAAA', mimeType: 'image/png' },
+					{ base64: 'BBBB', mimeType: 'image/gif' },
+				],
+			});
+
+			const params = interactionsCreateMock.mock.calls[0][0];
+			const lastStep = params.input[params.input.length - 1];
+			expect(lastStep.content).toEqual([
+				{ type: 'text', text: 'what are these?' },
+				{ type: 'image', data: 'AAAA', mime_type: 'image/png' },
+				{ type: 'image', data: 'BBBB', mime_type: 'image/gif' },
+			]);
+		});
+
 		test('extracts tool calls, thoughts, and usage from the interaction', async () => {
 			interactionsCreateMock.mockResolvedValue({
 				id: 'int_2',
