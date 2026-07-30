@@ -212,6 +212,125 @@ describe('ContextManager', () => {
 		});
 	});
 
+	// A flat per-provider limit is wrong for Ollama by up to three orders of
+	// magnitude: local windows run 4k–1M. The old 32k constant showed a 262k model
+	// as 43% full at 13.9k tokens and compacted history at 2.4% of real capacity.
+	describe('getTokenUsage: Ollama context window resolution', () => {
+		const OLLAMA_MODEL = 'kimi-k2.7-code:cloud';
+
+		/** ContextManager wired to an Ollama daemon with the given probe results. */
+		function buildOllamaContext(opts: { runtime?: number | null; contextWindow?: number }) {
+			const getRuntimeContextLength = vi.fn().mockResolvedValue(opts.runtime ?? null);
+			const getModels = vi
+				.fn()
+				.mockResolvedValue([
+					{ value: OLLAMA_MODEL, label: OLLAMA_MODEL, provider: 'ollama', contextWindow: opts.contextWindow },
+				]);
+			const plugin = {
+				...mockPlugin,
+				settings: { ...mockPlugin.settings, provider: 'ollama' },
+				getModelManager: vi.fn().mockReturnValue({
+					getOllamaModelsService: () => ({ getRuntimeContextLength, getModels }),
+				}),
+			};
+			return { ctx: new ContextManager(plugin, mockLogger), getRuntimeContextLength, getModels };
+		}
+
+		async function withOllamaModelRegistered(run: () => Promise<void>) {
+			const { setGeminiModels, GEMINI_MODELS } = await import('../../src/models');
+			const original = [...GEMINI_MODELS];
+			setGeminiModels([{ value: OLLAMA_MODEL, label: OLLAMA_MODEL, provider: 'ollama' as const }]);
+			try {
+				await run();
+			} finally {
+				setGeminiModels(original);
+			}
+		}
+
+		test('prefers the runtime allocation reported by /api/ps', async () => {
+			await withOllamaModelRegistered(async () => {
+				const { ctx } = buildOllamaContext({ runtime: 262_144, contextWindow: 262_144 });
+				ctx.updateUsageMetadata({ promptTokenCount: 13_898, totalTokenCount: 14_000 });
+
+				const usage = await ctx.getTokenUsage(OLLAMA_MODEL);
+
+				expect(usage.inputTokenLimit).toBe(262_144);
+				// Was reported as 43.4% against the flat 32k limit.
+				expect(usage.percentUsed).toBe(5.3);
+			});
+		});
+
+		// #1252: the daemon defaults to a 4k window under 24 GiB of VRAM. Trusting
+		// the model's trained ceiling there would mean never compacting while
+		// Ollama silently truncated the prompt.
+		test('uses the small runtime allocation over the much larger trained ceiling', async () => {
+			await withOllamaModelRegistered(async () => {
+				const { ctx, getModels } = buildOllamaContext({ runtime: 4_096, contextWindow: 262_144 });
+				ctx.updateUsageMetadata({ promptTokenCount: 2_048, totalTokenCount: 2_100 });
+
+				const usage = await ctx.getTokenUsage(OLLAMA_MODEL);
+
+				expect(usage.inputTokenLimit).toBe(4_096);
+				expect(usage.percentUsed).toBe(50);
+				// The authoritative probe answered, so the ceiling is never consulted.
+				expect(getModels).not.toHaveBeenCalled();
+			});
+		});
+
+		test('falls back to the trained ceiling when the model is not yet loaded', async () => {
+			await withOllamaModelRegistered(async () => {
+				const { ctx } = buildOllamaContext({ runtime: null, contextWindow: 131_072 });
+				ctx.updateUsageMetadata({ promptTokenCount: 13_107, totalTokenCount: 14_000 });
+
+				const usage = await ctx.getTokenUsage(OLLAMA_MODEL);
+
+				expect(usage.inputTokenLimit).toBe(131_072);
+			});
+		});
+
+		test('falls back to the provider default when the daemon is unreachable', async () => {
+			await withOllamaModelRegistered(async () => {
+				const { ctx } = buildOllamaContext({ runtime: null, contextWindow: undefined });
+				ctx.updateUsageMetadata({ promptTokenCount: 8_000, totalTokenCount: 9_000 });
+
+				const usage = await ctx.getTokenUsage(OLLAMA_MODEL);
+
+				expect(usage.inputTokenLimit).toBe(32_000);
+			});
+		});
+
+		test('a probe failure degrades to the provider default rather than throwing', async () => {
+			await withOllamaModelRegistered(async () => {
+				const plugin = {
+					...mockPlugin,
+					settings: { ...mockPlugin.settings, provider: 'ollama' },
+					getModelManager: vi.fn().mockReturnValue({
+						getOllamaModelsService: () => ({
+							getRuntimeContextLength: vi.fn().mockRejectedValue(new Error('ECONNREFUSED')),
+							getModels: vi.fn(),
+						}),
+					}),
+				};
+				const ctx = new ContextManager(plugin, mockLogger);
+				ctx.updateUsageMetadata({ promptTokenCount: 8_000, totalTokenCount: 9_000 });
+
+				const usage = await ctx.getTokenUsage(OLLAMA_MODEL);
+
+				expect(usage.inputTokenLimit).toBe(32_000);
+			});
+		});
+
+		test('leaves Gemini models on the provider limit', async () => {
+			const { ctx, getRuntimeContextLength } = buildOllamaContext({ runtime: 4_096 });
+			ctx.updateUsageMetadata({ promptTokenCount: 100_000, totalTokenCount: 120_000 });
+
+			const usage = await ctx.getTokenUsage('gemini-2.5-flash');
+
+			expect(usage.inputTokenLimit).toBe(1_000_000);
+			expect(getRuntimeContextLength).not.toHaveBeenCalled();
+		});
+	});
+
 	describe('countTokens', () => {
 		test('should call ai.models.countTokens with correct params', async () => {
 			mockCountTokens.mockResolvedValue({ totalTokens: 5000 });

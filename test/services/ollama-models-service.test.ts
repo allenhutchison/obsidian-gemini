@@ -260,4 +260,84 @@ describe('OllamaModelsService', () => {
 			expect(result['model:23b']).toBeUndefined();
 		});
 	});
+
+	describe('context window', () => {
+		it('reads the trained window from the architecture-prefixed model_info key', async () => {
+			mockEndpoints([{ name: 'gpt-oss:120b-cloud' }, { name: 'gemma4:12b-mlx' }], (name) =>
+				name === 'gpt-oss:120b-cloud'
+					? { capabilities: ['completion'], model_info: { 'gptoss.context_length': 131_072 } }
+					: { capabilities: ['completion'], model_info: { 'gemma3.context_length': 262_144 } }
+			);
+
+			const svc = new OllamaModelsService(buildPlugin());
+			const models = await svc.getModels();
+
+			// The key is architecture-prefixed, so it has to be matched by suffix.
+			expect(models[0].contextWindow).toBe(131_072);
+			expect(models[1].contextWindow).toBe(262_144);
+		});
+
+		it('omits the window when /api/show reports no usable value', async () => {
+			mockEndpoints(
+				[{ name: 'a' }, { name: 'b' }, { name: 'c' }],
+				(name) =>
+					({
+						a: { capabilities: ['completion'] },
+						b: { capabilities: ['completion'], model_info: { 'llama.embedding_length': 4096 } },
+						c: { capabilities: ['completion'], model_info: { 'llama.context_length': 0 } },
+					})[name]
+			);
+
+			const svc = new OllamaModelsService(buildPlugin());
+			const models = await svc.getModels();
+
+			// No model_info at all, no context_length key, and a zero value: none
+			// should masquerade as a real window.
+			expect(models.map((m) => m.contextWindow)).toEqual([undefined, undefined, undefined]);
+		});
+	});
+
+	describe('getRuntimeContextLength', () => {
+		/** Mock /api/ps alongside the endpoints getModels needs. */
+		function mockPs(psModels: any[] | null, status = 200) {
+			mockedRequestUrl.mockImplementation((opts: { url: string }) => {
+				if (opts.url.endsWith('/api/ps')) {
+					return Promise.resolve({ status, json: psModels ? { models: psModels } : {} });
+				}
+				return Promise.resolve({ status: 200, json: { models: [] } });
+			});
+		}
+
+		it('returns the allocation the daemon actually made for a loaded model', async () => {
+			mockPs([{ name: 'gemma4:12b-mlx', model: 'gemma4:12b-mlx', context_length: 262_144 }]);
+			const svc = new OllamaModelsService(buildPlugin());
+
+			await expect(svc.getRuntimeContextLength('gemma4:12b-mlx')).resolves.toBe(262_144);
+		});
+
+		// #1252: the daemon's VRAM-based default can be a small fraction of what
+		// the weights support, and only /api/ps knows which one is in force.
+		it('reports a small allocation for a model whose weights support far more', async () => {
+			mockPs([{ name: 'gemma4:12b-mlx', context_length: 4_096 }]);
+			const svc = new OllamaModelsService(buildPlugin());
+
+			await expect(svc.getRuntimeContextLength('gemma4:12b-mlx')).resolves.toBe(4_096);
+		});
+
+		it('returns null when the model is not currently loaded', async () => {
+			mockPs([{ name: 'some-other-model', context_length: 8_192 }]);
+			const svc = new OllamaModelsService(buildPlugin());
+
+			await expect(svc.getRuntimeContextLength('gemma4:12b-mlx')).resolves.toBeNull();
+		});
+
+		it('returns null when the daemon is unreachable or errors', async () => {
+			mockPs(null, 500);
+			const svc = new OllamaModelsService(buildPlugin());
+			await expect(svc.getRuntimeContextLength('gemma4:12b-mlx')).resolves.toBeNull();
+
+			mockedRequestUrl.mockRejectedValue(new Error('ECONNREFUSED'));
+			await expect(svc.getRuntimeContextLength('gemma4:12b-mlx')).resolves.toBeNull();
+		});
+	});
 });

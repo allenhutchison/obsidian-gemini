@@ -39,6 +39,16 @@ interface OllamaTagsModel {
 	model?: string;
 	size?: number;
 	modified_at?: string;
+	/**
+	 * Present only on Ollama Cloud entries (e.g. `https://ollama.com`), which are
+	 * local manifests that proxy inference to Ollama's servers. This structural
+	 * field is the reliable cloud signal — the tag itself is not, since the
+	 * suffix varies (`gpt-oss:120b-cloud` vs `glm-5.2:cloud`) and nothing stops a
+	 * local model from being named `…-cloud`.
+	 */
+	remote_host?: string;
+	/** The upstream model name the cloud entry proxies to. */
+	remote_model?: string;
 	details?: {
 		parameter_size?: string;
 		family?: string;
@@ -56,6 +66,17 @@ interface OllamaShowResponse {
 	capabilities?: string[];
 	/** Modelfile template text, present in all Ollama versions. */
 	template?: string;
+	/**
+	 * Architecture-keyed metadata. The context window is reported under an
+	 * architecture-prefixed key (`llama.context_length`, `gptoss.context_length`,
+	 * …) rather than a fixed field, so it is matched by suffix.
+	 */
+	model_info?: Record<string, unknown>;
+}
+
+/** Subset of the /api/ps response describing currently-loaded models. */
+interface OllamaPsResponse {
+	models?: { name?: string; model?: string; context_length?: number }[];
 }
 
 /**
@@ -194,12 +215,59 @@ export class OllamaModelsService {
 		return VISION_NAME_HINTS.some((h) => lower.includes(h));
 	}
 
+	/**
+	 * The model's *trained* context length, from the architecture-prefixed
+	 * `<arch>.context_length` key in /api/show's `model_info`.
+	 *
+	 * This is the model's ceiling, not what the daemon actually allocates —
+	 * Ollama sizes the runtime window from available VRAM (4k under 24 GiB) or
+	 * `OLLAMA_CONTEXT_LENGTH`, which is usually far smaller. Use
+	 * {@link getRuntimeContextLength} for the effective window; this value is
+	 * only a better-than-nothing upper bound before the model is first loaded.
+	 */
+	private extractContextWindow(show: OllamaShowResponse | null): number | undefined {
+		const info = show?.model_info;
+		if (!info) return undefined;
+		for (const [key, value] of Object.entries(info)) {
+			if (key.endsWith('.context_length') && typeof value === 'number' && value > 0) {
+				return value;
+			}
+		}
+		return undefined;
+	}
+
+	/**
+	 * The context window the daemon has actually allocated for a currently-loaded
+	 * model, from /api/ps. This is authoritative — a model whose weights support
+	 * 262k may well be running in a 4k window (see #1252, where that mismatch made
+	 * the agent's own system prompt overflow and the model hallucinate).
+	 *
+	 * Returns null when the model isn't loaded (nothing has been sent to it yet)
+	 * or the daemon is unreachable, so callers fall back to a bound.
+	 */
+	async getRuntimeContextLength(modelName: string): Promise<number | null> {
+		const baseUrl = this.plugin.settings.ollamaBaseUrl || OLLAMA_DEFAULT_BASE_URL;
+		try {
+			const url = `${baseUrl.replace(/\/$/, '')}/api/ps`;
+			const response = await requestUrl({ url, method: 'GET', throw: false });
+			if (response.status !== 200) return null;
+
+			const data = response.json as OllamaPsResponse;
+			const entry = data?.models?.find((m) => m.name === modelName || m.model === modelName);
+			return typeof entry?.context_length === 'number' && entry.context_length > 0 ? entry.context_length : null;
+		} catch (err) {
+			this.plugin.logger.debug(`[OllamaModelsService] /api/ps probe failed for ${modelName}:`, err);
+			return null;
+		}
+	}
+
 	private async toGeminiModel(m: OllamaTagsModel, baseUrl: string): Promise<GeminiModel> {
 		const name = m.name;
 		const lower = name.toLowerCase();
 		const isCompletion = COMPLETION_NAME_HINT_PATTERNS.some((re) => re.test(lower));
 		const show = await this.probeModel(name, baseUrl);
 		const isVision = this.detectVision(name, show);
+		const contextWindow = this.extractContextWindow(show);
 
 		const defaultForRoles = isCompletion ? (['completions'] as const) : undefined;
 
@@ -209,6 +277,8 @@ export class OllamaModelsService {
 			provider: 'ollama',
 			supportsTools: true,
 			supportsVision: isVision,
+			...(contextWindow && { contextWindow }),
+			...(m.remote_host && { remoteHost: m.remote_host }),
 			...(defaultForRoles && { defaultForRoles: [...defaultForRoles] }),
 		};
 	}
