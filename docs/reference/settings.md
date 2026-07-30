@@ -233,7 +233,7 @@ See the [Custom Prompts Guide](/guide/custom-prompts) for detailed instructions.
 - **Setting**: `expandedSettingsSections`
 - **Type**: `string[]`
 - **Default**: `[]`
-- **Description**: Internal list of section ids that are currently expanded in the settings tab. Updated automatically when you toggle a section. Known ids: `ui`, `automation`, `rag`, `tool-permissions`, `mcp-servers`, `agent-config`, `debug`. (General is always open; it has no id and ignores this setting.)
+- **Description**: Internal list of section ids that are currently expanded in the settings tab. Updated automatically when you toggle a section. Known ids: `ui`, `automation`, `rag`, `tool-permissions`, `mcp-servers`, `agent-config`, `debug`, `per-feature-provider`. (General itself is always open and has no id; its **Per-feature provider** sub-section is separately collapsible and tracked as `per-feature-provider`.)
 - **Note**: Edit `data.json` directly to pre-expand sections (for example, on a new install) or restore a custom layout after migrating vaults.
 
 ## Automation Settings
