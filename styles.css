@@ -1698,6 +1698,65 @@ body.theme-dark {
 	color: var(--text-error);
 }
 
+/* Row-level delete confirmation. Replaces the row's action buttons in place, so
+ * the list keeps its scroll position and filter state -- no second modal stacked
+ * over the session list, and no full-pane swap. */
+/* The row's action area normally never shrinks; while confirming it may, so a long
+ * session title ellipsizes the prompt instead of squeezing the title out of the row. */
+.gemini-session-actions--confirming {
+	align-items: center;
+	gap: var(--gs-space-2);
+	flex-shrink: 1;
+	min-width: 0;
+}
+
+.gemini-session-confirm-prompt {
+	font-size: var(--font-ui-smaller);
+	color: var(--gs-text-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	/* The prompt is the only part that gives way. */
+	min-width: 0;
+}
+
+.gemini-session-confirm-delete,
+.gemini-session-confirm-cancel {
+	font-size: var(--font-ui-smaller);
+	padding: var(--gs-space-1) var(--gs-space-2);
+	border-radius: var(--gs-radius-sm);
+	cursor: pointer;
+	white-space: nowrap;
+	/* Never squeeze the decision buttons -- they must stay readable and clickable. */
+	flex-shrink: 0;
+	transition: background-color var(--gs-dur-fast) var(--gs-ease);
+}
+
+/* --gs-error tracks Obsidian's --color-red across themes; --gs-on-error keeps the
+ * label readable on it regardless of the theme accent. Same pairing the scheduler
+ * modal's confirm-delete button uses. */
+.gemini-session-confirm-delete {
+	background-color: var(--gs-error);
+	border: 1px solid var(--gs-error);
+	color: var(--gs-on-error);
+	font-weight: 600;
+}
+
+.gemini-session-confirm-delete:hover {
+	background-color: color-mix(in srgb, var(--gs-error) 80%, #000);
+	border-color: color-mix(in srgb, var(--gs-error) 80%, #000);
+}
+
+.gemini-session-confirm-cancel {
+	background-color: var(--interactive-normal);
+	border: 1px solid var(--gs-border);
+	color: var(--gs-text);
+}
+
+.gemini-session-confirm-cancel:hover {
+	background-color: var(--interactive-hover);
+}
+
 /* Session filter bar */
 .gemini-session-filter-bar {
 	display: flex;
