@@ -80,7 +80,6 @@ export interface InlineDataPart {
  * @property projectInstructions - Optional project-scoped instructions injected into the system prompt
  * @property availableTools - Optional array of tool definitions for function calling
  * @property inlineAttachments - Optional array of inline data attachments for multimodal input
- * @property imageAttachments - Deprecated alias for inlineAttachments
  */
 export interface ExtendedModelRequest extends Omit<BaseModelRequest, 'kind'> {
 	/** Discriminant for the request union. `'extended'` marks a chat-style request. */
@@ -104,8 +103,6 @@ export interface ExtendedModelRequest extends Omit<BaseModelRequest, 'kind'> {
 	 */
 	sessionStartedAt?: string;
 	inlineAttachments?: InlineDataPart[];
-	/** @deprecated Use inlineAttachments instead */
-	imageAttachments?: InlineDataPart[];
 }
 
 /**

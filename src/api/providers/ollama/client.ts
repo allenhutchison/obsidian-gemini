@@ -252,13 +252,7 @@ export class OllamaClient implements ModelApi {
 		if (request.perTurnContext && request.perTurnContext.trim()) {
 			userParts.push(request.perTurnContext);
 		}
-		const allAttachments: InlineDataPart[] = [
-			...(request.inlineAttachments || []),
-			// `imageAttachments` is the deprecated alias for `inlineAttachments`; still merged here for
-			// backward-compat with callers passing the legacy field (#1040).
-			// eslint-disable-next-line @typescript-eslint/no-deprecated -- deprecated imageAttachments alias merged for backward-compat (#1040)
-			...(request.imageAttachments || []),
-		];
+		const allAttachments: InlineDataPart[] = request.inlineAttachments ?? [];
 		for (const att of allAttachments) {
 			if (att.mimeType.startsWith('image/')) {
 				userImages.push(att.base64);

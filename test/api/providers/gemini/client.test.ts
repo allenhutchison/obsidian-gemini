@@ -928,21 +928,26 @@ describe('GeminiClient', () => {
 			);
 		});
 
-		test('both inlineAttachments and imageAttachments merged', async () => {
+		test('multiple inlineAttachments all reach the request', async () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'see these',
 				kind: 'extended',
 				conversationHistory: [],
-				inlineAttachments: [{ base64: 'inline1', mimeType: 'image/jpeg' }],
-				imageAttachments: [{ base64: 'img1', mimeType: 'image/gif' }],
+				inlineAttachments: [
+					{ base64: 'inline1', mimeType: 'image/jpeg' },
+					{ base64: 'inline2', mimeType: 'image/gif' },
+				],
 			});
 
 			const params = (generateContentMock as Mock).mock.calls[0][0];
 			const lastContent = params.contents[params.contents.length - 1];
 			// Should have text + 2 inlineData parts
 			const inlineDataParts = lastContent.parts.filter((p: any) => 'inlineData' in p);
-			expect(inlineDataParts).toHaveLength(2);
+			expect(inlineDataParts).toEqual([
+				{ inlineData: { mimeType: 'image/jpeg', data: 'inline1' } },
+				{ inlineData: { mimeType: 'image/gif', data: 'inline2' } },
+			]);
 		});
 
 		test('empty userMessage with no history -> finalContents is empty string', async () => {
@@ -1215,6 +1220,28 @@ describe('GeminiClient', () => {
 			expect(lastStep.content).toEqual([
 				{ type: 'text', text: 'what is this?' },
 				{ type: 'image', data: 'AAAA', mime_type: 'image/png' },
+			]);
+		});
+
+		test('maps multiple inline attachments in order', async () => {
+			const client = makeInteractionsClient();
+			await client.generateModelResponse({
+				prompt: '',
+				userMessage: 'what are these?',
+				kind: 'extended',
+				conversationHistory: [],
+				inlineAttachments: [
+					{ base64: 'AAAA', mimeType: 'image/png' },
+					{ base64: 'BBBB', mimeType: 'image/gif' },
+				],
+			});
+
+			const params = interactionsCreateMock.mock.calls[0][0];
+			const lastStep = params.input[params.input.length - 1];
+			expect(lastStep.content).toEqual([
+				{ type: 'text', text: 'what are these?' },
+				{ type: 'image', data: 'AAAA', mime_type: 'image/png' },
+				{ type: 'image', data: 'BBBB', mime_type: 'image/gif' },
 			]);
 		});
 
