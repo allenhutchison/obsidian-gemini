@@ -928,21 +928,26 @@ describe('GeminiClient', () => {
 			);
 		});
 
-		test('both inlineAttachments and imageAttachments merged', async () => {
+		test('multiple inlineAttachments all reach the request', async () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'see these',
 				kind: 'extended',
 				conversationHistory: [],
-				inlineAttachments: [{ base64: 'inline1', mimeType: 'image/jpeg' }],
-				imageAttachments: [{ base64: 'img1', mimeType: 'image/gif' }],
+				inlineAttachments: [
+					{ base64: 'inline1', mimeType: 'image/jpeg' },
+					{ base64: 'inline2', mimeType: 'image/gif' },
+				],
 			});
 
 			const params = (generateContentMock as Mock).mock.calls[0][0];
 			const lastContent = params.contents[params.contents.length - 1];
 			// Should have text + 2 inlineData parts
 			const inlineDataParts = lastContent.parts.filter((p: any) => 'inlineData' in p);
-			expect(inlineDataParts).toHaveLength(2);
+			expect(inlineDataParts).toEqual([
+				{ inlineData: { mimeType: 'image/jpeg', data: 'inline1' } },
+				{ inlineData: { mimeType: 'image/gif', data: 'inline2' } },
+			]);
 		});
 
 		test('empty userMessage with no history -> finalContents is empty string', async () => {
