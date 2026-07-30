@@ -1701,11 +1701,11 @@ body.theme-dark {
 /* Row-level delete confirmation. Replaces the row's action buttons in place, so
  * the list keeps its scroll position and filter state -- no second modal stacked
  * over the session list, and no full-pane swap. */
-/* The row's action area normally never shrinks; while confirming it may, so a long
- * session title ellipsizes the prompt instead of squeezing the title out of the row. */
 .gemini-session-actions--confirming {
 	align-items: center;
 	gap: var(--gs-space-2);
+	/* The action area normally never shrinks; while confirming it may, so a long
+	 * session title ellipsizes the prompt instead of being squeezed out of the row. */
 	flex-shrink: 1;
 	min-width: 0;
 }
@@ -1747,15 +1747,11 @@ body.theme-dark {
 	border-color: color-mix(in srgb, var(--gs-error) 80%, #000);
 }
 
-.gemini-session-confirm-cancel {
-	background-color: var(--interactive-normal);
-	border: 1px solid var(--gs-border);
-	color: var(--gs-text);
-}
-
-.gemini-session-confirm-cancel:hover {
-	background-color: var(--interactive-hover);
-}
+/* Cancel deliberately declares no colour of its own: it inherits Obsidian's native
+ * button chrome, which is what the scheduler/hook delete-confirm does too (there the
+ * cancel button is a bare <button> and only the destructive one is styled). Sizing
+ * comes from the shared rule above, so the non-destructive choice stays theme-native
+ * while Delete is the only one that reaches for colour. */
 
 /* Session filter bar */
 .gemini-session-filter-bar {
