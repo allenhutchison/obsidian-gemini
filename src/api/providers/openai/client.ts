@@ -262,9 +262,10 @@ export class OpenAIClient implements ModelApi {
 		// tool-role messages. `pendingCallIds` pairs functionCall parts with their
 		// functionResponse parts across adjacent Contents — see convertHistoryEntry.
 		const pendingCallIds = new Map<string, string[]>();
+		const declaredCallIds = new Set<string>();
 		let toolCallSeq = 0;
 		for (const entry of request.conversationHistory ?? []) {
-			const converted = this.convertHistoryEntry(entry, pendingCallIds, () => toolCallSeq++);
+			const converted = this.convertHistoryEntry(entry, pendingCallIds, declaredCallIds, () => toolCallSeq++);
 			if (converted) messages.push(...converted);
 		}
 
@@ -326,10 +327,16 @@ export class OpenAIClient implements ModelApi {
 	 * `id` pops the oldest pending id for its name so `tool_call_id` on the
 	 * resulting `tool` message lines up with the `id` on the assistant message's
 	 * `tool_calls` entry — mirroring Gemini's positional call/response pairing.
+	 *
+	 * `declaredCallIds` records every id emitted on an assistant `tool_calls`
+	 * entry. A `tool` message whose id was never declared (its functionCall was
+	 * trimmed away by history compaction) is dropped rather than emitted — the
+	 * Chat Completions API rejects the whole request otherwise.
 	 */
 	private convertHistoryEntry(
 		entry: unknown,
 		pendingCallIds: Map<string, string[]>,
+		declaredCallIds: Set<string>,
 		nextSeq: () => number
 	): ChatMessage[] | null {
 		if (!entry || typeof entry !== 'object') return null;
@@ -380,30 +387,43 @@ export class OpenAIClient implements ModelApi {
 
 			const out: ChatMessage[] = [];
 
-			// Tool responses become tool-role messages. Don't coalesce `null` to
-			// `{}` — an explicit null response carries different meaning ("no
-			// result") than an empty object, and JSON.stringify(null) === "null"
-			// is the correct serialization to preserve that.
-			for (const tr of toolResponseParts) {
-				const responseText = typeof tr.response === 'string' ? tr.response : JSON.stringify(tr.response);
-				out.push({ role: 'tool', tool_call_id: tr.id, content: responseText });
-			}
-
-			// Assistant turn (text + tool calls together)
+			// Assistant turn first (text + tool calls together): the API requires
+			// the assistant message declaring `tool_calls` to precede the tool-role
+			// messages that answer it.
 			if (role === 'assistant' && (textChunks.length || toolCallParts.length)) {
 				const message: OpenAI.ChatCompletionAssistantMessageParam = {
 					role: 'assistant',
 					content: textChunks.join('\n').trim() || null,
 				};
 				if (toolCallParts.length) {
-					message.tool_calls = toolCallParts.map((tc) => ({
-						id: tc.id,
-						type: 'function' as const,
-						function: { name: tc.name, arguments: JSON.stringify(tc.arguments) },
-					}));
+					message.tool_calls = toolCallParts.map((tc) => {
+						declaredCallIds.add(tc.id);
+						return {
+							id: tc.id,
+							type: 'function' as const,
+							function: { name: tc.name, arguments: JSON.stringify(tc.arguments) },
+						};
+					});
 				}
 				out.push(message);
-			} else if (role !== 'assistant' && (textChunks.length || imageParts.length)) {
+			}
+
+			// Tool responses become tool-role messages. Don't coalesce `null` to
+			// `{}` — an explicit null response carries different meaning ("no
+			// result") than an empty object, and JSON.stringify(null) === "null"
+			// is the correct serialization to preserve that. Responses whose call
+			// was never declared (trimmed by compaction) are dropped — the API
+			// rejects a `tool` message with an unknown `tool_call_id`.
+			for (const tr of toolResponseParts) {
+				if (!declaredCallIds.has(tr.id)) {
+					this.plugin?.logger?.log('OpenAI history: dropping orphaned tool response', tr.id);
+					continue;
+				}
+				const responseText = typeof tr.response === 'string' ? tr.response : JSON.stringify(tr.response);
+				out.push({ role: 'tool', tool_call_id: tr.id, content: responseText });
+			}
+
+			if (role !== 'assistant' && (textChunks.length || imageParts.length)) {
 				const text = textChunks.join('\n\n').trim();
 				if (role === 'user' && imageParts.length) {
 					const content: (TextContentPart | ImageContentPart)[] = [];

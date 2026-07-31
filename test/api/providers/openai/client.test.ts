@@ -408,6 +408,7 @@ describe('OpenAIClient', () => {
 				userMessage: 'ok',
 				kind: 'extended',
 				conversationHistory: [
+					{ role: 'model', parts: [{ functionCall: { name: 'tool1', args: {} } }] },
 					{ role: 'user', parts: [{ functionResponse: { name: 'tool1', response: null as any } }] },
 				],
 			});
@@ -423,6 +424,7 @@ describe('OpenAIClient', () => {
 				userMessage: 'ok',
 				kind: 'extended',
 				conversationHistory: [
+					{ role: 'model', parts: [{ functionCall: { name: 'tool1', args: {} } }] },
 					{ role: 'user', parts: [{ functionResponse: { name: 'tool1', response: 'raw result' as any } }] },
 				],
 			});
@@ -430,6 +432,40 @@ describe('OpenAIClient', () => {
 			const msgs = openaiCalls.create.mock.calls[0][0].messages;
 			const toolMsg = msgs.find((m: any) => m.role === 'tool');
 			expect(toolMsg.content).toBe('raw result');
+		});
+
+		it('drops a tool response whose functionCall was trimmed from history', async () => {
+			await client.generateModelResponse({
+				prompt: '',
+				userMessage: 'ok',
+				kind: 'extended',
+				conversationHistory: [
+					// Compaction removed the model turn that declared this call.
+					{ role: 'user', parts: [{ functionResponse: { name: 'tool1', response: { ok: true } } }] },
+				],
+			});
+
+			const msgs = openaiCalls.create.mock.calls[0][0].messages;
+			expect(msgs.filter((m: any) => m.role === 'tool')).toHaveLength(0);
+		});
+
+		it('emits the assistant tool_calls message before its tool responses', async () => {
+			await client.generateModelResponse({
+				prompt: '',
+				userMessage: 'ok',
+				kind: 'extended',
+				conversationHistory: [
+					{ role: 'model', parts: [{ text: 'calling' }, { functionCall: { name: 'tool1', args: {} } }] },
+					{ role: 'user', parts: [{ functionResponse: { name: 'tool1', response: 'done' as any } }] },
+				],
+			});
+
+			const msgs = openaiCalls.create.mock.calls[0][0].messages;
+			const assistantIdx = msgs.findIndex((m: any) => m.role === 'assistant' && m.tool_calls?.length);
+			const toolIdx = msgs.findIndex((m: any) => m.role === 'tool');
+			expect(assistantIdx).toBeGreaterThanOrEqual(0);
+			expect(toolIdx).toBeGreaterThan(assistantIdx);
+			expect(msgs[toolIdx].tool_call_id).toBe(msgs[assistantIdx].tool_calls[0].id);
 		});
 
 		it('handles mixed text + functionCall in one model entry', async () => {
@@ -750,6 +786,24 @@ describe('OpenAIClient', () => {
 			expect(result.markdown).toBe('hi there');
 			const args = openaiCalls.create.mock.calls[0][0];
 			expect(args.messages).toEqual([{ role: 'user', content: 'hello' }]);
+		});
+	});
+
+	describe('sampling-parameter defaults', () => {
+		it('falls back to temperature 0.7 and top_p 1 when the config omits them', async () => {
+			openaiCalls.create.mockResolvedValue({
+				choices: [{ message: { content: 'ok' } }],
+			});
+			const c = new OpenAIClient(
+				{ apiKey: 'sk-test', baseUrl: 'https://api.openai.com/v1', model: 'gpt-5.6' },
+				undefined,
+				buildPlugin()
+			);
+			await c.generateModelResponse({ kind: 'base', prompt: 'test' });
+
+			const args = openaiCalls.create.mock.calls[0][0];
+			expect(args.temperature).toBe(0.7);
+			expect(args.top_p).toBe(1);
 		});
 	});
 
