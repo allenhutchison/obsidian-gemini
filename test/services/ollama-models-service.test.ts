@@ -468,10 +468,13 @@ describe('OllamaModelsService', () => {
 				const stale = svc.getRuntimeContextLength('gemma4:12b-mlx');
 				svc.invalidate();
 				release(null);
-				await stale;
 
-				// The stale result was still returned to its own caller, but the next
-				// lookup must go back to the daemon rather than read a re-seeded entry.
+				// The generation guard suppresses the cache write, not the result: the
+				// caller that started the probe still gets its answer.
+				expect(await stale).toBe(262_144);
+
+				// But the next lookup must go back to the daemon rather than read an
+				// entry re-seeded after invalidate().
 				await svc.getRuntimeContextLength('gemma4:12b-mlx');
 				expect(psCalls()).toBe(2);
 			});
