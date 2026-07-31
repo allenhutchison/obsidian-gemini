@@ -66,7 +66,10 @@ function isOpenAIHostedEndpoint(baseUrl: string): boolean {
 	try {
 		return new URL(baseUrl).hostname === 'api.openai.com';
 	} catch {
-		return baseUrl.includes('api.openai.com');
+		// Unparseable base URL — treat as a compatible server rather than
+		// substring-matching (a host like `api.openai.com.evil.example` must
+		// never be classified as the official endpoint).
+		return false;
 	}
 }
 
