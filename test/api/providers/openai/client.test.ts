@@ -1,7 +1,7 @@
 import type { Mock } from 'vitest';
 import { OpenAIClient } from '../../../../src/api/providers/openai/client';
 import type { OpenAIClientConfig } from '../../../../src/api/providers/openai/config';
-import { ExtendedModelRequest } from '../../../../src/api/interfaces/model-api';
+import { ExtendedModelRequest, ToolDefinition } from '../../../../src/api/interfaces/model-api';
 
 // vitest hoists vi.mock to the top of the file; vi.hoisted() lets us share
 // fixtures with the factory while keeping initialization order safe.
@@ -795,7 +795,7 @@ describe('OpenAIClient', () => {
 				choices: [{ message: { content: 'ok' } }],
 			});
 			const c = new OpenAIClient(
-				{ apiKey: 'sk-test', baseUrl: 'https://api.openai.com/v1', model: 'gpt-5.6' },
+				{ apiKey: 'sk-test', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
 				undefined,
 				buildPlugin()
 			);
@@ -804,6 +804,112 @@ describe('OpenAIClient', () => {
 			const args = openaiCalls.create.mock.calls[0][0];
 			expect(args.temperature).toBe(0.7);
 			expect(args.top_p).toBe(1);
+		});
+	});
+
+	// GPT-5.6 reasoning models reject a non-default temperature/top_p outright,
+	// and reject function tools in Chat Completions unless reasoning is off.
+	describe('GPT-5.6 parameter handling', () => {
+		const gpt56Config: OpenAIClientConfig = {
+			apiKey: 'sk-test',
+			baseUrl: 'https://api.openai.com/v1',
+			model: 'gpt-5.6-luna',
+			temperature: 0.4,
+			topP: 0.9,
+		};
+		const readFileTool: ToolDefinition = {
+			name: 'read_file',
+			description: 'reads a file',
+			parameters: { type: 'object', properties: { path: { type: 'string' } }, required: ['path'] },
+		};
+
+		let gpt56Client: OpenAIClient;
+
+		beforeEach(() => {
+			gpt56Client = new OpenAIClient(gpt56Config, undefined, buildPlugin());
+			openaiCalls.create.mockResolvedValue({ choices: [{ message: { content: 'ok' } }] });
+		});
+
+		it('omits temperature and top_p for a base request', async () => {
+			await gpt56Client.generateModelResponse({ kind: 'base', prompt: 'hi' });
+
+			const args = openaiCalls.create.mock.calls[0][0];
+			expect(args).not.toHaveProperty('temperature');
+			expect(args).not.toHaveProperty('top_p');
+		});
+
+		it('omits temperature and top_p even when the request supplies them', async () => {
+			await gpt56Client.generateModelResponse({ kind: 'base', prompt: 'hi', temperature: 0.2 });
+
+			const args = openaiCalls.create.mock.calls[0][0];
+			expect(args).not.toHaveProperty('temperature');
+			expect(args).not.toHaveProperty('top_p');
+		});
+
+		it("sets reasoning_effort 'none' when sending tools", async () => {
+			await gpt56Client.generateModelResponse({
+				prompt: '',
+				userMessage: 'read foo',
+				kind: 'extended',
+				conversationHistory: [],
+				availableTools: [readFileTool],
+			});
+
+			const args = openaiCalls.create.mock.calls[0][0];
+			expect(args.reasoning_effort).toBe('none');
+			expect(args.tools).toHaveLength(1);
+		});
+
+		it('does not set reasoning_effort when there are no tools', async () => {
+			await gpt56Client.generateModelResponse({
+				prompt: '',
+				userMessage: 'just chat',
+				kind: 'extended',
+				conversationHistory: [],
+			});
+
+			const args = openaiCalls.create.mock.calls[0][0];
+			expect(args).not.toHaveProperty('reasoning_effort');
+		});
+
+		it('applies the same handling on the streaming path', async () => {
+			async function* stream() {
+				yield { choices: [{ index: 0, delta: { content: 'ok' }, finish_reason: 'stop' }] };
+			}
+			openaiCalls.create.mockResolvedValue(stream());
+
+			const streaming = gpt56Client.generateStreamingResponse(
+				{
+					prompt: '',
+					userMessage: 'read foo',
+					kind: 'extended',
+					conversationHistory: [],
+					availableTools: [readFileTool],
+				},
+				() => {}
+			);
+			await streaming.complete;
+
+			const args = openaiCalls.create.mock.calls[0][0];
+			expect(args).not.toHaveProperty('temperature');
+			expect(args).not.toHaveProperty('top_p');
+			expect(args.reasoning_effort).toBe('none');
+		});
+
+		it('leaves non-GPT-5.6 models untouched', async () => {
+			const c = new OpenAIClient({ ...gpt56Config, model: 'gpt-4o-mini' }, undefined, buildPlugin());
+			await c.generateModelResponse({
+				prompt: '',
+				userMessage: 'read foo',
+				kind: 'extended',
+				conversationHistory: [],
+				availableTools: [readFileTool],
+			});
+
+			const args = openaiCalls.create.mock.calls[0][0];
+			expect(args.temperature).toBe(0.4);
+			expect(args.top_p).toBe(0.9);
+			expect(args).not.toHaveProperty('reasoning_effort');
 		});
 	});
 
@@ -832,7 +938,7 @@ describe('OpenAIClient', () => {
 			await expect(client.generateModelResponse({ kind: 'base', prompt: 'test' })).rejects.toThrow(
 				'connection refused'
 			);
-			expect(mockLogger.error).toHaveBeenCalledWith('[OpenAIClient] Error generating content:', expect.any(Error));
+			expect(mockLogger.error).toHaveBeenCalledWith('[OpenAIClient] Error generating content:', 'connection refused');
 		});
 
 		it('logs and re-throws streaming errors when not cancelled', async () => {
@@ -844,7 +950,28 @@ describe('OpenAIClient', () => {
 			);
 
 			await expect(streaming.complete).rejects.toThrow('connection refused');
-			expect(mockLogger.error).toHaveBeenCalledWith('[OpenAIClient] Streaming error:', expect.any(Error));
+			expect(mockLogger.error).toHaveBeenCalledWith('[OpenAIClient] Streaming error:', 'connection refused');
+		});
+
+		it('surfaces the server message from an API error body instead of a flattened object', async () => {
+			openaiCalls.create.mockRejectedValue(
+				Object.assign(new Error('400 status code (no body)'), {
+					status: 400,
+					code: 'unsupported_value',
+					error: { message: "Unsupported value: 'temperature' does not support 0.7 with this model." },
+				})
+			);
+
+			const streaming = client.generateStreamingResponse(
+				{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] },
+				() => {}
+			);
+			await expect(streaming.complete).rejects.toThrow();
+
+			expect(mockLogger.error).toHaveBeenCalledWith(
+				'[OpenAIClient] Streaming error:',
+				"HTTP 400 [unsupported_value]: Unsupported value: 'temperature' does not support 0.7 with this model."
+			);
 		});
 	});
 

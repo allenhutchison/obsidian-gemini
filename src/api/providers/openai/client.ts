@@ -67,6 +67,14 @@ interface StreamingToolCallAccumulator {
 }
 
 export class OpenAIClient implements ModelApi {
+	/**
+	 * GPT-5.6-family reasoning models reject any non-default `temperature`/
+	 * `top_p`, and `/v1/chat/completions` rejects function tools for them
+	 * unless `reasoning_effort` is 'none'. Matched by id (not base URL) so the
+	 * same handling applies when a proxy serves these models.
+	 */
+	private static readonly GPT56_MODEL_PATTERN = /^gpt-5\.6/;
+
 	private client: OpenAI;
 	private config: OpenAIClientConfig;
 	private prompts: GeminiPrompts;
@@ -107,8 +115,7 @@ export class OpenAIClient implements ModelApi {
 					model,
 					messages: [{ role: 'user', content: request.prompt }],
 					stream: false,
-					temperature: request.temperature ?? this.config.temperature,
-					top_p: request.topP ?? this.config.topP,
+					...this.samplingParams(model, request),
 				});
 				return this.toModelResponse(completion);
 			}
@@ -118,13 +125,12 @@ export class OpenAIClient implements ModelApi {
 				model,
 				messages,
 				stream: false,
-				temperature: request.temperature ?? this.config.temperature,
-				top_p: request.topP ?? this.config.topP,
-				...(tools && tools.length ? { tools } : {}),
+				...this.samplingParams(model, request),
+				...this.toolParams(model, tools),
 			});
 			return this.toModelResponse(completion);
 		} catch (error) {
-			this.plugin?.logger.error('[OpenAIClient] Error generating content:', error);
+			this.plugin?.logger.error('[OpenAIClient] Error generating content:', this.describeError(error));
 			throw error;
 		}
 	}
@@ -177,8 +183,7 @@ export class OpenAIClient implements ModelApi {
 							// Servers that ignore this option simply omit `usage` on chunks;
 							// toUsageMetadata() tolerates that by returning undefined.
 							stream_options: { include_usage: true },
-							temperature: request.temperature ?? this.config.temperature,
-							top_p: request.topP ?? this.config.topP,
+							...this.samplingParams(model, request),
 						},
 						{ signal: controller.signal }
 					);
@@ -190,9 +195,8 @@ export class OpenAIClient implements ModelApi {
 							messages,
 							stream: true,
 							stream_options: { include_usage: true },
-							temperature: request.temperature ?? this.config.temperature,
-							top_p: request.topP ?? this.config.topP,
-							...(tools && tools.length ? { tools } : {}),
+							...this.samplingParams(model, request),
+							...this.toolParams(model, tools),
 						},
 						{ signal: controller.signal }
 					);
@@ -228,7 +232,7 @@ export class OpenAIClient implements ModelApi {
 				if (cancelled) {
 					return buildResult();
 				}
-				this.plugin?.logger.error('[OpenAIClient] Streaming error:', error);
+				this.plugin?.logger.error('[OpenAIClient] Streaming error:', this.describeError(error));
 				throw error;
 			}
 		})();
@@ -243,6 +247,65 @@ export class OpenAIClient implements ModelApi {
 					this.plugin?.logger.debug('[OpenAIClient] Abort failed:', err);
 				}
 			},
+		};
+	}
+
+	/**
+	 * Flattens an SDK `APIError` into a readable string. The console serializes
+	 * an APIError's nested `error` body as the useless `"error":"Object"`, which
+	 * hides the one field that identifies the failure — the server's message.
+	 * Matched structurally rather than with `instanceof OpenAI.APIError` so the
+	 * check doesn't depend on the error carrying that exact class identity.
+	 */
+	private describeError(error: unknown): string {
+		const apiError = error as { status?: number; code?: string | null; error?: { message?: string } } | null;
+		if (apiError && typeof apiError === 'object' && typeof apiError.status === 'number') {
+			const detail = apiError.error?.message ?? (error instanceof Error ? error.message : undefined) ?? 'unknown error';
+			return `HTTP ${apiError.status}${apiError.code ? ` [${apiError.code}]` : ''}: ${detail}`;
+		}
+		return error instanceof Error ? error.message : String(error);
+	}
+
+	/** Whether `model` is a GPT-5.6-family reasoning model. */
+	private isGpt56Model(model: string): boolean {
+		return OpenAIClient.GPT56_MODEL_PATTERN.test(model);
+	}
+
+	/**
+	 * Sampling params for a request. GPT-5.6 models accept only the default
+	 * temperature/top_p and 400 on anything else, so they're omitted entirely
+	 * rather than sent with the configured values.
+	 */
+	private samplingParams(
+		model: string,
+		request: BaseModelRequest | ExtendedModelRequest
+	): { temperature?: number; top_p?: number } {
+		if (this.isGpt56Model(model)) {
+			return {};
+		}
+		return {
+			temperature: request.temperature ?? this.config.temperature,
+			top_p: request.topP ?? this.config.topP,
+		};
+	}
+
+	/**
+	 * Tool params for a request. `/v1/chat/completions` rejects function tools
+	 * for GPT-5.6 models unless reasoning is disabled, so those requests pin
+	 * `reasoning_effort: 'none'`. (Tool calling with reasoning would require the
+	 * Responses API, which this client deliberately doesn't target — see the
+	 * module header.)
+	 */
+	private toolParams(
+		model: string,
+		tools?: ChatTool[]
+	): { tools?: ChatTool[]; reasoning_effort?: OpenAI.ReasoningEffort } {
+		if (!tools || !tools.length) {
+			return {};
+		}
+		return {
+			tools,
+			...(this.isGpt56Model(model) && { reasoning_effort: 'none' as const }),
 		};
 	}
 
