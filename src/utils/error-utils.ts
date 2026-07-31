@@ -444,6 +444,32 @@ function getHttpErrorMessage(statusCode: number, error: unknown): string {
 }
 
 /**
+ * Condense an already-stringified error into the first meaningful line,
+ * capped at 120 characters.
+ *
+ * Unlike {@link getShortErrorMessage}, this takes a raw string rather than an
+ * error value — the automation surfaces (scheduled tasks, hooks, background
+ * tasks) persist `lastError` as text, so by the time the UI renders it there is
+ * no error object left to inspect. It peels off the two shapes those stored
+ * strings arrive in: a Gemini JSON blob carrying the human-readable text in a
+ * `"message"` field, and an SDK prefix such as `ApiError: [429 Too Many
+ * Requests]`.
+ */
+export function truncateStoredError(raw: string): string {
+	// Prefer the human-readable message out of a Gemini JSON error blob,
+	// e.g. ApiError: {"error":{"code":429,"message":"You exceeded..."}}
+	const jsonMatch = raw.match(/"message"\s*:\s*"([^"]+)"/);
+	if (jsonMatch) {
+		const msg = jsonMatch[1].split(/[\n]/)[0].trim();
+		return msg.length > 120 ? msg.slice(0, 117) + '…' : msg;
+	}
+	// Otherwise strip the HTTP status prefix like "[429 Too Many Requests] "
+	const stripped = raw.replace(/^(ApiError:\s*)?\[\d+ [^\]]+\]\s*/, '').replace(/^ApiError:\s*/, '');
+	const firstLine = stripped.split(/[\n.]/)[0].trim();
+	return firstLine.length > 120 ? firstLine.slice(0, 117) + '…' : firstLine;
+}
+
+/**
  * Get a shortened error message suitable for inline display
  * (e.g., in status bars or small UI elements)
  */

@@ -4,7 +4,7 @@ import type { BackgroundTask } from '../services/background-task-manager';
 import type { RagDetailedStatus } from '../services/rag-types';
 import type { ProgressListener } from '../services/rag-types';
 import type { RagIndexingService } from '../services/rag-indexing';
-import { getErrorMessage } from '../utils/error-utils';
+import { getErrorMessage, truncateStoredError } from '../utils/error-utils';
 import { renderRagOverview, renderRagFileList, renderRagFailures } from './components/rag-status-panel';
 import { openPluginSettingsTab } from '../utils/obsidian-settings';
 import { t } from '../i18n';
@@ -311,14 +311,7 @@ export class BackgroundTasksModal extends Modal {
 
 	/** Return the first meaningful line of an error, capped at 120 chars. */
 	private truncateError(raw: string): string {
-		const jsonMatch = raw.match(/"message"\s*:\s*"([^"]+)"/);
-		if (jsonMatch) {
-			const msg = jsonMatch[1].split(/[\n]/)[0].trim();
-			return msg.length > 120 ? msg.slice(0, 117) + '…' : msg;
-		}
-		const stripped = raw.replace(/^(ApiError:\s*)?\[\d+ [^\]]+\]\s*/, '').replace(/^ApiError:\s*/, '');
-		const firstLine = stripped.split(/[\n.]/)[0].trim();
-		return firstLine.length > 120 ? firstLine.slice(0, 117) + '…' : firstLine;
+		return truncateStoredError(raw);
 	}
 	// ---------------------------------------------------------------------------
 	// RAG tab

@@ -4,7 +4,7 @@ import { DEFAULT_HEADLESS_MAX_ITERATIONS } from '../agent/agent-loop';
 import type { FeatureToolPolicy } from '../types/tool-policy';
 import { ManagementModalBase } from './components/management-modal-base';
 import { ToolPolicyEditor } from './components/tool-policy-editor';
-import { getRawErrorMessage } from '../utils/error-utils';
+import { getRawErrorMessage, truncateStoredError } from '../utils/error-utils';
 import { t } from '../i18n';
 
 const SCHEDULE_PRESETS = [
@@ -472,14 +472,7 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 	 * extracts JSON "message" fields and strips ApiError prefixes.
 	 */
 	protected truncateError(raw: string): string {
-		const jsonMatch = raw.match(/"message"\s*:\s*"([^"]+)"/);
-		if (jsonMatch) {
-			const msg = jsonMatch[1].split(/[\n]/)[0].trim();
-			return msg.length > 120 ? msg.slice(0, 117) + '…' : msg;
-		}
-		const stripped = raw.replace(/^(ApiError:\s*)?\[\d+ [^\]]+\]\s*/, '').replace(/^ApiError:\s*/, '');
-		const firstLine = stripped.split(/[\n.]/)[0].trim();
-		return firstLine.length > 120 ? firstLine.slice(0, 117) + '…' : firstLine;
+		return truncateStoredError(raw);
 	}
 
 	private blankForm() {

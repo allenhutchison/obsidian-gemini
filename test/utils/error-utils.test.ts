@@ -6,6 +6,7 @@ import {
 	isNotFoundError,
 	isQuotaExhausted,
 	isRateLimitError,
+	truncateStoredError,
 } from '../../src/utils/error-utils';
 
 describe('error-utils', () => {
@@ -612,6 +613,47 @@ describe('error-utils', () => {
 			const error = { status: 500, message: 'Internal error. Try again later.' };
 			const short = getShortErrorMessage(error);
 			expect(short).toBe('Server error');
+		});
+	});
+
+	describe('truncateStoredError', () => {
+		test('extracts the message field from a Gemini JSON error blob', () => {
+			const raw =
+				'ApiError: {"error":{"code":429,"message":"You exceeded your current quota","status":"RESOURCE_EXHAUSTED"}}';
+			expect(truncateStoredError(raw)).toBe('You exceeded your current quota');
+		});
+
+		test('keeps only the first line of a multi-line JSON message', () => {
+			const raw = '{"message":"Quota exceeded\nRetry in 30s"}';
+			expect(truncateStoredError(raw)).toBe('Quota exceeded');
+		});
+
+		test('caps an over-long JSON message at 120 chars with an ellipsis', () => {
+			const long = 'q'.repeat(200);
+			const result = truncateStoredError(`{"message":"${long}"}`);
+			expect(result).toHaveLength(118);
+			expect(result.endsWith('…')).toBe(true);
+		});
+
+		test('strips the ApiError and HTTP status prefixes', () => {
+			expect(truncateStoredError('ApiError: [429 Too Many Requests] Slow down')).toBe('Slow down');
+			expect(truncateStoredError('[503 Service Unavailable] Model overloaded')).toBe('Model overloaded');
+			expect(truncateStoredError('ApiError: Something broke')).toBe('Something broke');
+		});
+
+		test('returns the first sentence of a plain error string', () => {
+			expect(truncateStoredError('Tool run failed. See the log for details.')).toBe('Tool run failed');
+		});
+
+		test('caps an over-long plain message at 120 chars with an ellipsis', () => {
+			const result = truncateStoredError('e'.repeat(200));
+			expect(result).toHaveLength(118);
+			expect(result.endsWith('…')).toBe(true);
+		});
+
+		test('returns short messages unchanged', () => {
+			expect(truncateStoredError('Disk full')).toBe('Disk full');
+			expect(truncateStoredError('')).toBe('');
 		});
 	});
 });
