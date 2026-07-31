@@ -28,6 +28,9 @@ const { mockSelectModelSetting, capturedDropdowns, capturedRows, capturedButtons
 
 vi.mock('../../src/ui/settings-helpers', () => ({
 	selectModelSetting: mockSelectModelSetting,
+	// Real mapping, not a stub — the missing-key notice tests depend on it.
+	apiKeySecretNameFor: (settings: any, provider: any) =>
+		provider === 'openai' ? settings.openaiApiKeySecretName : settings.apiKeySecretName,
 	// The General section is rendered directly into the element we pass in.
 	createAlwaysOpenSection: (containerEl: any) => containerEl,
 	createCollapsibleSection: (_plugin: any, containerEl: any) => containerEl,

@@ -46,6 +46,7 @@ import { ScheduledTaskManager } from './services/scheduled-task-manager';
 import { HookManager } from './services/hook-manager';
 import { asRecord, getRawErrorMessage } from './utils/error-utils';
 import { t } from './i18n';
+import { apiKeySecretNameFor } from './ui/settings-helpers';
 import { DEFAULT_OPENAI_BASE_URL } from './api/providers/openai/config';
 
 // Settings interfaces live in a leaf module so the rest of the codebase can
@@ -283,8 +284,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		// The secret-name field is provider-specific — an OpenAI-primary install
 		// checks its own key, not Gemini's, so a missing OpenAI key surfaces the
 		// same kind of actionable notice a missing Gemini key would.
-		const apiKeySecretName =
-			this.settings.provider === 'openai' ? this.settings.openaiApiKeySecretName : this.settings.apiKeySecretName;
+		const apiKeySecretName = apiKeySecretNameFor(this.settings, this.settings.provider);
 		return buildApiKeyErrorMessage({
 			provider: this.settings.provider,
 			lastInitError: this.lastInitError,

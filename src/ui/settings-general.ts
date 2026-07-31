@@ -1,6 +1,7 @@
 import type { ObsidianGemini } from '../types/plugin';
 import { App, Notice, Setting, SecretComponent } from 'obsidian';
 import {
+	apiKeySecretNameFor,
 	createAlwaysOpenSection,
 	createCollapsibleSection,
 	createDebouncedSave,
@@ -368,16 +369,6 @@ function renderPrivacyNotice(sectionEl: HTMLElement, plugin: ObsidianGemini): vo
 	new Setting(sectionEl)
 		.setName(t('settings.general.localOnlyNoticeName'))
 		.setDesc(t('settings.general.localOnlyNoticeDesc'));
-}
-
-/**
- * Which settings field holds a provider's API key secret name. Every
- * key-requiring provider has its own field (`apiKeySecretName` for Gemini,
- * `openaiApiKeySecretName` for OpenAI) rather than sharing one, so a mixed
- * configuration with both active needs its own key each.
- */
-function apiKeySecretNameFor(settings: ObsidianGemini['settings'], provider: ModelProvider): string {
-	return provider === 'openai' ? settings.openaiApiKeySecretName : settings.apiKeySecretName;
 }
 
 /**
