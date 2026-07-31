@@ -32,21 +32,37 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'settings.general.viewDocumentationButton': 'Se dokumentation',
 	'settings.general.providerName': 'Udbyder',
 	'settings.general.providerDesc':
-		"Vælg modeludbyder. Gemini bruger Google Cloud API'en. Ollama kører modeller lokalt på din maskine; installer fra https://ollama.com og hent en model med `ollama pull <name>`.",
+		'Vælg modeludbyder. Gemini bruger Google Cloud API. Ollama kører modeller lokalt på din maskine; installer fra https://ollama.com og hent en model med `ollama pull <name>`. OpenAI bruger din OpenAI API-nøgle eller en hvilken som helst OpenAI-kompatibel server (LM Studio, MLX, ...) via en brugerdefineret base-URL.',
 	'settings.general.providerOptionGemini': 'Google Gemini (cloud)',
 	'settings.general.providerOptionOllama': 'Ollama (lokal)',
+	'settings.general.providerOptionOpenai': 'OpenAI (cloud)',
 	'settings.general.ollamaBaseUrlName': 'Ollama base-URL',
 	'settings.general.ollamaBaseUrlDesc':
 		'HTTP-endpoint for din lokale Ollama-daemon. Standard er http://localhost:11434.',
 	'settings.general.refreshModelListName': 'Opdater modelliste',
 	'settings.general.refreshOllamaModelListName': 'Opdater Ollama-modelliste',
 	'settings.general.refreshModelListOllamaDesc': 'Forespørg Ollama-daemonen igen for tilgængelige modeller.',
+	'settings.general.openaiApiKeyName': 'OpenAI API-nøgle',
+	'settings.general.openaiApiKeyDesc':
+		'Tilknyt din OpenAI API-nøgle. Klik på "Link..." og Obsidian vil bede om et hemmeligt navn (dette er blot en etiket — brug et vilkårligt navn som "openai-api") og en hemmelig værdi (indsæt din API-nøgle her). Hent en nøgle på https://platform.openai.com/api-keys. Ikke nødvendigt for en OpenAI-kompatibel lokal server, der ikke kræver en.',
+	'settings.general.openaiBaseUrlName': 'OpenAI base-URL',
+	'settings.general.openaiBaseUrlDesc':
+		'Chat Completions-slutpunkt. Standard er OpenAI API (api.openai.com). Peg denne mod en OpenAI-kompatibel lokal server i stedet — såsom LM Studio eller MLX — for at holde anmodninger på din maskine.',
+	'settings.general.refreshOpenaiModelListName': 'Opdater OpenAI-modelliste',
+	'settings.general.refreshModelListOpenaiDesc':
+		'Forespørg det konfigurerede slutpunkt igen for tilgængelige modeller.',
+	'settings.general.openaiModelsFoundSingular': 'Fandt {count} OpenAI-model.',
+	'settings.general.openaiModelsFound': 'Fandt {count} OpenAI-modeller.',
+	'settings.general.openaiChatModelDesc': 'Model, der bruges til agent-chatsessioner og omskrivning af markeringer.',
 	'settings.general.refreshModelListGeminiDesc':
 		'Hent den seneste Gemini-modelliste fra GitHub nu, og gå udenom 24-timers cachen. Brug dette, efter en ny model er udgivet.',
 	'settings.general.refreshButton': 'Opdater',
 	'settings.general.ollamaModelsFoundSingular': 'Fandt {count} Ollama-model.',
 	'settings.general.ollamaModelsFound': 'Fandt {count} Ollama-modeller.',
 	'settings.general.refreshFailedNotice': 'Kunne ikke opdatere: {error}',
+	'settings.general.remoteModelNoticeName': 'Meddelelse om cloud-hostet model',
+	'settings.general.remoteModelNoticeDesc':
+		'{models} kører på {hosts}, ikke på din maskine. Anmodninger — herunder eventuelt noteindhold, de sender — forlader din enhed, selvom din udbyder er Ollama. Vælg en lokalt hentet model, hvis du har brug for, at alt forbliver lokalt.',
 	'settings.general.localOnlyNoticeName': 'Meddelelse om rent lokale funktioner',
 	'settings.general.localOnlyNoticeDesc':
 		'Alt kører på din maskine. Google Search, URL Context (webhentning), Deep Research, billedgenerering og vault-søgeindekset afhænger af Gemini-skytjenester og er deaktiveret. For at aktivere en af dem skal du tildele den en udbyder under "Udbyder pr. funktion" — data for den pågældende funktion vil derefter blive sendt til skyen.',
@@ -854,6 +870,8 @@ export const da: Partial<Record<TranslationKey, string>> = {
 		"Kunne ikke oprette forbindelse til Ollama på {url}. Sørg for, at Ollama-tjenesten kører, og at base-URL'en er korrekt i Indstillinger → Gemini Scribe.",
 	'notice.main.noApiKey':
 		'Ingen Gemini API-nøgle konfigureret. Åbn Indstillinger → Gemini Scribe for at tilføje en. Hent en gratis nøgle på aistudio.google.com/apikey',
+	'notice.main.noApiKeyOpenai':
+		'Ingen OpenAI API-nøgle konfigureret. Åbn Indstillinger → Gemini Scribe for at tilføje en. Hent en nøgle på platform.openai.com/api-keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Kunne ikke hente din API-nøgle fra sikker lagring. Prøv at indtaste den igen under Indstillinger → Gemini Scribe → API-nøgle.',
 	'notice.main.initFailedConsole': 'Gemini Scribe kunne ikke initialiseres: {error}. Se konsollen for detaljer.',

@@ -34,21 +34,38 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'settings.general.viewDocumentationButton': 'Dokumentation anzeigen',
 	'settings.general.providerName': 'Anbieter',
 	'settings.general.providerDesc':
-		'Wähle den Modellanbieter. Gemini verwendet die Google Cloud API. Ollama führt Modelle lokal auf deinem Computer aus; installiere es von https://ollama.com und lade ein Modell mit `ollama pull <name>` herunter.',
+		'Wählen Sie den Modellanbieter. Gemini verwendet die Google Cloud API. Ollama führt Modelle lokal auf Ihrem Computer aus; installieren Sie es von https://ollama.com und laden Sie ein Modell mit `ollama pull <name>` herunter. OpenAI verwendet Ihren OpenAI-API-Schlüssel oder einen beliebigen OpenAI-kompatiblen Server (LM Studio, MLX, ...) über eine benutzerdefinierte Basis-URL.',
 	'settings.general.providerOptionGemini': 'Google Gemini (Cloud)',
 	'settings.general.providerOptionOllama': 'Ollama (lokal)',
+	'settings.general.providerOptionOpenai': 'OpenAI (Cloud)',
 	'settings.general.ollamaBaseUrlName': 'Ollama-Basis-URL',
 	'settings.general.ollamaBaseUrlDesc':
 		'HTTP-Endpunkt Ihres lokalen Ollama-Daemons. Standard ist http://localhost:11434.',
 	'settings.general.refreshModelListName': 'Modellliste aktualisieren',
 	'settings.general.refreshOllamaModelListName': 'Ollama-Modellliste aktualisieren',
 	'settings.general.refreshModelListOllamaDesc': 'Den Ollama-Daemon erneut nach verfügbaren Modellen abfragen.',
+	'settings.general.openaiApiKeyName': 'OpenAI-API-Schlüssel',
+	'settings.general.openaiApiKeyDesc':
+		'Verknüpfen Sie Ihren OpenAI-API-Schlüssel. Klicken Sie auf „Verknüpfen...“ und Obsidian fragt nach einem Secret-Namen (dies ist nur ein Label – verwenden Sie einen beliebigen Namen wie „openai-api“) und einem Secret-Wert (fügen Sie hier Ihren API-Schlüssel ein). Sie erhalten einen Schlüssel unter https://platform.openai.com/api-keys. Nicht erforderlich für einen OpenAI-kompatiblen lokalen Server, der keinen benötigt.',
+	'settings.general.openaiBaseUrlName': 'OpenAI-Basis-URL',
+	'settings.general.openaiBaseUrlDesc':
+		'Chat-Completions-Endpunkt. Standardmäßig ist dies die OpenAI-API (api.openai.com). Verweisen Sie stattdessen auf einen OpenAI-kompatiblen lokalen Server – wie LM Studio oder MLX –, um Anfragen auf Ihrem Computer zu behalten.',
+	'settings.general.refreshOpenaiModelListName': 'OpenAI-Modellliste aktualisieren',
+	'settings.general.refreshModelListOpenaiDesc':
+		'Fragt den konfigurierten Endpunkt erneut nach verfügbaren Modellen ab.',
+	'settings.general.openaiModelsFoundSingular': '{count} OpenAI-Modell gefunden.',
+	'settings.general.openaiModelsFound': '{count} OpenAI-Modelle gefunden.',
+	'settings.general.openaiChatModelDesc':
+		'Modell, das für Agenten-Chat-Sitzungen und das Umschreiben der Auswahl verwendet wird.',
 	'settings.general.refreshModelListGeminiDesc':
 		'Die neueste Gemini-Modellliste jetzt von GitHub abrufen und den 24-Stunden-Cache umgehen. Verwenden Sie dies, nachdem ein neues Modell veröffentlicht wurde.',
 	'settings.general.refreshButton': 'Aktualisieren',
 	'settings.general.ollamaModelsFoundSingular': '{count} Ollama-Modell gefunden.',
 	'settings.general.ollamaModelsFound': '{count} Ollama-Modelle gefunden.',
 	'settings.general.refreshFailedNotice': 'Aktualisierung fehlgeschlagen: {error}',
+	'settings.general.remoteModelNoticeName': 'Hinweis zu Cloud-gehosteten Modellen',
+	'settings.general.remoteModelNoticeDesc':
+		'{models} läuft auf {hosts}, nicht auf Ihrem Computer. Anfragen – einschließlich aller gesendeten Notizinhalte – verlassen Ihr Gerät, obwohl Ihr Anbieter Ollama ist. Wählen Sie ein lokal heruntergeladenes Modell, wenn alles lokal bleiben soll.',
 	'settings.general.localOnlyNoticeName': 'Hinweis zu rein lokalen Funktionen',
 	'settings.general.localOnlyNoticeDesc':
 		'Alles läuft auf Ihrem Computer. Google-Suche, URL-Kontext (Web-Abruf), Deep Research, Bildgenerierung und der Vault-Suchindex basieren auf Gemini-Cloud-Diensten und sind deaktiviert. Um eine Funktion zu aktivieren, weisen Sie ihr unter „Anbieter pro Funktion“ einen Anbieter zu – die Daten dieser Funktion werden dann an die Cloud gesendet.',
@@ -873,6 +890,8 @@ export const de: Partial<Record<TranslationKey, string>> = {
 		'Ollama unter {url} konnte nicht erreicht werden. Stelle sicher, dass der Ollama-Daemon läuft und die Basis-URL in Einstellungen → Gemini Scribe korrekt ist.',
 	'notice.main.noApiKey':
 		'Kein Gemini-API-Schlüssel konfiguriert. Öffne Einstellungen → Gemini Scribe, um einen hinzuzufügen. Hole dir einen kostenlosen Schlüssel unter aistudio.google.com/apikey',
+	'notice.main.noApiKeyOpenai':
+		'Kein OpenAI-API-Schlüssel konfiguriert. Öffnen Sie die Einstellungen → Gemini Scribe, um einen hinzuzufügen. Holen Sie sich einen Schlüssel unter platform.openai.com/api-keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Ihr API-Schlüssel konnte nicht aus dem sicheren Speicher abgerufen werden. Versuchen Sie, ihn unter Einstellungen → Gemini Scribe → API-Schlüssel erneut einzugeben.',
 	'notice.main.initFailedConsole':

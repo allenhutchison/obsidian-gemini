@@ -32,21 +32,36 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'settings.general.viewDocumentationButton': 'Lihat dokumentasi',
 	'settings.general.providerName': 'Penyedia',
 	'settings.general.providerDesc':
-		'Pilih penyedia model. Gemini menggunakan Google Cloud API. Ollama menjalankan model secara lokal di komputer Anda; instal dari https://ollama.com dan tarik model dengan `ollama pull <name>`.',
+		'Pilih penyedia model. Gemini menggunakan Google Cloud API. Ollama menjalankan model secara lokal di perangkat Anda; instal dari https://ollama.com dan unduh model dengan `ollama pull <name>`. OpenAI menggunakan kunci API OpenAI Anda, atau server apa pun yang kompatibel dengan OpenAI (LM Studio, MLX, ...) melalui URL basis kustom.',
 	'settings.general.providerOptionGemini': 'Google Gemini (cloud)',
 	'settings.general.providerOptionOllama': 'Ollama (lokal)',
+	'settings.general.providerOptionOpenai': 'OpenAI (cloud)',
 	'settings.general.ollamaBaseUrlName': 'URL dasar Ollama',
 	'settings.general.ollamaBaseUrlDesc':
 		'Endpoint HTTP dari daemon Ollama lokal Anda. Defaultnya adalah http://localhost:11434.',
 	'settings.general.refreshModelListName': 'Segarkan daftar model',
 	'settings.general.refreshOllamaModelListName': 'Segarkan daftar model Ollama',
 	'settings.general.refreshModelListOllamaDesc': 'Kueri ulang daemon Ollama untuk model yang tersedia.',
+	'settings.general.openaiApiKeyName': 'Kunci API OpenAI',
+	'settings.general.openaiApiKeyDesc':
+		'Tautkan kunci API OpenAI Anda. Klik "Tautkan..." dan Obsidian akan meminta nama rahasia (ini hanya label — gunakan nama apa saja seperti "openai-api") dan nilai rahasia (tempel kunci API Anda di sini). Dapatkan kunci di https://platform.openai.com/api-keys. Tidak diperlukan untuk server lokal yang kompatibel dengan OpenAI yang tidak membutuhkannya.',
+	'settings.general.openaiBaseUrlName': 'URL basis OpenAI',
+	'settings.general.openaiBaseUrlDesc':
+		'Endpoint Chat Completions. Defaultnya adalah API OpenAI (api.openai.com). Arahkan ini ke server lokal yang kompatibel dengan OpenAI — seperti LM Studio atau MLX — untuk menjaga agar permintaan tetap berada di perangkat Anda.',
+	'settings.general.refreshOpenaiModelListName': 'Segarkan daftar model OpenAI',
+	'settings.general.refreshModelListOpenaiDesc': 'Kueri ulang endpoint yang dikonfigurasi untuk model yang tersedia.',
+	'settings.general.openaiModelsFoundSingular': 'Menemukan {count} model OpenAI.',
+	'settings.general.openaiModelsFound': 'Menemukan {count} model OpenAI.',
+	'settings.general.openaiChatModelDesc': 'Model yang digunakan untuk sesi obrolan agen dan penulisan ulang pilihan.',
 	'settings.general.refreshModelListGeminiDesc':
 		'Ambil daftar model Gemini terbaru dari GitHub sekarang, melewati cache 24 jam. Gunakan ini setelah model baru dirilis.',
 	'settings.general.refreshButton': 'Segarkan',
 	'settings.general.ollamaModelsFoundSingular': 'Menemukan {count} model Ollama.',
 	'settings.general.ollamaModelsFound': 'Menemukan {count} model Ollama.',
 	'settings.general.refreshFailedNotice': 'Gagal menyegarkan: {error}',
+	'settings.general.remoteModelNoticeName': 'Pemberitahuan model yang di-host di cloud',
+	'settings.general.remoteModelNoticeDesc':
+		'{models} berjalan di {hosts}, bukan di perangkat Anda. Permintaan — termasuk konten catatan apa pun yang dikirimkannya — akan keluar dari perangkat Anda meskipun penyedia Anda adalah Ollama. Pilih model yang diunduh secara lokal jika Anda ingin semuanya tetap lokal.',
 	'settings.general.localOnlyNoticeName': 'Pemberitahuan fitur khusus lokal',
 	'settings.general.localOnlyNoticeDesc':
 		'Semua berjalan di mesin Anda. Google Search, URL Context (web fetch), Deep Research, pembuatan gambar, dan indeks pencarian vault bergantung pada layanan cloud Gemini dan dinonaktifkan. Untuk mengaktifkannya, tentukan penyedia di bawah "Penyedia per fitur" — data fitur tersebut kemudian akan dikirim ke cloud.',
@@ -851,6 +866,8 @@ export const id: Partial<Record<TranslationKey, string>> = {
 		'Tidak dapat menjangkau Ollama di {url}. Pastikan daemon Ollama berjalan dan URL dasar sudah benar di Pengaturan → Gemini Scribe.',
 	'notice.main.noApiKey':
 		'Kunci API Gemini belum dikonfigurasi. Buka Pengaturan → Gemini Scribe untuk menambahkannya. Dapatkan kunci gratis di aistudio.google.com/apikey',
+	'notice.main.noApiKeyOpenai':
+		'Kunci API OpenAI belum dikonfigurasi. Buka Pengaturan → Gemini Scribe untuk menambahkannya. Dapatkan kunci di platform.openai.com/api-keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Tidak dapat mengambil kunci API Anda dari penyimpanan aman. Coba masukkan kembali di Pengaturan → Gemini Scribe → Kunci API.',
 	'notice.main.initFailedConsole': 'Gemini Scribe gagal diinisialisasi: {error}. Periksa konsol untuk detailnya.',

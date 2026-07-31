@@ -33,21 +33,37 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.general.viewDocumentationButton': 'Xem tài liệu hướng dẫn',
 	'settings.general.providerName': 'Nhà cung cấp',
 	'settings.general.providerDesc':
-		'Chọn nhà cung cấp mô hình. Gemini sử dụng Google Cloud API. Ollama chạy các mô hình cục bộ trên máy của bạn; cài đặt từ https://ollama.com và tải mô hình bằng lệnh `ollama pull <name>`.',
+		'Chọn nhà cung cấp mô hình. Gemini sử dụng Google Cloud API. Ollama chạy các mô hình cục bộ trên máy của bạn; cài đặt từ https://ollama.com và tải mô hình bằng lệnh `ollama pull <name>`. OpenAI sử dụng API key OpenAI của bạn, hoặc bất kỳ máy chủ tương thích với OpenAI nào (LM Studio, MLX, ...) thông qua URL cơ sở tùy chỉnh.',
 	'settings.general.providerOptionGemini': 'Google Gemini (đám mây)',
 	'settings.general.providerOptionOllama': 'Ollama (cục bộ)',
+	'settings.general.providerOptionOpenai': 'OpenAI (đám mây)',
 	'settings.general.ollamaBaseUrlName': 'URL cơ sở của Ollama',
 	'settings.general.ollamaBaseUrlDesc':
 		'Điểm cuối HTTP (endpoint) của tiến trình Ollama cục bộ. Mặc định là http://localhost:11434.',
 	'settings.general.refreshModelListName': 'Làm mới danh sách mô hình',
 	'settings.general.refreshOllamaModelListName': 'Làm mới danh sách mô hình Ollama',
 	'settings.general.refreshModelListOllamaDesc': 'Truy vấn lại tiến trình Ollama để tìm các mô hình hiện có.',
+	'settings.general.openaiApiKeyName': 'API key OpenAI',
+	'settings.general.openaiApiKeyDesc':
+		'Liên kết API key OpenAI của bạn. Nhấp vào "Liên kết..." và Obsidian sẽ yêu cầu nhập tên bí mật (đây chỉ là một nhãn — sử dụng bất kỳ tên nào như "openai-api") và giá trị bí mật (dán API key của bạn vào đây). Lấy key tại https://platform.openai.com/api-keys. Không cần thiết đối với máy chủ cục bộ tương thích với OpenAI mà không yêu cầu key.',
+	'settings.general.openaiBaseUrlName': 'URL cơ sở OpenAI',
+	'settings.general.openaiBaseUrlDesc':
+		'Endpoint của Chat Completions. Mặc định là OpenAI API (api.openai.com). Trỏ URL này đến một máy chủ cục bộ tương thích với OpenAI — chẳng hạn như LM Studio hoặc MLX — để giữ các yêu cầu trên máy của bạn.',
+	'settings.general.refreshOpenaiModelListName': 'Làm mới danh sách mô hình OpenAI',
+	'settings.general.refreshModelListOpenaiDesc': 'Truy vấn lại endpoint đã cấu hình để tìm các mô hình khả dụng.',
+	'settings.general.openaiModelsFoundSingular': 'Đã tìm thấy {count} mô hình OpenAI.',
+	'settings.general.openaiModelsFound': 'Đã tìm thấy {count} mô hình OpenAI.',
+	'settings.general.openaiChatModelDesc':
+		'Mô hình được sử dụng cho các phiên trò chuyện của agent và viết lại vùng chọn.',
 	'settings.general.refreshModelListGeminiDesc':
 		'Tải danh sách mô hình Gemini mới nhất từ GitHub ngay bây giờ, bỏ qua bộ nhớ đệm 24 giờ. Sử dụng tính năng này sau khi một mô hình mới được phát hành.',
 	'settings.general.refreshButton': 'Làm mới',
 	'settings.general.ollamaModelsFoundSingular': 'Tìm thấy {count} mô hình Ollama.',
 	'settings.general.ollamaModelsFound': 'Tìm thấy {count} mô hình Ollama.',
 	'settings.general.refreshFailedNotice': 'Không thể làm mới: {error}',
+	'settings.general.remoteModelNoticeName': 'Thông báo mô hình lưu trữ trên đám mây',
+	'settings.general.remoteModelNoticeDesc':
+		'{models} chạy trên {hosts}, không phải trên máy của bạn. Các yêu cầu — bao gồm cả nội dung ghi chú được gửi đi — sẽ rời khỏi thiết bị của bạn mặc dù nhà cung cấp của bạn là Ollama. Hãy chọn một mô hình được tải về cục bộ nếu bạn muốn mọi thứ ở lại cục bộ.',
 	'settings.general.localOnlyNoticeName': 'Thông báo tính năng chỉ chạy cục bộ',
 	'settings.general.localOnlyNoticeDesc':
 		'Mọi thứ đều chạy trên máy của bạn. Google Tìm kiếm, URL Context (tải trang web), Deep Research, tạo hình ảnh và chỉ mục tìm kiếm vault phụ thuộc vào dịch vụ đám mây Gemini và đã bị tắt. Để bật một tính năng, hãy chỉ định nhà cung cấp cho nó trong mục "Nhà cung cấp cho từng tính năng" — dữ liệu của tính năng đó sau đó sẽ được gửi lên đám mây.',
@@ -853,6 +869,8 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 		'Không thể kết nối với Ollama tại {url}. Hãy đảm bảo tiến trình Ollama đang chạy và URL cơ sở chính xác trong Cài đặt → Gemini Scribe.',
 	'notice.main.noApiKey':
 		'Chưa cấu hình API key cho Gemini. Mở Cài đặt → Gemini Scribe để thêm. Nhận key miễn phí tại aistudio.google.com/apikey',
+	'notice.main.noApiKeyOpenai':
+		'Chưa cấu hình API key OpenAI. Mở Cài đặt → Gemini Scribe để thêm. Lấy key tại platform.openai.com/api-keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Không thể lấy API key của bạn từ bộ lưu trữ bảo mật. Hãy thử nhập lại trong Cài đặt → Gemini Scribe → API key.',
 	'notice.main.initFailedConsole': 'Gemini Scribe không thể khởi tạo: {error}. Kiểm tra console để biết thêm chi tiết.',

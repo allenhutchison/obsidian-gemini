@@ -33,21 +33,38 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.general.viewDocumentationButton': 'ドキュメントを表示',
 	'settings.general.providerName': 'プロバイダー',
 	'settings.general.providerDesc':
-		'モデルプロバイダーを選択します。GeminiはGoogle Cloud APIを使用します。Ollamaはマシン上でローカルにモデルを実行します。https://ollama.com からインストールし、`ollama pull <name>` でモデルを取得してください。',
+		'モデルプロバイダーを選択します。GeminiはGoogle Cloud APIを使用します。Ollamaはモデルをローカルマシン上で実行します。https://ollama.com からインストールし、`ollama pull <name>` でモデルを取得してください。OpenAIは、OpenAI APIキー、またはカスタムベースURLを介したOpenAI互換サーバー（LM Studio、MLXなど）を使用します。',
 	'settings.general.providerOptionGemini': 'Google Gemini (クラウド)',
 	'settings.general.providerOptionOllama': 'Ollama (ローカル)',
+	'settings.general.providerOptionOpenai': 'OpenAI (クラウド)',
 	'settings.general.ollamaBaseUrlName': 'OllamaのベースURL',
 	'settings.general.ollamaBaseUrlDesc':
 		'ローカルのOllamaデーモンのHTTPエンドポイント。デフォルトは http://localhost:11434 です。',
 	'settings.general.refreshModelListName': 'モデルリストを更新',
 	'settings.general.refreshOllamaModelListName': 'Ollamaモデルリストを更新',
 	'settings.general.refreshModelListOllamaDesc': '利用可能なモデルについてOllamaデーモンに再問い合わせします。',
+	'settings.general.openaiApiKeyName': 'OpenAI APIキー',
+	'settings.general.openaiApiKeyDesc':
+		'OpenAI APIキーを連携します。「リンク...」をクリックすると、Obsidianがシークレット名（これは単なるラベルです。「openai-api」などの任意の名前を使用してください）とシークレット値（ここにAPIキーを貼り付けます）の入力を求めます。キーは https://platform.openai.com/api-keys で取得できます。キーを必要としないOpenAI互換のローカルサーバーを使用する場合は不要です。',
+	'settings.general.openaiBaseUrlName': 'OpenAIベースURL',
+	'settings.general.openaiBaseUrlDesc':
+		'Chat Completionsのエンドポイント。デフォルトはOpenAI API（api.openai.com）です。リクエストをローカルマシン内にとどめるには、LM StudioやMLXなどのOpenAI互換ローカルサーバーを指定してください。',
+	'settings.general.refreshOpenaiModelListName': 'OpenAIモデルリストを更新',
+	'settings.general.refreshModelListOpenaiDesc':
+		'設定されたエンドポイントに再度問い合わせて、利用可能なモデルを取得します。',
+	'settings.general.openaiModelsFoundSingular': '{count}個のOpenAIモデルが見つかりました。',
+	'settings.general.openaiModelsFound': '{count}個のOpenAIモデルが見つかりました。',
+	'settings.general.openaiChatModelDesc':
+		'エージェントのチャットセッションおよび選択範囲の書き換えに使用されるモデル。',
 	'settings.general.refreshModelListGeminiDesc':
 		'24時間のキャッシュをバイパスして、GitHubから最新のGeminiモデルリストを今すぐ取得します。新しいモデルが公開された後に使用してください。',
 	'settings.general.refreshButton': '更新',
 	'settings.general.ollamaModelsFoundSingular': '{count} 個のOllamaモデルが見つかりました。',
 	'settings.general.ollamaModelsFound': '{count} 個のOllamaモデルが見つかりました。',
 	'settings.general.refreshFailedNotice': '更新に失敗しました: {error}',
+	'settings.general.remoteModelNoticeName': 'クラウドホスト型モデルに関する注意',
+	'settings.general.remoteModelNoticeDesc':
+		'{models}はローカルマシンではなく、{hosts}上で実行されます。プロバイダーがOllamaであっても、送信されるノートの内容を含むリクエストはデバイスの外部に送信されます。すべてをローカルに維持する必要がある場合は、ローカルにプルされたモデルを選択してください。',
 	'settings.general.localOnlyNoticeName': 'ローカル専用機能の通知',
 	'settings.general.localOnlyNoticeDesc':
 		'すべての処理はローカルマシン上で実行されます。Google Search、URL Context（ウェブ取得）、Deep Research、画像生成、およびvault検索インデックスはGeminiクラウドサービスに依存しているため、オフになっています。これらを有効にするには、「機能ごとのプロバイダー」でプロバイダーを割り当ててください。その機能のデータはクラウドに送信されるようになります。',
@@ -857,6 +874,8 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 		'{url} の Ollama に接続できませんでした。Ollama デーモンが起動していること、および設定 → Gemini Scribe のベースURLが正しいことを確認してください。',
 	'notice.main.noApiKey':
 		'Gemini APIキーが設定されていません。設定 → Gemini Scribe を開いて追加してください。無料のキーは aistudio.google.com/apikey で取得できます。',
+	'notice.main.noApiKeyOpenai':
+		'OpenAI APIキーが設定されていません。「設定」→「Gemini Scribe」を開いて追加してください。キーは platform.openai.com/api-keys で取得できます。',
 	'notice.main.apiKeyRetrieveFailed':
 		'安全なストレージからAPIキーを取得できませんでした。設定 → Gemini Scribe → APIキー から再入力してください。',
 	'notice.main.initFailedConsole': 'Gemini Scribeの初期化に失敗しました: {error}。詳細はコンソールを確認してください。',

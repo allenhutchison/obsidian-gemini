@@ -33,21 +33,36 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.general.viewDocumentationButton': 'Belgeleri görüntüle',
 	'settings.general.providerName': 'Sağlayıcı',
 	'settings.general.providerDesc':
-		"Model sağlayıcısını seçin. Gemini, Google Cloud API'sini kullanır. Ollama, modelleri makinenizde yerel olarak çalıştırır; https://ollama.com adresinden yükleyin ve `ollama pull <name>` ile bir model çekin.",
+		"Model sağlayıcısını seçin. Gemini, Google Cloud API'sini kullanır. Ollama, modelleri makinenizde yerel olarak çalıştırır; https://ollama.com adresinden yükleyin ve `ollama pull <name>` ile bir model çekin. OpenAI, OpenAI API anahtarınızı veya özel bir temel URL aracılığıyla OpenAI uyumlu herhangi bir sunucuyu (LM Studio, MLX, ...) kullanır.",
 	'settings.general.providerOptionGemini': 'Google Gemini (bulut)',
 	'settings.general.providerOptionOllama': 'Ollama (yerel)',
+	'settings.general.providerOptionOpenai': 'OpenAI (bulut)',
 	'settings.general.ollamaBaseUrlName': "Ollama temel URL'si",
 	'settings.general.ollamaBaseUrlDesc':
 		"Yerel Ollama arka plan programınızın (daemon) HTTP uç noktası. Varsayılan değer http://localhost:11434'tür.",
 	'settings.general.refreshModelListName': 'Model listesini yenile',
 	'settings.general.refreshOllamaModelListName': 'Ollama model listesini yenile',
 	'settings.general.refreshModelListOllamaDesc': 'Mevcut modeller için Ollama arka plan programını yeniden sorgulayın.',
+	'settings.general.openaiApiKeyName': 'OpenAI API anahtarı',
+	'settings.general.openaiApiKeyDesc':
+		'OpenAI API anahtarınızı bağlayın. "Bağla..." seçeneğine tıkladığınızda Obsidian sizden gizli bir ad (bu sadece bir etikettir — "openai-api" gibi herhangi bir ad kullanın) ve gizli bir değer (API anahtarınızı buraya yapıştırın) isteyecektir. https://platform.openai.com/api-keys adresinden bir anahtar edinin. Anahtar gerektirmeyen OpenAI uyumlu yerel bir sunucu için gerekli değildir.',
+	'settings.general.openaiBaseUrlName': "OpenAI temel URL'si",
+	'settings.general.openaiBaseUrlDesc':
+		"Sohbet Tamamlama (Chat Completions) uç noktası. Varsayılan, OpenAI API'sidir (api.openai.com). İstekleri makinenizde tutmak için bunu LM Studio veya MLX gibi OpenAI uyumlu yerel bir sunucuya yönlendirin.",
+	'settings.general.refreshOpenaiModelListName': 'OpenAI model listesini yenile',
+	'settings.general.refreshModelListOpenaiDesc': 'Mevcut modeller için yapılandırılmış uç noktayı yeniden sorgulayın.',
+	'settings.general.openaiModelsFoundSingular': '{count} OpenAI modeli bulundu.',
+	'settings.general.openaiModelsFound': '{count} OpenAI modeli bulundu.',
+	'settings.general.openaiChatModelDesc': 'Temsilci sohbet oturumları ve seçimi yeniden yazma için kullanılan model.',
 	'settings.general.refreshModelListGeminiDesc':
 		"24 saatlik önbelleği atlayarak en güncel Gemini model listesini şimdi GitHub'dan çekin. Bunu yeni bir model yayınlandıktan sonra kullanın.",
 	'settings.general.refreshButton': 'Yenile',
 	'settings.general.ollamaModelsFoundSingular': '{count} Ollama modeli bulundu.',
 	'settings.general.ollamaModelsFound': '{count} Ollama modeli bulundu.',
 	'settings.general.refreshFailedNotice': 'Yenileme başarısız oldu: {error}',
+	'settings.general.remoteModelNoticeName': 'Bulut tabanlı model uyarısı',
+	'settings.general.remoteModelNoticeDesc':
+		'{models}, makinenizde değil {hosts} üzerinde çalışıyor. Sağlayıcınız Ollama olsa bile, gönderdikleri not içerikleri de dahil olmak üzere istekler cihazınızdan ayrılır. Her şeyin yerel kalmasını istiyorsanız yerel olarak çekilmiş bir model seçin.',
 	'settings.general.localOnlyNoticeName': 'Yalnızca yerel özellik bildirimi',
 	'settings.general.localOnlyNoticeDesc':
 		'Her şey makinenizde çalışır. Google Search, URL Context (web getirme), Deep Research, görsel oluşturma ve vault arama dizini Gemini bulut hizmetlerine dayanır ve kapalıdır. Bunlardan birini etkinleştirmek için "Özellik başına sağlayıcı" altından ona bir sağlayıcı atayın — bu durumda ilgili özelliğin verileri buluta gönderilecektir.',
@@ -864,6 +879,8 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 		"{url} adresindeki Ollama'ya ulaşılamadı. Ollama arka plan programının çalıştığından ve Ayarlar → Gemini Scribe altındaki temel URL'nin doğru olduğundan emin olun.",
 	'notice.main.noApiKey':
 		'Tanımlanmış Gemini API anahtarı yok. Eklemek için Ayarlar → Gemini Scribe bölümünü açın. aistudio.google.com/apikey adresinden ücretsiz bir anahtar alabilirsiniz.',
+	'notice.main.noApiKeyOpenai':
+		'Yapılandırılmış OpenAI API anahtarı yok. Eklemek için Ayarlar → Gemini Scribe menüsünü açın. platform.openai.com/api-keys adresinden bir anahtar edinin.',
 	'notice.main.apiKeyRetrieveFailed':
 		'API anahtarınız güvenli depolama alanından alınamadı. Ayarlar → Gemini Scribe → API anahtarı bölümünden tekrar girmeyi deneyin.',
 	'notice.main.initFailedConsole': 'Gemini Scribe başlatılamadı: {error}. Detaylar için konsolu kontrol edin.',

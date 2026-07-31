@@ -32,21 +32,37 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'settings.general.viewDocumentationButton': 'Documentatie bekijken',
 	'settings.general.providerName': 'Provider',
 	'settings.general.providerDesc':
-		'Kies de modelprovider. Gemini gebruikt de Google Cloud API. Ollama voert modellen lokaal uit op je machine; installeer vanaf https://ollama.com en haal een model op met `ollama pull <name>`.',
+		'Kies de modelprovider. Gemini gebruikt de Google Cloud API. Ollama voert modellen lokaal uit op je machine; installeer vanaf https://ollama.com en haal een model op met `ollama pull <name>`. OpenAI gebruikt je OpenAI-API-sleutel, of een met OpenAI compatibele server (LM Studio, MLX, ...) via een aangepaste basis-URL.',
 	'settings.general.providerOptionGemini': 'Google Gemini (cloud)',
 	'settings.general.providerOptionOllama': 'Ollama (lokaal)',
+	'settings.general.providerOptionOpenai': 'OpenAI (cloud)',
 	'settings.general.ollamaBaseUrlName': 'Ollama basis-URL',
 	'settings.general.ollamaBaseUrlDesc':
 		'HTTP-endpoint van je lokale Ollama-daemon. Standaard is http://localhost:11434.',
 	'settings.general.refreshModelListName': 'Modellenlijst vernieuwen',
 	'settings.general.refreshOllamaModelListName': 'Ollama-modellenlijst vernieuwen',
 	'settings.general.refreshModelListOllamaDesc': 'Vraag de Ollama-daemon opnieuw om beschikbare modellen.',
+	'settings.general.openaiApiKeyName': 'OpenAI-API-sleutel',
+	'settings.general.openaiApiKeyDesc':
+		'Koppel je OpenAI-API-sleutel. Klik op "Koppelen..." en Obsidian zal vragen om een geheime naam (dit is slechts een label — gebruik een naam zoals "openai-api") en een geheime waarde (plak hier je API-sleutel). Verkrijg een sleutel op https://platform.openai.com/api-keys. Niet nodig voor een met OpenAI compatibele lokale server die er geen vereist.',
+	'settings.general.openaiBaseUrlName': 'OpenAI-basis-URL',
+	'settings.general.openaiBaseUrlDesc':
+		'Chat Completions-eindpunt. Standaard is de OpenAI-API (api.openai.com). Verwijs dit in plaats daarvan naar een met OpenAI compatibele lokale server — zoals LM Studio of MLX — om verzoeken op je machine te houden.',
+	'settings.general.refreshOpenaiModelListName': 'OpenAI-modellijst vernieuwen',
+	'settings.general.refreshModelListOpenaiDesc': 'Vraag het geconfigureerde eindpunt opnieuw om beschikbare modellen.',
+	'settings.general.openaiModelsFoundSingular': '{count} OpenAI-model gevonden.',
+	'settings.general.openaiModelsFound': '{count} OpenAI-modellen gevonden.',
+	'settings.general.openaiChatModelDesc':
+		'Model dat wordt gebruikt voor chatsessies met agents en het herschrijven van selecties.',
 	'settings.general.refreshModelListGeminiDesc':
 		'Haal nu de nieuwste Gemini-modellijst op van GitHub, waarbij de 24-uurs cache wordt omzeild. Gebruik dit nadat een nieuw model is gepubliceerd.',
 	'settings.general.refreshButton': 'Vernieuwen',
 	'settings.general.ollamaModelsFoundSingular': '{count} Ollama-model gevonden.',
 	'settings.general.ollamaModelsFound': '{count} Ollama-modellen gevonden.',
 	'settings.general.refreshFailedNotice': 'Vernieuwen mislukt: {error}',
+	'settings.general.remoteModelNoticeName': 'Melding over in de cloud gehost model',
+	'settings.general.remoteModelNoticeDesc':
+		'{models} draait op {hosts}, niet op je machine. Verzoeken — inclusief eventuele notitie-inhoud die ze verzenden — verlaten je apparaat, ook al is je provider Ollama. Kies een lokaal opgehaald model als je wilt dat alles lokaal blijft.',
 	'settings.general.localOnlyNoticeName': 'Melding over uitsluitend lokale functies',
 	'settings.general.localOnlyNoticeDesc':
 		'Alles wordt op uw machine uitgevoerd. Google Search, URL Context (web fetch), Deep Research, afbeeldingengeneratie en de vault-zoekindex zijn afhankelijk van Gemini-clouddiensten en zijn uitgeschakeld. Om een functie in te schakelen, wijst u een provider toe onder "Provider per functie" — de gegevens van die functie worden dan naar de cloud verzonden.',
@@ -860,6 +876,8 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 		'Kon Ollama niet bereiken op {url}. Zorg ervoor dat de Ollama-daemon actief is en de basis-URL correct is in Instellingen → Gemini Scribe.',
 	'notice.main.noApiKey':
 		'Geen Gemini API-sleutel geconfigureerd. Open Instellingen → Gemini Scribe om er een toe te voegen. Vraag een gratis sleutel aan op aistudio.google.com/apikey',
+	'notice.main.noApiKeyOpenai':
+		'Geen OpenAI-API-sleutel geconfigureerd. Open Instellingen → Gemini Scribe om er een toe te voegen. Verkrijg een sleutel op platform.openai.com/api-keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Kan uw API-sleutel niet ophalen uit de beveiligde opslag. Probeer deze opnieuw in te voeren in Instellingen → Gemini Scribe → API-sleutel.',
 	'notice.main.initFailedConsole':
