@@ -962,7 +962,7 @@ describe('OpenAIClient', () => {
 		});
 
 		// The formatted string is only `error.message` for a non-API error, so the
-		// raw error has to ride along or the stack trace never reaches the console.
+		// raw error has to ride along or its stack trace is never logged at all.
 		it('passes the original error through so its stack survives', async () => {
 			const raw = new TypeError('boom');
 			openaiCalls.create.mockRejectedValue(raw);
