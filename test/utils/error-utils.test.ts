@@ -623,7 +623,20 @@ describe('error-utils', () => {
 			expect(truncateStoredError(raw)).toBe('You exceeded your current quota');
 		});
 
-		test('keeps only the first line of a multi-line JSON message', () => {
+		test('decodes an escaped newline and keeps only the first line', () => {
+			// A real Gemini blob escapes its newlines, so this is the common shape.
+			const raw = '{"message":"Quota exceeded\\nRetry in 30s"}';
+			expect(truncateStoredError(raw)).toBe('Quota exceeded');
+		});
+
+		test('decodes escaped quotes instead of ending the capture early', () => {
+			const raw = '{"message":"He said \\"boom\\" then failed"}';
+			expect(truncateStoredError(raw)).toBe('He said "boom" then failed');
+		});
+
+		test('falls back to the raw capture when the JSON string body is malformed', () => {
+			// A literal newline inside the string is invalid JSON, so the decode
+			// throws; the message must still survive rather than being dropped.
 			const raw = '{"message":"Quota exceeded\nRetry in 30s"}';
 			expect(truncateStoredError(raw)).toBe('Quota exceeded');
 		});

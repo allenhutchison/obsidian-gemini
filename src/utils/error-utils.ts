@@ -458,9 +458,22 @@ function getHttpErrorMessage(statusCode: number, error: unknown): string {
 export function truncateStoredError(raw: string): string {
 	// Prefer the human-readable message out of a Gemini JSON error blob,
 	// e.g. ApiError: {"error":{"code":429,"message":"You exceeded..."}}
-	const jsonMatch = raw.match(/"message"\s*:\s*"([^"]+)"/);
+	//
+	// The capture keeps backslash escape pairs intact, so an embedded \" does not
+	// end it early, and JSON.parse then turns \n and \" back into real characters
+	// — without decoding, a multi-line API error renders as one line with a
+	// literal "\n" in it. A blob that isn't valid JSON (e.g. a raw newline inside
+	// the string) fails to parse; fall back to the captured text rather than
+	// dropping the message.
+	const jsonMatch = raw.match(/"message"\s*:\s*"((?:[^"\\]|\\.)*)"/);
 	if (jsonMatch) {
-		const msg = jsonMatch[1].split(/[\n]/)[0].trim();
+		let decoded = jsonMatch[1];
+		try {
+			decoded = JSON.parse(`"${decoded}"`) as string;
+		} catch {
+			// Not a well-formed JSON string body — use the raw capture as-is.
+		}
+		const msg = decoded.split(/[\n]/)[0].trim();
 		return msg.length > 120 ? msg.slice(0, 117) + '…' : msg;
 	}
 	// Otherwise strip the HTTP status prefix like "[429 Too Many Requests] "
