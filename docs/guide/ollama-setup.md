@@ -55,7 +55,9 @@ The tradeoff is memory: a larger window costs more RAM/VRAM and slows generation
 
 ## Cloud models
 
-Ollama can also run large models on its own servers — `gpt-oss:120b-cloud`, `deepseek-v4-pro:cloud`, and similar. These behave like local models from the plugin's point of view (same daemon, same API, tool calling and vision all work), but the inference happens on ollama.com.
+Ollama can also run large models on its own servers — `gpt-oss:120b-cloud`, `deepseek-v4-pro:cloud`, and similar. These reach the plugin like local models (same daemon, same API, same auto-detected capabilities), but the inference happens on ollama.com.
+
+Tool calling and vision still depend on the model you pick, exactly as they do locally — being cloud-hosted grants neither. Most current cloud models report tool support, but vision is common to skip: of the models available here, `kimi-k2.7-code:cloud` and `qwen3.5:397b-cloud` report vision while the larger `deepseek-v4-pro:cloud` and `glm-5.2:cloud` do not, so image attachments fail on the latter. The picker reflects whatever `/api/show` reports for each model.
 
 **You must pull a cloud model before the plugin can see it.** This is the part that trips people up: running a cloud model from the Ollama desktop app or via `ollama run` does _not_ register it locally. The plugin builds its model list from the daemon's `/api/tags` endpoint, which only reports models that have a local manifest — so a cloud model you've been happily using elsewhere will still be missing from the picker.
 
