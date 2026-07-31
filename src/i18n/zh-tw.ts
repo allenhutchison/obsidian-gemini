@@ -31,20 +31,35 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'settings.general.viewDocumentationButton': '查看文件',
 	'settings.general.providerName': '提供商',
 	'settings.general.providerDesc':
-		'選擇模型提供商。Gemini 使用 Google Cloud API。Ollama 在您的本機電腦上執行模型；請從 https://ollama.com 安裝，並使用 `ollama pull <name>` 獲取模型。',
+		'選擇模型提供商。Gemini 使用 Google Cloud API。Ollama 在您的本機電腦上執行模型；請從 https://ollama.com 安裝，並使用 `ollama pull <name>` 下載模型。OpenAI 使用您的 OpenAI API 金鑰，或透過自訂基礎 URL 使用任何與 OpenAI 相容的伺服器（LM Studio、MLX...）。',
 	'settings.general.providerOptionGemini': 'Google Gemini (雲端)',
 	'settings.general.providerOptionOllama': 'Ollama (本機)',
+	'settings.general.providerOptionOpenai': 'OpenAI (雲端)',
 	'settings.general.ollamaBaseUrlName': 'Ollama 基本 URL',
 	'settings.general.ollamaBaseUrlDesc': '本機 Ollama 服務的 HTTP 端點。預設為 http://localhost:11434。',
 	'settings.general.refreshModelListName': '重新整理模型清單',
 	'settings.general.refreshOllamaModelListName': '重新整理 Ollama 模型清單',
 	'settings.general.refreshModelListOllamaDesc': '重新向 Ollama 服務查詢可用的模型。',
+	'settings.general.openaiApiKeyName': 'OpenAI API 金鑰',
+	'settings.general.openaiApiKeyDesc':
+		'連結您的 OpenAI API 金鑰。點擊「連結...」，Obsidian 將會要求輸入機密名稱（這只是一個標籤 — 可以使用任何名稱，例如 "openai-api"）和機密值（在此貼上您的 API 金鑰）。請至 https://platform.openai.com/api-keys 取得金鑰。若使用不需要金鑰且與 OpenAI 相容的本機伺服器，則無需此金鑰。',
+	'settings.general.openaiBaseUrlName': 'OpenAI 基礎 URL',
+	'settings.general.openaiBaseUrlDesc':
+		'對話補全（Chat Completions）端點。預設為 OpenAI API (api.openai.com)。將此指向與 OpenAI 相容的本機伺服器（例如 LM Studio 或 MLX），即可將請求保留在您的本機電腦上。',
+	'settings.general.refreshOpenaiModelListName': '重新整理 OpenAI 模型清單',
+	'settings.general.refreshModelListOpenaiDesc': '重新查詢已設定的端點以取得可用模型。',
+	'settings.general.openaiModelsFoundSingular': '找到 {count} 個 OpenAI 模型。',
+	'settings.general.openaiModelsFound': '找到 {count} 個 OpenAI 模型。',
+	'settings.general.openaiChatModelDesc': '用於 Agent 對話工作階段與選取內容重寫的模型。',
 	'settings.general.refreshModelListGeminiDesc':
 		'立即從 GitHub 獲取最新的 Gemini 模型清單，繞過 24 小時快取。在新模型發佈後可使用此功能。',
 	'settings.general.refreshButton': '重新整理',
 	'settings.general.ollamaModelsFoundSingular': '找到 {count} 個 Ollama 模型。',
 	'settings.general.ollamaModelsFound': '找到 {count} 個 Ollama 模型。',
 	'settings.general.refreshFailedNotice': '重新整理失敗：{error}',
+	'settings.general.remoteModelNoticeName': '雲端託管模型提示',
+	'settings.general.remoteModelNoticeDesc':
+		'{models} 執行於 {hosts}，而非您的本機電腦。即使您的提供商是 Ollama，請求（包括傳送的任何筆記內容）仍會離開您的裝置。如果您需要所有內容都保留在本機，請選擇本機下載的模型。',
 	'settings.general.localOnlyNoticeName': '僅限本地功能通知',
 	'settings.general.localOnlyNoticeDesc':
 		'所有功能皆在您的電腦上執行。Google Search、URL Context (網頁擷取)、Deep Research、圖片生成以及 vault 搜尋索引皆依賴 Gemini 雲端服務，目前已關閉。若要啟用其中一項，請在「個別功能提供商」下為其指定提供商 — 該功能的資料隨後將會傳送至雲端。',
@@ -798,6 +813,8 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 		'無法連線至位於 {url} 的 Ollama。請確保 Ollama 服務正在執行，且「設定」→「Gemini Scribe」中的基礎 URL 正確。',
 	'notice.main.noApiKey':
 		'未設定 Gemini API 金鑰。請開啟「設定」→「Gemini Scribe」以新增。可在 aistudio.google.com/apikey 取得免費金鑰',
+	'notice.main.noApiKeyOpenai':
+		'未設定 OpenAI API 金鑰。請前往「設定」→「Gemini Scribe」以新增金鑰。請至 platform.openai.com/api-keys 取得金鑰',
 	'notice.main.apiKeyRetrieveFailed':
 		'無法從安全儲存區取得您的 API 金鑰。請嘗試至「設定」→「Gemini Scribe」→「API 金鑰」重新輸入。',
 	'notice.main.initFailedConsole': 'Gemini Scribe 初始化失敗：{error}。請檢查主控台以取得詳細資訊。',

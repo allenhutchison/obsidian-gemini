@@ -32,21 +32,37 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.general.viewDocumentationButton': 'Zobrazit dokumentaci',
 	'settings.general.providerName': 'Poskytovatel',
 	'settings.general.providerDesc':
-		'Vyberte poskytovatele modelu. Gemini využívá Google Cloud API. Ollama spouští modely lokálně na vašem počítači; nainstalujte z https://ollama.com a stáhněte model pomocí `ollama pull <name>`.',
+		'Vyberte poskytovatele modelu. Gemini využívá Google Cloud API. Ollama spouští modely lokálně na vašem počítači; nainstalujte z https://ollama.com a stáhněte model pomocí `ollama pull <name>`. OpenAI využívá váš API klíč OpenAI nebo jakýkoli server kompatibilní s OpenAI (LM Studio, MLX, ...) prostřednictvím vlastní základní URL adresy.',
 	'settings.general.providerOptionGemini': 'Google Gemini (cloud)',
 	'settings.general.providerOptionOllama': 'Ollama (lokální)',
+	'settings.general.providerOptionOpenai': 'OpenAI (cloud)',
 	'settings.general.ollamaBaseUrlName': 'Základní URL Ollama',
 	'settings.general.ollamaBaseUrlDesc':
 		'HTTP koncový bod (endpoint) vašeho lokálního démona Ollama. Výchozí je http://localhost:11434.',
 	'settings.general.refreshModelListName': 'Obnovit seznam modelů',
 	'settings.general.refreshOllamaModelListName': 'Obnovit seznam modelů Ollama',
 	'settings.general.refreshModelListOllamaDesc': 'Znovu se dotázat démona Ollama na dostupné modely.',
+	'settings.general.openaiApiKeyName': 'API klíč OpenAI',
+	'settings.general.openaiApiKeyDesc':
+		'Propojte svůj API klíč OpenAI. Klikněte na „Link...“ a Obsidian vás požádá o název tajného klíče (to je jen štítek – použijte jakýkoli název jako „openai-api“) a hodnotu tajného klíče (sem vložte svůj API klíč). Klíč získáte na adrese https://platform.openai.com/api-keys. Není vyžadováno pro lokální server kompatibilní s OpenAI, který klíč nevyžaduje.',
+	'settings.general.openaiBaseUrlName': 'Základní URL OpenAI',
+	'settings.general.openaiBaseUrlDesc':
+		'Koncový bod (endpoint) pro Chat Completions. Výchozí je OpenAI API (api.openai.com). Chcete-li, aby požadavky zůstaly ve vašem počítači, nasměrujte jej na lokální server kompatibilní s OpenAI – například LM Studio nebo MLX.',
+	'settings.general.refreshOpenaiModelListName': 'Obnovit seznam modelů OpenAI',
+	'settings.general.refreshModelListOpenaiDesc':
+		'Znovu odeslat dotaz na nakonfigurovaný koncový bod pro získání dostupných modelů.',
+	'settings.general.openaiModelsFoundSingular': 'Nalezen {count} model OpenAI.',
+	'settings.general.openaiModelsFound': 'Nalezeno {count} modelů OpenAI.',
+	'settings.general.openaiChatModelDesc': 'Model používaný pro chatovací relace agentů a přepisování výběru.',
 	'settings.general.refreshModelListGeminiDesc':
 		'Stáhnout nejnovější seznam modelů Gemini z GitHubu hned a obejít 24hodinovou mezipaměť. Použijte po vydání nového modelu.',
 	'settings.general.refreshButton': 'Obnovit',
 	'settings.general.ollamaModelsFoundSingular': 'Nalezen {count} model Ollama.',
 	'settings.general.ollamaModelsFound': 'Nalezeno {count} modelů Ollama.',
 	'settings.general.refreshFailedNotice': 'Nepodařilo se obnovit: {error}',
+	'settings.general.remoteModelNoticeName': 'Upozornění na model hostovaný v cloudu',
+	'settings.general.remoteModelNoticeDesc':
+		'{models} běží na {hosts}, nikoli na vašem počítači. Požadavky – včetně jakéhokoli obsahu poznámek, který odesílají – opouštějí vaše zařízení, i když je vaším poskytovatelem Ollama. Pokud potřebujete, aby vše zůstalo lokální, zvolte lokálně stažený model.',
 	'settings.general.localOnlyNoticeName': 'Upozornění na pouze lokální funkce',
 	'settings.general.localOnlyNoticeDesc':
 		'Vše běží na vašem počítači. Vyhledávání Google, URL Context (načítání webu), Deep Research, generování obrázků a vyhledávací index vaultu závisí na cloudových službách Gemini a jsou vypnuté. Chcete-li některou z nich povolit, přiřaďte jí poskytovatele v sekci „Poskytovatel pro jednotlivé funkce“ — data této funkce pak budou odesílána do cloudu.',
@@ -850,6 +866,8 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 		'Nelze se připojit k Ollama na adrese {url}. Ujistěte se, že běží démon Ollama a že je základní URL správná v Nastavení → Gemini Scribe.',
 	'notice.main.noApiKey':
 		'Není nakonfigurován žádný API klíč Gemini. Přidejte jej v Nastavení → Gemini Scribe. Bezplatný klíč získáte na adrese aistudio.google.com/apikey',
+	'notice.main.noApiKeyOpenai':
+		'Není nakonfigurován žádný API klíč OpenAI. Otevřete Nastavení → Gemini Scribe a přidejte jej. Klíč získáte na platform.openai.com/api-keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Nepodařilo se načíst váš API klíč ze zabezpečeného úložiště. Zkuste jej znovu zadat v Nastavení → Gemini Scribe → API klíč.',
 	'notice.main.initFailedConsole': 'Inicializace Gemini Scribe selhala: {error}. Podrobnosti naleznete v konzoli.',

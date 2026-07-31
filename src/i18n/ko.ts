@@ -30,23 +30,38 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'settings.general.documentationName': '문서',
 	'settings.general.documentationDesc': '전체 플러그인 문서 및 가이드 보기',
 	'settings.general.viewDocumentationButton': '문서 보기',
-	'settings.general.providerName': '제공자',
+	'settings.general.providerName': '프로바이더',
 	'settings.general.providerDesc':
-		'모델 제공업체를 선택하세요. Gemini는 Google Cloud API를 사용합니다. Ollama는 사용자의 기기에서 로컬로 모델을 실행합니다. https://ollama.com 에서 설치하고 `ollama pull <name>` 명령어로 모델을 가져오세요.',
+		'모델 프로바이더를 선택하세요. Gemini는 Google Cloud API를 사용합니다. Ollama는 사용자의 기기에서 로컬로 모델을 실행합니다. https://ollama.com 에서 설치하고 `ollama pull <name>`으로 모델을 가져오세요. OpenAI는 OpenAI API 키를 사용하거나, 사용자 지정 기본 URL을 통해 OpenAI 호환 서버(LM Studio, MLX 등)를 사용합니다.',
 	'settings.general.providerOptionGemini': 'Google Gemini (클라우드)',
 	'settings.general.providerOptionOllama': 'Ollama (로컬)',
+	'settings.general.providerOptionOpenai': 'OpenAI (클라우드)',
 	'settings.general.ollamaBaseUrlName': 'Ollama 기본 URL',
 	'settings.general.ollamaBaseUrlDesc':
 		'로컬 Ollama 데몬의 HTTP 엔드포인트입니다. 기본값은 http://localhost:11434 입니다.',
 	'settings.general.refreshModelListName': '모델 목록 새로고침',
 	'settings.general.refreshOllamaModelListName': 'Ollama 모델 목록 새로고침',
 	'settings.general.refreshModelListOllamaDesc': '사용 가능한 모델을 확인하기 위해 Ollama 데몬을 다시 쿼리합니다.',
+	'settings.general.openaiApiKeyName': 'OpenAI API 키',
+	'settings.general.openaiApiKeyDesc':
+		'OpenAI API 키를 연결합니다. "연결..."을 클릭하면 Obsidian에서 비밀 이름(단순한 레이블이므로 "openai-api"와 같은 이름을 사용하면 됩니다)과 비밀 값(여기에 API 키를 붙여넣으세요)을 요청합니다. https://platform.openai.com/api-keys 에서 키를 발급받을 수 있습니다. API 키가 필요하지 않은 OpenAI 호환 로컬 서버의 경우 필요하지 않습니다.',
+	'settings.general.openaiBaseUrlName': 'OpenAI 기본 URL',
+	'settings.general.openaiBaseUrlDesc':
+		'Chat Completions 엔드포인트입니다. 기본값은 OpenAI API(api.openai.com)입니다. 요청이 기기 내에만 머물도록 하려면 LM Studio나 MLX 같은 OpenAI 호환 로컬 서버를 가리키도록 설정하세요.',
+	'settings.general.refreshOpenaiModelListName': 'OpenAI 모델 목록 새로고침',
+	'settings.general.refreshModelListOpenaiDesc': '설정된 엔드포인트에서 사용 가능한 모델을 다시 조회합니다.',
+	'settings.general.openaiModelsFoundSingular': '{count}개의 OpenAI 모델을 찾았습니다.',
+	'settings.general.openaiModelsFound': '{count}개의 OpenAI 모델을 찾았습니다.',
+	'settings.general.openaiChatModelDesc': '에이전트 채팅 세션 및 선택 영역 재작성에 사용되는 모델입니다.',
 	'settings.general.refreshModelListGeminiDesc':
 		'24시간 캐시를 우회하여 지금 GitHub에서 최신 Gemini 모델 목록을 가져옵니다. 새 모델이 출시된 후에 사용하세요.',
 	'settings.general.refreshButton': '새로고침',
 	'settings.general.ollamaModelsFoundSingular': '{count}개의 Ollama 모델을 찾았습니다.',
 	'settings.general.ollamaModelsFound': '{count}개의 Ollama 모델을 찾았습니다.',
 	'settings.general.refreshFailedNotice': '새로고침 실패: {error}',
+	'settings.general.remoteModelNoticeName': '클라우드 호스팅 모델 알림',
+	'settings.general.remoteModelNoticeDesc':
+		'{models}은(는) 사용자의 기기가 아닌 {hosts}에서 실행됩니다. 프로바이더가 Ollama이더라도, 전송되는 노트 콘텐츠를 포함한 요청이 기기 외부로 전송됩니다. 모든 데이터를 로컬에 유지하려면 로컬로 가져온 모델을 선택하세요.',
 	'settings.general.localOnlyNoticeName': '로컬 전용 기능 안내',
 	'settings.general.localOnlyNoticeDesc':
 		'모든 기능이 사용자의 기기에서 실행됩니다. Google Search, URL Context (웹 가져오기), Deep Research, 이미지 생성 및 보관소 검색 인덱스는 Gemini 클라우드 서비스에 의존하므로 비활성화되어 있습니다. 이 중 하나를 활성화하려면 "기능별 프로바이더"에서 프로바이더를 지정하세요. 해당 기능의 데이터는 클라우드로 전송됩니다.',
@@ -838,6 +853,8 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 		'{url}에서 Ollama에 연결할 수 없습니다. Ollama 데몬이 실행 중이고 설정 → Gemini Scribe의 기본 URL이 올바른지 확인하세요.',
 	'notice.main.noApiKey':
 		'Gemini API 키가 설정되지 않았습니다. 설정 → Gemini Scribe에서 키를 추가하세요. aistudio.google.com/apikey 에서 무료 키를 받을 수 있습니다.',
+	'notice.main.noApiKeyOpenai':
+		'OpenAI API 키가 설정되지 않았습니다. 설정 → Gemini Scribe에서 키를 추가하세요. platform.openai.com/api-keys 에서 키를 발급받을 수 있습니다.',
 	'notice.main.apiKeyRetrieveFailed':
 		'보안 저장소에서 API 키를 가져올 수 없습니다. 설정 → Gemini Scribe → API 키에서 다시 입력해 보세요.',
 	'notice.main.initFailedConsole': 'Gemini Scribe 초기화 실패: {error}. 자세한 내용은 콘솔을 확인하세요.',

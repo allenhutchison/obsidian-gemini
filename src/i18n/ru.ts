@@ -32,21 +32,37 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.general.viewDocumentationButton': 'Просмотреть документацию',
 	'settings.general.providerName': 'Провайдер',
 	'settings.general.providerDesc':
-		'Выберите провайдера модели. Gemini использует Google Cloud API. Ollama запускает модели локально на вашем компьютере; установите с https://ollama.com и скачайте модель с помощью `ollama pull <name>`.',
+		'Выберите провайдера моделей. Gemini использует Google Cloud API. Ollama запускает модели локально на вашем компьютере; установите его с https://ollama.com и скачайте модель с помощью команды `ollama pull <name>`. OpenAI использует ваш API-ключ OpenAI или любой OpenAI-совместимый сервер (LM Studio, MLX, ...) через пользовательский базовый URL.',
 	'settings.general.providerOptionGemini': 'Google Gemini (облако)',
 	'settings.general.providerOptionOllama': 'Ollama (локально)',
+	'settings.general.providerOptionOpenai': 'OpenAI (облако)',
 	'settings.general.ollamaBaseUrlName': 'Базовый URL Ollama',
 	'settings.general.ollamaBaseUrlDesc':
 		'HTTP-эндпоинт вашего локального демона Ollama. По умолчанию: http://localhost:11434.',
 	'settings.general.refreshModelListName': 'Обновить список моделей',
 	'settings.general.refreshOllamaModelListName': 'Обновить список моделей Ollama',
 	'settings.general.refreshModelListOllamaDesc': 'Повторно запросить доступные модели у демона Ollama.',
+	'settings.general.openaiApiKeyName': 'API-ключ OpenAI',
+	'settings.general.openaiApiKeyDesc':
+		'Привяжите свой API-ключ OpenAI. Нажмите «Link...», и Obsidian запросит имя секрета (это просто ярлык — используйте любое имя, например «openai-api») и значение секрета (вставьте сюда ваш API-ключ). Получить ключ можно на https://platform.openai.com/api-keys. Не требуется для OpenAI-совместимого локального сервера, которому не нужен ключ.',
+	'settings.general.openaiBaseUrlName': 'Базовый URL OpenAI',
+	'settings.general.openaiBaseUrlDesc':
+		'Эндпоинт Chat Completions. По умолчанию используется API OpenAI (api.openai.com). Укажите здесь адрес OpenAI-совместимого локального сервера (например, LM Studio или MLX), чтобы запросы не покидали ваш компьютер.',
+	'settings.general.refreshOpenaiModelListName': 'Обновить список моделей OpenAI',
+	'settings.general.refreshModelListOpenaiDesc': 'Повторно запросить доступные модели с настроенного эндпоинта.',
+	'settings.general.openaiModelsFoundSingular': 'Найдена {count} модель OpenAI.',
+	'settings.general.openaiModelsFound': 'Найдено {count} моделей OpenAI.',
+	'settings.general.openaiChatModelDesc':
+		'Модель, используемая для чат-сессий с агентами и переписывания выделенного текста.',
 	'settings.general.refreshModelListGeminiDesc':
 		'Получить актуальный список моделей Gemini с GitHub прямо сейчас, минуя 24-часовой кэш. Используйте это после выхода новой модели.',
 	'settings.general.refreshButton': 'Обновить',
 	'settings.general.ollamaModelsFoundSingular': 'Найдена {count} модель Ollama.',
 	'settings.general.ollamaModelsFound': 'Найдено моделей Ollama: {count}.',
 	'settings.general.refreshFailedNotice': 'Не удалось обновить: {error}',
+	'settings.general.remoteModelNoticeName': 'Уведомление об облачной модели',
+	'settings.general.remoteModelNoticeDesc':
+		'{models} запускается на {hosts}, а не на вашем компьютере. Запросы (включая отправляемое содержимое заметок) покидают ваше устройство, несмотря на то, что вашим провайдером выбран Ollama. Выберите локально скачанную модель, если вам нужно, чтобы всё оставалось локальным.',
 	'settings.general.localOnlyNoticeName': 'Уведомление о локальных функциях',
 	'settings.general.localOnlyNoticeDesc':
 		'Всё работает на вашем компьютере. Google Search, URL Context (веб-запросы), Deep Research, генерация изображений и поисковый индекс хранилища зависят от облачных служб Gemini и отключены. Чтобы включить любую из них, укажите для неё провайдера в разделе «Провайдер для каждой функции» — тогда данные этой функции будут отправляться в облако.',
@@ -865,6 +881,8 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 		'Не удалось связаться с Ollama по адресу {url}. Убедитесь, что служба Ollama запущена, а базовый URL указан верно в Настройках → Gemini Scribe.',
 	'notice.main.noApiKey':
 		'API-ключ Gemini не настроен. Откройте Настройки → Gemini Scribe, чтобы добавить его. Получите бесплатный ключ на aistudio.google.com/apikey',
+	'notice.main.noApiKeyOpenai':
+		'API-ключ OpenAI не настроен. Откройте Настройки → Gemini Scribe, чтобы добавить его. Получить ключ можно на platform.openai.com/api-keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Не удалось получить ваш API-ключ из безопасного хранилища. Попробуйте ввести его заново в меню Настройки → Gemini Scribe → API-ключ.',
 	'notice.main.initFailedConsole':
