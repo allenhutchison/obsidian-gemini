@@ -9,6 +9,7 @@ import {
 	GeminiModel,
 	getUpdatedModelSettings,
 	isInteractionsOnlyModel,
+	contextWindowForModel,
 	migrateOllamaModelSetting,
 	providerForModel,
 	resolveGenerateContentModel,
@@ -619,6 +620,35 @@ describe('isInteractionsOnlyModel', () => {
 	it('honors an explicit false in the live list over the bundled flag', () => {
 		setGeminiModels([{ value: 'gemini-omni-flash-preview', label: 'Omni', interactionsOnly: false }]);
 		expect(isInteractionsOnlyModel('gemini-omni-flash-preview')).toBe(false);
+	});
+});
+
+describe('contextWindowForModel', () => {
+	let originalModels: GeminiModel[];
+
+	beforeEach(() => {
+		originalModels = [...GEMINI_MODELS];
+	});
+
+	afterEach(() => {
+		setGeminiModels(originalModels);
+	});
+
+	it('returns the window a discovered model carries', () => {
+		setGeminiModels([{ value: 'gpt-5.6-luna', label: 'gpt-5.6-luna', provider: 'openai', contextWindow: 922_000 }]);
+		expect(contextWindowForModel('gpt-5.6-luna')).toBe(922_000);
+	});
+
+	it('returns null for a model with no declared window, so callers use the provider default', () => {
+		setGeminiModels([{ value: 'some-local-model', label: 'Local', provider: 'openai' }]);
+		expect(contextWindowForModel('some-local-model')).toBeNull();
+	});
+
+	it('returns null for unknown models and empty values', () => {
+		expect(contextWindowForModel('not-a-real-model')).toBeNull();
+		expect(contextWindowForModel('')).toBeNull();
+		expect(contextWindowForModel(undefined)).toBeNull();
+		expect(contextWindowForModel(null)).toBeNull();
 	});
 });
 

@@ -17,7 +17,7 @@ import { executeWithRetry } from '../utils/retry';
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
 import { truncateOldToolResults } from '../agent/agent-loop-helpers';
 import { getLegacyEntryTextTruthy } from '../utils/history-normalize';
-import { findModelProvider, resolveGenerateContentModel } from '../models';
+import { contextWindowForModel, findModelProvider, resolveGenerateContentModel } from '../models';
 import { isProviderActive, resolveProviderOrDefault } from '../api/provider-routing';
 import { getCapabilities } from '../api/providers/registry';
 
@@ -224,12 +224,18 @@ export class ContextManager {
 	 * three orders of magnitude across local models (4k to 1M), so a flat number
 	 * is wrong for nearly everyone: it showed a 262k-window model as 43% full at
 	 * 13.9k tokens and compacted history away at 2.4% of real capacity.
+	 *
+	 * Other providers take the window the model list carries, falling back to the
+	 * provider default only for a model the list can't identify. The same
+	 * understatement bites here: OpenAI's provider floor is 128k (the conservative
+	 * value for an unrecognized compatible-server model), while GPT-5.6 accepts
+	 * 922k, so trusting the floor would compact at ~14% of real capacity.
 	 */
 	private async getInputTokenLimit(modelName: string): Promise<number> {
 		const provider = this.providerForContextModel(modelName);
 		const capabilities = getCapabilities(provider);
 		if (provider !== 'ollama' || !modelName) {
-			return capabilities.defaultInputTokenLimit;
+			return contextWindowForModel(modelName) ?? capabilities.defaultInputTokenLimit;
 		}
 		return (await this.getOllamaInputTokenLimit(modelName)) ?? capabilities.defaultInputTokenLimit;
 	}
