@@ -7,7 +7,7 @@ Gemini Scribe can run on the **Google Gemini (cloud)**, **Ollama (local)**, or *
 | Feature                         | Gemini | Ollama                                                                              | OpenAI                                           |
 | ------------------------------- | :----: | ----------------------------------------------------------------------------------- | ------------------------------------------------ |
 | Chat                            |   ✓    | ✓                                                                                   | ✓                                                |
-| Tool calling (agent mode)       |   ✓    | ✓ (model-dependent)                                                                 | ✓                                                |
+| Tool calling (agent mode)       |   ✓    | ✓ (model-dependent)                                                                 | ✓ (model-dependent on compatible servers)        |
 | Vision (image attachments)      |   ✓    | ✓ (model-dependent, auto-detected)                                                  | ✓ (model-dependent, auto-detected)               |
 | Scheduled tasks                 |   ✓    | ✓ (inherits the model's tool/vision limits)                                         | ✓ (inherits the model's tool/vision limits)      |
 | Summaries                       |   ✓    | ✓                                                                                   | ✓                                                |
