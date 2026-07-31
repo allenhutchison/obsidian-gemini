@@ -938,7 +938,11 @@ describe('OpenAIClient', () => {
 			await expect(client.generateModelResponse({ kind: 'base', prompt: 'test' })).rejects.toThrow(
 				'connection refused'
 			);
-			expect(mockLogger.error).toHaveBeenCalledWith('[OpenAIClient] Error generating content:', 'connection refused');
+			expect(mockLogger.error).toHaveBeenCalledWith(
+				'[OpenAIClient] Error generating content:',
+				'connection refused',
+				expect.any(Error)
+			);
 		});
 
 		it('logs and re-throws streaming errors when not cancelled', async () => {
@@ -950,7 +954,22 @@ describe('OpenAIClient', () => {
 			);
 
 			await expect(streaming.complete).rejects.toThrow('connection refused');
-			expect(mockLogger.error).toHaveBeenCalledWith('[OpenAIClient] Streaming error:', 'connection refused');
+			expect(mockLogger.error).toHaveBeenCalledWith(
+				'[OpenAIClient] Streaming error:',
+				'connection refused',
+				expect.any(Error)
+			);
+		});
+
+		// The formatted string is only `error.message` for a non-API error, so the
+		// raw error has to ride along or the stack trace never reaches the console.
+		it('passes the original error through so its stack survives', async () => {
+			const raw = new TypeError('boom');
+			openaiCalls.create.mockRejectedValue(raw);
+
+			await expect(client.generateModelResponse({ kind: 'base', prompt: 'test' })).rejects.toThrow('boom');
+
+			expect(mockLogger.error).toHaveBeenCalledWith('[OpenAIClient] Error generating content:', 'boom', raw);
 		});
 
 		it('surfaces the server message from an API error body instead of a flattened object', async () => {
@@ -970,7 +989,8 @@ describe('OpenAIClient', () => {
 
 			expect(mockLogger.error).toHaveBeenCalledWith(
 				'[OpenAIClient] Streaming error:',
-				"HTTP 400 [unsupported_value]: Unsupported value: 'temperature' does not support 0.7 with this model."
+				"HTTP 400 [unsupported_value]: Unsupported value: 'temperature' does not support 0.7 with this model.",
+				expect.anything()
 			);
 		});
 	});

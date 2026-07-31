@@ -130,7 +130,7 @@ export class OpenAIClient implements ModelApi {
 			});
 			return this.toModelResponse(completion);
 		} catch (error) {
-			this.plugin?.logger.error('[OpenAIClient] Error generating content:', this.describeError(error));
+			this.plugin?.logger.error('[OpenAIClient] Error generating content:', this.describeError(error), error);
 			throw error;
 		}
 	}
@@ -232,7 +232,7 @@ export class OpenAIClient implements ModelApi {
 				if (cancelled) {
 					return buildResult();
 				}
-				this.plugin?.logger.error('[OpenAIClient] Streaming error:', this.describeError(error));
+				this.plugin?.logger.error('[OpenAIClient] Streaming error:', this.describeError(error), error);
 				throw error;
 			}
 		})();
@@ -256,6 +256,10 @@ export class OpenAIClient implements ModelApi {
 	 * hides the one field that identifies the failure — the server's message.
 	 * Matched structurally rather than with `instanceof OpenAI.APIError` so the
 	 * check doesn't depend on the error carrying that exact class identity.
+	 *
+	 * Log this *alongside* the original error, never instead of it: for anything
+	 * that isn't an API error (a `TypeError` out of `buildChatRequest`, say) the
+	 * string is just `error.message` and the stack trace is the useful part.
 	 */
 	private describeError(error: unknown): string {
 		const apiError = error as { status?: number; code?: string | null; error?: { message?: string } } | null;
