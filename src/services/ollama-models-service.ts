@@ -34,6 +34,14 @@ const VISION_NAME_HINTS = ['llava', 'bakllava', 'vision', 'moondream', 'qwen2-vl
 
 const OLLAMA_DEFAULT_BASE_URL = 'http://localhost:11434';
 
+/**
+ * How long an /api/ps result stays fresh. Long enough to collapse the two or
+ * three context-limit lookups a single turn makes into one probe, short enough
+ * that a model swap (which reloads under a different window) is picked up on the
+ * next turn rather than persisting.
+ */
+const PS_CACHE_TTL_MS = 5_000;
+
 interface OllamaTagsModel {
 	name: string;
 	model?: string;
@@ -97,6 +105,16 @@ export class OllamaModelsService {
 	 * issue #709) can reuse these cached responses without extra network calls.
 	 */
 	private showCache = new Map<string, OllamaShowResponse>();
+	/**
+	 * Short-lived /api/ps results, keyed by model name. A single turn resolves the
+	 * context limit up to three times — the token-usage indicator plus both
+	 * compaction thresholds — and the daemon's allocation cannot meaningfully
+	 * change between them, so without this each turn issues redundant probes.
+	 *
+	 * The TTL stays short because the allocation *can* change across turns: Ollama
+	 * keeps one model resident, so a swap reloads it under a different window.
+	 */
+	private psCache = new Map<string, { contextLength: number | null; at: number }>();
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
@@ -160,6 +178,7 @@ export class OllamaModelsService {
 		this.cachedModels = null;
 		this.lastBaseUrl = null;
 		this.showCache.clear();
+		this.psCache.clear();
 	}
 
 	/**
@@ -247,6 +266,24 @@ export class OllamaModelsService {
 	 */
 	async getRuntimeContextLength(modelName: string): Promise<number | null> {
 		const baseUrl = this.plugin.settings.ollamaBaseUrl || OLLAMA_DEFAULT_BASE_URL;
+		// Keyed by base URL too: pointing at a different daemon must not serve the
+		// previous one's allocation, and this probe can run without getModels()
+		// having noticed the switch.
+		const cacheKey = `${baseUrl}|${modelName}`;
+		const cached = this.psCache.get(cacheKey);
+		if (cached && Date.now() - cached.at < PS_CACHE_TTL_MS) {
+			return cached.contextLength;
+		}
+		// Every outcome is cached, including "not loaded" and probe failure. A
+		// failing daemon is the case that most needs it — otherwise each turn pays
+		// the connection timeout three times over — and the short TTL keeps
+		// recovery within a few seconds.
+		const contextLength = await this.fetchRuntimeContextLength(modelName, baseUrl);
+		this.psCache.set(cacheKey, { contextLength, at: Date.now() });
+		return contextLength;
+	}
+
+	private async fetchRuntimeContextLength(modelName: string, baseUrl: string): Promise<number | null> {
 		try {
 			const url = `${baseUrl.replace(/\/$/, '')}/api/ps`;
 			const response = await requestUrl({ url, method: 'GET', throw: false });

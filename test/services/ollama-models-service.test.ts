@@ -336,8 +336,78 @@ describe('OllamaModelsService', () => {
 			const svc = new OllamaModelsService(buildPlugin());
 			await expect(svc.getRuntimeContextLength('gemma4:12b-mlx')).resolves.toBeNull();
 
+			svc.invalidate();
 			mockedRequestUrl.mockRejectedValue(new Error('ECONNREFUSED'));
 			await expect(svc.getRuntimeContextLength('gemma4:12b-mlx')).resolves.toBeNull();
+		});
+
+		// A single turn resolves the context limit up to three times (token-usage
+		// indicator + both compaction thresholds); the allocation can't change
+		// between them, so they should collapse into one probe.
+		describe('caching', () => {
+			const psCalls = () =>
+				mockedRequestUrl.mock.calls.filter((c: any[]) => String(c[0]?.url).endsWith('/api/ps')).length;
+
+			it('probes once for repeated lookups of the same model', async () => {
+				mockPs([{ name: 'gemma4:12b-mlx', context_length: 262_144 }]);
+				const svc = new OllamaModelsService(buildPlugin());
+
+				const results = [
+					await svc.getRuntimeContextLength('gemma4:12b-mlx'),
+					await svc.getRuntimeContextLength('gemma4:12b-mlx'),
+					await svc.getRuntimeContextLength('gemma4:12b-mlx'),
+				];
+
+				expect(results).toEqual([262_144, 262_144, 262_144]);
+				expect(psCalls()).toBe(1);
+			});
+
+			// A down daemon is the case that most needs caching — otherwise every
+			// turn pays the connection timeout three times over.
+			it('caches a probe failure rather than retrying it within the turn', async () => {
+				mockedRequestUrl.mockRejectedValue(new Error('ECONNREFUSED'));
+				const svc = new OllamaModelsService(buildPlugin());
+
+				await expect(svc.getRuntimeContextLength('gemma4:12b-mlx')).resolves.toBeNull();
+				await expect(svc.getRuntimeContextLength('gemma4:12b-mlx')).resolves.toBeNull();
+
+				expect(psCalls()).toBe(1);
+			});
+
+			it('does not serve one model’s allocation for another', async () => {
+				mockPs([
+					{ name: 'gemma4:12b-mlx', context_length: 262_144 },
+					{ name: 'gpt-oss:120b-cloud', context_length: 131_072 },
+				]);
+				const svc = new OllamaModelsService(buildPlugin());
+
+				await expect(svc.getRuntimeContextLength('gemma4:12b-mlx')).resolves.toBe(262_144);
+				await expect(svc.getRuntimeContextLength('gpt-oss:120b-cloud')).resolves.toBe(131_072);
+			});
+
+			// Pointing at a different daemon must not serve the previous one's
+			// allocation, and this probe can run without getModels() noticing.
+			it('does not serve a previous daemon’s allocation after the base URL changes', async () => {
+				const plugin = buildPlugin();
+				mockPs([{ name: 'gemma4:12b-mlx', context_length: 262_144 }]);
+				const svc = new OllamaModelsService(plugin);
+				await expect(svc.getRuntimeContextLength('gemma4:12b-mlx')).resolves.toBe(262_144);
+
+				plugin.settings.ollamaBaseUrl = 'http://10.0.0.1:11434';
+				mockPs([{ name: 'gemma4:12b-mlx', context_length: 4_096 }]);
+				await expect(svc.getRuntimeContextLength('gemma4:12b-mlx')).resolves.toBe(4_096);
+			});
+
+			it('re-probes after invalidate()', async () => {
+				mockPs([{ name: 'gemma4:12b-mlx', context_length: 262_144 }]);
+				const svc = new OllamaModelsService(buildPlugin());
+				await svc.getRuntimeContextLength('gemma4:12b-mlx');
+
+				svc.invalidate();
+				await svc.getRuntimeContextLength('gemma4:12b-mlx');
+
+				expect(psCalls()).toBe(2);
+			});
 		});
 	});
 });
