@@ -1,5 +1,9 @@
+import type { Mock } from 'vitest';
+import { requestUrl } from 'obsidian';
 import { ModelManager } from '../../src/services/model-manager';
 import { GeminiModel, setGeminiModels, GEMINI_MODELS } from '../../src/models';
+
+const mockedRequestUrl = requestUrl as unknown as Mock;
 
 const mockPlugin = {
 	settings: {
@@ -301,17 +305,30 @@ describe('ModelManager', () => {
 				},
 			};
 			openaiManager = new ModelManager(openaiPlugin);
+			mockedRequestUrl.mockReset();
 		});
 
 		afterEach(() => {
 			setGeminiModels(originalModels);
 		});
 
-		it('initialize() populates models from the OpenAI endpoint', async () => {
-			// OpenAIModelsService returns an empty array when the endpoint is
-			// unreachable — best-effort. initialize() should still complete without error.
+		it('initialize() merges discovered OpenAI models into the global model list', async () => {
+			mockedRequestUrl.mockResolvedValue({
+				status: 200,
+				json: { data: [{ id: 'gpt-5.6' }, { id: 'gpt-5.6-luna' }] },
+			});
+
 			await openaiManager.initialize();
-			expect(true).toBe(true);
+
+			const active = GEMINI_MODELS.filter((m) => m.provider === 'openai').map((m) => m.value);
+			expect(active).toEqual(expect.arrayContaining(['gpt-5.6', 'gpt-5.6-luna']));
+		});
+
+		it('initialize() still completes when the OpenAI endpoint is unreachable', async () => {
+			mockedRequestUrl.mockRejectedValue(new Error('ECONNREFUSED'));
+
+			await expect(openaiManager.initialize()).resolves.not.toThrow();
+			expect(GEMINI_MODELS.filter((m) => m.provider === 'openai')).toHaveLength(0);
 		});
 
 		it('getAvailableModels() does not return Gemini bundled models', async () => {
