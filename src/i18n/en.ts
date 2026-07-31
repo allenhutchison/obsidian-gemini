@@ -122,11 +122,11 @@ export const en = {
 	},
 	'settings.general.providerName': {
 		message: 'Provider',
-		context: 'Settings field name for choosing the AI model provider (Gemini or Ollama).',
+		context: 'Settings field name for choosing the AI model provider (Gemini, Ollama, or OpenAI).',
 	},
 	'settings.general.providerDesc': {
 		message:
-			'Choose the model provider. Gemini uses the Google Cloud API. Ollama runs models locally on your machine; install from https://ollama.com and pull a model with `ollama pull <name>`.',
+			'Choose the model provider. Gemini uses the Google Cloud API. Ollama runs models locally on your machine; install from https://ollama.com and pull a model with `ollama pull <name>`. OpenAI uses your OpenAI API key, or any OpenAI-compatible server (LM Studio, MLX, ...) via a custom base URL.',
 		context:
 			'Settings field description for the provider dropdown. Keep the URL and the backtick-quoted shell command untranslated.',
 	},
