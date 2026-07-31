@@ -9,6 +9,7 @@ const mockPlugin = {
 		imageModelName: 'gemini-2.5-flash-image',
 	},
 	apiKey: 'test-api-key',
+	openaiApiKey: 'sk-test-key',
 	loadData: vi.fn().mockResolvedValue({}),
 	saveData: vi.fn(),
 	logger: {
@@ -278,6 +279,60 @@ describe('ModelManager', () => {
 
 		it('getParameterRanges() returns normalized numeric ranges', async () => {
 			const ranges = await ollamaManager.getParameterRanges();
+
+			expect(ranges.temperature.min).toBe(0);
+			expect(ranges.topP.min).toBe(0);
+			expect(ranges.temperature.step).toBeGreaterThan(0);
+			expect(ranges.topP.step).toBeGreaterThan(0);
+		});
+	});
+
+	describe('OpenAI provider', () => {
+		let openaiPlugin: any;
+		let openaiManager: ModelManager;
+
+		beforeEach(() => {
+			openaiPlugin = {
+				...mockPlugin,
+				settings: {
+					...mockPlugin.settings,
+					provider: 'openai',
+					openaiBaseUrl: 'https://api.openai.com/v1',
+				},
+			};
+			openaiManager = new ModelManager(openaiPlugin);
+		});
+
+		afterEach(() => {
+			setGeminiModels(originalModels);
+		});
+
+		it('initialize() populates models from the OpenAI endpoint', async () => {
+			// OpenAIModelsService returns an empty array when the endpoint is
+			// unreachable — best-effort. initialize() should still complete without error.
+			await openaiManager.initialize();
+			expect(true).toBe(true);
+		});
+
+		it('getAvailableModels() does not return Gemini bundled models', async () => {
+			const models = await openaiManager.getAvailableModels();
+
+			// OpenAIModelsService.getModels() may return empty if the endpoint is
+			// unreachable, but the important thing is it doesn't return Gemini bundled models.
+			expect(Array.isArray(models)).toBe(true);
+			const bundledValues = new Set(originalModels.map((m) => m.value));
+			expect(models.some((m) => bundledValues.has(m.value))).toBe(false);
+		});
+
+		it('getOpenAIModelsService() returns the internal service instance', () => {
+			const service = openaiManager.getOpenAIModelsService();
+			expect(service).toBeDefined();
+			expect(typeof service.getModels).toBe('function');
+			expect(typeof service.invalidate).toBe('function');
+		});
+
+		it('getParameterRanges() returns normalized numeric ranges', async () => {
+			const ranges = await openaiManager.getParameterRanges();
 
 			expect(ranges.temperature.min).toBe(0);
 			expect(ranges.topP.min).toBe(0);

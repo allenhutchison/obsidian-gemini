@@ -59,7 +59,7 @@ Route Gemini requests through Google's newer [Interactions API](https://ai.googl
 
 - **Setting name**: Use Interactions API
 - **Default**: on. Existing installs are migrated to the Interactions API automatically on upgrade — a one-time flip you can reverse by turning the toggle off, which is then respected on future launches.
-- **Scope**: Gemini transport only — the toggle is shown whenever Gemini serves at least one use case (chat, summary, completions, etc.), and hidden only in a fully local, all-Ollama setup.
+- **Scope**: Gemini transport only — the toggle is shown whenever Gemini serves at least one use case (chat, summary, completions, etc.), and hidden when no feature is routed to Gemini (an all-Ollama, all-OpenAI, or mixed Ollama/OpenAI setup).
 - **Privacy**: The plugin runs the Interactions API **statelessly** (`store: false`). Conversation history is replayed with each request, and the plugin does not persist Interactions state on Google's side between turns. (Requests are still sent to Google to generate each response, subject to Google's standard API data-handling terms.)
 - **Status**: Default transport. If you hit problems, turn it off to fall back to the proven `generateContent` path. Responses stream incrementally, including reasoning and tool calls.
 - **Interactions-only models**: Some models (e.g. Gemini Omni Flash Preview, an image-generation model) are only served by the Interactions API — `generateContent` rejects them outright. Requests to these models always use the Interactions API, even when this toggle is off; that includes image generation when an interactions-only model is selected as the image model. Features that still run on `generateContent` (Google Search grounding, web fetch, RAG semantic search) substitute the default chat model if an interactions-only model ever ends up configured as the chat model.
@@ -107,10 +107,11 @@ Configure how the plugin handles API failures:
 
 Model discovery is automatic — no configuration is required. On startup, the plugin fetches the latest available Gemini models from GitHub and caches the result for 24 hours. If the fetch fails, the bundled static model list is used as a fallback.
 
-Both providers expose a **Refresh model list** button in Settings → General:
+Every provider in use exposes its own **Refresh model list** button in Settings → General:
 
 - **Gemini** — bypasses the 24-hour cache and re-fetches the remote model list immediately. You can also trigger this from the command palette with **Gemini Scribe: Refresh model list** (`gemini-scribe:refresh-model-list`). Useful when a newly-published model doesn't appear yet.
 - **Ollama** — re-queries the Ollama daemon for any models you've pulled since the plugin loaded (`ollama pull <name>`). Use this instead of restarting Obsidian.
+- **OpenAI** — re-queries `GET <openaiBaseUrl>/models`. Useful after changing the base URL, or after loading a different model in an OpenAI-compatible local server such as LM Studio.
 
 ## Performance Optimization
 
@@ -176,8 +177,9 @@ In v4.0+, context is manually managed through session-based file selection:
 ### Model List
 
 1. **Use Refresh model list** in Settings → General (or run **Gemini Scribe: Refresh model list** from the command palette) to pick up newly published Gemini models without waiting for the 24-hour cache to expire
-2. **Use Refresh model list** (Ollama provider) after pulling new models with `ollama pull`
-3. **Check your API key** if the model list looks empty or stale
+2. **Use Refresh Ollama model list** after pulling new models with `ollama pull`
+3. **Use Refresh OpenAI model list** after changing the base URL or loading a different model in a compatible server
+4. **Check your API key** if the model list looks empty or stale
 
 ## Troubleshooting
 
@@ -216,7 +218,8 @@ In v4.0+, context is manually managed through session-based file selection:
 **Models not appearing or stale:**
 
 - For Gemini: click **Refresh model list** in Settings → General (or run the **Gemini Scribe: Refresh model list** command) to bypass the 24-hour cache; check API key validity and network connectivity if it still fails
-- For Ollama: click **Refresh model list** in Settings → General after pulling new models
+- For Ollama: click **Refresh Ollama model list** in Settings → General after pulling new models
+- For OpenAI: click **Refresh OpenAI model list** in Settings → General; check the base URL and API key if it still fails
 - If the list still looks wrong after refreshing, restart Obsidian
 
 ## Security Considerations

@@ -34,6 +34,7 @@ export default defineConfig({
 					items: [
 						{ text: 'Introduction', link: '/guide/getting-started' },
 						{ text: 'Ollama (Local Models)', link: '/guide/ollama-setup' },
+						{ text: 'OpenAI', link: '/guide/openai-setup' },
 						{ text: 'FAQ', link: '/guide/faq' },
 					],
 				},

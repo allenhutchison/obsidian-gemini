@@ -92,10 +92,10 @@ export function getDefaultModelForRole(role: ModelRole, provider: ModelProvider 
 		return candidates[0].value;
 	}
 
-	// No models for this provider yet (e.g. Ollama before /api/tags returns).
-	// Returning an empty string lets callers handle the unconfigured state
-	// rather than throwing at module load.
-	if (provider === 'ollama') {
+	// No models for this provider yet (e.g. Ollama before /api/tags returns, or
+	// OpenAI before /v1/models returns). Returning an empty string lets callers
+	// handle the unconfigured state rather than throwing at module load.
+	if (provider === 'ollama' || provider === 'openai') {
 		return '';
 	}
 
@@ -203,20 +203,49 @@ export function getOllamaModelForRole(settings: OllamaModelSettingsSlice, role: 
 	return specific || settings.ollamaModelName || getDefaultModelForRole('chat', 'ollama');
 }
 
+/** The settings fields that hold OpenAI model choices, per use case. */
+export interface OpenAIModelSettingsSlice {
+	openaiModelName?: string;
+	openaiSummaryModelName?: string;
+	openaiCompletionsModelName?: string;
+}
+
+/**
+ * Resolve the OpenAI model for a use case.
+ *
+ * Unlike Ollama, OpenAI has no single-resident-model constraint
+ * (`capabilities.perUseCaseModels`), so each use case reads its own dedicated
+ * field rather than inheriting the chat model; an unset field falls back to
+ * the role's bundled/discovered default, not to `openaiModelName`.
+ */
+export function getOpenAIModelForRole(settings: OpenAIModelSettingsSlice, role: ModelRole): string {
+	const configured =
+		role === 'summary'
+			? settings.openaiSummaryModelName
+			: role === 'completions'
+				? settings.openaiCompletionsModelName
+				: settings.openaiModelName;
+	return configured || getDefaultModelForRole(role, 'openai');
+}
+
 /**
  * Resolve the chat model for whichever provider currently serves chat. Each
- * provider keeps its own persisted model (`chatModelName` vs `ollamaModelName`),
- * so re-routing chat back and forth never clobbers the other's choice. Use this
- * anywhere the "current chat model" is needed for a request or for history
- * metadata; the Gemini-cloud tools (search grounding, URL context, RAG)
- * intentionally keep reading `chatModelName` directly since they always call
- * Google's API.
+ * provider keeps its own persisted model (`chatModelName` vs `ollamaModelName`
+ * vs `openaiModelName`), so re-routing chat back and forth never clobbers
+ * another provider's choice. Use this anywhere the "current chat model" is
+ * needed for a request or for history metadata; the Gemini-cloud tools
+ * (search grounding, URL context, RAG) intentionally keep reading
+ * `chatModelName` directly since they always call Google's API.
  */
 export function getActiveChatModel(
-	settings: ProviderRoutingSlice & { chatModelName?: string } & OllamaModelSettingsSlice
+	settings: ProviderRoutingSlice & { chatModelName?: string } & OllamaModelSettingsSlice & OpenAIModelSettingsSlice
 ): string {
-	if (resolveProviderOrDefault(settings, 'chat') === 'ollama') {
+	const provider = resolveProviderOrDefault(settings, 'chat');
+	if (provider === 'ollama') {
 		return getOllamaModelForRole(settings, 'chat');
+	}
+	if (provider === 'openai') {
+		return getOpenAIModelForRole(settings, 'chat');
 	}
 	return settings.chatModelName || getDefaultModelForRole('chat', 'gemini');
 }
@@ -244,6 +273,14 @@ export interface ModelSettingsSlice {
 	 */
 	ollamaSummaryModelName?: string;
 	ollamaCompletionsModelName?: string;
+	/**
+	 * Optional: the OpenAI model is only reconciled once the discovered model
+	 * list is known, and callers (tests, partial fixtures) may omit the field
+	 * entirely.
+	 */
+	openaiModelName?: string;
+	openaiSummaryModelName?: string;
+	openaiCompletionsModelName?: string;
 }
 
 export interface ModelUpdateResult<T extends ModelSettingsSlice = ModelSettingsSlice> {
@@ -285,6 +322,7 @@ export function migrateOllamaModelSetting(
 export function getUpdatedModelSettings<T extends ModelSettingsSlice>(currentSettings: T): ModelUpdateResult<T> {
 	const geminiModelValues = new Set(GEMINI_MODELS.filter((m) => getModelProvider(m) === 'gemini').map((m) => m.value));
 	const ollamaModelValues = new Set(GEMINI_MODELS.filter((m) => getModelProvider(m) === 'ollama').map((m) => m.value));
+	const openaiModelValues = new Set(GEMINI_MODELS.filter((m) => getModelProvider(m) === 'openai').map((m) => m.value));
 	let settingsChanged = false;
 	const changedSettingsInfo: string[] = [];
 	const newSettings = { ...currentSettings };
@@ -357,6 +395,30 @@ export function getUpdatedModelSettings<T extends ModelSettingsSlice>(currentSet
 		};
 		clearStaleOllamaOverride('ollamaSummaryModelName', 'Ollama summary model');
 		clearStaleOllamaOverride('ollamaCompletionsModelName', 'Ollama completions model');
+	}
+
+	// OpenAI has no single-resident-model constraint (perUseCaseModels), so each
+	// use case is reconciled independently against the discovered model list —
+	// mirroring reconcileGemini above rather than Ollama's "inherit chat, blank
+	// on stale" pattern. Only runs once the list is known (models load lazily
+	// via /v1/models), same gating as the Ollama block above.
+	if (openaiModelValues.size > 0) {
+		const reconcileOpenAI = (
+			key: 'openaiModelName' | 'openaiSummaryModelName' | 'openaiCompletionsModelName',
+			role: ModelRole,
+			label: string
+		) => {
+			const previous = modelFields[key];
+			if (previous && openaiModelValues.has(previous)) return;
+			const next = getDefaultModelForRole(role, 'openai');
+			if (!next || next === previous) return;
+			modelFields[key] = next;
+			changedSettingsInfo.push(`${label}: '${previous ?? ''}' -> '${next}' (legacy model update)`);
+			settingsChanged = true;
+		};
+		reconcileOpenAI('openaiModelName', 'chat', 'OpenAI model');
+		reconcileOpenAI('openaiSummaryModelName', 'summary', 'OpenAI summary model');
+		reconcileOpenAI('openaiCompletionsModelName', 'completions', 'OpenAI completions model');
 	}
 
 	return {

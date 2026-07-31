@@ -3,21 +3,26 @@ import { getDefaultModelForRole } from '../../src/models';
 
 // --- Mocks ---
 
-const { MockGeminiClient, MockOllamaClient, MockRetryDecorator, MockGeminiPrompts } = vi.hoisted(() => {
-	const MockGeminiClient = vi.fn().mockImplementation(function () {
-		return { generateModelResponse: vi.fn() };
-	});
-	const MockOllamaClient = vi.fn().mockImplementation(function () {
-		return { generateModelResponse: vi.fn() };
-	});
-	const MockRetryDecorator = vi.fn().mockImplementation(function (_client: any) {
-		return { _wrappedClient: _client };
-	});
-	const MockGeminiPrompts = vi.fn().mockImplementation(function () {
-		return {};
-	});
-	return { MockGeminiClient, MockOllamaClient, MockRetryDecorator, MockGeminiPrompts };
-});
+const { MockGeminiClient, MockOllamaClient, MockOpenAIClient, MockRetryDecorator, MockGeminiPrompts } = vi.hoisted(
+	() => {
+		const MockGeminiClient = vi.fn().mockImplementation(function () {
+			return { generateModelResponse: vi.fn() };
+		});
+		const MockOllamaClient = vi.fn().mockImplementation(function () {
+			return { generateModelResponse: vi.fn() };
+		});
+		const MockOpenAIClient = vi.fn().mockImplementation(function () {
+			return { generateModelResponse: vi.fn() };
+		});
+		const MockRetryDecorator = vi.fn().mockImplementation(function (_client: any) {
+			return { _wrappedClient: _client };
+		});
+		const MockGeminiPrompts = vi.fn().mockImplementation(function () {
+			return {};
+		});
+		return { MockGeminiClient, MockOllamaClient, MockOpenAIClient, MockRetryDecorator, MockGeminiPrompts };
+	}
+);
 
 vi.mock('../../src/api/providers/gemini/client', () => ({
 	GeminiClient: MockGeminiClient,
@@ -25,6 +30,10 @@ vi.mock('../../src/api/providers/gemini/client', () => ({
 
 vi.mock('../../src/api/providers/ollama/client', () => ({
 	OllamaClient: MockOllamaClient,
+}));
+
+vi.mock('../../src/api/providers/openai/client', () => ({
+	OpenAIClient: MockOpenAIClient,
 }));
 
 vi.mock('../../src/api/retry-decorator', () => ({
@@ -40,6 +49,7 @@ vi.mock('../../src/prompts', () => ({
 function createMockPlugin(overrides?: Record<string, any>) {
 	return {
 		apiKey: 'test-api-key',
+		openaiApiKey: 'sk-test-key',
 		settings: {
 			provider: 'gemini',
 			chatModelName: 'gemini-2.0-flash',
@@ -51,6 +61,10 @@ function createMockPlugin(overrides?: Record<string, any>) {
 			maxRetries: 3,
 			initialBackoffDelay: 1000,
 			ollamaBaseUrl: 'http://localhost:11434',
+			openaiBaseUrl: 'https://api.openai.com/v1',
+			openaiModelName: 'gpt-5.6',
+			openaiSummaryModelName: 'gpt-5.6-terra',
+			openaiCompletionsModelName: 'gpt-5.6-luna',
 			...overrides,
 		},
 		logger: {
@@ -156,6 +170,41 @@ describe('ModelClientFactory', () => {
 			const ollamaConfig = MockOllamaClient.mock.calls[0][0];
 			expect(ollamaConfig.baseUrl).toBe('http://localhost:11434');
 		});
+
+		it('should create an OpenAIClient when provider is openai', () => {
+			const plugin = createMockPlugin({ provider: 'openai' });
+			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
+
+			expect(MockOpenAIClient).toHaveBeenCalledTimes(1);
+			expect(MockGeminiClient).not.toHaveBeenCalled();
+			expect(MockOllamaClient).not.toHaveBeenCalled();
+			expect(MockRetryDecorator).toHaveBeenCalledTimes(1);
+		});
+
+		it('should use the resolved OpenAI API key and base URL from settings', () => {
+			const plugin = createMockPlugin({ provider: 'openai', openaiBaseUrl: 'http://localhost:1234/v1' });
+			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
+
+			const openaiConfig = MockOpenAIClient.mock.calls[0][0];
+			expect(openaiConfig.apiKey).toBe('sk-test-key');
+			expect(openaiConfig.baseUrl).toBe('http://localhost:1234/v1');
+		});
+
+		it('should default openaiBaseUrl to api.openai.com when empty', () => {
+			const plugin = createMockPlugin({ provider: 'openai', openaiBaseUrl: '' });
+			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
+
+			const openaiConfig = MockOpenAIClient.mock.calls[0][0];
+			expect(openaiConfig.baseUrl).toBe('https://api.openai.com/v1');
+		});
+
+		it('should apply overrides to OpenAI config', () => {
+			const plugin = createMockPlugin({ provider: 'openai' });
+			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT, { temperature: 0.3 });
+
+			const openaiConfig = MockOpenAIClient.mock.calls[0][0];
+			expect(openaiConfig.temperature).toBe(0.3);
+		});
 	});
 
 	describe('resolveModelName (via createFromPlugin)', () => {
@@ -255,6 +304,51 @@ describe('ModelClientFactory', () => {
 				// context with no Ollama models loaded this is the empty-string sentinel,
 				// which is exactly the unconfigured-Ollama state the resolver passes through.
 				expect(config.model).toBe(getDefaultModelForRole('chat', 'ollama'));
+			});
+		});
+
+		describe('OpenAI provider', () => {
+			// Unlike Ollama, OpenAI has no single-resident-model constraint
+			// (perUseCaseModels), so each use case resolves to its own configured field.
+			it('resolves CHAT to openaiModelName', () => {
+				const plugin = createMockPlugin({ provider: 'openai', openaiModelName: 'openai-chat' });
+				ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
+
+				expect(MockOpenAIClient).toHaveBeenCalledTimes(1);
+				expect(MockGeminiClient).not.toHaveBeenCalled();
+				expect(MockOpenAIClient.mock.calls[0][0].model).toBe('openai-chat');
+			});
+
+			it('resolves SUMMARY to openaiSummaryModelName independently of the chat model', () => {
+				const plugin = createMockPlugin({
+					provider: 'openai',
+					openaiModelName: 'openai-chat',
+					openaiSummaryModelName: 'openai-summary',
+				});
+				ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SUMMARY);
+
+				expect(MockOpenAIClient.mock.calls[0][0].model).toBe('openai-summary');
+			});
+
+			it('resolves COMPLETIONS to openaiCompletionsModelName independently of the chat model', () => {
+				const plugin = createMockPlugin({
+					provider: 'openai',
+					openaiModelName: 'openai-chat',
+					openaiCompletionsModelName: 'openai-completions',
+				});
+				ModelClientFactory.createFromPlugin(plugin, ModelUseCase.COMPLETIONS);
+
+				expect(MockOpenAIClient.mock.calls[0][0].model).toBe('openai-completions');
+			});
+
+			it('resolves REWRITE and SEARCH to openaiModelName (no dedicated field)', () => {
+				const plugin = createMockPlugin({ provider: 'openai', openaiModelName: 'openai-chat' });
+
+				ModelClientFactory.createFromPlugin(plugin, ModelUseCase.REWRITE);
+				expect(MockOpenAIClient.mock.calls[0][0].model).toBe('openai-chat');
+
+				ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SEARCH);
+				expect(MockOpenAIClient.mock.calls[1][0].model).toBe('openai-chat');
 			});
 		});
 	});
@@ -432,6 +526,24 @@ describe('ModelClientFactory', () => {
 
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.COMPLETIONS);
 			expect(MockOllamaClient.mock.calls[0][0].model).toBe('ollama-tiny');
+		});
+
+		it('builds an OpenAI client for a use case overridden away from a local primary', () => {
+			const plugin = createMockPlugin({
+				provider: 'ollama',
+				providerOverrides: { summary: 'openai' },
+				openaiSummaryModelName: 'openai-summary',
+				ollamaModelName: 'ollama-local',
+			});
+
+			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SUMMARY);
+			expect(MockOpenAIClient).toHaveBeenCalledTimes(1);
+			expect(MockOpenAIClient.mock.calls[0][0].model).toBe('openai-summary');
+			expect(MockOllamaClient).not.toHaveBeenCalled();
+
+			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
+			expect(MockOllamaClient).toHaveBeenCalledTimes(1);
+			expect(MockOllamaClient.mock.calls[0][0].model).toBe('ollama-local');
 		});
 	});
 });

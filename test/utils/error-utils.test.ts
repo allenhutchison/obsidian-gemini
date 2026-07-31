@@ -195,6 +195,45 @@ describe('error-utils', () => {
 			});
 		});
 
+		describe('OpenAI SDK errors', () => {
+			// Mirrors the shape of `openai`'s APIError subclasses (status + type/code
+			// pulled from the response body) without importing the SDK — see
+			// isOpenAIApiError's own duck-typing rationale in error-utils.ts.
+			function fakeOpenAIError(status: number, message: string, extra: Record<string, unknown> = {}) {
+				const error = new Error(`${status} ${message}`) as Error & Record<string, unknown>;
+				Object.assign(error, { status, type: 'invalid_request_error', ...extra });
+				return error;
+			}
+
+			test('401 gets OpenAI-specific key guidance instead of the generic message', () => {
+				const error = fakeOpenAIError(401, 'Incorrect API key provided', { type: 'invalid_request_error' });
+				expect(getErrorMessage(error)).toBe(
+					'Invalid OpenAI API key. Please check the API key in Settings → Gemini Scribe.'
+				);
+			});
+
+			test('404 mentions the endpoint rather than the generic model-not-found wording', () => {
+				const error = fakeOpenAIError(404, 'The model `gpt-9` does not exist', { code: 'model_not_found' });
+				expect(getErrorMessage(error)).toBe(
+					'Model not available on this endpoint. Please check your model settings or the configured base URL.'
+				);
+			});
+
+			test('a plain 401 without the OpenAI shape keeps the generic message', () => {
+				const error = { status: 401, message: 'Unauthorized' };
+				expect(getErrorMessage(error)).toBe(
+					'Authentication failed: Invalid API key. Please check your model provider credentials in settings.'
+				);
+			});
+
+			test('APIConnectionError ("Connection error.", no status) gets local-server guidance', () => {
+				const error = new Error('Connection error.');
+				expect(getErrorMessage(error)).toBe(
+					'Could not connect to the model server. If you configured a custom base URL (LM Studio, MLX, etc.), make sure the server is running and the base URL in settings is correct.'
+				);
+			});
+		});
+
 		describe('Error message pattern matching', () => {
 			test('API key error', () => {
 				const error = new Error('Invalid API key provided');

@@ -51,6 +51,22 @@ export interface ObsidianGeminiSettings {
 	 */
 	ollamaSummaryModelName: string;
 	ollamaCompletionsModelName: string;
+	/**
+	 * Base URL for the OpenAI Chat Completions API. Defaults to
+	 * `DEFAULT_OPENAI_BASE_URL` (api.openai.com); overridden to target an
+	 * OpenAI-compatible local server (LM Studio, MLX, ...).
+	 */
+	openaiBaseUrl: string;
+	/** SecretStorage key holding the OpenAI API key, mirroring `apiKeySecretName`. */
+	openaiApiKeySecretName: string;
+	/**
+	 * Per-use-case OpenAI models. Unlike Ollama, OpenAI has no single-resident-model
+	 * constraint (`capabilities.perUseCaseModels`), so each use case keeps its own
+	 * model rather than defaulting to "inherit the chat model".
+	 */
+	openaiModelName: string;
+	openaiSummaryModelName: string;
+	openaiCompletionsModelName: string;
 	summaryFrontmatterKey: string;
 	userName: string;
 	chatHistory: boolean;

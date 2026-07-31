@@ -11,10 +11,12 @@ import { GeminiClient } from './providers/gemini/client';
 import type { GeminiClientConfig } from './providers/gemini/config';
 import { OllamaClient } from './providers/ollama/client';
 import type { OllamaClientConfig } from './providers/ollama/config';
+import { OpenAIClient } from './providers/openai/client';
+import { DEFAULT_OPENAI_BASE_URL, type OpenAIClientConfig } from './providers/openai/config';
 import { ModelApi } from './interfaces/model-api';
 import { GeminiPrompts } from '../prompts';
 import { RetryDecorator } from './retry-decorator';
-import { getDefaultModelForRole, getOllamaModelForRole } from '../models';
+import { getDefaultModelForRole, getOllamaModelForRole, getOpenAIModelForRole } from '../models';
 import type { ObsidianGemini } from '../types/plugin';
 import { ModelUseCase } from './model-use-case';
 import { resolveProviderOrDefault } from './provider-routing';
@@ -57,7 +59,7 @@ export class ModelClientFactory {
 	static createFromPlugin(
 		plugin: ObsidianGemini,
 		useCase: ModelUseCase,
-		overrides?: Partial<GeminiClientConfig> & Partial<OllamaClientConfig>
+		overrides?: Partial<GeminiClientConfig> & Partial<OllamaClientConfig> & Partial<OpenAIClientConfig>
 	): ModelApi {
 		const settings = plugin.settings;
 		// Every ModelUseCase maps to a use case that all providers support, so the
@@ -84,6 +86,20 @@ export class ModelClientFactory {
 				...overrides,
 			};
 			const client = new OllamaClient(config, prompts, plugin);
+			return new RetryDecorator(client, retryConfig, plugin.logger);
+		}
+
+		if (provider === 'openai') {
+			const config: OpenAIClientConfig = {
+				apiKey: plugin.openaiApiKey,
+				baseUrl: settings.openaiBaseUrl || DEFAULT_OPENAI_BASE_URL,
+				model: modelName,
+				temperature: settings.temperature ?? 0.7,
+				topP: settings.topP ?? 1,
+				streamingEnabled: settings.streamingEnabled ?? true,
+				...overrides,
+			};
+			const client = new OpenAIClient(config, prompts, plugin);
 			return new RetryDecorator(client, retryConfig, plugin.logger);
 		}
 
@@ -124,6 +140,10 @@ export class ModelClientFactory {
 			// Ollama keeps one model resident, so the per-use-case fields default
 			// to inheriting the chat model rather than forcing a swap (#1077).
 			return getOllamaModelForRole(settings, role);
+		}
+
+		if (provider === 'openai') {
+			return getOpenAIModelForRole(settings, role);
 		}
 
 		const configured =

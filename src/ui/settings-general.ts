@@ -27,6 +27,7 @@ import {
 	providersSupporting,
 	type ProviderUseCase,
 } from '../api/providers/registry';
+import { DEFAULT_OPENAI_BASE_URL } from '../api/providers/openai/config';
 
 export async function renderGeneralSettings(
 	containerEl: HTMLElement,
@@ -143,6 +144,53 @@ async function renderGeneralSection(
 							models.length === 1
 								? t('settings.general.ollamaModelsFoundSingular', { count: models.length })
 								: t('settings.general.ollamaModelsFound', { count: models.length })
+						);
+						await rerender();
+					} catch (error) {
+						new Notice(t('settings.general.refreshFailedNotice', { error: getErrorMessage(error) }));
+					}
+				})
+			);
+	}
+
+	const usesOpenai = isProviderActive(plugin.settings, 'openai');
+	if (usesOpenai) {
+		new Setting(sectionEl)
+			.setName(t('settings.general.openaiApiKeyName'))
+			.setDesc(t('settings.general.openaiApiKeyDesc'))
+			.addComponent((el) =>
+				new SecretComponent(app, el).setValue(plugin.settings.openaiApiKeySecretName).onChange(async (secretName) => {
+					plugin.settings.openaiApiKeySecretName = secretName;
+					await plugin.saveSettings();
+				})
+			);
+
+		new Setting(sectionEl)
+			.setName(t('settings.general.openaiBaseUrlName'))
+			.setDesc(t('settings.general.openaiBaseUrlDesc'))
+			.addText((text) =>
+				text
+					.setPlaceholder(DEFAULT_OPENAI_BASE_URL)
+					.setValue(plugin.settings.openaiBaseUrl)
+					.onChange((value) => {
+						plugin.settings.openaiBaseUrl = value.trim() || DEFAULT_OPENAI_BASE_URL;
+						debouncedSave();
+					})
+			);
+
+		new Setting(sectionEl)
+			.setName(t('settings.general.refreshOpenaiModelListName'))
+			.setDesc(t('settings.general.refreshModelListOpenaiDesc'))
+			.addButton((button) =>
+				button.setButtonText(t('settings.general.refreshButton')).onClick(async () => {
+					try {
+						const manager = plugin.getModelManager();
+						manager.getOpenAIModelsService().invalidate();
+						const models = await manager.getAvailableModels({ forceRefresh: true }, 'openai');
+						new Notice(
+							models.length === 1
+								? t('settings.general.openaiModelsFoundSingular', { count: models.length })
+								: t('settings.general.openaiModelsFound', { count: models.length })
 						);
 						await rerender();
 					} catch (error) {
@@ -278,9 +326,11 @@ function renderPrivacyNotice(sectionEl: HTMLElement, plugin: ObsidianGemini): vo
 
 	// A keyless provider is enough to start the plugin, so a feature routed to a
 	// key-requiring provider without a key initializes fine and then fails at
-	// call time with an opaque auth error. Say so up front instead.
+	// call time with an opaque auth error. Say so up front instead. Since
+	// OpenAI (#1237) more than one active provider can require a key at once,
+	// so each one's own secret field is checked rather than assuming Gemini's.
 	const missingKey = activeProviders(plugin.settings).filter(
-		(id) => getCapabilities(id).requiresApiKey && !plugin.settings.apiKeySecretName
+		(id) => getCapabilities(id).requiresApiKey && !apiKeySecretNameFor(plugin.settings, id)
 	);
 	if (missingKey.length > 0) {
 		const providers = missingKey.map((id) => t(PROVIDERS[id].labelKey as TranslationKey)).join(', ');
@@ -318,6 +368,16 @@ function renderPrivacyNotice(sectionEl: HTMLElement, plugin: ObsidianGemini): vo
 	new Setting(sectionEl)
 		.setName(t('settings.general.localOnlyNoticeName'))
 		.setDesc(t('settings.general.localOnlyNoticeDesc'));
+}
+
+/**
+ * Which settings field holds a provider's API key secret name. Every
+ * key-requiring provider has its own field (`apiKeySecretName` for Gemini,
+ * `openaiApiKeySecretName` for OpenAI) rather than sharing one, so a mixed
+ * configuration with both active needs its own key each.
+ */
+function apiKeySecretNameFor(settings: ObsidianGemini['settings'], provider: ModelProvider): string {
+	return provider === 'openai' ? settings.openaiApiKeySecretName : settings.apiKeySecretName;
 }
 
 /**
@@ -373,6 +433,18 @@ async function renderModelPickers(sectionEl: HTMLElement, plugin: ObsidianGemini
 			'text',
 			'ollama'
 		);
+	} else if (chatProvider === 'openai') {
+		// OpenAI has no single-resident-model constraint (perUseCaseModels), so
+		// unlike Ollama it gets its own field rather than an "inherit" option.
+		await selectModelSetting(
+			sectionEl,
+			plugin,
+			'openaiModelName',
+			t('settings.general.chatModelName'),
+			t('settings.general.openaiChatModelDesc'),
+			'text',
+			'openai'
+		);
 	} else {
 		await selectModelSetting(
 			sectionEl,
@@ -398,6 +470,16 @@ async function renderModelPickers(sectionEl: HTMLElement, plugin: ObsidianGemini
 			'ollama',
 			t('settings.general.inheritOllamaChatModel')
 		);
+	} else if (summaryProvider === 'openai') {
+		await selectModelSetting(
+			sectionEl,
+			plugin,
+			'openaiSummaryModelName',
+			t('settings.general.summaryModelName'),
+			t('settings.general.summaryModelDesc'),
+			'text',
+			'openai'
+		);
 	} else {
 		await selectModelSetting(
 			sectionEl,
@@ -420,6 +502,16 @@ async function renderModelPickers(sectionEl: HTMLElement, plugin: ObsidianGemini
 			'text',
 			'ollama',
 			t('settings.general.inheritOllamaChatModel')
+		);
+	} else if (completionsProvider === 'openai') {
+		await selectModelSetting(
+			sectionEl,
+			plugin,
+			'openaiCompletionsModelName',
+			t('settings.general.completionModelName'),
+			t('settings.general.completionModelDesc'),
+			'text',
+			'openai'
 		);
 	} else {
 		await selectModelSetting(

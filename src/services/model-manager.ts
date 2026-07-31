@@ -11,6 +11,7 @@ import { activeProviders, resolveProviderOrDefault } from '../api/provider-routi
 import type { ObsidianGeminiSettings } from '../types/settings';
 import { ModelListProvider, RefreshResult } from './model-list-provider';
 import { OllamaModelsService } from './ollama-models-service';
+import { OpenAIModelsService } from './openai-models-service';
 import { ParameterValidationService, ParameterRanges } from './parameter-validation';
 
 export interface ModelUpdateOptions {
@@ -22,12 +23,14 @@ export class ModelManager {
 	private plugin: ObsidianGemini;
 	private listProvider: ModelListProvider;
 	private ollamaModelsService: OllamaModelsService;
+	private openaiModelsService: OpenAIModelsService;
 	private static staticModels: GeminiModel[] = [...DEFAULT_GEMINI_MODELS];
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 		this.listProvider = new ModelListProvider(plugin);
 		this.ollamaModelsService = new OllamaModelsService(plugin);
+		this.openaiModelsService = new OpenAIModelsService(plugin);
 	}
 
 	/**
@@ -42,6 +45,9 @@ export class ModelManager {
 		const target = provider ?? resolveProviderOrDefault(this.plugin.settings, 'chat');
 		if (target === 'ollama') {
 			return this.ollamaModelsService.getModels(options.forceRefresh);
+		}
+		if (target === 'openai') {
+			return this.openaiModelsService.getModels(options.forceRefresh);
 		}
 		return this.listProvider.getTextModels();
 	}
@@ -76,6 +82,13 @@ export class ModelManager {
 				this.plugin.logger.warn('[ModelManager] Could not load Ollama models:', error);
 			}
 		}
+		if (providers.includes('openai')) {
+			try {
+				models.push(...(await this.openaiModelsService.getModels(forceRefresh)));
+			} catch (error) {
+				this.plugin.logger.warn('[ModelManager] Could not load OpenAI models:', error);
+			}
+		}
 		return models;
 	}
 
@@ -84,6 +97,13 @@ export class ModelManager {
 	 */
 	getOllamaModelsService(): OllamaModelsService {
 		return this.ollamaModelsService;
+	}
+
+	/**
+	 * Get the OpenAI models service for direct interaction (e.g. cache refresh).
+	 */
+	getOpenAIModelsService(): OpenAIModelsService {
+		return this.openaiModelsService;
 	}
 
 	/**
@@ -160,8 +180,12 @@ export class ModelManager {
 	 * widen the range beyond what chat actually accepts.
 	 */
 	private async getModelsForActiveProvider(): Promise<GeminiModel[]> {
-		if (resolveProviderOrDefault(this.plugin.settings, 'chat') === 'ollama') {
+		const provider = resolveProviderOrDefault(this.plugin.settings, 'chat');
+		if (provider === 'ollama') {
 			return this.ollamaModelsService.getModels();
+		}
+		if (provider === 'openai') {
+			return this.openaiModelsService.getModels();
 		}
 		return this.listProvider.getModels();
 	}

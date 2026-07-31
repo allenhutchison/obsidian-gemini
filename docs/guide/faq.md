@@ -75,7 +75,9 @@ If the Gemma model you want is served through the Gemini API (ai.google.dev) it 
 
 ### Can I use non-Gemini providers like OpenAI, Anthropic, or Mistral?
 
-No. Gemini Scribe is intentionally a Gemini-only integration — it's built tightly around the `@google/genai` SDK, Gemini's tool-calling surface, URL Context, inline attachments, Google Search grounding, and the File Search API used for semantic vault search. Abstracting these to a generic provider interface would effectively be a rewrite, and there are other Obsidian plugins focused on multi-provider chat if that's what you need. ([#588](https://github.com/allenhutchison/obsidian-gemini/issues/588))
+**OpenAI is supported** as a provider — see the question below for setup, including using your own API key or an OpenAI-compatible local server. Ollama is also supported for local models — see [Can I use a local LLM via Ollama or llama.cpp?](#can-i-use-a-local-llm-via-ollama-or-llama-cpp) below.
+
+Anthropic and Mistral are not supported directly. A handful of Gemini-specific features — Google Search grounding, URL Context, and the File Search API used for semantic vault search — remain tightly coupled to the `@google/genai` SDK and are Gemini-only regardless of which provider serves chat; per-feature provider routing lets you mix, e.g. chat on OpenAI with those tools still on Gemini. ([#588](https://github.com/allenhutchison/obsidian-gemini/issues/588), [#1237](https://github.com/allenhutchison/obsidian-gemini/issues/1237))
 
 ### Can I point the plugin at Vertex AI for privacy or compliance reasons?
 
@@ -117,6 +119,12 @@ ollama pull deepseek-v4-pro:cloud
 ```
 
 Watch the tag format: models with a size tag take a `-cloud` suffix (`gpt-oss:120b-cloud`), while untagged models use `cloud` as the tag itself (`glm-5.2:cloud`). Note that a cloud model runs on ollama.com, so your notes leave your machine even though the provider is set to Ollama. See [Cloud models](./ollama-setup.md#cloud-models).
+
+### Can I use my own OpenAI API key, or point the plugin at LM Studio / another OpenAI-compatible server?
+
+**Yes to both.** Switch the provider to **OpenAI (cloud)** in Settings → Gemini Scribe → Provider, enter your API key from [platform.openai.com/api-keys](https://platform.openai.com/api-keys), and pick models for chat, summary, and completions. To use an OpenAI-compatible server instead — LM Studio, an MLX-served endpoint, Ollama's own OpenAI-compatible endpoint, etc. — point the **OpenAI base URL** field at it (e.g. `http://localhost:1234/v1` for LM Studio) and enter any placeholder value in the API key field if the server doesn't check one. See the [OpenAI Setup guide](./openai-setup.md) for a full walkthrough.
+
+This is API-key billing only — there is no "Sign in with ChatGPT" / ChatGPT-subscription auth. The same Gemini-only features listed above for Ollama (Deep Research, semantic vault search, Google Search/Maps grounding, URL Context, image generation) are also unavailable on OpenAI, and the same per-feature mixing applies: keep chat on OpenAI while routing individual cloud-only features to Gemini. See [Provider Capabilities](../reference/provider-capabilities.md). ([#1237](https://github.com/allenhutchison/obsidian-gemini/issues/1237))
 
 ## Language & Localization
 

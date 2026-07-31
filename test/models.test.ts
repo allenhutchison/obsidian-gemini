@@ -5,6 +5,7 @@ import {
 	getActiveChatModel,
 	getDefaultModelForRole,
 	getOllamaModelForRole,
+	getOpenAIModelForRole,
 	GeminiModel,
 	getUpdatedModelSettings,
 	isInteractionsOnlyModel,
@@ -69,6 +70,15 @@ describe('getDefaultModelForRole', () => {
 		expect(() => getDefaultModelForRole('chat')).toThrow(
 			'CRITICAL: GEMINI_MODELS array is empty. Please configure available models.'
 		);
+	});
+
+	// Ollama and OpenAI models both load lazily (daemon /api/tags, /v1/models),
+	// so an empty candidate list is a real, non-error state for either — unlike
+	// the bundled Gemini list, which should never be empty.
+	it('should return an empty string for ollama/openai when no models are registered yet', () => {
+		setTestModels([]);
+		expect(getDefaultModelForRole('chat', 'ollama')).toBe('');
+		expect(getDefaultModelForRole('chat', 'openai')).toBe('');
 	});
 
 	// This test checks the actual imported GEMINI_MODELS state
@@ -376,6 +386,60 @@ describe('getUpdatedModelSettings', () => {
 		expect(result.updatedSettings.ollamaModelName).toBe('llama3.2');
 	});
 
+	it('tolerates a stale OpenAI model while the discovered list has not loaded yet', () => {
+		// Only Gemini models are registered — the OpenAI list loads later via
+		// /v1/models. The Gemini fields stay valid and the OpenAI fields are left
+		// untouched rather than throwing or being blanked.
+		const currentSettings = {
+			provider: 'openai',
+			chatModelName: 'gemini-chat-default',
+			summaryModelName: 'gemini-summary-default',
+			completionsModelName: 'gemini-completions-default',
+			imageModelName: 'gemini-image-default',
+			openaiModelName: 'gpt-5.6',
+		};
+		const result = getUpdatedModelSettings(currentSettings);
+		expect(result.settingsChanged).toBe(false);
+		expect(result.updatedSettings.openaiModelName).toBe('gpt-5.6');
+		expect(result.changedSettingsInfo).toEqual([]);
+	});
+
+	it('reconciles each OpenAI per-use-case field independently once the list has loaded (perUseCaseModels)', () => {
+		// Unlike Ollama, OpenAI reconciles chat/summary/completions independently
+		// against their own role defaults rather than inheriting the chat model.
+		setTestModels([
+			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
+			{ value: 'gemini-summary-default', label: 'Summary Default', defaultForRoles: ['summary'] },
+			{ value: 'gemini-completions-default', label: 'Completions Default', defaultForRoles: ['completions'] },
+			{ value: 'gemini-image-default', label: 'Image Default', defaultForRoles: ['image'] },
+			{ value: 'gpt-5.6', label: 'gpt-5.6', provider: 'openai' as const, defaultForRoles: ['chat'] },
+			{ value: 'gpt-5.6-terra', label: 'gpt-5.6-terra', provider: 'openai' as const, defaultForRoles: ['summary'] },
+			{
+				value: 'gpt-5.6-luna',
+				label: 'gpt-5.6-luna',
+				provider: 'openai' as const,
+				defaultForRoles: ['completions'],
+			},
+		]);
+		const currentSettings = {
+			provider: 'openai',
+			chatModelName: 'gemini-chat-default',
+			summaryModelName: 'gemini-summary-default',
+			completionsModelName: 'gemini-completions-default',
+			imageModelName: 'gemini-image-default',
+			openaiModelName: 'retired-openai-model',
+			openaiSummaryModelName: '',
+			openaiCompletionsModelName: '',
+		};
+		const result = getUpdatedModelSettings(currentSettings);
+		expect(result.settingsChanged).toBe(true);
+		expect(result.updatedSettings.openaiModelName).toBe('gpt-5.6');
+		expect(result.updatedSettings.openaiSummaryModelName).toBe('gpt-5.6-terra');
+		expect(result.updatedSettings.openaiCompletionsModelName).toBe('gpt-5.6-luna');
+		// Gemini fields are preserved across an OpenAI-active reconcile.
+		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default');
+	});
+
 	it('should propagate error if GEMINI_MODELS is empty and a model update is attempted', () => {
 		setTestModels([]); // GEMINI_MODELS is empty
 		const currentSettings = {
@@ -595,6 +659,7 @@ describe('findModelProvider / providerForModel', () => {
 		setTestModels([
 			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
 			{ value: 'llama3.2', label: 'Llama 3.2', provider: 'ollama' as const },
+			{ value: 'gpt-5.6', label: 'gpt-5.6', provider: 'openai' as const },
 		]);
 	});
 
@@ -605,6 +670,7 @@ describe('findModelProvider / providerForModel', () => {
 	it('identifies each provider from the union model list', () => {
 		expect(findModelProvider('gemini-chat-default')).toBe('gemini');
 		expect(findModelProvider('llama3.2')).toBe('ollama');
+		expect(findModelProvider('gpt-5.6')).toBe('openai');
 	});
 
 	// Ollama tags only enter the list once the daemon answers, so an unknown
@@ -669,6 +735,47 @@ describe('getOllamaModelForRole', () => {
 	});
 });
 
+describe('getOpenAIModelForRole', () => {
+	let originalModels: GeminiModel[];
+
+	beforeEach(() => {
+		originalModels = [...GEMINI_MODELS];
+		setTestModels([
+			{ value: 'gpt-5.6', label: 'gpt-5.6', provider: 'openai' as const, defaultForRoles: ['chat'] },
+			{ value: 'gpt-5.6-terra', label: 'gpt-5.6-terra', provider: 'openai' as const, defaultForRoles: ['summary'] },
+		]);
+	});
+
+	afterEach(() => {
+		setTestModels(originalModels);
+	});
+
+	// Unlike Ollama, OpenAI has no single-resident-model constraint: an unset
+	// per-use-case field falls back to that role's own default, not to
+	// `openaiModelName` (the chat model).
+	it('falls back to the role default rather than inheriting the chat model', () => {
+		const settings = { openaiModelName: 'gpt-5.6', openaiSummaryModelName: '', openaiCompletionsModelName: '' };
+		expect(getOpenAIModelForRole(settings, 'chat')).toBe('gpt-5.6');
+		expect(getOpenAIModelForRole(settings, 'summary')).toBe('gpt-5.6-terra');
+	});
+
+	it('uses a per-use-case model when one is configured', () => {
+		const settings = {
+			openaiModelName: 'gpt-5.6',
+			openaiSummaryModelName: 'gpt-5.6-terra',
+			openaiCompletionsModelName: 'gpt-5.6-luna',
+		};
+		expect(getOpenAIModelForRole(settings, 'chat')).toBe('gpt-5.6');
+		expect(getOpenAIModelForRole(settings, 'summary')).toBe('gpt-5.6-terra');
+		expect(getOpenAIModelForRole(settings, 'completions')).toBe('gpt-5.6-luna');
+	});
+
+	// Rewrite has no field of its own and deliberately reuses the chat model.
+	it('resolves roles without a dedicated field to the chat model', () => {
+		expect(getOpenAIModelForRole({ openaiModelName: 'gpt-5.6' }, 'rewrite')).toBe('gpt-5.6');
+	});
+});
+
 describe('getActiveChatModel under per-use-case routing', () => {
 	let originalModels: GeminiModel[];
 
@@ -678,6 +785,7 @@ describe('getActiveChatModel under per-use-case routing', () => {
 			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
 			{ value: 'gemini-flash-lite', label: 'Flash Lite' },
 			{ value: 'llama3.2', label: 'Llama 3.2', provider: 'ollama' as const, defaultForRoles: ['chat'] },
+			{ value: 'gpt-5.6', label: 'gpt-5.6', provider: 'openai' as const, defaultForRoles: ['chat'] },
 		]);
 	});
 
@@ -706,5 +814,16 @@ describe('getActiveChatModel under per-use-case routing', () => {
 				ollamaModelName: 'llama3.2',
 			})
 		).toBe('gemini-flash-lite');
+	});
+
+	it('resolves the OpenAI model when OpenAI serves chat', () => {
+		expect(
+			getActiveChatModel({
+				provider: 'openai',
+				chatModelName: 'gemini-flash-lite',
+				ollamaModelName: 'llama3.2',
+				openaiModelName: 'gpt-5.6',
+			})
+		).toBe('gpt-5.6');
 	});
 });

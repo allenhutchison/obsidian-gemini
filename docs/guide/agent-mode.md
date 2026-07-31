@@ -371,7 +371,7 @@ What do you remember about my vault?
 
 ### Web & Research Operations
 
-> All four tools in this section (`google_search`, `google_maps`, `fetch_url`, `deep_research`) require Gemini — they're registered only when the **Web and search** feature (Settings → Gemini Scribe → Per-feature provider) resolves to Gemini, whether that's your default provider or a per-feature override on an otherwise-Ollama setup. See the [Provider Capabilities reference](/reference/provider-capabilities) for the full matrix.
+> All four tools in this section (`google_search`, `google_maps`, `fetch_url`, `deep_research`) require Gemini — they're registered only when the **Web and search** feature (Settings → Gemini Scribe → Per-feature provider) resolves to Gemini, whether that's your default provider or a per-feature override on an otherwise-Ollama or otherwise-OpenAI setup. See the [Provider Capabilities reference](/reference/provider-capabilities) for the full matrix.
 
 #### google_search
 
