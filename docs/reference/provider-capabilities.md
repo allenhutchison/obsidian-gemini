@@ -48,7 +48,8 @@ Consequences worth knowing:
 - Choosing Gemini for a feature means **that feature's requests — including any note content they send — go to Google.** The settings UI shows a "Some features use a different provider" notice listing exactly which ones whenever this is the case.
 - **Vault search index** is the broadest of these: enabling it uploads note content to a cloud file-search store, not just the text of a single request.
 - The **API key** field appears whenever _any_ feature is routed to Gemini, not only when Gemini is your default.
-- With every feature on Ollama, the settings show the "Local-only feature notice" and nothing leaves your machine.
+- With every feature on Ollama and every selected model pulled locally, the settings show the "Local-only feature notice" and nothing leaves your machine.
+- Ollama can also serve **cloud-hosted models** (`gpt-oss:120b-cloud`, `deepseek-v4-pro:cloud`, …), which reach the daemon like local ones but run on ollama.com. Selecting one for any Ollama-served feature replaces the local-only reassurance with a "Cloud-hosted model notice" naming the model and host — provider alone no longer implies on-device execution. Detection uses the `remote_host` field Ollama reports for these entries, not the model name. See [Cloud models](/guide/ollama-setup#cloud-models).
 
 ### Models
 
@@ -60,9 +61,11 @@ Ollama keeps one model resident at a time, so its summary and completions picker
 
 - **Tool calling** — Whether an Ollama model can call tools depends on the model itself; most modern instruct models (Llama 3.2, Qwen 2.5, Mistral 0.3, …) support it, smaller or older models may not.
 - **Vision** — Ollama vision support is auto-detected per model from its `/api/show` capabilities (with a template/name-hint fallback for older Ollama versions) — no manual configuration is needed when you pull a new multimodal model.
+- **Model discovery** — The Ollama picker is built from the daemon's `/api/tags`, which lists locally pulled models only. A cloud model must be pulled before it appears, even if you already use it from the Ollama app or CLI. The cloud tag takes one of two forms depending on whether the model carries a size tag — `ollama pull gpt-oss:120b-cloud` but `ollama pull glm-5.2:cloud`; see [Cloud models](/guide/ollama-setup#cloud-models) for the exact syntax per model.
 - **RAG, image generation, Google Search, Google Maps, URL Context, and Deep Research** all call Google's cloud APIs directly and require a Gemini API key. Their agent tools are only registered when the corresponding feature is routed to a provider that supports them; RAG's indexing service isn't initialized otherwise. What stays visible either way is the command palette and settings UI: the **Generate image** command, the RAG **Pause/Resume/Show status** commands, and the **Vault search index** settings toggle remain in place, but invoking one while its feature has no provider shows a notice pointing at the Per-feature provider settings rather than failing the call.
 - **Scheduled tasks** run through the same chat/tool-calling path as interactive agent sessions, so a task that needs vision or tool calling on Ollama is still bound by that model's capabilities.
-- **Context limits and token counting** follow the model in hand, not a global setting — a Gemini model is counted through Google's `countTokens` endpoint against a 1M-token window, while a local model uses a calibrated chars-per-token estimate against a conservative 32k window. In a mixed setup both apply, each to its own model.
+- **Context limits and token counting** follow the model in hand, not a global setting — a Gemini model is counted through Google's `countTokens` endpoint against a 1M-token window, while a local model uses a calibrated chars-per-token estimate. In a mixed setup both apply, each to its own model.
+- **Ollama context window** — Resolved per model from the daemon rather than assumed: the runtime allocation from `/api/ps` when the model is loaded, the model's advertised maximum from `/api/show` before that, and a conservative 32k fallback only when the daemon is unreachable. This matters because Ollama's own default window is VRAM-derived (4k under 24 GiB) and often a small fraction of what the model supports — see [Set the context window first](/guide/ollama-setup#set-the-context-window-first).
 
 Changing the default provider or any per-feature provider takes effect immediately — no data is lost, and each provider's model choices persist across changes.
 

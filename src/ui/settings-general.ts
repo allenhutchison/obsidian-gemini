@@ -10,7 +10,7 @@ import { FolderSuggest } from './folder-suggest';
 import { getErrorMessage } from '../utils/error-utils';
 import { t, type TranslationKey } from '../i18n';
 import type { SettingsSectionContext } from './settings-helpers';
-import type { ModelProvider } from '../models';
+import { getOllamaModelForRole, remoteHostForModel, type ModelProvider, type ModelRole } from '../models';
 import {
 	activeProviders,
 	isProviderActive,
@@ -297,12 +297,56 @@ function renderPrivacyNotice(sectionEl: HTMLElement, plugin: ObsidianGemini): vo
 		return;
 	}
 
-	// An all-local configuration keeps the reassurance it had before #704.
-	if (!getCapabilities(primary).requiresApiKey) {
+	if (getCapabilities(primary).requiresApiKey) return;
+
+	// "Provider: Ollama" stopped implying "runs on this machine" once Ollama
+	// shipped cloud models: they appear in /api/tags and go through the local
+	// daemon, but inference — and the note content in the prompt — happens on
+	// ollama.com. Claiming everything is local here would be an actively false
+	// privacy assurance, so a remote-served model replaces the reassurance.
+	const remote = remotelyServedModels(plugin.settings);
+	if (remote.length > 0) {
+		const models = remote.map((m) => m.model).join(', ');
+		const hosts = [...new Set(remote.map((m) => m.host))].join(', ');
 		new Setting(sectionEl)
-			.setName(t('settings.general.localOnlyNoticeName'))
-			.setDesc(t('settings.general.localOnlyNoticeDesc'));
+			.setName(t('settings.general.remoteModelNoticeName'))
+			.setDesc(t('settings.general.remoteModelNoticeDesc', { models, hosts }));
+		return;
 	}
+
+	// An all-local configuration keeps the reassurance it had before #704.
+	new Setting(sectionEl)
+		.setName(t('settings.general.localOnlyNoticeName'))
+		.setDesc(t('settings.general.localOnlyNoticeDesc'));
+}
+
+/**
+ * The selected Ollama models that are actually served by a remote host, in
+ * use-case order and de-duplicated by model name.
+ *
+ * Only use cases genuinely routed to Ollama are inspected — a use case pointed
+ * at Gemini is covered by the mixed-provider notice instead.
+ */
+function remotelyServedModels(
+	settings: ObsidianGemini['settings']
+): { useCase: ProviderUseCase; model: string; host: string }[] {
+	const roles: { useCase: ProviderUseCase; role: ModelRole }[] = [
+		{ useCase: 'chat', role: 'chat' },
+		{ useCase: 'summary', role: 'summary' },
+		{ useCase: 'completions', role: 'completions' },
+	];
+
+	const seen = new Set<string>();
+	const remote: { useCase: ProviderUseCase; model: string; host: string }[] = [];
+	for (const { useCase, role } of roles) {
+		if (resolveProviderOrDefault(settings, useCase) !== 'ollama') continue;
+		const model = getOllamaModelForRole(settings, role);
+		const host = remoteHostForModel(model);
+		if (!host || seen.has(model)) continue;
+		seen.add(model);
+		remote.push({ useCase, model, host });
+	}
+	return remote;
 }
 
 /**

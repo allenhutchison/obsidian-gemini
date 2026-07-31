@@ -24,6 +24,14 @@ export interface GeminiModel {
 	/** Context window in tokens (used for compaction thresholds). */
 	contextWindow?: number;
 	/**
+	 * Host that actually serves this model when it is not the local machine —
+	 * set for Ollama Cloud entries, which look local (they appear in `/api/tags`
+	 * and run through the local daemon) but proxy inference to `ollama.com`.
+	 * Absent for genuinely local models. Privacy notices key off this, since a
+	 * provider of "Ollama" no longer implies on-device execution.
+	 */
+	remoteHost?: string;
+	/**
 	 * The model is only served by the Interactions API — `generateContent`
 	 * rejects it with a 400 ("This model only supports Interactions API").
 	 * The Gemini client routes these through the Interactions path regardless
@@ -127,6 +135,21 @@ export function findModelProvider(modelValue: string | null | undefined): ModelP
  */
 export function providerForModel(modelValue: string | null | undefined): ModelProvider {
 	return findModelProvider(modelValue) ?? 'gemini';
+}
+
+/**
+ * The remote host serving a model, or `null` when it runs on this machine.
+ *
+ * Only Ollama Cloud entries carry a host today. An unknown model returns `null`
+ * — a model missing from the list (daemon unreachable) can't be shown to be
+ * remote, and the privacy notices that call this already caveat cloud routing
+ * elsewhere.
+ */
+export function remoteHostForModel(modelValue: string | null | undefined): string | null {
+	if (!modelValue) return null;
+	const entry =
+		GEMINI_MODELS.find((m) => m.value === modelValue) ?? DEFAULT_GEMINI_MODELS.find((m) => m.value === modelValue);
+	return entry?.remoteHost ?? null;
 }
 
 /**

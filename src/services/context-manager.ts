@@ -219,9 +219,49 @@ export class ContextManager {
 	 * per-use-case routing a single session can touch models from more than one
 	 * provider, and a 1M-token Gemini limit applied to a 32k local model would
 	 * let the context blow past the window before compaction ever fires.
+	 *
+	 * On Ollama the per-provider default is only a last resort. Windows vary by
+	 * three orders of magnitude across local models (4k to 1M), so a flat number
+	 * is wrong for nearly everyone: it showed a 262k-window model as 43% full at
+	 * 13.9k tokens and compacted history away at 2.4% of real capacity.
 	 */
 	private async getInputTokenLimit(modelName: string): Promise<number> {
-		return getCapabilities(this.providerForContextModel(modelName)).defaultInputTokenLimit;
+		const provider = this.providerForContextModel(modelName);
+		const capabilities = getCapabilities(provider);
+		if (provider !== 'ollama' || !modelName) {
+			return capabilities.defaultInputTokenLimit;
+		}
+		return (await this.getOllamaInputTokenLimit(modelName)) ?? capabilities.defaultInputTokenLimit;
+	}
+
+	/**
+	 * Effective Ollama window, most- to least-authoritative:
+	 *   1. The daemon's *runtime allocation* (/api/ps). Ollama sizes this from
+	 *      available VRAM or `OLLAMA_CONTEXT_LENGTH`, so it is routinely far
+	 *      below what the weights support — a 262k model commonly runs in a 4k
+	 *      window. Trusting the model's ceiling instead would mean never
+	 *      compacting while the daemon silently truncated the prompt, which is
+	 *      exactly the failure in #1252.
+	 *   2. The model's trained ceiling (/api/show). Only reachable before the
+	 *      first request has loaded the model; by then `estimatedTokens` is 0 and
+	 *      compaction is skipped anyway, so this affects the displayed
+	 *      percentage rather than any truncation decision.
+	 *   3. `null`, letting the caller fall back to the provider default.
+	 */
+	private async getOllamaInputTokenLimit(modelName: string): Promise<number | null> {
+		try {
+			const service = this.plugin.getModelManager?.()?.getOllamaModelsService?.();
+			if (!service) return null;
+
+			const runtime = await service.getRuntimeContextLength(modelName);
+			if (runtime) return runtime;
+
+			const models = await service.getModels();
+			return models.find((m) => m.value === modelName)?.contextWindow ?? null;
+		} catch (err) {
+			this.logger.debug(`[ContextManager] Could not resolve Ollama context window for ${modelName}:`, err);
+			return null;
+		}
 	}
 
 	/**

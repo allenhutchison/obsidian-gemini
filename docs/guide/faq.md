@@ -100,6 +100,24 @@ Agent mode, tool calling, scheduled tasks, lifecycle hooks, custom prompts, comp
 
 You can also mix the two: under **Settings → Gemini Scribe → Per-feature provider**, each feature can be pointed at its own provider, so you can keep chat local while still using Gemini for web search or image generation (an API key is needed for whichever features you route there). Nothing is sent to the cloud unless you explicitly route it — a feature Ollama can't serve stays off rather than falling back to Google. See [Provider Capabilities](../reference/provider-capabilities.md). ([#576](https://github.com/allenhutchison/obsidian-gemini/discussions/576))
 
+### My Ollama answers are irrelevant, or the agent invents files that aren't in my vault
+
+Almost always Ollama's context window, not the model or the plugin. Ollama defaults to a VRAM-derived window — **4,000 tokens on machines under 24 GiB** — which isn't enough to hold the agent's system prompt and tool definitions alongside your notes. The prompt is truncated before the model sees your question, so it answers from a fragment and confabulates the rest.
+
+Raise it in the Ollama desktop app's settings slider, or with `OLLAMA_CONTEXT_LENGTH=65536 ollama serve`, then confirm with `curl -s http://localhost:11434/api/ps`. Aim for 64k minimum, 256k if your hardware allows. Full walkthrough: [Set the context window first](./ollama-setup.md#set-the-context-window-first). ([#1252](https://github.com/allenhutchison/obsidian-gemini/issues/1252))
+
+### Why don't my Ollama cloud models show up in the model picker?
+
+Because the plugin lists models from your daemon's `/api/tags` endpoint, which reports **locally pulled models only**. Using a cloud model from the Ollama desktop app or `ollama run` doesn't create a local entry, so it stays invisible to the plugin.
+
+Pull it explicitly — this fetches a small manifest, not the weights — then click **Refresh** in Settings → General:
+
+```bash
+ollama pull deepseek-v4-pro:cloud
+```
+
+Watch the tag format: models with a size tag take a `-cloud` suffix (`gpt-oss:120b-cloud`), while untagged models use `cloud` as the tag itself (`glm-5.2:cloud`). Note that a cloud model runs on ollama.com, so your notes leave your machine even though the provider is set to Ollama. See [Cloud models](./ollama-setup.md#cloud-models).
+
 ## Language & Localization
 
 ### How does the plugin decide what language to respond in?

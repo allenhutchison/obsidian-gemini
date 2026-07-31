@@ -136,8 +136,11 @@ export const PROVIDERS: Record<ModelProvider, ProviderDefinition> = {
 			perUseCaseModels: false,
 			requiresApiKey: false,
 			/**
-			 * Local models vary widely (4k–128k); a conservative middle so
-			 * compaction triggers before smaller models truncate.
+			 * Last-resort fallback only. The real window is resolved per model at
+			 * runtime from the daemon (`/api/ps`, falling back to `/api/show`) —
+			 * see `ContextManager.getOllamaInputTokenLimit`. This value applies
+			 * when the daemon is unreachable, where a conservative middle is
+			 * safer than assuming a large window.
 			 */
 			defaultInputTokenLimit: 32_000,
 		},

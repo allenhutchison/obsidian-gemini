@@ -180,6 +180,17 @@ export const en = {
 		message: 'Failed to refresh: {error}',
 		context: 'Notice when refreshing the Ollama model list fails. {error} is the error message.',
 	},
+	'settings.general.remoteModelNoticeName': {
+		message: 'Cloud-hosted model notice',
+		context:
+			'Settings field name of a warning row shown when a selected Ollama model runs on a remote host instead of the local machine.',
+	},
+	'settings.general.remoteModelNoticeDesc': {
+		message:
+			'{models} runs on {hosts}, not on your machine. Requests — including any note content they send — leave your device even though your provider is Ollama. Choose a locally pulled model if you need everything to stay local.',
+		context:
+			'Description warning that a selected Ollama model is cloud-hosted. {models} is a comma-separated list of model names; {hosts} is a comma-separated list of hostnames.',
+	},
 	'settings.general.localOnlyNoticeName': {
 		message: 'Local-only feature notice',
 		context:

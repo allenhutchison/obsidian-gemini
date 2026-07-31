@@ -8,11 +8,14 @@
  * to inheriting the chat model (#1077); image generation has no picker at all
  * when no provider serves it.
  */
-const { mockSelectModelSetting, capturedDropdowns } = vi.hoisted(() => ({
+const { mockSelectModelSetting, capturedDropdowns, capturedRows } = vi.hoisted(() => ({
 	mockSelectModelSetting: vi.fn(),
 	// Records each rendered dropdown as { name, options, value, disabled } so
 	// tests can assert on the options a row actually offers.
 	capturedDropdowns: [] as Array<{ name: string; options: string[]; value: string; disabled: boolean }>,
+	// Records every rendered Setting row's name/description i18n key, so the
+	// privacy notices (which render as plain name+desc rows) can be asserted on.
+	capturedRows: [] as Array<{ name: string; desc: string }>,
 }));
 
 vi.mock('../../src/ui/settings-helpers', () => ({
@@ -27,8 +30,10 @@ vi.mock('../../src/ui/folder-suggest', () => ({
 	FolderSuggest: vi.fn(),
 }));
 
+// Echo the key, appending interpolation vars so tests can assert on which
+// models/hosts a notice actually names, not just that a notice appeared.
 vi.mock('../../src/i18n', () => ({
-	t: (key: string) => key,
+	t: (key: string, vars?: Record<string, string>) => (vars ? `${key}:${JSON.stringify(vars)}` : key),
 }));
 
 vi.mock('../../src/utils/error-utils', () => ({
@@ -38,12 +43,18 @@ vi.mock('../../src/utils/error-utils', () => ({
 vi.mock('obsidian', () => {
 	class Setting {
 		name = '';
-		constructor(public containerEl: any) {}
+		private row: { name: string; desc: string };
+		constructor(public containerEl: any) {
+			this.row = { name: '', desc: '' };
+			capturedRows.push(this.row);
+		}
 		setName(n?: string) {
 			this.name = n ?? '';
+			this.row.name = this.name;
 			return this;
 		}
-		setDesc() {
+		setDesc(d?: string) {
+			this.row.desc = d ?? '';
 			return this;
 		}
 		addButton(cb: (c: any) => void) {
@@ -313,5 +324,117 @@ describe('renderGeneralSettings — per-feature provider dropdowns', () => {
 		await renderGeneralSettings({} as any, plugin, {} as any, createContext());
 
 		expect(dropdownFor('settings.general.useCaseChatName')?.value).toBe('');
+	});
+});
+
+/**
+ * "Provider: Ollama" stopped implying "runs on this machine" once Ollama shipped
+ * cloud models: they appear in /api/tags and go through the local daemon, but
+ * inference happens on ollama.com. The local-only reassurance must not be shown
+ * in that case — it would be an actively false privacy claim.
+ */
+describe('renderGeneralSettings — local-only vs cloud-hosted model notice', () => {
+	const LOCAL = 'gemma4:12b-mlx';
+	const CLOUD = 'deepseek-v4-pro:cloud';
+	const CLOUD_COMPLETIONS = 'gpt-oss:120b-cloud';
+
+	let restoreModels: () => void;
+
+	beforeEach(async () => {
+		vi.clearAllMocks();
+		capturedDropdowns.length = 0;
+		capturedRows.length = 0;
+
+		const { setGeminiModels, GEMINI_MODELS } = await import('../../src/models');
+		const original = [...GEMINI_MODELS];
+		setGeminiModels([
+			{ value: LOCAL, label: LOCAL, provider: 'ollama' as const },
+			{ value: CLOUD, label: CLOUD, provider: 'ollama' as const, remoteHost: 'https://ollama.com' },
+			{
+				value: CLOUD_COMPLETIONS,
+				label: CLOUD_COMPLETIONS,
+				provider: 'ollama' as const,
+				remoteHost: 'https://ollama.com',
+			},
+		]);
+		restoreModels = () => setGeminiModels(original);
+	});
+
+	afterEach(() => restoreModels());
+
+	const rowNamed = (name: string) => capturedRows.find((r) => r.name === name);
+	const REMOTE = 'settings.general.remoteModelNoticeName';
+	const LOCAL_ONLY = 'settings.general.localOnlyNoticeName';
+
+	async function renderWith(settings: Record<string, unknown>) {
+		const plugin = createMockPlugin('ollama');
+		Object.assign(plugin.settings, settings);
+		await renderGeneralSettings({} as any, plugin, {} as any, createContext());
+		return plugin;
+	}
+
+	it('reassures that everything is local when every selected model is local', async () => {
+		await renderWith({ ollamaModelName: LOCAL });
+
+		expect(rowNamed(LOCAL_ONLY)).toBeDefined();
+		expect(rowNamed(REMOTE)).toBeUndefined();
+	});
+
+	it('replaces the reassurance with a warning when the chat model is cloud-hosted', async () => {
+		await renderWith({ ollamaModelName: CLOUD });
+
+		expect(rowNamed(LOCAL_ONLY)).toBeUndefined();
+		const notice = rowNamed(REMOTE);
+		expect(notice?.desc).toContain(CLOUD);
+		expect(notice?.desc).toContain('https://ollama.com');
+	});
+
+	// Summary/completions default to inheriting the chat model, but a user who
+	// opts into a distinct model there can send notes to the cloud via that path
+	// alone — the notice has to follow every Ollama-served use case.
+	it('warns when only a per-use-case model is cloud-hosted', async () => {
+		await renderWith({ ollamaModelName: LOCAL, ollamaCompletionsModelName: CLOUD_COMPLETIONS });
+
+		expect(rowNamed(LOCAL_ONLY)).toBeUndefined();
+		expect(rowNamed(REMOTE)?.desc).toContain(CLOUD_COMPLETIONS);
+	});
+
+	it('names each distinct cloud model once when several are selected', async () => {
+		await renderWith({ ollamaModelName: CLOUD, ollamaCompletionsModelName: CLOUD_COMPLETIONS });
+
+		const desc = rowNamed(REMOTE)?.desc ?? '';
+		expect(desc).toContain(CLOUD);
+		expect(desc).toContain(CLOUD_COMPLETIONS);
+		// The host is shared, so it should not be repeated per model.
+		expect(desc.match(/https:\/\/ollama\.com/g)).toHaveLength(1);
+	});
+
+	// An inherited cloud model reaches chat, summary and completions alike; the
+	// notice should name it once rather than three times.
+	it('does not repeat a single inherited cloud model', async () => {
+		await renderWith({ ollamaModelName: CLOUD });
+
+		expect(rowNamed(REMOTE)?.desc.match(new RegExp(CLOUD, 'g'))).toHaveLength(1);
+	});
+
+	// A model missing from the list (daemon unreachable) can't be shown to be
+	// remote, so the existing local-only behaviour stands.
+	it('treats an unknown model as local rather than guessing', async () => {
+		await renderWith({ ollamaModelName: 'never-registered:latest' });
+
+		expect(rowNamed(LOCAL_ONLY)).toBeDefined();
+		expect(rowNamed(REMOTE)).toBeUndefined();
+	});
+
+	// A mixed setup already gets the stronger "these features use another
+	// provider" warning, which returns before either of these rows.
+	it('defers to the mixed-provider notice', async () => {
+		const plugin = createMockPlugin('ollama', { imageGen: 'gemini' });
+		plugin.settings.ollamaModelName = CLOUD;
+		await renderGeneralSettings({} as any, plugin, {} as any, createContext());
+
+		expect(rowNamed('settings.general.mixedProviderNoticeName')).toBeDefined();
+		expect(rowNamed(REMOTE)).toBeUndefined();
+		expect(rowNamed(LOCAL_ONLY)).toBeUndefined();
 	});
 });
