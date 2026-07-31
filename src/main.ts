@@ -46,6 +46,8 @@ import { ScheduledTaskManager } from './services/scheduled-task-manager';
 import { HookManager } from './services/hook-manager';
 import { asRecord, getRawErrorMessage } from './utils/error-utils';
 import { t } from './i18n';
+import { apiKeySecretNameFor } from './ui/settings-helpers';
+import { DEFAULT_OPENAI_BASE_URL } from './api/providers/openai/config';
 
 // Settings interfaces live in a leaf module so the rest of the codebase can
 // reference them without importing this hub file (see #1155).
@@ -71,6 +73,13 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	// unless the user deliberately splits them.
 	ollamaSummaryModelName: '',
 	ollamaCompletionsModelName: '',
+	openaiBaseUrl: DEFAULT_OPENAI_BASE_URL,
+	openaiApiKeySecretName: '',
+	// OpenAI has no single-resident-model constraint (perUseCaseModels), so each
+	// use case gets its own default rather than inheriting the chat model.
+	openaiModelName: 'gpt-5.6',
+	openaiSummaryModelName: 'gpt-5.6-terra',
+	openaiCompletionsModelName: 'gpt-5.6-luna',
 	summaryFrontmatterKey: 'summary',
 	userName: 'User',
 	chatHistory: false,
@@ -141,6 +150,13 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		return this.app.secretStorage.getSecret(secretName) ?? '';
 	}
 
+	/** The configured OpenAI API key, mirroring `apiKey` above. */
+	get openaiApiKey(): string {
+		const secretName = this.settings?.openaiApiKeySecretName;
+		if (!secretName) return '';
+		return this.app.secretStorage.getSecret(secretName) ?? '';
+	}
+
 	// Public service properties — assigned by LifecycleService
 	public gfile!: ScribeFile;
 	public agentView!: AgentView;
@@ -185,6 +201,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	private ribbonIcon!: HTMLElement;
 	public isGeminiInitialized: boolean = false;
 	private previousApiKey: string = '';
+	private previousOpenaiApiKey: string = '';
 	private previousRagEnabled: boolean = false;
 	/**
 	 * Serialized provider routing (primary + every use case's resolved provider).
@@ -195,6 +212,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	private previousRoutingKey: string = '';
 	private previousOllamaBaseUrl: string = '';
 	private previousCustomBaseUrl: string = '';
+	private previousOpenaiBaseUrl: string = '';
 	private previousHooksEnabled: boolean = false;
 	private lifecycle!: LifecycleService;
 	// Captures the last initialization failure so guarded commands can surface
@@ -226,10 +244,12 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 			this.isGeminiInitialized = true;
 			this.lastInitError = null;
 			this.previousApiKey = this.apiKey;
+			this.previousOpenaiApiKey = this.openaiApiKey;
 			this.previousRagEnabled = this.settings.ragIndexing.enabled;
 			this.previousRoutingKey = routingKey(this.settings);
 			this.previousOllamaBaseUrl = this.settings.ollamaBaseUrl;
 			this.previousCustomBaseUrl = this.settings.customBaseUrl;
+			this.previousOpenaiBaseUrl = this.settings.openaiBaseUrl;
 			this.previousHooksEnabled = this.settings.hooksEnabled;
 		} catch (error) {
 			this.logger.error('Failed to initialize Gemini Scribe:', error);
@@ -261,10 +281,14 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	 * Distinguishes between "never configured" and "storage retrieval failure".
 	 */
 	private getApiKeyErrorMessage(): string {
+		// The secret-name field is provider-specific — an OpenAI-primary install
+		// checks its own key, not Gemini's, so a missing OpenAI key surfaces the
+		// same kind of actionable notice a missing Gemini key would.
+		const apiKeySecretName = apiKeySecretNameFor(this.settings, this.settings.provider);
 		return buildApiKeyErrorMessage({
 			provider: this.settings.provider,
 			lastInitError: this.lastInitError,
-			apiKeySecretName: this.settings.apiKeySecretName,
+			apiKeySecretName,
 			ollamaBaseUrl: this.settings.ollamaBaseUrl,
 		});
 	}
@@ -492,7 +516,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		await this.saveData(this.settings);
 
 		// Check if we need to re-initialize
-		const apiKeyChanged = this.previousApiKey !== this.apiKey;
+		const apiKeyChanged = this.previousApiKey !== this.apiKey || this.previousOpenaiApiKey !== this.openaiApiKey;
 		// Any change to *which provider serves which use case* re-inits: tool
 		// registration, RAG, and image generation are all keyed off the resolved
 		// providers, not just the primary.
@@ -503,22 +527,34 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 			isProviderActive(this.settings, 'ollama') && this.previousOllamaBaseUrl !== this.settings.ollamaBaseUrl;
 		const customBaseUrlChanged =
 			isProviderActive(this.settings, 'gemini') && this.previousCustomBaseUrl !== this.settings.customBaseUrl;
+		const openaiBaseUrlChanged =
+			isProviderActive(this.settings, 'openai') && this.previousOpenaiBaseUrl !== this.settings.openaiBaseUrl;
 		// A primary that needs no key (Ollama) can initialize on the provider
 		// switch alone; overrides pointing at a cloud provider degrade gracefully
 		// without one rather than blocking init.
-		const hasCredentials = !getCapabilities(this.settings.provider).requiresApiKey || !!this.apiKey;
+		const activePrimaryApiKey = this.settings.provider === 'openai' ? this.openaiApiKey : this.apiKey;
+		const hasCredentials = !getCapabilities(this.settings.provider).requiresApiKey || !!activePrimaryApiKey;
 		const needsInit = !this.isGeminiInitialized && hasCredentials;
 
-		if (apiKeyChanged || providerChanged || ollamaUrlChanged || customBaseUrlChanged || needsInit) {
+		if (
+			apiKeyChanged ||
+			providerChanged ||
+			ollamaUrlChanged ||
+			customBaseUrlChanged ||
+			openaiBaseUrlChanged ||
+			needsInit
+		) {
 			try {
 				await this.lifecycle.setup();
 				this.isGeminiInitialized = true;
 				this.lastInitError = null;
 				this.previousApiKey = this.apiKey;
+				this.previousOpenaiApiKey = this.openaiApiKey;
 				this.previousRagEnabled = this.settings.ragIndexing.enabled;
 				this.previousRoutingKey = routingKey(this.settings);
 				this.previousOllamaBaseUrl = this.settings.ollamaBaseUrl;
 				this.previousCustomBaseUrl = this.settings.customBaseUrl;
+				this.previousOpenaiBaseUrl = this.settings.openaiBaseUrl;
 				this.previousHooksEnabled = this.settings.hooksEnabled;
 
 				// If this is the first successful initialization, we may need to

@@ -65,6 +65,23 @@ describe('resolveProvider', () => {
 	});
 });
 
+describe('OpenAI routing', () => {
+	it('resolves every routable use case OpenAI supports, and null for the rest', () => {
+		const enabled = PROVIDER_USE_CASES.filter((u) => resolveProvider({ provider: 'openai' }, u) !== null);
+		expect(enabled).toEqual(['chat', 'summary', 'completions', 'rewrite']);
+	});
+
+	it('participates in activeProviders and routingKey like any other provider', () => {
+		expect(activeProviders({ provider: 'openai' })).toEqual(['openai']);
+		expect(isProviderActive({ provider: 'ollama', providerOverrides: { chat: 'openai' } }, 'openai')).toBe(true);
+		expect(routingKey({ provider: 'openai' })).not.toBe(routingKey({ provider: 'gemini' }));
+	});
+
+	it('resolveProviderOrDefault keeps OpenAI for a mandatory-client use case', () => {
+		expect(resolveProviderOrDefault({ provider: 'openai' }, 'chat')).toBe('openai');
+	});
+});
+
 describe('backward compatibility', () => {
 	// An install from before #704 has a primary and no overrides. Every use case
 	// must resolve exactly as the old single-provider check did.
@@ -151,7 +168,9 @@ describe('sanitizeProviderOverrides', () => {
 	});
 
 	it('drops unknown use cases and unknown providers', () => {
-		expect(sanitizeProviderOverrides({ chat: 'openai', bogus: 'gemini', rag: 'gemini' })).toEqual({ rag: 'gemini' });
+		expect(sanitizeProviderOverrides({ chat: 'anthropic', bogus: 'gemini', rag: 'gemini' })).toEqual({
+			rag: 'gemini',
+		});
 	});
 
 	// A pairing resolveProvider would treat as null must not survive in storage:

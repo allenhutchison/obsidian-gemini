@@ -32,7 +32,7 @@ export function getApiKeyErrorMessage(params: ApiKeyErrorMessageParams): string 
 		return t('notice.main.ollamaUnreachable', { url: params.ollamaBaseUrl });
 	}
 	if (!params.apiKeySecretName) {
-		return t('notice.main.noApiKey');
+		return params.provider === 'openai' ? t('notice.main.noApiKeyOpenai') : t('notice.main.noApiKey');
 	}
 	return t('notice.main.apiKeyRetrieveFailed');
 }

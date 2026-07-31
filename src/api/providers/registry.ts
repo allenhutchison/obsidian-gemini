@@ -21,7 +21,7 @@
  * `models.ts` re-exports it for backward compatibility and imports the router,
  * which would be a cycle if the type lived the other way round.
  */
-export type ModelProvider = 'gemini' | 'ollama';
+export type ModelProvider = 'gemini' | 'ollama' | 'openai';
 
 /**
  * A use case that can be routed to a provider independently.
@@ -145,10 +145,33 @@ export const PROVIDERS: Record<ModelProvider, ProviderDefinition> = {
 			defaultInputTokenLimit: 32_000,
 		},
 	},
+	openai: {
+		id: 'openai',
+		labelKey: 'settings.general.providerOptionOpenai',
+		capabilities: {
+			chat: true,
+			summary: true,
+			completions: true,
+			rewrite: true,
+			webSearch: false,
+			rag: false,
+			imageGen: false,
+			vision: 'auto-detect',
+			nativeTokenCount: false,
+			promptCache: false,
+			costMetrics: false,
+			interactionsApi: false,
+			customBaseUrl: true,
+			perUseCaseModels: true,
+			requiresApiKey: true,
+			/** Conservative floor for an unrecognized model; known models report their own via the models list. */
+			defaultInputTokenLimit: 128_000,
+		},
+	},
 };
 
 /** Every known provider id, in display order. */
-export const PROVIDER_IDS: readonly ModelProvider[] = ['gemini', 'ollama'] as const;
+export const PROVIDER_IDS: readonly ModelProvider[] = ['gemini', 'ollama', 'openai'] as const;
 
 /**
  * Capabilities for a provider, defaulting to Gemini for an unrecognized id

@@ -19,6 +19,22 @@ export function asRecord(value: unknown): Record<string, unknown> {
 }
 
 /**
+ * Whether an error looks like it came from the `openai` SDK's `APIError`
+ * hierarchy (`BadRequestError`, `AuthenticationError`, `NotFoundError`, ...):
+ * a numeric `status` alongside a `type` or `code` string pulled from the
+ * response body's `error.type`/`error.code` fields.
+ *
+ * Duck-typed on that shape rather than an `instanceof` check against the SDK's
+ * error classes, so this stays a provider-agnostic leaf utility with no SDK
+ * import — and so a minifier renaming the SDK's class names can't break
+ * detection. Gemini's `ApiError` only ever carries `status`, so it can't
+ * false-positive here.
+ */
+function isOpenAIApiError(error: Record<string, unknown>): boolean {
+	return typeof error.status === 'number' && (typeof error.type === 'string' || typeof error.code === 'string');
+}
+
+/**
  * Extract the `details` array from various Google API error shapes.
  * Google errors may carry details at `error.details`, `error.error.details`,
  * `error.response.data.error.details`, or embedded as JSON in `error.message`.
@@ -189,6 +205,33 @@ export function getErrorMessage(error: unknown): string {
 		// HTTP status-code mapping below.
 		const message = error.message;
 		const messageLower = message.toLowerCase();
+
+		// OpenAI-shaped errors get provider-specific guidance for the two status
+		// codes generic wording serves poorly: 401 should point at the OpenAI key
+		// specifically, and 404 should mention the endpoint (since a custom base
+		// URL — LM Studio, MLX, ... — may simply not have the model). Checked
+		// before the generic message-substring checks below so this wins.
+		if (isOpenAIApiError(asRecord(error))) {
+			const statusCode = extractStatusCode(error);
+			if (statusCode === 401) {
+				return 'Invalid OpenAI API key. Please check the API key in Settings → Gemini Scribe.';
+			}
+			if (statusCode === 404) {
+				return 'Model not available on this endpoint. Please check your model settings or the configured base URL.';
+			}
+		}
+
+		// The openai SDK's fetch-layer failures (unreachable custom base URL —
+		// LM Studio/MLX not running, wrong port, DNS failure, ...) surface as
+		// `APIConnectionError`, whose own `.message` is the fixed, uninformative
+		// string "Connection error." — the actionable detail (ECONNREFUSED, etc.)
+		// lives on `.cause`, which callers don't reliably get to inspect. Matched
+		// on that exact message plus an absent status (real HTTP failures always
+		// carry one) rather than an SDK class import, for the same reason as
+		// `isOpenAIApiError` above.
+		if (message === 'Connection error.' && extractStatusCode(error) === null) {
+			return 'Could not connect to the model server. If you configured a custom base URL (LM Studio, MLX, etc.), make sure the server is running and the base URL in settings is correct.';
+		}
 
 		// API key errors
 		if (

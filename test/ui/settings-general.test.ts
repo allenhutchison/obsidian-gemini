@@ -8,18 +8,29 @@
  * to inheriting the chat model (#1077); image generation has no picker at all
  * when no provider serves it.
  */
-const { mockSelectModelSetting, capturedDropdowns, capturedRows } = vi.hoisted(() => ({
-	mockSelectModelSetting: vi.fn(),
-	// Records each rendered dropdown as { name, options, value, disabled } so
-	// tests can assert on the options a row actually offers.
-	capturedDropdowns: [] as Array<{ name: string; options: string[]; value: string; disabled: boolean }>,
-	// Records every rendered Setting row's name/description i18n key, so the
-	// privacy notices (which render as plain name+desc rows) can be asserted on.
-	capturedRows: [] as Array<{ name: string; desc: string }>,
-}));
+const { mockSelectModelSetting, capturedDropdowns, capturedRows, capturedButtons, capturedSecrets } = vi.hoisted(
+	() => ({
+		mockSelectModelSetting: vi.fn(),
+		// Records each rendered dropdown as { name, options, value, disabled } so
+		// tests can assert on the options a row actually offers.
+		capturedDropdowns: [] as Array<{ name: string; options: string[]; value: string; disabled: boolean }>,
+		// Records every rendered Setting row's name/description i18n key, so the
+		// privacy notices (which render as plain name+desc rows) can be asserted on.
+		capturedRows: [] as Array<{ name: string; desc: string }>,
+		// Records each rendered button as { name, text, onClick } so tests can
+		// invoke the handler directly (e.g. the refresh-model-list buttons).
+		capturedButtons: [] as Array<{ name: string; text: string; onClick: () => void | Promise<void> }>,
+		// Records each rendered SecretComponent as { value, onChange } so tests can
+		// assert which settings field an API key row is bound to.
+		capturedSecrets: [] as Array<{ value: string; onChange?: (v: string) => void }>,
+	})
+);
 
 vi.mock('../../src/ui/settings-helpers', () => ({
 	selectModelSetting: mockSelectModelSetting,
+	// Real mapping, not a stub — the missing-key notice tests depend on it.
+	apiKeySecretNameFor: (settings: any, provider: any) =>
+		provider === 'openai' ? settings.openaiApiKeySecretName : settings.apiKeySecretName,
 	// The General section is rendered directly into the element we pass in.
 	createAlwaysOpenSection: (containerEl: any) => containerEl,
 	createCollapsibleSection: (_plugin: any, containerEl: any) => containerEl,
@@ -58,7 +69,18 @@ vi.mock('obsidian', () => {
 			return this;
 		}
 		addButton(cb: (c: any) => void) {
-			cb({ setButtonText: () => ({ onClick: () => this }) });
+			const record = { name: this.name, text: '', onClick: (() => {}) as () => void | Promise<void> };
+			const c: any = {};
+			c.setButtonText = (text: string) => {
+				record.text = text;
+				return c;
+			};
+			c.onClick = (handler: () => void | Promise<void>) => {
+				record.onClick = handler;
+				return c;
+			};
+			cb(c);
+			capturedButtons.push(record);
 			return this;
 		}
 		addDropdown(cb: (c: any) => void) {
@@ -103,11 +125,17 @@ vi.mock('obsidian', () => {
 		}
 	}
 	class SecretComponent {
-		constructor(_app: any, _el: any) {}
-		setValue() {
+		private record: { value: string; onChange?: (v: string) => void };
+		constructor(_app: any, _el: any) {
+			this.record = { value: '' };
+			capturedSecrets.push(this.record);
+		}
+		setValue(v: string) {
+			this.record.value = v;
 			return this;
 		}
-		onChange() {
+		onChange(fn: (v: string) => void) {
+			this.record.onChange = fn;
 			return this;
 		}
 	}
@@ -122,7 +150,7 @@ vi.mock('obsidian', () => {
 
 import { renderGeneralSettings } from '../../src/ui/settings-general';
 
-function createMockPlugin(provider: 'gemini' | 'ollama', providerOverrides: Record<string, string> = {}) {
+function createMockPlugin(provider: 'gemini' | 'ollama' | 'openai', providerOverrides: Record<string, string> = {}) {
 	return {
 		settings: {
 			provider,
@@ -136,6 +164,11 @@ function createMockPlugin(provider: 'gemini' | 'ollama', providerOverrides: Reco
 			ollamaCompletionsModelName: '',
 			ollamaBaseUrl: 'http://localhost:11434',
 			apiKeySecretName: 'test-secret',
+			openaiModelName: 'openai-chat-model',
+			openaiSummaryModelName: 'openai-summary-model',
+			openaiCompletionsModelName: 'openai-completions-model',
+			openaiBaseUrl: 'https://api.openai.com/v1',
+			openaiApiKeySecretName: 'openai-test-secret',
 			historyFolder: 'gemini-scribe',
 			expandedSettingsSections: [],
 		},
@@ -234,6 +267,39 @@ describe('renderGeneralSettings — model pickers per provider', () => {
 		]);
 	});
 
+	// OpenAI has no single-resident-model constraint (perUseCaseModels), so unlike
+	// Ollama each use case gets its own field and no "inherit the chat model"
+	// option (#1237).
+	it('routes every picker to its own OpenAI field, with no inherit option', async () => {
+		const plugin = createMockPlugin('openai');
+		await renderGeneralSettings({} as any, plugin, {} as any, createContext());
+
+		expect(renderedModelCalls()).toEqual([
+			{
+				settingName: 'openaiModelName',
+				label: 'settings.general.chatModelName',
+				desc: 'settings.general.openaiChatModelDesc',
+				provider: 'openai',
+			},
+			{
+				settingName: 'openaiSummaryModelName',
+				label: 'settings.general.summaryModelName',
+				desc: 'settings.general.summaryModelDesc',
+				provider: 'openai',
+			},
+			{
+				settingName: 'openaiCompletionsModelName',
+				label: 'settings.general.completionModelName',
+				desc: 'settings.general.completionModelDesc',
+				provider: 'openai',
+			},
+		]);
+		// No inherit-option arg (7th call arg) for any OpenAI row.
+		for (const call of mockSelectModelSetting.mock.calls) {
+			expect(call[7]).toBeUndefined();
+		}
+	});
+
 	// The point of #704: each row follows its own use case's provider.
 	it('binds each picker to its own use case provider in a mixed configuration', async () => {
 		const plugin = createMockPlugin('ollama', { summary: 'gemini', imageGen: 'gemini' });
@@ -287,7 +353,7 @@ describe('renderGeneralSettings — per-feature provider dropdowns', () => {
 		await renderGeneralSettings({} as any, plugin, {} as any, createContext());
 
 		const chat = dropdownFor('settings.general.useCaseChatName');
-		expect(chat?.options).toEqual(['', 'ollama']);
+		expect(chat?.options).toEqual(['', 'ollama', 'openai']);
 		expect(chat?.disabled).toBe(false);
 	});
 
@@ -436,5 +502,124 @@ describe('renderGeneralSettings — local-only vs cloud-hosted model notice', ()
 		expect(rowNamed('settings.general.mixedProviderNoticeName')).toBeDefined();
 		expect(rowNamed(REMOTE)).toBeUndefined();
 		expect(rowNamed(LOCAL_ONLY)).toBeUndefined();
+	});
+});
+
+/**
+ * Credentials/endpoint block for OpenAI (#1237), mirroring the Gemini API key
+ * row and the Ollama base-URL/refresh rows.
+ */
+describe('renderGeneralSettings — OpenAI credentials/endpoint block', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		capturedDropdowns.length = 0;
+		capturedRows.length = 0;
+		capturedButtons.length = 0;
+		capturedSecrets.length = 0;
+	});
+
+	const rowNamed = (name: string) => capturedRows.find((r) => r.name === name);
+	const API_KEY = 'settings.general.openaiApiKeyName';
+	const BASE_URL = 'settings.general.openaiBaseUrlName';
+	const REFRESH = 'settings.general.refreshOpenaiModelListName';
+
+	it('renders the API key, base URL, and refresh rows when OpenAI is active', async () => {
+		const plugin = createMockPlugin('openai');
+		await renderGeneralSettings({} as any, plugin, {} as any, createContext());
+
+		expect(rowNamed(API_KEY)).toBeDefined();
+		expect(rowNamed(BASE_URL)).toBeDefined();
+		expect(rowNamed(REFRESH)).toBeDefined();
+	});
+
+	it('hides the OpenAI block when no use case is routed to OpenAI', async () => {
+		const plugin = createMockPlugin('gemini');
+		await renderGeneralSettings({} as any, plugin, {} as any, createContext());
+
+		expect(rowNamed(API_KEY)).toBeUndefined();
+		expect(rowNamed(BASE_URL)).toBeUndefined();
+		expect(rowNamed(REFRESH)).toBeUndefined();
+	});
+
+	// Credentials are rendered for every provider serving *some* use case, not
+	// just the primary — a Gemini-primary install that overrides summary to
+	// OpenAI still needs the OpenAI key field (mirrors #704's rule for Ollama).
+	it('shows the OpenAI block when only an override routes a use case to it', async () => {
+		const plugin = createMockPlugin('gemini', { summary: 'openai' });
+		await renderGeneralSettings({} as any, plugin, {} as any, createContext());
+
+		expect(rowNamed(API_KEY)).toBeDefined();
+	});
+
+	it('binds the API key row to openaiApiKeySecretName, not the Gemini field', async () => {
+		const plugin = createMockPlugin('openai');
+		plugin.settings.openaiApiKeySecretName = 'my-openai-secret';
+		await renderGeneralSettings({} as any, plugin, {} as any, createContext());
+
+		const secret = capturedSecrets.find((s) => s.value === 'my-openai-secret');
+		expect(secret).toBeDefined();
+
+		secret!.onChange!('rotated-secret');
+		expect(plugin.settings.openaiApiKeySecretName).toBe('rotated-secret');
+		expect(plugin.settings.apiKeySecretName).toBe('test-secret'); // Gemini field untouched.
+		expect(plugin.saveSettings).toHaveBeenCalled();
+	});
+
+	it('refresh button invalidates the OpenAI models service and refetches with forceRefresh', async () => {
+		const invalidate = vi.fn();
+		const getAvailableModels = vi.fn().mockResolvedValue([{ value: 'gpt-5.6', label: 'gpt-5.6' }]);
+		const plugin = createMockPlugin('openai');
+		plugin.getModelManager = vi.fn().mockReturnValue({
+			getOpenAIModelsService: () => ({ invalidate }),
+			getAvailableModels,
+		});
+
+		// The refresh handler calls back into rerender(), which re-empties and
+		// re-renders this section — give the container a working `empty()`.
+		await renderGeneralSettings({ empty: () => {} } as any, plugin, {} as any, createContext());
+
+		const button = capturedButtons.find((b) => b.name === REFRESH);
+		expect(button).toBeDefined();
+
+		await button!.onClick();
+
+		expect(invalidate).toHaveBeenCalledOnce();
+		expect(getAvailableModels).toHaveBeenCalledWith({ forceRefresh: true }, 'openai');
+	});
+});
+
+/**
+ * Regression coverage for the missing-key notice now checking each active
+ * provider's own secret field (#1237) instead of assuming Gemini's
+ * `apiKeySecretName` — a Gemini key being present must not mask a missing
+ * OpenAI key, and vice versa.
+ */
+describe('renderGeneralSettings — missing-key notice is per-provider', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		capturedDropdowns.length = 0;
+		capturedRows.length = 0;
+	});
+
+	const rowNamed = (name: string) => capturedRows.find((r) => r.name === name);
+	const MISSING_KEY = 'settings.general.missingKeyNoticeName';
+
+	it('warns when the OpenAI key is missing even though the unrelated Gemini field is set', async () => {
+		const plugin = createMockPlugin('openai');
+		plugin.settings.openaiApiKeySecretName = '';
+		plugin.settings.apiKeySecretName = 'unrelated-gemini-secret';
+		await renderGeneralSettings({} as any, plugin, {} as any, createContext());
+
+		const notice = rowNamed(MISSING_KEY);
+		expect(notice).toBeDefined();
+		expect(notice?.desc).toContain('settings.general.providerOptionOpenai');
+	});
+
+	it('does not warn once the OpenAI key is configured', async () => {
+		const plugin = createMockPlugin('openai');
+		plugin.settings.openaiApiKeySecretName = 'configured-secret';
+		await renderGeneralSettings({} as any, plugin, {} as any, createContext());
+
+		expect(rowNamed(MISSING_KEY)).toBeUndefined();
 	});
 });

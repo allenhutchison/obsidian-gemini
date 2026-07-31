@@ -104,6 +104,10 @@ export { OllamaClient } from './api/providers/ollama';
 
 export type { OllamaClientConfig } from './api/providers/ollama';
 
+export { OpenAIClient } from './api/providers/openai';
+
+export type { OpenAIClientConfig } from './api/providers/openai';
+
 // Main Plugin Class (for type reference)
 export { default as ObsidianGeminiPlugin } from './main';
 

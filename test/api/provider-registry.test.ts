@@ -49,9 +49,31 @@ describe('capability matrix', () => {
 		expect(caps.perUseCaseModels).toBe(false);
 	});
 
+	it('matches the documented OpenAI capabilities', () => {
+		const caps = PROVIDERS.openai.capabilities;
+		expect(caps.chat).toBe(true);
+		expect(caps.summary).toBe(true);
+		expect(caps.completions).toBe(true);
+		expect(caps.rewrite).toBe(true);
+		// Cloud-only features this phase doesn't implement for OpenAI.
+		expect(caps.webSearch).toBe(false);
+		expect(caps.rag).toBe(false);
+		expect(caps.imageGen).toBe(false);
+		expect(caps.requiresApiKey).toBe(true);
+		expect(caps.nativeTokenCount).toBe(false);
+		expect(caps.promptCache).toBe(false);
+		expect(caps.costMetrics).toBe(false);
+		expect(caps.interactionsApi).toBe(false);
+		expect(caps.vision).toBe('auto-detect');
+		expect(caps.customBaseUrl).toBe(true);
+		// Each use case keeps its own model — no single-resident-model constraint.
+		expect(caps.perUseCaseModels).toBe(true);
+	});
+
 	it('gives every provider a smaller default context limit than Gemini where local', () => {
 		expect(PROVIDERS.gemini.capabilities.defaultInputTokenLimit).toBe(1_000_000);
 		expect(PROVIDERS.ollama.capabilities.defaultInputTokenLimit).toBe(32_000);
+		expect(PROVIDERS.openai.capabilities.defaultInputTokenLimit).toBe(128_000);
 	});
 
 	it('declares every routable use case for every provider', () => {
@@ -73,13 +95,13 @@ describe('capability matrix', () => {
 
 describe('lookup helpers', () => {
 	it('providersSupporting lists candidates in display order', () => {
-		expect(providersSupporting('chat')).toEqual(['gemini', 'ollama']);
+		expect(providersSupporting('chat')).toEqual(['gemini', 'ollama', 'openai']);
 		expect(providersSupporting('rag')).toEqual(['gemini']);
 		expect(providersSupporting('imageGen')).toEqual(['gemini']);
 	});
 
 	it('providerSupports rejects unknown providers rather than throwing', () => {
-		expect(providerSupports('openai' as never, 'chat')).toBe(false);
+		expect(providerSupports('anthropic' as never, 'chat')).toBe(false);
 		expect(providerSupports(null, 'chat')).toBe(false);
 		expect(providerSupports(undefined, 'chat')).toBe(false);
 	});
@@ -87,7 +109,7 @@ describe('lookup helpers', () => {
 	// A settings file written by a newer version and then downgraded shouldn't
 	// crash the plugin on load.
 	it('getCapabilities falls back to Gemini for an unknown provider', () => {
-		expect(getCapabilities('openai' as never)).toBe(PROVIDERS.gemini.capabilities);
+		expect(getCapabilities('anthropic' as never)).toBe(PROVIDERS.gemini.capabilities);
 		expect(getCapabilities(undefined)).toBe(PROVIDERS.gemini.capabilities);
 	});
 

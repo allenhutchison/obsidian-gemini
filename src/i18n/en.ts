@@ -122,11 +122,11 @@ export const en = {
 	},
 	'settings.general.providerName': {
 		message: 'Provider',
-		context: 'Settings field name for choosing the AI model provider (Gemini or Ollama).',
+		context: 'Settings field name for choosing the AI model provider (Gemini, Ollama, or OpenAI).',
 	},
 	'settings.general.providerDesc': {
 		message:
-			'Choose the model provider. Gemini uses the Google Cloud API. Ollama runs models locally on your machine; install from https://ollama.com and pull a model with `ollama pull <name>`.',
+			'Choose the model provider. Gemini uses the Google Cloud API. Ollama runs models locally on your machine; install from https://ollama.com and pull a model with `ollama pull <name>`. OpenAI uses your OpenAI API key, or any OpenAI-compatible server (LM Studio, MLX, ...) via a custom base URL.',
 		context:
 			'Settings field description for the provider dropdown. Keep the URL and the backtick-quoted shell command untranslated.',
 	},
@@ -137,6 +137,11 @@ export const en = {
 	'settings.general.providerOptionOllama': {
 		message: 'Ollama (local)',
 		context: 'Dropdown option label for the Ollama local provider. "Ollama" is a product name.',
+	},
+	'settings.general.providerOptionOpenai': {
+		message: 'OpenAI (cloud)',
+		context:
+			'Dropdown option label for the OpenAI cloud provider (also used for OpenAI-compatible local servers via a custom base URL). "OpenAI" is a product name.',
 	},
 	'settings.general.ollamaBaseUrlName': {
 		message: 'Ollama base URL',
@@ -158,6 +163,49 @@ export const en = {
 	'settings.general.refreshModelListOllamaDesc': {
 		message: 'Re-query the Ollama daemon for available models.',
 		context: 'Settings field description for the refresh-models row when the Ollama provider is active.',
+	},
+	'settings.general.openaiApiKeyName': {
+		message: 'OpenAI API key',
+		context: 'Settings field name for the OpenAI API key input. Shown only when the OpenAI provider is active.',
+	},
+	'settings.general.openaiApiKeyDesc': {
+		message:
+			'Link your OpenAI API key. Click "Link..." and Obsidian will ask for a secret name (this is just a label — use any name like "openai-api") and a secret value (paste your API key here). Get a key at https://platform.openai.com/api-keys. Not needed for an OpenAI-compatible local server that doesn\'t require one.',
+		context:
+			'Settings field description for the OpenAI API key. "Link...", "Secret Name", and "Secret Value" refer to Obsidian secret-storage UI labels. Keep the URL untranslated.',
+	},
+	'settings.general.openaiBaseUrlName': {
+		message: 'OpenAI base URL',
+		context:
+			'Settings field name for the endpoint OpenAI Chat Completions requests are sent to. Shown only when the OpenAI provider is active.',
+	},
+	'settings.general.openaiBaseUrlDesc': {
+		message:
+			'Chat Completions endpoint. Default is the OpenAI API (api.openai.com). Point this at an OpenAI-compatible local server instead — such as LM Studio or MLX — to keep requests on your machine.',
+		context:
+			'Settings field description for the OpenAI base URL input, explaining it can target a local OpenAI-compatible server. Keep the URL and product names (LM Studio, MLX) untranslated.',
+	},
+	'settings.general.refreshOpenaiModelListName': {
+		message: 'Refresh OpenAI model list',
+		context:
+			'Settings field name for the button that re-fetches the available models from the configured OpenAI endpoint. "OpenAI" is a product name.',
+	},
+	'settings.general.refreshModelListOpenaiDesc': {
+		message: 'Re-query the configured endpoint for available models.',
+		context: 'Settings field description for the refresh-models row when the OpenAI provider is active.',
+	},
+	'settings.general.openaiModelsFoundSingular': {
+		message: 'Found {count} OpenAI model.',
+		context: 'Notice after refreshing the OpenAI model list when exactly one model was found. {count} is the number 1.',
+	},
+	'settings.general.openaiModelsFound': {
+		message: 'Found {count} OpenAI models.',
+		context: 'Notice after refreshing the OpenAI model list. {count} is the number of models found (0 or 2+).',
+	},
+	'settings.general.openaiChatModelDesc': {
+		message: 'Model used for agent chat sessions and selection rewriting.',
+		context:
+			'Settings field description for the OpenAI chat model dropdown. Unlike the generic chat model description, this omits web search tools since the OpenAI provider does not support them.',
 	},
 	'settings.general.refreshModelListGeminiDesc': {
 		message:
@@ -2958,6 +3006,11 @@ export const en = {
 		message:
 			'No Gemini API key configured. Open Settings → Gemini Scribe to add one. Get a free key at aistudio.google.com/apikey',
 		context: 'Error notice when the user has not configured a Gemini API key yet.',
+	},
+	'notice.main.noApiKeyOpenai': {
+		message:
+			'No OpenAI API key configured. Open Settings → Gemini Scribe to add one. Get a key at platform.openai.com/api-keys',
+		context: 'Error notice when the user has not configured an OpenAI API key yet (OpenAI is the primary provider).',
 	},
 	'notice.main.apiKeyRetrieveFailed': {
 		message:

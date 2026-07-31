@@ -33,21 +33,21 @@ UI sections without a dedicated topic in this reference: _Vault search index_ (c
 ### Provider
 
 - **Setting**: `provider`
-- **Type**: `'gemini' | 'ollama'`
+- **Type**: `'gemini' | 'ollama' | 'openai'`
 - **Default**: `'gemini'`
-- **Description**: The **default** model backend, used by every feature without an explicit override (see [Per-feature provider](#per-feature-provider)). `gemini` calls the Google Cloud API; `ollama` calls a local Ollama daemon.
-- **Notes**: Changing the provider re-initialises the plugin. Model selections persist across the change — the Gemini fields (`chatModelName`, `summaryModelName`, `completionsModelName`, `imageModelName`) and the Ollama fields (`ollamaModelName`, `ollamaSummaryModelName`, `ollamaCompletionsModelName`) are stored separately, so returning to a provider restores the model you had there; a value is only reset if it's actually stale for its own provider (e.g. a deprecated Gemini model id), never merely because you switched providers. Cloud-only features (Google Search, URL Context, Deep Research, image generation, RAG indexing) are off when `ollama` is the default — unless you route them to Gemini individually. See the [Ollama Setup Guide](/guide/ollama-setup) for details.
+- **Description**: The **default** model backend, used by every feature without an explicit override (see [Per-feature provider](#per-feature-provider)). `gemini` calls the Google Cloud API; `ollama` calls a local Ollama daemon; `openai` calls the OpenAI Chat Completions API (or a compatible server at a custom base URL).
+- **Notes**: Changing the provider re-initialises the plugin. Model selections persist across the change — the Gemini fields (`chatModelName`, `summaryModelName`, `completionsModelName`, `imageModelName`), the Ollama fields (`ollamaModelName`, `ollamaSummaryModelName`, `ollamaCompletionsModelName`), and the OpenAI fields (`openaiModelName`, `openaiSummaryModelName`, `openaiCompletionsModelName`) are each stored separately, so returning to a provider restores the model you had there; a value is only reset if it's actually stale for its own provider (e.g. a deprecated Gemini model id), never merely because you switched providers. Cloud-only features (Google Search, URL Context, Deep Research, image generation, RAG indexing) are off when `ollama` or `openai` is the default — unless you route them to Gemini individually. See the [Ollama Setup Guide](/guide/ollama-setup) and [OpenAI Setup Guide](/guide/openai-setup) for details.
 
 ### Per-feature provider
 
 - **Setting**: `providerOverrides`
-- **Type**: `Partial<Record<'chat' | 'summary' | 'completions' | 'rewrite' | 'webSearch' | 'rag' | 'imageGen', 'gemini' | 'ollama'>>`
+- **Type**: `Partial<Record<'chat' | 'summary' | 'completions' | 'rewrite' | 'webSearch' | 'rag' | 'imageGen', 'gemini' | 'ollama' | 'openai'>>`
 - **Default**: `{}` (every feature uses [`provider`](#provider))
-- **Description**: Routes individual features to a provider other than the default. Each settings row lists only the providers that support that feature, so e.g. Image generation offers Gemini only. This is what enables a mixed setup — chat on a local model, web search and image generation on Gemini.
+- **Description**: Routes individual features to a provider other than the default. Each settings row lists only the providers that support that feature, so e.g. Image generation offers Gemini only, while Chat/Summaries/Completions/Rewrite offer all three. This is what enables a mixed setup — chat on a local Ollama or OpenAI-compatible model, web search and image generation on Gemini.
 - **Notes**:
   - **A feature is never routed to the cloud on your behalf.** If the resolved provider can't serve a feature, that feature stays off; the plugin does not substitute a different one. Enabling a cloud feature is always an explicit choice.
-  - Choosing Gemini for a feature means that feature's requests — including note content — go to Google. The settings UI names the affected features whenever this is the case.
-  - The API key field is shown whenever _any_ feature is routed to Gemini, not just when Gemini is the default.
+  - Choosing Gemini for a feature means that feature's requests — including note content — go to Google. Choosing OpenAI means they go to your configured OpenAI base URL. The settings UI names the affected features whenever this is the case.
+  - The API key field is shown whenever _any_ feature is routed to Gemini, not just when Gemini is the default; the OpenAI API key field works the same way for OpenAI.
   - Changing any override re-initialises the plugin, since tool registration, RAG, and image generation all key off the resolved providers.
   - Unknown keys or provider ids in a hand-edited `data.json` are dropped on load.
 - **Full capability matrix**: [Provider Capabilities](/reference/provider-capabilities)
@@ -60,14 +60,31 @@ UI sections without a dedicated topic in this reference: _Vault search index_ (c
 - **Required when any feature uses `ollama`**: Yes
 - **Description**: HTTP endpoint of your Ollama daemon. Update if Ollama runs on a different host or port.
 
+### OpenAI base URL
+
+- **Setting**: `openaiBaseUrl`
+- **Type**: String
+- **Default**: `https://api.openai.com/v1`
+- **Required when any feature uses `openai`**: Yes (falls back to the default if cleared)
+- **Description**: Endpoint OpenAI Chat Completions requests are sent to. Point this at an OpenAI-compatible local server instead — LM Studio, MLX, Ollama's OpenAI-compatible endpoint, etc. — to keep requests on your machine. See the [OpenAI Setup Guide](/guide/openai-setup#using-an-openai-compatible-server).
+
 ### API Key
 
 - **Type**: String
-- **Required**: Yes, whenever any feature is routed to `gemini` — including a single [per-feature override](#per-feature-provider) under an `ollama` default. Not needed for an all-Ollama setup.
+- **Required**: Yes, whenever any feature is routed to `gemini` — including a single [per-feature override](#per-feature-provider) under an `ollama` or `openai` default. Not needed for an all-Ollama setup.
 - **Storage**: Stored securely using Obsidian's SecretStorage API (not saved in `data.json`)
 - **Description**: Your Google AI API key for accessing Gemini models
 - **How to obtain**: Visit [Google AI Studio](https://aistudio.google.com/apikey)
 - **Migration**: If upgrading from a previous version, your API key is automatically migrated from `data.json` to secure storage on first load
+
+### OpenAI API key
+
+- **Setting**: `openaiApiKeySecretName`
+- **Type**: String (SecretStorage key name; the key value itself is never in `data.json`)
+- **Default**: `""` (unset)
+- **Required**: Yes, whenever any feature is routed to `openai` — including a single per-feature override under a different default. For a local compatible server that doesn't validate keys, any placeholder value satisfies this requirement.
+- **Storage**: Stored securely using Obsidian's SecretStorage API, mirroring `apiKeySecretName` for Gemini
+- **How to obtain**: Visit [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
 
 ### Your name
 
@@ -113,12 +130,13 @@ UI sections without a dedicated topic in this reference: _Vault search index_ (c
 
 ## Model Configuration
 
-Each model picker is filtered to the models of the provider serving **its own** feature, so a chat-on-Ollama / summaries-on-Gemini setup offers the right models in each row. Both providers' lists are loaded whenever both are in use.
+Each model picker is filtered to the models of the provider serving **its own** feature, so a chat-on-Ollama / summaries-on-Gemini setup offers the right models in each row. Every provider in use has its list loaded independently.
 
 - **Gemini** — models are loaded from the bundled list and auto-refreshed from GitHub on startup (cached for 24h). Click **Refresh model list** in Settings → General — or run the **Gemini Scribe: Refresh model list** command — to fetch the latest list immediately (bypasses the cache). `imageModelName` is Gemini-only.
 - **Ollama** — dropdowns are populated from `GET <ollamaBaseUrl>/api/tags`, listing whatever you have pulled. Click **Refresh Ollama model list** if a freshly pulled model doesn't appear. Ollama keeps only one model resident at a time, so its summary and completions pickers default to **Same as chat model** (`''`) — picking a distinct model there is supported but costs a model reload on every switch.
+- **OpenAI** — dropdowns are populated from `GET <openaiBaseUrl>/models`, enriched with curated metadata (context window, vision support) for current `api.openai.com` models; unrecognized ids (typically from a compatible server) get conservative defaults. Click **Refresh OpenAI model list** if a model doesn't appear. Unlike Ollama, OpenAI has no single-resident-model constraint, so chat, summary, and completions each default to their own model rather than inheriting the chat model.
 
-Because each provider uses its own settings fields, re-routing a feature between providers preserves both choices — returning to Gemini restores the exact model you had.
+Because each provider uses its own settings fields, re-routing a feature between providers preserves every provider's choice — returning to a provider restores the exact model you had.
 
 ### Chat model
 
@@ -178,6 +196,14 @@ Because each provider uses its own settings fields, re-routing a feature between
 - **Default**: `''` — **Same as chat model**
 - **Only shown when**: That feature is served by `ollama`
 - **Description**: Optional per-feature Ollama models. Ollama keeps one model resident at a time, so the default inherits `ollamaModelName` and avoids a reload on every call; set one only when the swap is worth it (a small, fast completions model is the usual case). A value naming a model the daemon no longer serves is reset to `''` rather than to another model, so the feature falls back to the chat model instead of silently switching.
+
+### OpenAI chat / summary / completions models
+
+- **Settings**: `openaiModelName`, `openaiSummaryModelName`, `openaiCompletionsModelName`
+- **Type**: String
+- **Default**: `'gpt-5.6'`, `'gpt-5.6-terra'`, `'gpt-5.6-luna'` respectively
+- **Only shown when**: That feature is served by `openai`
+- **Description**: The OpenAI model used for each use case. Unlike Ollama, OpenAI has no single-resident-model constraint, so each use case keeps its own model rather than defaulting to "inherit the chat model." Populated from `GET <openaiBaseUrl>/models`.
 
 ## Custom Prompts
 
@@ -331,7 +357,7 @@ Advanced settings for developers and power users. Access by clicking "Show advan
 - **Setting**: `useInteractionsApi`
 - **Type**: Boolean
 - **Default**: `true`
-- **Only applies when**: Gemini serves at least one use case (the toggle is hidden in an all-Ollama setup, shown whenever chat, summary, or any other feature is routed to Gemini)
+- **Only applies when**: Gemini serves at least one use case (the toggle is hidden when no feature is routed to Gemini — e.g. an all-Ollama or all-OpenAI setup — and shown whenever chat, summary, or any other feature is routed to Gemini)
 - **Description**: Routes Gemini requests through Google's GA [Interactions API](https://ai.google.dev/gemini-api/docs/interactions) (`interactions.create`) instead of the legacy `generateContent` API. This is now the default transport; existing installs are migrated to it automatically (a one-time flip you can reverse by turning the toggle off).
 - **Privacy**: Runs statelessly (`store: false`) — conversation history is replayed with each request, and the plugin does not persist Interactions state on Google's side between turns. (Requests are still sent to Google to generate each response, subject to Google's standard API data-handling terms.)
 - **Status**: Default-on. Responses stream incrementally (text, reasoning, and tool calls); turn it off to fall back to the legacy `generateContent` path if you hit issues.
@@ -343,7 +369,7 @@ Advanced settings for developers and power users. Access by clicking "Show advan
 - **Setting**: `customBaseUrl`
 - **Type**: String
 - **Default**: `""` (empty)
-- **Only applies when**: Gemini serves at least one use case (Ollama has its own `ollamaBaseUrl` setting and ignores this value; the field is hidden in an all-Ollama setup)
+- **Only applies when**: Gemini serves at least one use case (Ollama has its own `ollamaBaseUrl` setting and OpenAI has its own `openaiBaseUrl` setting; both ignore this value, and the field is hidden when no feature is routed to Gemini)
 - **Description**: Overrides the default Google API base URL for all SDK calls. Use this to route requests through a corporate proxy, local gateway, or regional mirror.
 - **Example**: `https://my-proxy.example.com`
 - **Scope**: Applies to every Google API call site in the plugin (chat, streaming, image generation, web fetch, Google Search/Maps grounding, RAG indexing, deep research, context management).
@@ -393,7 +419,7 @@ Advanced settings for developers and power users. Access by clicking "Show advan
 
 Model discovery is automatic — no user-configurable settings are required. On startup, the plugin fetches the latest available Gemini models from GitHub and falls back to the bundled list if the fetch fails. The remote list is cached in `data.json` under `remoteModelCache` for 24 hours; subsequent reloads within that window are no-ops.
 
-To pick up a newly-published model without waiting for the cache to expire, click **Refresh model list** in Settings → General, or run the **Gemini Scribe: Refresh model list** command (`gemini-scribe:refresh-model-list`). Both honor the same skip conditions as the auto-fetch — they no-op when no feature is routed to Gemini or the host reports offline, and surface the outcome via a `Notice`. When any feature uses Ollama, a separate **Refresh Ollama model list** row re-queries the daemon for newly pulled models; in a mixed setup both rows are shown.
+To pick up a newly-published model without waiting for the cache to expire, click **Refresh model list** in Settings → General, or run the **Gemini Scribe: Refresh model list** command (`gemini-scribe:refresh-model-list`). Both honor the same skip conditions as the auto-fetch — they no-op when no feature is routed to Gemini or the host reports offline, and surface the outcome via a `Notice`. When any feature uses Ollama, a separate **Refresh Ollama model list** row re-queries the daemon for newly pulled models; when any feature uses OpenAI, a **Refresh OpenAI model list** row re-queries `GET <openaiBaseUrl>/models`. In a mixed setup, only the rows for providers actually in use are shown.
 
 When Google retires a model (the API starts returning 404 "no longer available" — e.g. `gemini-3-pro-preview` in July 2026), it is removed from the catalog and any settings still pointing at it are migrated automatically on the next reload: to the retired model's designated successor when one exists (`gemini-3-pro-preview` → `gemini-3.1-pro-preview`), otherwise to the default model for that role.
 
@@ -552,7 +578,8 @@ Available permission bypasses:
 1. Check API key is valid
 2. For Gemini: click **Refresh** in the **Refresh model list** row (Settings → General), or run the **Gemini Scribe: Refresh model list** command. The auto-fetch runs at most once every 24 hours, so a freshly published model won't appear until the cache expires unless you force a refresh.
 3. For Ollama: go to Settings → General and click **Refresh** in the **Refresh Ollama model list** row after pulling new models
-4. Check console for errors (with Debug mode enabled)
+4. For OpenAI: go to Settings → General and click **Refresh** in the **Refresh OpenAI model list** row — useful after changing the base URL or loading a different model in a compatible server
+5. Check console for errors (with Debug mode enabled)
 
 ### Tool execution issues
 

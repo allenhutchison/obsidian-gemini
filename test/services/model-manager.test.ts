@@ -1,5 +1,9 @@
+import type { Mock } from 'vitest';
+import { requestUrl } from 'obsidian';
 import { ModelManager } from '../../src/services/model-manager';
 import { GeminiModel, setGeminiModels, GEMINI_MODELS } from '../../src/models';
+
+const mockedRequestUrl = requestUrl as unknown as Mock;
 
 const mockPlugin = {
 	settings: {
@@ -9,6 +13,7 @@ const mockPlugin = {
 		imageModelName: 'gemini-2.5-flash-image',
 	},
 	apiKey: 'test-api-key',
+	openaiApiKey: 'sk-test-key',
 	loadData: vi.fn().mockResolvedValue({}),
 	saveData: vi.fn(),
 	logger: {
@@ -278,6 +283,73 @@ describe('ModelManager', () => {
 
 		it('getParameterRanges() returns normalized numeric ranges', async () => {
 			const ranges = await ollamaManager.getParameterRanges();
+
+			expect(ranges.temperature.min).toBe(0);
+			expect(ranges.topP.min).toBe(0);
+			expect(ranges.temperature.step).toBeGreaterThan(0);
+			expect(ranges.topP.step).toBeGreaterThan(0);
+		});
+	});
+
+	describe('OpenAI provider', () => {
+		let openaiPlugin: any;
+		let openaiManager: ModelManager;
+
+		beforeEach(() => {
+			openaiPlugin = {
+				...mockPlugin,
+				settings: {
+					...mockPlugin.settings,
+					provider: 'openai',
+					openaiBaseUrl: 'https://api.openai.com/v1',
+				},
+			};
+			openaiManager = new ModelManager(openaiPlugin);
+			mockedRequestUrl.mockReset();
+		});
+
+		afterEach(() => {
+			setGeminiModels(originalModels);
+		});
+
+		it('initialize() merges discovered OpenAI models into the global model list', async () => {
+			mockedRequestUrl.mockResolvedValue({
+				status: 200,
+				json: { data: [{ id: 'gpt-5.6' }, { id: 'gpt-5.6-luna' }] },
+			});
+
+			await openaiManager.initialize();
+
+			const active = GEMINI_MODELS.filter((m) => m.provider === 'openai').map((m) => m.value);
+			expect(active).toEqual(expect.arrayContaining(['gpt-5.6', 'gpt-5.6-luna']));
+		});
+
+		it('initialize() still completes when the OpenAI endpoint is unreachable', async () => {
+			mockedRequestUrl.mockRejectedValue(new Error('ECONNREFUSED'));
+
+			await expect(openaiManager.initialize()).resolves.not.toThrow();
+			expect(GEMINI_MODELS.filter((m) => m.provider === 'openai')).toHaveLength(0);
+		});
+
+		it('getAvailableModels() does not return Gemini bundled models', async () => {
+			const models = await openaiManager.getAvailableModels();
+
+			// OpenAIModelsService.getModels() may return empty if the endpoint is
+			// unreachable, but the important thing is it doesn't return Gemini bundled models.
+			expect(Array.isArray(models)).toBe(true);
+			const bundledValues = new Set(originalModels.map((m) => m.value));
+			expect(models.some((m) => bundledValues.has(m.value))).toBe(false);
+		});
+
+		it('getOpenAIModelsService() returns the internal service instance', () => {
+			const service = openaiManager.getOpenAIModelsService();
+			expect(service).toBeDefined();
+			expect(typeof service.getModels).toBe('function');
+			expect(typeof service.invalidate).toBe('function');
+		});
+
+		it('getParameterRanges() returns normalized numeric ranges', async () => {
+			const ranges = await openaiManager.getParameterRanges();
 
 			expect(ranges.temperature.min).toBe(0);
 			expect(ranges.topP.min).toBe(0);
