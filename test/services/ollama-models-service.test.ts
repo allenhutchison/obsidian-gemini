@@ -408,6 +408,73 @@ describe('OllamaModelsService', () => {
 
 				expect(psCalls()).toBe(2);
 			});
+
+			// The result cache only helps after a probe resolves. Callers can overlap
+			// — the UI's token indicator refreshing while a turn's prepareHistory
+			// runs — so concurrent misses must share one request, not fan out.
+			it('coalesces concurrent lookups into a single probe', async () => {
+				let release: (v: any) => void = () => {};
+				const gate = new Promise((r) => (release = r));
+				mockedRequestUrl.mockImplementation(async (opts: { url: string }) => {
+					if (opts.url.endsWith('/api/ps')) {
+						await gate;
+						return { status: 200, json: { models: [{ name: 'gemma4:12b-mlx', context_length: 262_144 }] } };
+					}
+					return { status: 200, json: { models: [] } };
+				});
+				const svc = new OllamaModelsService(buildPlugin());
+
+				const all = Promise.all([
+					svc.getRuntimeContextLength('gemma4:12b-mlx'),
+					svc.getRuntimeContextLength('gemma4:12b-mlx'),
+					svc.getRuntimeContextLength('gemma4:12b-mlx'),
+				]);
+				release(null);
+
+				expect(await all).toEqual([262_144, 262_144, 262_144]);
+				expect(psCalls()).toBe(1);
+			});
+
+			it('starts a fresh probe once an in-flight one has settled', async () => {
+				mockPs([{ name: 'gemma4:12b-mlx', context_length: 262_144 }]);
+				const svc = new OllamaModelsService(buildPlugin());
+
+				await Promise.all([
+					svc.getRuntimeContextLength('gemma4:12b-mlx'),
+					svc.getRuntimeContextLength('gemma4:12b-mlx'),
+				]);
+				svc.invalidate();
+				await svc.getRuntimeContextLength('gemma4:12b-mlx');
+
+				// One coalesced probe, then one after the cache was dropped — the
+				// in-flight entry must not linger past settle.
+				expect(psCalls()).toBe(2);
+			});
+
+			// invalidate() has to be authoritative: a probe already in flight when it
+			// runs must not land afterwards and re-seed the cache it just cleared.
+			it('does not let a probe started before invalidate() re-seed the cache', async () => {
+				let release: (v: any) => void = () => {};
+				const gate = new Promise((r) => (release = r));
+				mockedRequestUrl.mockImplementation(async (opts: { url: string }) => {
+					if (opts.url.endsWith('/api/ps')) {
+						await gate;
+						return { status: 200, json: { models: [{ name: 'gemma4:12b-mlx', context_length: 262_144 }] } };
+					}
+					return { status: 200, json: { models: [] } };
+				});
+				const svc = new OllamaModelsService(buildPlugin());
+
+				const stale = svc.getRuntimeContextLength('gemma4:12b-mlx');
+				svc.invalidate();
+				release(null);
+				await stale;
+
+				// The stale result was still returned to its own caller, but the next
+				// lookup must go back to the daemon rather than read a re-seeded entry.
+				await svc.getRuntimeContextLength('gemma4:12b-mlx');
+				expect(psCalls()).toBe(2);
+			});
 		});
 	});
 });

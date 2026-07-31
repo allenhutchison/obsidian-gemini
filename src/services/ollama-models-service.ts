@@ -115,6 +115,13 @@ export class OllamaModelsService {
 	 * keeps one model resident, so a swap reloads it under a different window.
 	 */
 	private psCache = new Map<string, { contextLength: number | null; at: number }>();
+	/**
+	 * In-flight /api/ps probes, so concurrent misses for the same key share one
+	 * request instead of each hitting the daemon. Entries are removed on settle.
+	 */
+	private psInFlight = new Map<string, Promise<number | null>>();
+	/** Bumped by invalidate() so a probe started beforehand can't re-seed the cache. */
+	private cacheGeneration = 0;
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
@@ -179,6 +186,7 @@ export class OllamaModelsService {
 		this.lastBaseUrl = null;
 		this.showCache.clear();
 		this.psCache.clear();
+		this.cacheGeneration++;
 	}
 
 	/**
@@ -274,13 +282,32 @@ export class OllamaModelsService {
 		if (cached && Date.now() - cached.at < PS_CACHE_TTL_MS) {
 			return cached.contextLength;
 		}
-		// Every outcome is cached, including "not loaded" and probe failure. A
-		// failing daemon is the case that most needs it — otherwise each turn pays
-		// the connection timeout three times over — and the short TTL keeps
-		// recovery within a few seconds.
-		const contextLength = await this.fetchRuntimeContextLength(modelName, baseUrl);
-		this.psCache.set(cacheKey, { contextLength, at: Date.now() });
-		return contextLength;
+		// The result cache only helps once a probe has resolved, so callers that
+		// overlap (the UI's token indicator refreshing while a turn's
+		// prepareHistory runs) would each miss and hit the daemon. Share the
+		// in-flight probe instead.
+		const inFlight = this.psInFlight.get(cacheKey);
+		if (inFlight) return inFlight;
+
+		// Writes are guarded by the generation captured at probe start: an
+		// invalidate() mid-probe must not be undone by the older result landing
+		// afterwards and re-seeding the cache it just cleared.
+		const generation = this.cacheGeneration;
+		const probe = this.fetchRuntimeContextLength(modelName, baseUrl)
+			.then((contextLength) => {
+				// Every outcome is cached, including "not loaded" and probe failure. A
+				// failing daemon is the case that most needs it — otherwise each turn
+				// pays the connection timeout three times over — and the short TTL
+				// keeps recovery within a few seconds.
+				if (generation === this.cacheGeneration) {
+					this.psCache.set(cacheKey, { contextLength, at: Date.now() });
+				}
+				return contextLength;
+			})
+			.finally(() => this.psInFlight.delete(cacheKey));
+
+		this.psInFlight.set(cacheKey, probe);
+		return probe;
 	}
 
 	private async fetchRuntimeContextLength(modelName: string, baseUrl: string): Promise<number | null> {
