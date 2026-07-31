@@ -976,8 +976,8 @@ describe('ContextManager', () => {
 		describe('Ollama calibration seeding', () => {
 			// prepareHistory() is the entry point called before every outgoing
 			// request. Its normal (no-compaction-needed) paths don't call
-			// countTokens(), so they must still seed the pending Ollama estimate
-			// themselves or calibrateOllamaRatio() never has anything to
+			// countTokens(), so they must still seed the pending estimate
+			// themselves or calibrateEstimatedRatio() never has anything to
 			// calibrate against on ordinary turns (see #707 review feedback).
 			function buildOllamaContext() {
 				const ollamaPlugin = {
