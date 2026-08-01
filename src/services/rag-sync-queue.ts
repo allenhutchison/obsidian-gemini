@@ -221,34 +221,17 @@ export class RagSyncQueue {
 				currentChangeIndex = i;
 				const change = changes[i];
 				switch (change.type) {
-					case 'create': {
-						const file = this.plugin.app.vault.getAbstractFileByPath(change.path);
-						if (file instanceof TFile && vaultAdapter.shouldIndex(file.path)) {
-							const content = await vaultAdapter.readFileForUpload(file.path, file.path);
-							if (content) {
-								await fileUploader.uploadContent(content, storeName);
-								// Update cache for new file
-								if (this.ragCache.cache) {
-									this.ragCache.cache.files[file.path] = {
-										resourceName: storeName,
-										contentHash: content.hash,
-										lastIndexed: Date.now(),
-									};
-								}
-								// Incremental cache save for durability
-								changesSinceLastSave = await this.ragCache.incrementAndMaybeSaveCache(changesSinceLastSave);
-							}
-						}
-						break;
-					}
+					// Upload is idempotent, so a create and a modify are the same work:
+					// re-upload the current content and stamp the cache entry with the
+					// new hash. Neither touches indexedCount — a modified file is
+					// already counted, and a created one is counted by the caller.
+					case 'create':
 					case 'modify': {
-						// Update existing file - don't increment indexedCount since file is already indexed
 						const file = this.plugin.app.vault.getAbstractFileByPath(change.path);
 						if (file instanceof TFile && vaultAdapter.shouldIndex(file.path)) {
 							const content = await vaultAdapter.readFileForUpload(file.path, file.path);
 							if (content) {
 								await fileUploader.uploadContent(content, storeName);
-								// Update cache with new hash
 								if (this.ragCache.cache) {
 									this.ragCache.cache.files[file.path] = {
 										resourceName: storeName,
