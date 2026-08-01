@@ -315,13 +315,13 @@ describe('ModelManager', () => {
 		it('initialize() merges discovered OpenAI models into the global model list', async () => {
 			mockedRequestUrl.mockResolvedValue({
 				status: 200,
-				json: { data: [{ id: 'gpt-5.6' }, { id: 'gpt-5.6-luna' }] },
+				json: { data: [{ id: 'gpt-5.6-sol' }, { id: 'gpt-5.6-luna' }] },
 			});
 
 			await openaiManager.initialize();
 
 			const active = GEMINI_MODELS.filter((m) => m.provider === 'openai').map((m) => m.value);
-			expect(active).toEqual(expect.arrayContaining(['gpt-5.6', 'gpt-5.6-luna']));
+			expect(active).toEqual(expect.arrayContaining(['gpt-5.6-sol', 'gpt-5.6-luna']));
 		});
 
 		it('initialize() still completes when the OpenAI endpoint is unreachable', async () => {

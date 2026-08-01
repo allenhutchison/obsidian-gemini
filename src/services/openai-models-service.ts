@@ -10,48 +10,46 @@ interface OpenAIModelMetadata {
 }
 
 /**
+ * `/v1/models` reports no capability metadata at all — only id, created, and
+ * owned_by — so context windows have to be curated here. All three GPT-5.6
+ * models share one input limit, measured against the live API by submitting an
+ * over-limit request and reading the ceiling back out of the
+ * `context_length_exceeded` error ("Input tokens exceed the configured limit of
+ * 922000 tokens"). Re-measure that way rather than trusting published figures;
+ * the marketing "1M" does not match what the endpoint enforces.
+ */
+const GPT56_INPUT_TOKEN_LIMIT = 922_000;
+
+/**
  * Curated metadata for known OpenAI-hosted models, keyed by the model id
  * returned from `/v1/models`. Unknown ids — OpenAI-compatible local servers
  * (LM Studio, MLX, ...) whose catalog we have no curated data for — fall back
  * to `UNKNOWN_MODEL_DEFAULTS` in `toGeminiModel`.
  */
 const KNOWN_OPENAI_MODELS: Record<string, OpenAIModelMetadata> = {
-	// Current flagship family. 'gpt-5.6' is an alias of 'gpt-5.6-sol'.
-	'gpt-5.6': { contextWindow: 1_000_000, supportsVision: true, defaultForRoles: ['chat'] },
-	'gpt-5.6-sol': { contextWindow: 1_000_000, supportsVision: true },
-	'gpt-5.6-terra': { contextWindow: 400_000, supportsVision: true, defaultForRoles: ['summary'] },
-	'gpt-5.6-luna': { contextWindow: 128_000, supportsVision: true, defaultForRoles: ['completions'] },
-	// Still-available older families.
-	'gpt-5.1': { contextWindow: 400_000, supportsVision: true },
-	'gpt-5': { contextWindow: 400_000, supportsVision: true },
-	'gpt-4.1': { contextWindow: 400_000, supportsVision: true },
-	'gpt-4o': { contextWindow: 128_000, supportsVision: true },
+	// Current flagship family — the supported set on api.openai.com. Older
+	// families (gpt-5.1, gpt-4o, ...) are still reachable via a custom base URL
+	// but aren't offered here; see SUPPORTED_OPENAI_HOSTED_MODELS.
+	'gpt-5.6-sol': { contextWindow: GPT56_INPUT_TOKEN_LIMIT, supportsVision: true, defaultForRoles: ['chat'] },
+	'gpt-5.6-terra': { contextWindow: GPT56_INPUT_TOKEN_LIMIT, supportsVision: true, defaultForRoles: ['summary'] },
+	'gpt-5.6-luna': { contextWindow: GPT56_INPUT_TOKEN_LIMIT, supportsVision: true, defaultForRoles: ['completions'] },
 };
+
+/**
+ * The models offered when the base URL is api.openai.com. The endpoint
+ * advertises ~90 ids, most of which this Chat Completions client can't drive
+ * usefully (Responses-only, audio, embeddings, legacy families); rather than
+ * filter that catalog by heuristic, we allowlist the models actually validated
+ * against this client. A custom base URL is unaffected — a compatible server's
+ * catalog is whatever it advertises.
+ */
+const SUPPORTED_OPENAI_HOSTED_MODELS = new Set(Object.keys(KNOWN_OPENAI_MODELS));
 
 /** Applied to a model id absent from {@link KNOWN_OPENAI_MODELS}. */
 const UNKNOWN_MODEL_DEFAULTS: OpenAIModelMetadata = {
 	contextWindow: 128_000,
 	supportsVision: false,
 };
-
-/**
- * Model ids on api.openai.com that aren't chat-completion models (embeddings,
- * audio, image, moderation, legacy completion-only models, ...). Only applied
- * when the base URL is api.openai.com — a compatible local server's catalog
- * is whatever it advertises, and we don't second-guess it.
- */
-const NON_CHAT_ID_PATTERNS: RegExp[] = [
-	/embedding/i,
-	/whisper/i,
-	/\btts\b/i,
-	/dall-?e/i,
-	/moderation/i,
-	/davinci/i,
-	/babbage/i,
-	/realtime/i,
-	/\baudio\b/i,
-	/\bimage\b/i,
-];
 
 interface OpenAIModelListEntry {
 	id: string;
@@ -124,9 +122,9 @@ export class OpenAIModelsService {
 				throw new Error('Invalid /models response shape');
 			}
 
-			const filterNonChatIds = isOpenAIHostedEndpoint(baseUrl);
+			const restrictToSupported = isOpenAIHostedEndpoint(baseUrl);
 			this.cachedModels = data.data
-				.filter((m) => !filterNonChatIds || !NON_CHAT_ID_PATTERNS.some((re) => re.test(m.id)))
+				.filter((m) => !restrictToSupported || SUPPORTED_OPENAI_HOSTED_MODELS.has(m.id))
 				.map((m) => this.toGeminiModel(m.id));
 			this.lastBaseUrl = baseUrl;
 			this.lastApiKey = apiKey;

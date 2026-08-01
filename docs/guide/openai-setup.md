@@ -26,12 +26,20 @@ Example with [LM Studio](https://lmstudio.ai/):
 
 The same pattern works for MLX-served endpoints, Ollama's OpenAI-compatible endpoint (`http://localhost:11434/v1`), or any other server that implements the `/v1/chat/completions` and `/v1/models` endpoints.
 
-Requests to a non-`api.openai.com` base URL are not filtered against OpenAI's own non-chat model ids (embeddings, TTS, etc.) — a compatible server's `/models` catalog is taken at face value.
+A compatible server's `/models` catalog is taken at face value — the supported-model allowlist described below applies only to `api.openai.com`.
 
 ## Models
 
-- **`api.openai.com`** — the model list is enriched with curated metadata (context window, vision support) for current OpenAI models. `gpt-5.6` (chat), `gpt-5.6-terra` (summary), and `gpt-5.6-luna` (completions) are the defaults; older `gpt-5.x` and `gpt-4.x` models remain selectable.
+- **`api.openai.com`** — the endpoint advertises around ninety model ids, most of which this integration can't drive usefully (Responses-API-only, audio, embeddings, older families). The dropdowns are therefore limited to the three GPT-5.6 models that have been validated against the plugin: **`gpt-5.6-sol`** (chat default), **`gpt-5.6-terra`** (summary default), and **`gpt-5.6-luna`** (completions default). All three accept **922,000 input tokens**, which is what the token counter above the message box reflects.
+- **Where those numbers come from** — OpenAI's `/v1/models` returns no capability metadata (just an id and a creation date), so context windows are curated in the plugin rather than discovered. The 922,000 figure was measured directly against the live API, not taken from documentation.
 - **Compatible servers** — an unrecognized model id gets a conservative default: 128k context window, no vision, tool calling assumed. This covers most locally-served models correctly for tool calling, but vision won't be enabled automatically — there's no metadata to detect it from.
+
+### Reasoning and tool calling on GPT-5.6
+
+The GPT-5.6 models are reasoning models, which constrains what Chat Completions accepts:
+
+- **Sampling settings are ignored.** These models only accept the default temperature and top-p, so the plugin omits both rather than sending your configured values. Adjusting the temperature slider has no effect on a GPT-5.6 model.
+- **Tool calling runs with reasoning disabled.** `/v1/chat/completions` rejects function tools for these models unless reasoning effort is set to `none`, so any request carrying tools (all agent-mode turns) pins it there. Agent mode works normally; you just won't get reasoning output alongside tool use.
 
 ## What works
 
@@ -62,6 +70,7 @@ Nothing moves between providers unless you move it — a feature your default pr
 ## Tips
 
 - **Vision model detection** — Known OpenAI model ids report vision support from a curated metadata table; models from a compatible server default to no vision since the plugin has no way to know the server's capabilities. If your server serves a vision-capable model and attachments aren't working, this is why.
-- **Tool calling** — All current OpenAI models support function calling. Compatible-server models default to "tool calling assumed" — if a model genuinely doesn't support it, tool calls will fail rather than being pre-filtered.
+- **Tool calling** — All current OpenAI models support function calling; on GPT-5.6 models it runs with reasoning disabled (see above). Compatible-server models default to "tool calling assumed" — if a model genuinely doesn't support it, tool calls will fail rather than being pre-filtered.
+- **A model you want isn't listed** — On `api.openai.com` only the three validated GPT-5.6 models are offered. To use another OpenAI model, point the base URL at a proxy that serves it; catalogs from non-`api.openai.com` URLs aren't filtered.
 - **Placeholder API keys** — Required even when your server doesn't check them; the provider won't initialize with an empty key field.
 - **Refreshing the model list** — Click **Refresh OpenAI model list** in Settings → General after changing the base URL, loading a different model in a local server, or whenever a dropdown looks stale.

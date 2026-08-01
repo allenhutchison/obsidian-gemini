@@ -153,6 +153,21 @@ export function remoteHostForModel(modelValue: string | null | undefined): strin
 }
 
 /**
+ * A model's own input token limit, or `null` when the list carries none.
+ *
+ * Providers whose windows differ per model (OpenAI: 922k on GPT-5.6 versus the
+ * 128k floor a compatible server gets) need this rather than the provider-wide
+ * `defaultInputTokenLimit`, which is only a fallback for models the list can't
+ * identify. Understating the window is not merely cosmetic — it makes the
+ * context manager compact history long before the real ceiling.
+ */
+export function contextWindowForModel(modelValue: string | null | undefined): number | null {
+	if (!modelValue) return null;
+	const windowIn = (list: GeminiModel[]) => list.find((m) => m.value === modelValue)?.contextWindow;
+	return windowIn(GEMINI_MODELS) ?? windowIn(DEFAULT_GEMINI_MODELS) ?? null;
+}
+
+/**
  * Whether a model is served exclusively by the Interactions API (see
  * `GeminiModel.interactionsOnly`). Checks the live model list first (which may
  * be a newer remote list), then the bundled defaults — a stale remote cache

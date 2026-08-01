@@ -22,18 +22,18 @@ describe('OpenAIModelsService', () => {
 	});
 
 	it('parses /models response into GeminiModel entries with curated metadata', async () => {
-		mockModelList(['gpt-5.6', 'gpt-5.6-terra', 'gpt-5.6-luna']);
+		mockModelList(['gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna']);
 
 		const svc = new OpenAIModelsService(buildPlugin());
 		const models = await svc.getModels();
 
 		expect(models).toHaveLength(3);
 		expect(models[0]).toMatchObject({
-			value: 'gpt-5.6',
+			value: 'gpt-5.6-sol',
 			provider: 'openai',
 			supportsTools: true,
 			supportsVision: true,
-			contextWindow: 1_000_000,
+			contextWindow: 922_000,
 			defaultForRoles: ['chat'],
 		});
 		expect(models[1]).toMatchObject({ value: 'gpt-5.6-terra', defaultForRoles: ['summary'] });
@@ -42,8 +42,8 @@ describe('OpenAIModelsService', () => {
 
 	it('applies conservative defaults to a model id with no curated metadata', async () => {
 		mockModelList(['some-custom-local-model']);
-
-		const svc = new OpenAIModelsService(buildPlugin());
+		// Unknown ids only survive the filter on a non-hosted (compatible) endpoint.
+		const svc = new OpenAIModelsService(buildPlugin({ settings: { openaiBaseUrl: 'http://localhost:1234/v1' } }));
 		const models = await svc.getModels();
 
 		expect(models).toEqual([
@@ -58,7 +58,7 @@ describe('OpenAIModelsService', () => {
 	});
 
 	it('sends the resolved API key as a Bearer token', async () => {
-		mockModelList(['gpt-5.6']);
+		mockModelList(['gpt-5.6-sol']);
 		const plugin = buildPlugin({ openaiApiKey: 'sk-secret' });
 
 		await new OpenAIModelsService(plugin).getModels();
@@ -68,14 +68,23 @@ describe('OpenAIModelsService', () => {
 		);
 	});
 
-	describe('non-chat model filtering', () => {
-		it('filters out non-chat ids on api.openai.com', async () => {
-			mockModelList(['gpt-5.6', 'text-embedding-3-large', 'whisper-1', 'tts-1', 'dall-e-3', 'text-moderation-latest']);
+	describe('model filtering', () => {
+		it('keeps only the supported GPT-5.6 models on api.openai.com', async () => {
+			mockModelList([
+				'gpt-5.6-sol',
+				'gpt-5.6-terra',
+				'gpt-5.6-luna',
+				'gpt-5.1',
+				'gpt-4o',
+				'text-embedding-3-large',
+				'whisper-1',
+				'dall-e-3',
+			]);
 
 			const svc = new OpenAIModelsService(buildPlugin());
 			const models = await svc.getModels();
 
-			expect(models.map((m) => m.value)).toEqual(['gpt-5.6']);
+			expect(models.map((m) => m.value)).toEqual(['gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna']);
 		});
 
 		it('does not filter model ids on a custom (non-api.openai.com) base URL', async () => {
@@ -97,7 +106,7 @@ describe('OpenAIModelsService', () => {
 	});
 
 	it('caches results and only re-fetches after invalidate()', async () => {
-		mockModelList(['gpt-5.6']);
+		mockModelList(['gpt-5.6-sol']);
 
 		const svc = new OpenAIModelsService(buildPlugin());
 		await svc.getModels();
@@ -136,7 +145,7 @@ describe('OpenAIModelsService', () => {
 	});
 
 	it('does not return stale models from a previous base URL after a failed refresh', async () => {
-		const plugin = buildPlugin();
+		const plugin = buildPlugin({ settings: { openaiBaseUrl: 'http://first-server:1234/v1' } });
 
 		mockModelList(['old-only-model', 'shared-model']);
 		const svc = new OpenAIModelsService(plugin);
