@@ -976,8 +976,8 @@ describe('ContextManager', () => {
 		describe('Ollama calibration seeding', () => {
 			// prepareHistory() is the entry point called before every outgoing
 			// request. Its normal (no-compaction-needed) paths don't call
-			// countTokens(), so they must still seed the pending Ollama estimate
-			// themselves or calibrateOllamaRatio() never has anything to
+			// countTokens(), so they must still seed the pending estimate
+			// themselves or calibrateEstimatedRatio() never has anything to
 			// calibrate against on ordinary turns (see #707 review feedback).
 			function buildOllamaContext() {
 				const ollamaPlugin = {
@@ -1032,6 +1032,56 @@ describe('ContextManager', () => {
 				ollamaCtx.updateUsageMetadata({ promptTokenCount: Math.round(baselineEstimate / 4) }, 'llama3.2');
 				const recalibratedEstimate = await ollamaCtx.countTokens('llama3.2', history);
 				expect(recalibratedEstimate).toBeLessThan(baselineEstimate);
+			});
+		});
+
+		// The estimate-and-calibrate path is selected by capability (no
+		// `nativeTokenCount`), not by provider — OpenAI-compatible servers take it
+		// too. These guard against the guard narrowing back to Ollama-only, and
+		// against the Ollama-specific naming/logging returning (#1287).
+		describe('calibration for non-Ollama estimated providers', () => {
+			function buildOpenAIContext() {
+				const openaiPlugin = {
+					...mockPlugin,
+					apiKey: '',
+					settings: { ...mockPlugin.settings, provider: 'openai' },
+				};
+				return new ContextManager(openaiPlugin, mockLogger);
+			}
+
+			test('calibrates a model served by an estimate-only non-Ollama provider', async () => {
+				const openaiCtx = buildOpenAIContext();
+				const history = [
+					{ role: 'user', parts: [{ text: 'a'.repeat(400) }] },
+					{ role: 'model', parts: [{ text: 'Hi!' }] },
+				];
+
+				// Baseline under a never-seeded model name, so only prepareHistory()
+				// can seed calibration for the model under test.
+				const baselineEstimate = await openaiCtx.countTokens('gpt-test-baseline', history);
+
+				await openaiCtx.prepareHistory(history, 'gpt-test');
+
+				// Real response reports far fewer tokens than the default ratio predicted.
+				openaiCtx.updateUsageMetadata({ promptTokenCount: Math.round(baselineEstimate / 2) }, 'gpt-test');
+				const recalibratedEstimate = await openaiCtx.countTokens('gpt-test', history);
+				expect(recalibratedEstimate).toBeLessThan(baselineEstimate);
+			});
+
+			test('logs calibration without naming Ollama', async () => {
+				const openaiCtx = buildOpenAIContext();
+				const history = [{ role: 'user', parts: [{ text: 'a'.repeat(400) }] }];
+
+				await openaiCtx.prepareHistory(history, 'gpt-test');
+				openaiCtx.updateUsageMetadata({ promptTokenCount: 50 }, 'gpt-test');
+
+				const calibrationLogs = mockLogger.debug.mock.calls
+					.map((args: any[]) => String(args[0]))
+					.filter((message: string) => message.includes('Calibrated'));
+
+				expect(calibrationLogs).toHaveLength(1);
+				expect(calibrationLogs[0]).toContain('Calibrated estimated chars/token for gpt-test');
+				expect(calibrationLogs[0]).not.toContain('Ollama');
 			});
 		});
 	});

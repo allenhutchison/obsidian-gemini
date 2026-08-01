@@ -31,13 +31,14 @@ const AGGRESSIVE_COMPACTION_THRESHOLD_PERCENT = 80;
 
 /**
  * Starting chars-per-token ratio for providers that don't expose a countTokens
- * endpoint (Ollama), used until real usage data calibrates a per-model ratio.
+ * endpoint (Ollama, OpenAI-compatible), used until real usage data calibrates a
+ * per-model ratio.
  * 4 is the standard char/token heuristic for English text.
  */
-const DEFAULT_OLLAMA_CHARS_PER_TOKEN = 4;
+const DEFAULT_CHARS_PER_TOKEN = 4;
 
 /** Weight given to each new observation when blending the calibrated ratio (EMA). */
-const OLLAMA_RATIO_CALIBRATION_WEIGHT = 0.5;
+const RATIO_CALIBRATION_WEIGHT = 0.5;
 
 /** Minimum number of recent turns to preserve during compaction */
 const MIN_RECENT_TURNS_TO_KEEP = 6;
@@ -96,10 +97,10 @@ export class ContextManager {
 	private lastUsageMetadata: UsageMetadata | null = null;
 	private acceptNextLowerUpdate = false;
 	private ai: GoogleGenAI | null;
-	/** Per-model chars-per-token ratio for Ollama, calibrated from real usage metadata. */
-	private ollamaCharsPerToken: Map<string, number> = new Map();
-	/** Char length of the most recent Ollama countTokens() estimate per model, awaiting calibration against the next real response. */
-	private pendingOllamaEstimateCharLength: Map<string, number> = new Map();
+	/** Per-model chars-per-token ratio for estimate-based providers, calibrated from real usage metadata. */
+	private estimatedCharsPerToken: Map<string, number> = new Map();
+	/** Char length of the most recent estimated countTokens() result per model, awaiting calibration against the next real response. */
+	private pendingEstimateCharLength: Map<string, number> = new Map();
 
 	constructor(
 		private plugin: ObsidianGemini,
@@ -144,13 +145,13 @@ export class ContextManager {
 	 *
 	 * When `modelName` names a model whose provider has no token-counting
 	 * endpoint, this also calibrates that model's chars-per-token ratio against
-	 * the real `promptTokenCount` just reported (see calibrateOllamaRatio).
+	 * the real `promptTokenCount` just reported (see calibrateEstimatedRatio).
 	 */
 	updateUsageMetadata(metadata: UsageMetadata, modelName?: string): void {
 		if (!metadata) return;
 
 		if (modelName && !getCapabilities(this.providerForContextModel(modelName)).nativeTokenCount) {
-			this.calibrateOllamaRatio(modelName, metadata.promptTokenCount);
+			this.calibrateEstimatedRatio(modelName, metadata.promptTokenCount);
 		}
 
 		const newPrompt = metadata.promptTokenCount ?? 0;
@@ -166,7 +167,7 @@ export class ContextManager {
 	}
 
 	/**
-	 * Calibrate this model's Ollama chars-per-token ratio from a real response.
+	 * Calibrate this model's estimated chars-per-token ratio from a real response.
 	 * Correlates the character length of the most recent countTokens() estimate
 	 * for this model (computed just before the request that produced this
 	 * response, via prepareHistory) against the response's actual
@@ -174,18 +175,17 @@ export class ContextManager {
 	 * exponential moving average. Requires no extra API call and converges
 	 * toward the model's real tokenization over a few turns.
 	 */
-	private calibrateOllamaRatio(modelName: string, promptTokenCount: number | undefined): void {
-		const charLength = this.pendingOllamaEstimateCharLength.get(modelName);
+	private calibrateEstimatedRatio(modelName: string, promptTokenCount: number | undefined): void {
+		const charLength = this.pendingEstimateCharLength.get(modelName);
 		if (!charLength || !promptTokenCount) return;
-		this.pendingOllamaEstimateCharLength.delete(modelName);
+		this.pendingEstimateCharLength.delete(modelName);
 
 		const observedRatio = charLength / promptTokenCount;
-		const previousRatio = this.ollamaCharsPerToken.get(modelName) ?? DEFAULT_OLLAMA_CHARS_PER_TOKEN;
-		const calibratedRatio =
-			previousRatio * (1 - OLLAMA_RATIO_CALIBRATION_WEIGHT) + observedRatio * OLLAMA_RATIO_CALIBRATION_WEIGHT;
-		this.ollamaCharsPerToken.set(modelName, calibratedRatio);
+		const previousRatio = this.estimatedCharsPerToken.get(modelName) ?? DEFAULT_CHARS_PER_TOKEN;
+		const calibratedRatio = previousRatio * (1 - RATIO_CALIBRATION_WEIGHT) + observedRatio * RATIO_CALIBRATION_WEIGHT;
+		this.estimatedCharsPerToken.set(modelName, calibratedRatio);
 		this.logger.debug(
-			`[ContextManager] Calibrated Ollama chars/token for ${modelName}: ${previousRatio.toFixed(2)} -> ${calibratedRatio.toFixed(2)}`
+			`[ContextManager] Calibrated estimated chars/token for ${modelName}: ${previousRatio.toFixed(2)} -> ${calibratedRatio.toFixed(2)}`
 		);
 	}
 
@@ -303,15 +303,16 @@ export class ContextManager {
 	}
 
 	/**
-	 * Chars-per-token estimate for Ollama, using this model's calibrated ratio
-	 * (falling back to the generic default until enough real data has arrived).
+	 * Chars-per-token estimate for providers without a countTokens endpoint, using
+	 * this model's calibrated ratio (falling back to the generic default until
+	 * enough real data has arrived).
 	 * Records the char length used so the next updateUsageMetadata() call for
 	 * this model can calibrate against it.
 	 */
 	private estimateTokensFromContents(modelName: string, contents: Content[]): number {
 		const json = JSON.stringify(contents ?? []);
-		const charsPerToken = this.ollamaCharsPerToken.get(modelName) ?? DEFAULT_OLLAMA_CHARS_PER_TOKEN;
-		this.pendingOllamaEstimateCharLength.set(modelName, json.length);
+		const charsPerToken = this.estimatedCharsPerToken.get(modelName) ?? DEFAULT_CHARS_PER_TOKEN;
+		this.pendingEstimateCharLength.set(modelName, json.length);
 		return Math.ceil(json.length / charsPerToken);
 	}
 
@@ -364,7 +365,7 @@ export class ContextManager {
 	 * Providers with a real counting endpoint (Gemini) are called directly. For
 	 * the rest we fall back to a chars-per-token estimate, seeded at 4 and
 	 * calibrated per-model from real promptTokenCount values as they arrive
-	 * (see calibrateOllamaRatio) — compaction precision improves as the session
+	 * (see calibrateEstimatedRatio) — compaction precision improves as the session
 	 * progresses instead of staying pinned to the generic heuristic.
 	 *
 	 * The choice follows the *model*, not a global setting, so a mixed
@@ -417,9 +418,9 @@ export class ContextManager {
 	 * the summary. It uses cached usageMetadata from the last API response to
 	 * decide whether compaction is needed; the compaction decision itself does
 	 * not call countTokens() (that only happens after compaction, to measure
-	 * the result size), but for Ollama every call still seeds the pending
-	 * chars-per-token calibration estimate for this model — see the note at
-	 * the top of the method body.
+	 * the result size), but for estimate-based providers every call still seeds
+	 * the pending chars-per-token calibration estimate for this model — see the
+	 * note at the top of the method body.
 	 */
 	async prepareHistory(
 		conversationHistory: Content[],
@@ -433,7 +434,7 @@ export class ContextManager {
 		// is the char length that will correlate with the next real
 		// promptTokenCount for this model — seed it unconditionally (not just on
 		// the compaction path below, which only runs when over threshold) so
-		// calibrateOllamaRatio() has something to calibrate against on ordinary
+		// calibrateEstimatedRatio() has something to calibrate against on ordinary
 		// turns too. The returned estimate itself isn't needed here.
 		if (!getCapabilities(this.providerForContextModel(modelName)).nativeTokenCount) {
 			this.estimateTokensFromContents(modelName, this.sanitizeContentsForTokenCount(conversationHistory));
