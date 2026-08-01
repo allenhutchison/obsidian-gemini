@@ -223,8 +223,8 @@ export class RagSyncQueue {
 				switch (change.type) {
 					// Upload is idempotent, so a create and a modify are the same work:
 					// re-upload the current content and stamp the cache entry with the
-					// new hash. Neither touches indexedCount — a modified file is
-					// already counted, and a created one is counted by the caller.
+					// new hash. Neither updates indexedCount per file — the whole batch
+					// refreshes it once via ragCache.refreshIndexedCount() below.
 					case 'create':
 					case 'modify': {
 						const file = this.plugin.app.vault.getAbstractFileByPath(change.path);
