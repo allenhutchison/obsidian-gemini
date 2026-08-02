@@ -241,16 +241,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		// Try to setup the plugin, but don't fail if API key is missing
 		try {
 			await this.lifecycle.setup();
-			this.isGeminiInitialized = true;
-			this.lastInitError = null;
-			this.previousApiKey = this.apiKey;
-			this.previousOpenaiApiKey = this.openaiApiKey;
-			this.previousRagEnabled = this.settings.ragIndexing.enabled;
-			this.previousRoutingKey = routingKey(this.settings);
-			this.previousOllamaBaseUrl = this.settings.ollamaBaseUrl;
-			this.previousCustomBaseUrl = this.settings.customBaseUrl;
-			this.previousOpenaiBaseUrl = this.settings.openaiBaseUrl;
-			this.previousHooksEnabled = this.settings.hooksEnabled;
+			this.markInitialized();
 		} catch (error) {
 			this.logger.error('Failed to initialize Gemini Scribe:', error);
 			this.lastInitError = getRawErrorMessage(error);
@@ -262,6 +253,29 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		this.registerUIAndCommands();
 
 		this.app.workspace.onLayoutReady(() => this.lifecycle.onLayoutReady());
+	}
+
+	/**
+	 * Record a successful `lifecycle.setup()`: mark the plugin initialized and
+	 * snapshot every setting the re-init check in `saveSettings` compares against.
+	 *
+	 * Both the `onload` and `saveSettings` init paths must capture the *same*
+	 * baseline — a field snapshotted in one place but not the other leaves a
+	 * stale `previous*` value, so the next `saveSettings` sees a phantom change
+	 * (or misses a real one). Keeping the list in one method means adding a new
+	 * `previous*` field can't silently skip a call site.
+	 */
+	private markInitialized(): void {
+		this.isGeminiInitialized = true;
+		this.lastInitError = null;
+		this.previousApiKey = this.apiKey;
+		this.previousOpenaiApiKey = this.openaiApiKey;
+		this.previousRagEnabled = this.settings.ragIndexing.enabled;
+		this.previousRoutingKey = routingKey(this.settings);
+		this.previousOllamaBaseUrl = this.settings.ollamaBaseUrl;
+		this.previousCustomBaseUrl = this.settings.customBaseUrl;
+		this.previousOpenaiBaseUrl = this.settings.openaiBaseUrl;
+		this.previousHooksEnabled = this.settings.hooksEnabled;
 	}
 
 	/**
@@ -546,16 +560,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		) {
 			try {
 				await this.lifecycle.setup();
-				this.isGeminiInitialized = true;
-				this.lastInitError = null;
-				this.previousApiKey = this.apiKey;
-				this.previousOpenaiApiKey = this.openaiApiKey;
-				this.previousRagEnabled = this.settings.ragIndexing.enabled;
-				this.previousRoutingKey = routingKey(this.settings);
-				this.previousOllamaBaseUrl = this.settings.ollamaBaseUrl;
-				this.previousCustomBaseUrl = this.settings.customBaseUrl;
-				this.previousOpenaiBaseUrl = this.settings.openaiBaseUrl;
-				this.previousHooksEnabled = this.settings.hooksEnabled;
+				this.markInitialized();
 
 				// If this is the first successful initialization, we may need to
 				// re-register UI components to make them functional
