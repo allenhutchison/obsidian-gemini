@@ -332,17 +332,12 @@ export class AgentView extends ItemView {
 			getUserInput: () => this.userInput,
 			getSendButton: () => this.sendButton,
 			getPlanModeButton: () => this.planModeButton,
-			getChatContainer: () => this.chatContainer,
 			progress: this.progress,
 			messages: this.messages,
 			tools: this.tools,
 			session: this.session,
 			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
 			updateTokenUsage: () => this.updateTokenUsage(),
-			isToolAllowedWithoutConfirmation: (toolName: string) => this.isToolAllowedWithoutConfirmation(toolName),
-			allowToolWithoutConfirmation: (toolName: string) => this.allowToolWithoutConfirmation(toolName),
-			showConfirmationInChat: (tool, parameters, executionId, diffContext) =>
-				this.showConfirmationInChat(tool, parameters, executionId, diffContext),
 		});
 
 		// Register session lifecycle event bus subscribers for token display
