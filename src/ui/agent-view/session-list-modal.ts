@@ -22,6 +22,14 @@ export class SessionListModal extends Modal {
 	private projectMap: Map<string, string> = new Map();
 	/** Current filter selection: 'all', 'none', or a project file path. */
 	private selectedFilter: string = FILTER_ALL;
+	/**
+	 * Restores the action buttons of the row currently showing its delete
+	 * confirmation, or null when no row is confirming. Doubles as the "is a
+	 * confirm pending?" flag — at most one row confirms at a time.
+	 */
+	private pendingDelete: (() => void) | null = null;
+	/** Capture-phase Escape handler; cancels a pending confirm before the modal closes. */
+	private escapeHandler: ((evt: KeyboardEvent) => void) | null = null;
 
 	constructor(
 		app: App,
@@ -40,6 +48,17 @@ export class SessionListModal extends Modal {
 		contentEl.empty();
 		contentEl.addClass('gemini-session-modal');
 		this.modalEl.addClass('mod-gemini-session-modal');
+
+		// Escape cancels a pending row confirmation rather than closing the whole
+		// modal. Capture phase on modalEl runs before Obsidian's document-level
+		// close handler, so stopping propagation there keeps the modal open.
+		this.escapeHandler = (evt: KeyboardEvent) => {
+			if (evt.key !== 'Escape' || !this.pendingDelete) return;
+			evt.preventDefault();
+			evt.stopPropagation();
+			this.dismissDeleteConfirm();
+		};
+		this.modalEl.addEventListener('keydown', this.escapeHandler, true);
 
 		// Title
 		contentEl.createEl('h2', { text: t('agent.sessionList.title') });
@@ -172,6 +191,9 @@ export class SessionListModal extends Modal {
 	}
 
 	private renderSessionList(container: HTMLElement) {
+		// Any row mid-confirmation is about to be replaced; drop the stale restore
+		// callback so it can't rebuild actions on a detached element.
+		this.pendingDelete = null;
 		const filtered = this.getFilteredSessions();
 
 		if (filtered.length === 0) {
@@ -222,30 +244,7 @@ export class SessionListModal extends Modal {
 
 			// Actions
 			const actionsDiv = sessionItem.createDiv({ cls: 'gemini-session-actions' });
-
-			// Open button
-			const openBtn = actionsDiv.createEl('button', {
-				cls: 'gemini-session-action-btn',
-				title: t('agent.sessionList.openTooltip'),
-			});
-			setIcon(openBtn, 'arrow-right');
-
-			// Delete button
-			if (this.callbacks.onDelete) {
-				const deleteBtn = actionsDiv.createEl('button', {
-					cls: 'gemini-session-action-btn delete',
-					title: t('agent.sessionList.deleteTooltip'),
-				});
-				setIcon(deleteBtn, 'trash-2');
-
-				deleteBtn.addEventListener('click', (e) => {
-					e.stopPropagation();
-					// eslint-disable-next-line no-alert -- TODO: replace with Obsidian confirmation Modal
-					if (confirm(t('agent.sessionList.deleteConfirm', { title: session.title }))) {
-						void this.deleteSession(session);
-					}
-				});
-			}
+			this.renderSessionActions(actionsDiv, session);
 
 			// Click handler for the entire item
 			sessionItem.addEventListener('click', () => {
@@ -253,6 +252,91 @@ export class SessionListModal extends Modal {
 				this.close();
 			});
 		}
+	}
+
+	/**
+	 * Renders a row's default action buttons (open, and delete when a delete
+	 * callback was supplied). Rebuilt from scratch rather than shown/hidden, so
+	 * cancelling a confirmation restores buttons with live handlers.
+	 */
+	private renderSessionActions(actionsDiv: HTMLElement, session: ChatSession) {
+		actionsDiv.empty();
+		actionsDiv.removeClass('gemini-session-actions--confirming');
+
+		// Open button
+		const openBtn = actionsDiv.createEl('button', {
+			cls: 'gemini-session-action-btn',
+			title: t('agent.sessionList.openTooltip'),
+		});
+		setIcon(openBtn, 'arrow-right');
+
+		// Delete button
+		if (this.callbacks.onDelete) {
+			const deleteBtn = actionsDiv.createEl('button', {
+				cls: 'gemini-session-action-btn delete',
+				title: t('agent.sessionList.deleteTooltip'),
+			});
+			setIcon(deleteBtn, 'trash-2');
+
+			deleteBtn.addEventListener('click', (e) => {
+				// The row's own click handler opens the session and closes the modal,
+				// so a delete click must never reach it.
+				e.stopPropagation();
+				this.showDeleteConfirm(actionsDiv, session);
+			});
+		}
+	}
+
+	/**
+	 * Swaps a row's action buttons for an inline "delete?" confirmation. Keeps the
+	 * list's scroll position and filter state intact — unlike a full-pane swap —
+	 * and avoids stacking a second modal over the session list.
+	 */
+	private showDeleteConfirm(actionsDiv: HTMLElement, session: ChatSession) {
+		// At most one row confirms at a time.
+		this.dismissDeleteConfirm();
+
+		actionsDiv.empty();
+		actionsDiv.addClass('gemini-session-actions--confirming');
+
+		const prompt = t('agent.sessionList.deleteConfirm', { title: session.title });
+		actionsDiv.createSpan({
+			text: prompt,
+			cls: 'gemini-session-confirm-prompt',
+			// The row ellipsizes long titles; the tooltip keeps the full question reachable.
+			attr: { title: prompt },
+		});
+
+		const confirmBtn = actionsDiv.createEl('button', {
+			text: t('agent.sessionList.deleteConfirmAction'),
+			cls: 'gemini-session-confirm-delete',
+			// Names the session for screen readers, which don't get the row context.
+			attr: { 'aria-label': prompt },
+		});
+		const cancelBtn = actionsDiv.createEl('button', {
+			text: t('agent.sessionList.deleteCancel'),
+			cls: 'gemini-session-confirm-cancel',
+		});
+
+		this.pendingDelete = () => this.renderSessionActions(actionsDiv, session);
+
+		confirmBtn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			// The row is about to be re-rendered by deleteSession; nothing to restore.
+			this.pendingDelete = null;
+			void this.deleteSession(session);
+		});
+		cancelBtn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			this.dismissDeleteConfirm();
+		});
+	}
+
+	/** Restores the confirming row's buttons, if any row is confirming. */
+	private dismissDeleteConfirm() {
+		const restore = this.pendingDelete;
+		this.pendingDelete = null;
+		restore?.();
 	}
 
 	private async deleteSession(session: ChatSession) {
@@ -303,6 +387,11 @@ export class SessionListModal extends Modal {
 	}
 
 	onClose() {
+		if (this.escapeHandler) {
+			this.modalEl.removeEventListener('keydown', this.escapeHandler, true);
+			this.escapeHandler = null;
+		}
+		this.pendingDelete = null;
 		const { contentEl } = this;
 		contentEl.empty();
 	}

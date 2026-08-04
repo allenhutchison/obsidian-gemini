@@ -2803,7 +2803,16 @@ export const en = {
 	},
 	'agent.sessionList.deleteConfirm': {
 		message: 'Delete session "{title}"?',
-		context: 'Browser confirmation dialog before deleting a session. {title} is the session title.',
+		context:
+			'Inline confirmation prompt shown in the session row before deleting a session. {title} is the session title.',
+	},
+	'agent.sessionList.deleteConfirmAction': {
+		message: 'Delete',
+		context: 'Label on the button that confirms deleting a session, next to the inline confirmation prompt.',
+	},
+	'agent.sessionList.deleteCancel': {
+		message: 'Cancel',
+		context: 'Label on the button that dismisses the inline session-delete confirmation without deleting.',
 	},
 	'agent.sessionList.deleted': {
 		message: 'Session "{title}" deleted',

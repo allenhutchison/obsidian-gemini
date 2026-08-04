@@ -1698,6 +1698,61 @@ body.theme-dark {
 	color: var(--text-error);
 }
 
+/* Row-level delete confirmation. Replaces the row's action buttons in place, so
+ * the list keeps its scroll position and filter state -- no second modal stacked
+ * over the session list, and no full-pane swap. */
+.gemini-session-actions--confirming {
+	align-items: center;
+	gap: var(--gs-space-2);
+	/* The action area normally never shrinks; while confirming it may, so a long
+	 * session title ellipsizes the prompt instead of being squeezed out of the row. */
+	flex-shrink: 1;
+	min-width: 0;
+}
+
+.gemini-session-confirm-prompt {
+	font-size: var(--font-ui-smaller);
+	color: var(--gs-text-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	/* The prompt is the only part that gives way. */
+	min-width: 0;
+}
+
+.gemini-session-confirm-delete,
+.gemini-session-confirm-cancel {
+	font-size: var(--font-ui-smaller);
+	padding: var(--gs-space-1) var(--gs-space-2);
+	border-radius: var(--gs-radius-sm);
+	cursor: pointer;
+	white-space: nowrap;
+	/* Never squeeze the decision buttons -- they must stay readable and clickable. */
+	flex-shrink: 0;
+	transition: background-color var(--gs-dur-fast) var(--gs-ease);
+}
+
+/* --gs-error tracks Obsidian's --color-red across themes; --gs-on-error keeps the
+ * label readable on it regardless of the theme accent. Same pairing the scheduler
+ * modal's confirm-delete button uses. */
+.gemini-session-confirm-delete {
+	background-color: var(--gs-error);
+	border: 1px solid var(--gs-error);
+	color: var(--gs-on-error);
+	font-weight: 600;
+}
+
+.gemini-session-confirm-delete:hover {
+	background-color: color-mix(in srgb, var(--gs-error) 80%, #000);
+	border-color: color-mix(in srgb, var(--gs-error) 80%, #000);
+}
+
+/* Cancel deliberately declares no colour of its own: it inherits Obsidian's native
+ * button chrome, which is what the scheduler/hook delete-confirm does too (there the
+ * cancel button is a bare <button> and only the destructive one is styled). Sizing
+ * comes from the shared rule above, so the non-destructive choice stays theme-native
+ * while Delete is the only one that reaches for colour. */
+
 /* Session filter bar */
 .gemini-session-filter-bar {
 	display: flex;
