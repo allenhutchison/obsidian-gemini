@@ -400,119 +400,124 @@ function remotelyServedModels(
 	return remote;
 }
 
+/** The settings keys `selectModelSetting` accepts, without re-deriving its mapped type. */
+type ModelSettingKey = Parameters<typeof selectModelSetting>[2];
+
+/** How one use case's picker is wired for one provider. */
+interface ModelPickerSpec {
+	/** The settings field this provider persists its choice in. */
+	setting: ModelSettingKey;
+	labelKey: TranslationKey;
+	descKey: TranslationKey;
+	/**
+	 * Label for the "inherit the chat model" option. Only Ollama sets it: it
+	 * keeps a single model resident, so an extra per-use-case model costs a swap
+	 * on every call (#1077) and inheriting is the default. Providers with
+	 * `perUseCaseModels` get a dedicated field and no inherit option.
+	 */
+	inheritKey?: TranslationKey;
+}
+
+/**
+ * The text-model pickers, one per use case, as data.
+ *
+ * Each provider persists its own model per use case — re-routing chat from
+ * Gemini to Ollama and back never clobbers the other's choice — so the picker
+ * shown depends on the provider currently serving that use case. Keeping the
+ * three use cases in one table means adding a provider is a column, not a
+ * fourth copy of the same branch.
+ *
+ * Rewrite and search reuse the chat model, so they get no picker of their own;
+ * image generation is handled separately in `renderModelPickers` because it can
+ * resolve to no provider at all.
+ */
+const TEXT_MODEL_PICKERS: ReadonlyArray<{
+	useCase: ProviderUseCase;
+	byProvider: Record<ModelProvider, ModelPickerSpec>;
+}> = [
+	{
+		useCase: 'chat',
+		byProvider: {
+			gemini: {
+				setting: 'chatModelName',
+				labelKey: 'settings.general.chatModelName',
+				descKey: 'settings.general.chatModelDesc',
+			},
+			ollama: {
+				setting: 'ollamaModelName',
+				labelKey: 'settings.general.ollamaModelName',
+				descKey: 'settings.general.ollamaModelDesc',
+			},
+			openai: {
+				setting: 'openaiModelName',
+				labelKey: 'settings.general.chatModelName',
+				descKey: 'settings.general.openaiChatModelDesc',
+			},
+		},
+	},
+	{
+		useCase: 'summary',
+		byProvider: {
+			gemini: {
+				setting: 'summaryModelName',
+				labelKey: 'settings.general.summaryModelName',
+				descKey: 'settings.general.summaryModelDesc',
+			},
+			ollama: {
+				setting: 'ollamaSummaryModelName',
+				labelKey: 'settings.general.summaryModelName',
+				descKey: 'settings.general.ollamaSummaryModelDesc',
+				inheritKey: 'settings.general.inheritOllamaChatModel',
+			},
+			openai: {
+				setting: 'openaiSummaryModelName',
+				labelKey: 'settings.general.summaryModelName',
+				descKey: 'settings.general.summaryModelDesc',
+			},
+		},
+	},
+	{
+		useCase: 'completions',
+		byProvider: {
+			gemini: {
+				setting: 'completionsModelName',
+				labelKey: 'settings.general.completionModelName',
+				descKey: 'settings.general.completionModelDesc',
+			},
+			ollama: {
+				setting: 'ollamaCompletionsModelName',
+				labelKey: 'settings.general.completionModelName',
+				descKey: 'settings.general.ollamaCompletionsModelDesc',
+				inheritKey: 'settings.general.inheritOllamaChatModel',
+			},
+			openai: {
+				setting: 'openaiCompletionsModelName',
+				labelKey: 'settings.general.completionModelName',
+				descKey: 'settings.general.completionModelDesc',
+			},
+		},
+	},
+];
+
 /**
  * Model pickers, one per use case that has a configured model, each filtered to
  * the provider actually serving it.
- *
- * Rewrite and search reuse the chat model, so they get no picker of their own.
- * Under Ollama the summary/completions rows offer an "inherit the chat model"
- * option — the default — because Ollama keeps one model resident and an extra
- * model costs a swap on every call (#1077).
  */
 async function renderModelPickers(sectionEl: HTMLElement, plugin: ObsidianGemini): Promise<void> {
-	const chatProvider = resolveProviderOrDefault(plugin.settings, 'chat');
-	const summaryProvider = resolveProviderOrDefault(plugin.settings, 'summary');
-	const completionsProvider = resolveProviderOrDefault(plugin.settings, 'completions');
-
-	if (chatProvider === 'ollama') {
+	for (const { useCase, byProvider } of TEXT_MODEL_PICKERS) {
+		// Total lookup: `resolveProviderOrDefault` only ever returns a registered
+		// provider id, so every branch of the union has a spec above.
+		const provider = resolveProviderOrDefault(plugin.settings, useCase);
+		const spec = byProvider[provider];
 		await selectModelSetting(
 			sectionEl,
 			plugin,
-			'ollamaModelName',
-			t('settings.general.ollamaModelName'),
-			t('settings.general.ollamaModelDesc'),
+			spec.setting,
+			t(spec.labelKey),
+			t(spec.descKey),
 			'text',
-			'ollama'
-		);
-	} else if (chatProvider === 'openai') {
-		// OpenAI has no single-resident-model constraint (perUseCaseModels), so
-		// unlike Ollama it gets its own field rather than an "inherit" option.
-		await selectModelSetting(
-			sectionEl,
-			plugin,
-			'openaiModelName',
-			t('settings.general.chatModelName'),
-			t('settings.general.openaiChatModelDesc'),
-			'text',
-			'openai'
-		);
-	} else {
-		await selectModelSetting(
-			sectionEl,
-			plugin,
-			'chatModelName',
-			t('settings.general.chatModelName'),
-			t('settings.general.chatModelDesc'),
-			'text',
-			chatProvider
-		);
-	}
-
-	if (summaryProvider === 'ollama') {
-		// Only worth showing once chat is *not* also on Ollama, or as an explicit
-		// opt-in split; either way the inherit option keeps the default single-model.
-		await selectModelSetting(
-			sectionEl,
-			plugin,
-			'ollamaSummaryModelName',
-			t('settings.general.summaryModelName'),
-			t('settings.general.ollamaSummaryModelDesc'),
-			'text',
-			'ollama',
-			t('settings.general.inheritOllamaChatModel')
-		);
-	} else if (summaryProvider === 'openai') {
-		await selectModelSetting(
-			sectionEl,
-			plugin,
-			'openaiSummaryModelName',
-			t('settings.general.summaryModelName'),
-			t('settings.general.summaryModelDesc'),
-			'text',
-			'openai'
-		);
-	} else {
-		await selectModelSetting(
-			sectionEl,
-			plugin,
-			'summaryModelName',
-			t('settings.general.summaryModelName'),
-			t('settings.general.summaryModelDesc'),
-			'text',
-			summaryProvider
-		);
-	}
-
-	if (completionsProvider === 'ollama') {
-		await selectModelSetting(
-			sectionEl,
-			plugin,
-			'ollamaCompletionsModelName',
-			t('settings.general.completionModelName'),
-			t('settings.general.ollamaCompletionsModelDesc'),
-			'text',
-			'ollama',
-			t('settings.general.inheritOllamaChatModel')
-		);
-	} else if (completionsProvider === 'openai') {
-		await selectModelSetting(
-			sectionEl,
-			plugin,
-			'openaiCompletionsModelName',
-			t('settings.general.completionModelName'),
-			t('settings.general.completionModelDesc'),
-			'text',
-			'openai'
-		);
-	} else {
-		await selectModelSetting(
-			sectionEl,
-			plugin,
-			'completionsModelName',
-			t('settings.general.completionModelName'),
-			t('settings.general.completionModelDesc'),
-			'text',
-			completionsProvider
+			provider,
+			spec.inheritKey ? t(spec.inheritKey) : undefined
 		);
 	}
 
