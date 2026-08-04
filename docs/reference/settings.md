@@ -201,7 +201,7 @@ Because each provider uses its own settings fields, re-routing a feature between
 
 - **Settings**: `openaiModelName`, `openaiSummaryModelName`, `openaiCompletionsModelName`
 - **Type**: String
-- **Default**: `'gpt-5.6'`, `'gpt-5.6-terra'`, `'gpt-5.6-luna'` respectively
+- **Default**: `'gpt-5.6-sol'`, `'gpt-5.6-terra'`, `'gpt-5.6-luna'` respectively
 - **Only shown when**: That feature is served by `openai`
 - **Description**: The OpenAI model used for each use case. Unlike Ollama, OpenAI has no single-resident-model constraint, so each use case keeps its own model rather than defaulting to "inherit the chat model." Populated from `GET <openaiBaseUrl>/models`.
 

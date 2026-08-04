@@ -59,7 +59,7 @@ Consequences worth knowing:
 
 Each model dropdown lists the models of the provider serving that feature, so a chat-on-Ollama / summaries-on-Gemini setup offers the right models in each row.
 
-Ollama keeps one model resident at a time, so its summary and completions pickers default to **Same as chat model**. Choosing a distinct model there is supported but means Ollama reloads a model on every switch — worth it for a small, fast completions model, rarely worth it otherwise. OpenAI has no such constraint: each use case gets its own default model (currently `gpt-5.6` for chat, `gpt-5.6-terra` for summaries, `gpt-5.6-luna` for completions) and switching between them costs nothing extra.
+Ollama keeps one model resident at a time, so its summary and completions pickers default to **Same as chat model**. Choosing a distinct model there is supported but means Ollama reloads a model on every switch — worth it for a small, fast completions model, rarely worth it otherwise. OpenAI has no such constraint: each use case gets its own default model (currently `gpt-5.6-sol` for chat, `gpt-5.6-terra` for summaries, `gpt-5.6-luna` for completions) and switching between them costs nothing extra.
 
 ## Notes
 
