@@ -838,6 +838,8 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'agent.sessionList.openTooltip': 'Sitzung öffnen',
 	'agent.sessionList.deleteTooltip': 'Sitzung löschen',
 	'agent.sessionList.deleteConfirm': 'Sitzung "{title}" löschen?',
+	'agent.sessionList.deleteConfirmAction': 'Löschen',
+	'agent.sessionList.deleteCancel': 'Abbrechen',
 	'agent.sessionList.deleted': 'Sitzung "{title}" gelöscht',
 	'agent.sessionList.deleteFailed': 'Sitzung konnte nicht gelöscht werden',
 	'agent.sessionSettings.model': 'Modell',

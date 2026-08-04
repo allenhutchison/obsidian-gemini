@@ -818,6 +818,8 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'agent.sessionList.openTooltip': 'Mở phiên',
 	'agent.sessionList.deleteTooltip': 'Xóa phiên',
 	'agent.sessionList.deleteConfirm': 'Xóa phiên "{title}"?',
+	'agent.sessionList.deleteConfirmAction': 'Xóa',
+	'agent.sessionList.deleteCancel': 'Hủy',
 	'agent.sessionList.deleted': 'Đã xóa phiên "{title}"',
 	'agent.sessionList.deleteFailed': 'Không thể xóa phiên',
 	'agent.sessionSettings.model': 'Mô hình',

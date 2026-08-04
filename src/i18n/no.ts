@@ -813,6 +813,8 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'agent.sessionList.openTooltip': 'Åpne økt',
 	'agent.sessionList.deleteTooltip': 'Slett økt',
 	'agent.sessionList.deleteConfirm': 'Slette økten "{title}"?',
+	'agent.sessionList.deleteConfirmAction': 'Slett',
+	'agent.sessionList.deleteCancel': 'Avbryt',
 	'agent.sessionList.deleted': 'Økten "{title}" ble slettet',
 	'agent.sessionList.deleteFailed': 'Kunne ikke slette økten',
 	'agent.sessionSettings.model': 'Modell',

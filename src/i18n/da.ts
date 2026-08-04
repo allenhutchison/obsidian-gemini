@@ -818,6 +818,8 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'agent.sessionList.openTooltip': 'Åbn session',
 	'agent.sessionList.deleteTooltip': 'Slet session',
 	'agent.sessionList.deleteConfirm': 'Slet sessionen "{title}"?',
+	'agent.sessionList.deleteConfirmAction': 'Slet',
+	'agent.sessionList.deleteCancel': 'Annuller',
 	'agent.sessionList.deleted': 'Sessionen "{title}" blev slettet',
 	'agent.sessionList.deleteFailed': 'Kunne ikke slette session',
 	'agent.sessionSettings.model': 'Model',
