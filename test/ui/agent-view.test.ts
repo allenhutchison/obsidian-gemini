@@ -200,16 +200,12 @@ describe('AgentView UI Tests', () => {
 				getShelf: () => (agentView as any).shelf,
 				getUserInput: () => (agentView as any).userInput,
 				getSendButton: () => (agentView as any).sendButton,
-				getChatContainer: () => (agentView as any).chatContainer,
 				progress: (agentView as any).progress || { show: vi.fn(), hide: vi.fn(), update: vi.fn() },
 				messages: (agentView as any).messages || { displayMessage: vi.fn(), settlePendingPlanApproval: vi.fn() },
 				tools: (agentView as any).tools || { handleToolCalls: vi.fn() },
 				session: (agentView as any).session || { autoLabelSessionIfNeeded: vi.fn() },
 				displayMessage: (agentView as any).displayMessage || vi.fn(),
 				updateTokenUsage: vi.fn(),
-				isToolAllowedWithoutConfirmation: vi.fn().mockReturnValue(false),
-				allowToolWithoutConfirmation: vi.fn(),
-				showConfirmationInChat: vi.fn(),
 			};
 			(agentView as any).send = new AgentViewSend(mockSendCtx as any);
 

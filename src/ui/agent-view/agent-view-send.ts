@@ -19,7 +19,6 @@ import { AgentViewTools } from './agent-view-tools';
 import { AgentViewSession } from './agent-view-session';
 import { AgentViewShelf } from './agent-view-shelf';
 import type { ObsidianGemini } from '../../types/plugin';
-import type { ConfirmationResult, DiffContext, Tool } from '../../tools/types';
 import { t } from '../../i18n';
 
 /**
@@ -34,21 +33,12 @@ export interface SendContext {
 	getUserInput: () => HTMLDivElement;
 	getSendButton: () => HTMLButtonElement;
 	getPlanModeButton: () => HTMLButtonElement;
-	getChatContainer: () => HTMLElement;
 	progress: AgentViewProgress;
 	messages: AgentViewMessages;
 	tools: AgentViewTools;
 	session: AgentViewSession;
 	displayMessage: (entry: GeminiConversationEntry) => Promise<void>;
 	updateTokenUsage: () => Promise<void>;
-	isToolAllowedWithoutConfirmation: (toolName: string) => boolean;
-	allowToolWithoutConfirmation: (toolName: string) => void;
-	showConfirmationInChat: (
-		tool: Tool,
-		parameters: Record<string, unknown>,
-		executionId: string,
-		diffContext?: DiffContext
-	) => Promise<ConfirmationResult>;
 }
 
 /**
