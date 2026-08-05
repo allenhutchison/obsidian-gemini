@@ -130,30 +130,23 @@ export interface HookFireContext {
 }
 
 /**
+ * Fields that `Hook` requires but a caller may omit on create/update, because
+ * `HookManager` fills them in from a default (`toHook`) rather than failing.
+ */
+type HookDefaultedField = 'debounceMs' | 'cooldownMs' | 'enabledSkills' | 'enabled' | 'desktopOnly';
+
+/**
  * Parameters accepted by `HookManager.createHook` and the union of fields
  * `updateHook` understands. Mirrors the on-disk frontmatter schema; defaults
  * are applied at serialization time so callers can omit unset fields.
+ *
+ * Derived from `Hook` rather than re-listed so a new hook field can't land on
+ * `Hook` alone and silently become unsettable through create/update — the
+ * compiler now forces every addition to be either a create param or an
+ * explicit `HookDefaultedField`. `filePath` is excluded because the manager
+ * derives it from the slug.
  */
-export interface HookCreateParams {
-	slug: string;
-	trigger: HookTrigger;
-	action: HookAction;
-	prompt: string;
-	pathGlob?: string;
-	frontmatterFilter?: Record<string, unknown>;
-	debounceMs?: number;
-	maxRunsPerHour?: number;
-	cooldownMs?: number;
-	toolPolicy?: FeatureToolPolicy;
-	enabledSkills?: string[];
-	model?: string;
-	maxIterations?: number;
-	outputPath?: string;
-	enabled?: boolean;
-	desktopOnly?: boolean;
-	commandId?: string;
-	focusFile?: boolean;
-}
+export type HookCreateParams = Omit<Hook, 'filePath' | HookDefaultedField> & Partial<Pick<Hook, HookDefaultedField>>;
 
 export type HookUpdateParams = Partial<Omit<HookCreateParams, 'slug'>>;
 
