@@ -273,20 +273,6 @@ describe('RagIndexingService', () => {
 		});
 	});
 
-	describe('getPendingCount', () => {
-		it('should return 0 when no pending changes', () => {
-			expect(service.getPendingCount()).toBe(0);
-		});
-
-		it('should return count of pending changes', () => {
-			getSyncQueue(service).pendingChanges = new Map([
-				['file1.md', { type: 'create', path: 'file1.md', timestamp: Date.now() }],
-				['file2.md', { type: 'modify', path: 'file2.md', timestamp: Date.now() }],
-			]);
-			expect(service.getPendingCount()).toBe(2);
-		});
-	});
-
 	describe('change collapsing (queueChange)', () => {
 		beforeEach(() => {
 			// Setup service to be ready
@@ -542,31 +528,6 @@ describe('RagIndexingService', () => {
 			expect(status.pendingCount).toBe(1);
 			expect(status.indexedFiles).toHaveLength(1);
 			expect(status.failedFiles).toHaveLength(1);
-		});
-	});
-
-	describe('getStatusInfo', () => {
-		it('should return basic status info', () => {
-			(service as any).status = 'idle';
-			getRagCache(service).indexedCount = 5;
-			mockPlugin.settings.ragIndexing.fileSearchStoreName = 'my-store';
-			getRagCache(service).cache = { lastSync: 1234567890 };
-
-			const info = service.getStatusInfo();
-
-			expect(info.status).toBe('idle');
-			expect(info.indexedCount).toBe(5);
-			expect(info.storeName).toBe('my-store');
-			expect(info.lastSync).toBe(1234567890);
-		});
-
-		it('should include progress when indexing', () => {
-			(service as any).status = 'indexing';
-			getVaultScanner(service).indexingProgress = { current: 5, total: 10 };
-
-			const info = service.getStatusInfo();
-
-			expect(info.progress).toEqual({ current: 5, total: 10 });
 		});
 	});
 

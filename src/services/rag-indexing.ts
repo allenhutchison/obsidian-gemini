@@ -17,7 +17,7 @@ import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory'
 import type {
 	IndexProgress,
 	IndexResult,
-	FailedFileEntry,
+	RagDetailedStatus,
 	RagIndexStatus,
 	RagProgressInfo,
 	ProgressListener,
@@ -239,22 +239,6 @@ export class RagIndexingService {
 		return this.ragCache.indexedCount;
 	}
 
-	getStatusInfo(): {
-		status: RagIndexStatus;
-		indexedCount: number;
-		storeName: string | null;
-		lastSync: number | null;
-		progress?: { current: number; total: number };
-	} {
-		return {
-			status: this.status,
-			indexedCount: this.ragCache.indexedCount,
-			storeName: this.plugin.settings.ragIndexing.fileSearchStoreName,
-			lastSync: this.ragCache.cache?.lastSync || null,
-			progress: this.status === 'indexing' ? this.vaultScanner?.getIndexingProgress() : undefined,
-		};
-	}
-
 	getProgressInfo(): RagProgressInfo {
 		return {
 			status: this.status,
@@ -269,20 +253,7 @@ export class RagIndexingService {
 		};
 	}
 
-	getPendingCount(): number {
-		return this.syncQueue?.getPendingCount() ?? 0;
-	}
-
-	getDetailedStatus(): {
-		status: RagIndexStatus;
-		indexedCount: number;
-		failedCount: number;
-		pendingCount: number;
-		storeName: string | null;
-		lastSync: number | null;
-		indexedFiles: Array<{ path: string; lastIndexed: number }>;
-		failedFiles: FailedFileEntry[];
-	} {
+	getDetailedStatus(): RagDetailedStatus {
 		// Build indexed files list from cache, sorted by lastIndexed (newest first)
 		const indexedFiles = this.ragCache.cache
 			? Object.entries(this.ragCache.cache.files)
