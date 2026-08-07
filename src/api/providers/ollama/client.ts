@@ -227,7 +227,7 @@ export class OllamaClient implements ModelApi {
 		model: string,
 		stream: boolean
 	): Promise<ChatRequest & { stream: boolean }> {
-		const systemInstruction = await this.buildSystemInstruction(request);
+		const systemInstruction = await this.prompts.buildExtendedSystemInstruction(request);
 		const messages: Message[] = [];
 
 		if (systemInstruction) {
@@ -283,10 +283,6 @@ export class OllamaClient implements ModelApi {
 			options: this.buildOptions(request),
 			...(tools && tools.length ? { tools } : {}),
 		};
-	}
-
-	private async buildSystemInstruction(request: ExtendedModelRequest): Promise<string> {
-		return this.prompts.buildExtendedSystemInstruction(request);
 	}
 
 	private convertHistoryEntry(entry: unknown): Message[] | null {

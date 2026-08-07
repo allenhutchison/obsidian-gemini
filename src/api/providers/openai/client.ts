@@ -316,7 +316,7 @@ export class OpenAIClient implements ModelApi {
 	private async buildChatRequest(
 		request: ExtendedModelRequest
 	): Promise<{ messages: ChatMessage[]; tools?: ChatTool[] }> {
-		const systemInstruction = await this.buildSystemInstruction(request);
+		const systemInstruction = await this.prompts.buildExtendedSystemInstruction(request);
 		const messages: ChatMessage[] = [];
 
 		if (systemInstruction) {
@@ -373,10 +373,6 @@ export class OpenAIClient implements ModelApi {
 		const tools = request.availableTools ? this.toOpenAITools(request.availableTools) : undefined;
 
 		return { messages, ...(tools && tools.length ? { tools } : {}) };
-	}
-
-	private async buildSystemInstruction(request: ExtendedModelRequest): Promise<string> {
-		return this.prompts.buildExtendedSystemInstruction(request);
 	}
 
 	private toImageContentPart(att: InlineDataPart): ImageContentPart {
