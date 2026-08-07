@@ -815,6 +815,8 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'agent.sessionList.openTooltip': 'Otevřít relaci',
 	'agent.sessionList.deleteTooltip': 'Smazat relaci',
 	'agent.sessionList.deleteConfirm': 'Smazat relaci "{title}"?',
+	'agent.sessionList.deleteConfirmAction': 'Smazat',
+	'agent.sessionList.deleteCancel': 'Zrušit',
 	'agent.sessionList.deleted': 'Relace "{title}" byla smazána',
 	'agent.sessionList.deleteFailed': 'Nepodařilo se smazat relaci',
 	'agent.sessionSettings.model': 'Model',

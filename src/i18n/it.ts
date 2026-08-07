@@ -831,6 +831,8 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'agent.sessionList.openTooltip': 'Apri sessione',
 	'agent.sessionList.deleteTooltip': 'Elimina sessione',
 	'agent.sessionList.deleteConfirm': 'Eliminare la sessione "{title}"?',
+	'agent.sessionList.deleteConfirmAction': 'Elimina',
+	'agent.sessionList.deleteCancel': 'Annulla',
 	'agent.sessionList.deleted': 'Sessione "{title}" eliminata',
 	'agent.sessionList.deleteFailed': 'Impossibile eliminare la sessione',
 	'agent.sessionSettings.model': 'Modello',

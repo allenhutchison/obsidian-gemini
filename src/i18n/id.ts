@@ -814,6 +814,8 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'agent.sessionList.openTooltip': 'Buka sesi',
 	'agent.sessionList.deleteTooltip': 'Hapus sesi',
 	'agent.sessionList.deleteConfirm': 'Hapus sesi "{title}"?',
+	'agent.sessionList.deleteConfirmAction': 'Hapus',
+	'agent.sessionList.deleteCancel': 'Batal',
 	'agent.sessionList.deleted': 'Sesi "{title}" dihapus',
 	'agent.sessionList.deleteFailed': 'Gagal menghapus sesi',
 	'agent.sessionSettings.model': 'Model',

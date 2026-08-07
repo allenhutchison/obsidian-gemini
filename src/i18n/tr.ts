@@ -827,6 +827,8 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'agent.sessionList.openTooltip': 'Oturumu aç',
 	'agent.sessionList.deleteTooltip': 'Oturumu sil',
 	'agent.sessionList.deleteConfirm': '"{title}" oturumu silinsin mi?',
+	'agent.sessionList.deleteConfirmAction': 'Sil',
+	'agent.sessionList.deleteCancel': 'İptal',
 	'agent.sessionList.deleted': '"{title}" oturumu silindi',
 	'agent.sessionList.deleteFailed': 'Oturum silinemedi',
 	'agent.sessionSettings.model': 'Model',

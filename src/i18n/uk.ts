@@ -823,6 +823,8 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'agent.sessionList.openTooltip': 'Відкрити сесію',
 	'agent.sessionList.deleteTooltip': 'Видалити сесію',
 	'agent.sessionList.deleteConfirm': 'Видалити сесію "{title}"?',
+	'agent.sessionList.deleteConfirmAction': 'Видалити',
+	'agent.sessionList.deleteCancel': 'Скасувати',
 	'agent.sessionList.deleted': 'Сесію "{title}" видалено',
 	'agent.sessionList.deleteFailed': 'Не вдалося видалити сесію',
 	'agent.sessionSettings.model': 'Модель',

@@ -802,6 +802,8 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'agent.sessionList.openTooltip': '세션 열기',
 	'agent.sessionList.deleteTooltip': '세션 삭제',
 	'agent.sessionList.deleteConfirm': '"{title}" 세션을 삭제하시겠습니까?',
+	'agent.sessionList.deleteConfirmAction': '삭제',
+	'agent.sessionList.deleteCancel': '취소',
 	'agent.sessionList.deleted': '"{title}" 세션이 삭제되었습니다',
 	'agent.sessionList.deleteFailed': '세션을 삭제하지 못했습니다',
 	'agent.sessionSettings.model': '모델',
