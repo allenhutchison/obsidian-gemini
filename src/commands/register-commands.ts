@@ -9,6 +9,24 @@ import type { ObsidianGemini } from '../types/plugin';
 import { resolveProvider } from '../api/provider-routing';
 
 /**
+ * Shared entry gate for the RAG commands. Each of them opens with the same two
+ * checks — a provider must be routed to RAG, and the indexing service must
+ * exist — emitting the same two notices. Returns the service when both hold, or
+ * `null` when the caller should bail because the notice has already been shown.
+ */
+function resolveRagIndexing(plugin: ObsidianGemini): NonNullable<ObsidianGemini['ragIndexing']> | null {
+	if (resolveProvider(plugin.settings, 'rag') === null) {
+		new Notice(t('notice.main.ragUnavailableProvider'));
+		return null;
+	}
+	if (!plugin.ragIndexing) {
+		new Notice(t('notice.main.ragNotEnabled'));
+		return null;
+	}
+	return plugin.ragIndexing;
+}
+
+/**
  * Register all command-palette commands on the plugin instance.
  *
  * Extracted verbatim from `ObsidianGemini.registerUIAndCommands()` as a pure
@@ -335,23 +353,17 @@ export function registerCommands(plugin: ObsidianGemini): void {
 		id: 'rag-pause',
 		name: t('command.ragPause'),
 		callback: () => {
-			if (resolveProvider(plugin.settings, 'rag') === null) {
-				new Notice(t('notice.main.ragUnavailableProvider'));
-				return;
-			}
-			if (!plugin.ragIndexing) {
-				new Notice(t('notice.main.ragNotEnabled'));
-				return;
-			}
-			if (plugin.ragIndexing.isPaused()) {
+			const ragIndexing = resolveRagIndexing(plugin);
+			if (!ragIndexing) return;
+			if (ragIndexing.isPaused()) {
 				new Notice(t('notice.main.ragAlreadyPaused'));
 				return;
 			}
-			if (plugin.ragIndexing.isIndexing()) {
+			if (ragIndexing.isIndexing()) {
 				new Notice(t('notice.main.ragCannotPauseWhileIndexing'));
 				return;
 			}
-			plugin.ragIndexing.pause();
+			ragIndexing.pause();
 			new Notice(t('notice.main.ragPaused'));
 		},
 	});
@@ -360,19 +372,13 @@ export function registerCommands(plugin: ObsidianGemini): void {
 		id: 'rag-resume',
 		name: t('command.ragResume'),
 		callback: () => {
-			if (resolveProvider(plugin.settings, 'rag') === null) {
-				new Notice(t('notice.main.ragUnavailableProvider'));
-				return;
-			}
-			if (!plugin.ragIndexing) {
-				new Notice(t('notice.main.ragNotEnabled'));
-				return;
-			}
-			if (!plugin.ragIndexing.isPaused()) {
+			const ragIndexing = resolveRagIndexing(plugin);
+			if (!ragIndexing) return;
+			if (!ragIndexing.isPaused()) {
 				new Notice(t('notice.main.ragNotPaused'));
 				return;
 			}
-			plugin.ragIndexing.resume();
+			ragIndexing.resume();
 			new Notice(t('notice.main.ragResumed'));
 		},
 	});
@@ -381,18 +387,12 @@ export function registerCommands(plugin: ObsidianGemini): void {
 		id: 'rag-status',
 		name: t('command.ragStatus'),
 		callback: async () => {
-			if (resolveProvider(plugin.settings, 'rag') === null) {
-				new Notice(t('notice.main.ragUnavailableProvider'));
-				return;
-			}
-			if (!plugin.ragIndexing) {
-				new Notice(t('notice.main.ragNotEnabled'));
-				return;
-			}
+			const ragIndexing = resolveRagIndexing(plugin);
+			if (!ragIndexing) return;
 			// Trigger the same modal as clicking the status bar
 			try {
 				const { openRagStatusModal } = await import('../services/rag-status-bar');
-				await openRagStatusModal(plugin.app, plugin.ragIndexing, plugin.manifest.id);
+				await openRagStatusModal(plugin.app, ragIndexing, plugin.manifest.id);
 			} catch (error) {
 				plugin.logger.error('RAG Indexing: Failed to open status UI', error);
 				new Notice(t('notice.rag.uiError', { error: getErrorMessage(error) }));
