@@ -14,11 +14,25 @@ import { FailurePauseTracker, MAX_CONSECUTIVE_FAILURES } from './failure-pause-t
 import { computeNextRunAt } from './scheduled-tasks/schedule';
 import { detectMissedRuns as detectMissedRunsInWindow } from './scheduled-tasks/missed-runs';
 import { submitTask as submitTaskDispatch, type ExecutionDeps } from './scheduled-tasks/execution';
-import type { PendingCatchUp, ScheduledTask, ScheduledTasksState, TaskState } from './scheduled-tasks/types';
+import type {
+	PendingCatchUp,
+	ScheduledTask,
+	ScheduledTaskCreateParams,
+	ScheduledTasksState,
+	ScheduledTaskUpdateParams,
+	TaskState,
+} from './scheduled-tasks/types';
 
 // Re-export the task types and the pure schedule helper from their new module
 // homes so existing import paths (`from '.../scheduled-task-manager'`) keep working.
-export type { PendingCatchUp, ScheduledTask, ScheduledTasksState, TaskState } from './scheduled-tasks/types';
+export type {
+	PendingCatchUp,
+	ScheduledTask,
+	ScheduledTaskCreateParams,
+	ScheduledTasksState,
+	ScheduledTaskUpdateParams,
+	TaskState,
+} from './scheduled-tasks/types';
 export { computeNextRunAt } from './scheduled-tasks/schedule';
 
 // ─── Folder / file layout ─────────────────────────────────────────────────────
@@ -309,17 +323,7 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 	 * Create a new scheduled task by writing a markdown file to the tasks folder.
 	 * The metadata cache 'create' listener will pick it up within ~500 ms.
 	 */
-	async createTask(params: {
-		slug: string;
-		schedule: string;
-		toolPolicy?: FeatureToolPolicy;
-		outputPath?: string;
-		model?: string;
-		maxIterations?: number;
-		enabled?: boolean;
-		runIfMissed?: boolean;
-		prompt: string;
-	}): Promise<void> {
+	async createTask(params: ScheduledTaskCreateParams): Promise<void> {
 		const slug = params.slug.trim();
 		if (!slug) throw new Error('Task slug cannot be empty');
 		if (this.tasks.has(slug)) throw new Error(`A task named "${slug}" already exists`);
@@ -372,19 +376,7 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 	 * Rewrite a task's definition file (frontmatter + prompt body).
 	 * Slug is the stable identifier — renaming is not supported via this method.
 	 */
-	async updateTask(
-		slug: string,
-		params: {
-			schedule?: string;
-			toolPolicy?: FeatureToolPolicy;
-			outputPath?: string;
-			model?: string;
-			maxIterations?: number;
-			enabled?: boolean;
-			runIfMissed?: boolean;
-			prompt?: string;
-		}
-	): Promise<void> {
+	async updateTask(slug: string, params: ScheduledTaskUpdateParams): Promise<void> {
 		const task = this.tasks.get(slug);
 		if (!task) throw new Error(`Scheduled task "${slug}" not found`);
 

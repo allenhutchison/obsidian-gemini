@@ -57,6 +57,30 @@ export interface ScheduledTask {
 	filePath: string;
 }
 
+/**
+ * Fields `ScheduledTaskManager.createTask` defaults when the caller omits them
+ * (`outputPath` from the runs-folder template, `enabled` to true, `runIfMissed`
+ * to false), so they are optional on the create params but required on the
+ * parsed `ScheduledTask`.
+ */
+type ScheduledTaskDefaultedField = 'outputPath' | 'enabled' | 'runIfMissed';
+
+/**
+ * Parameters accepted by `ScheduledTaskManager.createTask`.
+ *
+ * Derived from `ScheduledTask` rather than re-listed so a new task field can't
+ * land on `ScheduledTask` alone and silently become unsettable through
+ * create/update — the compiler now forces every addition to be either a create
+ * param or an explicit `ScheduledTaskDefaultedField`. `filePath` is excluded
+ * because the manager derives it from the slug. Mirrors the `HookCreateParams`
+ * shape in `../hook-types`.
+ */
+export type ScheduledTaskCreateParams = Omit<ScheduledTask, 'filePath' | ScheduledTaskDefaultedField> &
+	Partial<Pick<ScheduledTask, ScheduledTaskDefaultedField>>;
+
+/** The fields `updateTask` understands. Slug is immutable after creation. */
+export type ScheduledTaskUpdateParams = Partial<Omit<ScheduledTaskCreateParams, 'slug'>>;
+
 /** Per-task volatile runtime state stored in the sidecar JSON. */
 export interface TaskState {
 	/** ISO-8601 date string for the next scheduled run. */
