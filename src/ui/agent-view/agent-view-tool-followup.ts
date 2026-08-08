@@ -36,22 +36,42 @@ export interface RetryRequestParams extends PerTurnContext {
 }
 
 /**
+ * The request fields the follow-up and the empty-response retry share verbatim:
+ * everything except `userMessage` and (for the follow-up) `availableTools`.
+ * Built in one place so a change to the model/temperature/topP resolution or the
+ * project context passthrough can't land on one request shape and miss the other.
+ *
+ * `perTurnContext` is deliberately omitted from both: `buildToolHistoryTurns`
+ * already spliced it into the user turn of `updatedHistory`. Passing it here too
+ * would make `buildContents` append it a second time, duplicating the
+ * (potentially large) context payload on every tool iteration.
+ */
+function buildSharedRequestFields(params: RetryRequestParams): Omit<ExtendedModelRequest, 'userMessage'> {
+	const { plugin, currentSession, updatedHistory, customPrompt, projectInstructions, projectSkills, sessionStartedAt } =
+		params;
+	const modelConfig = currentSession?.modelConfig || {};
+
+	return {
+		kind: 'extended',
+		conversationHistory: updatedHistory,
+		model: modelConfig.model || getActiveChatModel(plugin.settings),
+		temperature: modelConfig.temperature ?? plugin.settings.temperature,
+		topP: modelConfig.topP ?? plugin.settings.topP,
+		prompt: '', // Unused in agent pipeline — context lives in conversationHistory
+		customPrompt,
+		projectInstructions,
+		projectSkills,
+		sessionStartedAt,
+		renderContent: false,
+	};
+}
+
+/**
  * Build the follow-up request sent to the model after tool execution.
  * Includes available tools so the model can chain additional calls.
  */
 export function buildFollowUpRequest(params: FollowUpRequestParams): ExtendedModelRequest {
-	const {
-		plugin,
-		currentSession,
-		updatedHistory,
-		customPrompt,
-		projectRootPath,
-		featureToolPolicy,
-		headless,
-		projectInstructions,
-		projectSkills,
-		sessionStartedAt,
-	} = params;
+	const { plugin, currentSession, projectRootPath, featureToolPolicy, headless } = params;
 
 	const availableToolsContext: ToolExecutionContext = {
 		plugin,
@@ -66,25 +86,9 @@ export function buildFollowUpRequest(params: FollowUpRequestParams): ExtendedMod
 		? plugin.toolRegistry.getAutoApprovedTools(availableToolsContext)
 		: plugin.toolRegistry.getEnabledTools(availableToolsContext);
 
-	const modelConfig = currentSession?.modelConfig || {};
-
-	// `perTurnContext` is deliberately omitted: `buildToolHistoryTurns` already
-	// spliced it into the user turn of `updatedHistory`. Passing it here too
-	// would make `buildContents` append it a second time, duplicating the
-	// (potentially large) context payload on every tool iteration.
 	return {
-		kind: 'extended',
+		...buildSharedRequestFields(params),
 		userMessage: '', // Empty since tool results are already in conversation history
-		conversationHistory: updatedHistory,
-		model: modelConfig.model || getActiveChatModel(plugin.settings),
-		temperature: modelConfig.temperature ?? plugin.settings.temperature,
-		topP: modelConfig.topP ?? plugin.settings.topP,
-		prompt: '', // Unused in agent pipeline — context lives in conversationHistory
-		customPrompt,
-		projectInstructions,
-		projectSkills,
-		sessionStartedAt,
-		renderContent: false,
 		availableTools, // Include tools so model can chain calls
 	};
 }
@@ -94,25 +98,9 @@ export function buildFollowUpRequest(params: FollowUpRequestParams): ExtendedMod
  * Does not include tools — just asks the model to summarize what it did.
  */
 export function buildRetryRequest(params: RetryRequestParams): ExtendedModelRequest {
-	const { plugin, currentSession, updatedHistory, customPrompt, projectInstructions, projectSkills, sessionStartedAt } =
-		params;
-	const modelConfig = currentSession?.modelConfig || {};
-
-	// `perTurnContext` is deliberately omitted — see `buildFollowUpRequest`:
-	// it is already embedded in `updatedHistory` via `buildToolHistoryTurns`.
 	return {
-		kind: 'extended',
+		...buildSharedRequestFields(params),
 		userMessage: 'Please summarize what you just did with the tools.',
-		conversationHistory: updatedHistory,
-		model: modelConfig.model || getActiveChatModel(plugin.settings),
-		temperature: modelConfig.temperature ?? plugin.settings.temperature,
-		topP: modelConfig.topP ?? plugin.settings.topP,
-		prompt: '', // Unused in agent pipeline — context lives in conversationHistory
-		customPrompt,
-		projectInstructions,
-		projectSkills,
-		sessionStartedAt,
-		renderContent: false,
 	};
 }
 
