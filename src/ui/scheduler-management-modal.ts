@@ -1,5 +1,10 @@
 import { Notice, Setting } from 'obsidian';
-import type { ScheduledTask, TaskState, ScheduledTasksState } from '../services/scheduled-task-manager';
+import type {
+	ScheduledTask,
+	ScheduledTaskCreateParams,
+	TaskState,
+	ScheduledTasksState,
+} from '../services/scheduled-task-manager';
 import { DEFAULT_HEADLESS_MAX_ITERATIONS } from '../agent/agent-loop';
 import type { FeatureToolPolicy } from '../types/tool-policy';
 import { ManagementModalBase } from './components/management-modal-base';
@@ -395,31 +400,26 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 			return;
 		}
 
+		// Create and update send the identical field set; only `slug` differs
+		// (it is immutable after creation). Built once so a new form field can't
+		// be added to one branch and forgotten in the other.
+		const params: Omit<ScheduledTaskCreateParams, 'slug'> = {
+			schedule,
+			toolPolicy: this.form.toolPolicy,
+			outputPath: this.form.outputPath || undefined,
+			model: this.form.model || undefined,
+			maxIterations,
+			enabled: this.form.enabled,
+			runIfMissed: this.form.runIfMissed,
+			prompt: this.form.prompt,
+		};
+
 		try {
 			if (isEdit && this.editingSlug) {
-				await manager.updateTask(this.editingSlug, {
-					schedule,
-					toolPolicy: this.form.toolPolicy,
-					outputPath: this.form.outputPath || undefined,
-					model: this.form.model || undefined,
-					maxIterations,
-					enabled: this.form.enabled,
-					runIfMissed: this.form.runIfMissed,
-					prompt: this.form.prompt,
-				});
+				await manager.updateTask(this.editingSlug, params);
 				new Notice(t('scheduler.taskUpdated', { slug: this.editingSlug }));
 			} else {
-				await manager.createTask({
-					slug: this.form.slug,
-					schedule,
-					toolPolicy: this.form.toolPolicy,
-					outputPath: this.form.outputPath || undefined,
-					model: this.form.model || undefined,
-					maxIterations,
-					enabled: this.form.enabled,
-					runIfMissed: this.form.runIfMissed,
-					prompt: this.form.prompt,
-				});
+				await manager.createTask({ slug: this.form.slug, ...params });
 				new Notice(t('scheduler.taskCreated', { slug: this.form.slug }));
 			}
 			this.view = 'list';
