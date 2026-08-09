@@ -2,7 +2,6 @@ import {
 	getErrorMessage,
 	getRawErrorMessage,
 	getRawErrorMessageOr,
-	getShortErrorMessage,
 	isNotFoundError,
 	isQuotaExhausted,
 	isRateLimitError,
@@ -612,46 +611,6 @@ describe('error-utils', () => {
 		test('handles non-Error values via String()', () => {
 			expect(isNotFoundError('plain 404 string')).toBe(true);
 			expect(isNotFoundError(null)).toBe(false);
-		});
-	});
-
-	describe('getShortErrorMessage', () => {
-		test('Extract first sentence from full message', () => {
-			const error = { status: 401 };
-			const short = getShortErrorMessage(error);
-			expect(short).toBe('Authentication failed');
-		});
-
-		test('Extract first clause (before colon)', () => {
-			const error = new Error('Network error: connection failed');
-			const short = getShortErrorMessage(error);
-			expect(short).toBe('Network error');
-		});
-
-		test('Truncate very long messages', () => {
-			// Create an error message that doesn't match any patterns
-			// so it returns "API error: <message>" where message is long
-			const longMessage =
-				'This is a very long error message that does not match any patterns and should be truncated when extracting the short version of the error message for display purposes';
-			const error = new Error(longMessage);
-			const short = getShortErrorMessage(error);
-			// The short message will be "API error" after splitting on ':'
-			// which is less than 80 chars, so this test doesn't actually test truncation
-			// Instead, test that we handle the first clause correctly
-			expect(short.length).toBeLessThanOrEqual(80);
-			expect(short).toBe('API error');
-		});
-
-		test('Short message returned as-is', () => {
-			const error = new Error('Short error');
-			const short = getShortErrorMessage(error);
-			expect(short).toBe('API error');
-		});
-
-		test('Handle complex multi-sentence message', () => {
-			const error = { status: 500, message: 'Internal error. Try again later.' };
-			const short = getShortErrorMessage(error);
-			expect(short).toBe('Server error');
 		});
 	});
 

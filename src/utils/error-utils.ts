@@ -490,7 +490,7 @@ function getHttpErrorMessage(statusCode: number, error: unknown): string {
  * Condense an already-stringified error into the first meaningful line,
  * capped at 120 characters.
  *
- * Unlike {@link getShortErrorMessage}, this takes a raw string rather than an
+ * Unlike {@link getErrorMessage}, this takes a raw string rather than an
  * error value — the automation surfaces (scheduled tasks, hooks, background
  * tasks) persist `lastError` as text, so by the time the UI renders it there is
  * no error object left to inspect. It peels off the two shapes those stored
@@ -523,22 +523,4 @@ export function truncateStoredError(raw: string): string {
 	const stripped = raw.replace(/^(ApiError:\s*)?\[\d+ [^\]]+\]\s*/, '').replace(/^ApiError:\s*/, '');
 	const firstLine = stripped.split(/[\n.]/)[0].trim();
 	return firstLine.length > 120 ? firstLine.slice(0, 117) + '…' : firstLine;
-}
-
-/**
- * Get a shortened error message suitable for inline display
- * (e.g., in status bars or small UI elements)
- */
-export function getShortErrorMessage(error: unknown): string {
-	const fullMessage = getErrorMessage(error);
-
-	// Extract just the first sentence or clause
-	const firstSentence = fullMessage.split(/[:.]/)[0];
-
-	// If it's still too long, truncate it
-	if (firstSentence.length > 80) {
-		return firstSentence.substring(0, 77) + '...';
-	}
-
-	return firstSentence;
 }
