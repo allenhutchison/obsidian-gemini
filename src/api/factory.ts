@@ -20,7 +20,7 @@ import { getDefaultModelForRole, getOllamaModelForRole, getOpenAIModelForRole } 
 import type { ObsidianGemini } from '../types/plugin';
 import { ModelUseCase } from './model-use-case';
 import { resolveProviderOrDefault } from './provider-routing';
-import type { ProviderUseCase } from './providers/registry';
+import type { ModelProvider, ProviderUseCase } from './providers/registry';
 
 /**
  * Which routable use case each model-client use case is billed to.
@@ -67,7 +67,7 @@ export class ModelClientFactory {
 		// features (RAG, image generation) never reach the client factory.
 		const provider = resolveProviderOrDefault(settings, ROUTING_USE_CASE[useCase]);
 
-		const modelName = this.resolveModelName(plugin, useCase);
+		const modelName = this.resolveModelName(plugin, useCase, provider);
 
 		const prompts = new GeminiPrompts(plugin);
 
@@ -131,9 +131,13 @@ export class ModelClientFactory {
 		}
 	}
 
-	private static resolveModelName(plugin: ObsidianGemini, useCase: ModelUseCase): string {
+	/**
+	 * The configured model for a use case. Takes the already-resolved provider
+	 * rather than re-deriving it, so the client and the model name can never be
+	 * chosen from two separate routing lookups.
+	 */
+	private static resolveModelName(plugin: ObsidianGemini, useCase: ModelUseCase, provider: ModelProvider): string {
 		const settings = plugin.settings;
-		const provider = resolveProviderOrDefault(settings, ROUTING_USE_CASE[useCase]);
 		const role = this.roleForUseCase(useCase);
 
 		if (provider === 'ollama') {
