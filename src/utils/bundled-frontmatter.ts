@@ -24,6 +24,15 @@ const FRONTMATTER_BLOCK = /^---\r?\n([\s\S]*?)\r?\n---/;
 /** Match the whole leading frontmatter block including its trailing newline. */
 const FRONTMATTER_WITH_TERMINATOR = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/;
 
+/**
+ * Escape regex metacharacters so a key is matched literally. Callers pass
+ * literals today, but an unescaped `.` in e.g. `model.name` would also match
+ * `modelXname`, and an unescaped `|` would match a different property entirely.
+ */
+function escapeRegExp(value: string): string {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 /** Strip YAML frontmatter from a markdown string, returning only the body. */
 export function stripFrontmatter(md: string): string {
 	const match = md.match(FRONTMATTER_WITH_TERMINATOR);
@@ -43,7 +52,7 @@ export function stripFrontmatter(md: string): string {
 export function parseFrontmatterProperty(md: string, key: string): string {
 	const match = md.match(FRONTMATTER_BLOCK);
 	if (!match) return '';
-	const propMatch = match[1].match(new RegExp(`^${key}:\\s*(.+)$`, 'm'));
+	const propMatch = match[1].match(new RegExp(`^${escapeRegExp(key)}:\\s*(.+)$`, 'm'));
 	if (!propMatch) return '';
 
 	const value = propMatch[1].trim();
@@ -66,7 +75,7 @@ export function parseFrontmatterProperty(md: string, key: string): string {
 export function parseFrontmatterList(md: string, key: string): string[] {
 	const match = md.match(FRONTMATTER_BLOCK);
 	if (!match) return [];
-	const listMatch = match[1].match(new RegExp(`^${key}:\\s*\\[(.*)\\]`, 'm'));
+	const listMatch = match[1].match(new RegExp(`^${escapeRegExp(key)}:\\s*\\[(.*)\\]`, 'm'));
 	if (!listMatch) return [];
 
 	return listMatch[1]
