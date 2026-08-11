@@ -161,6 +161,27 @@ describe('startOAuthCallbackServer', () => {
 		expect(mockRes.writeHead).toHaveBeenCalledWith(400, { 'Content-Type': 'text/html' });
 	});
 
+	it('should escape HTML in error_description before writing it into the error page', async () => {
+		const { startOAuthCallbackServer } = await import('../../src/mcp/mcp-oauth-callback');
+		const handle = await startOAuthCallbackServer();
+
+		const handler = (mockServer as any)._handler;
+		const mockReq = {
+			url: '/callback?error=access_denied&error_description=%3Cscript%3Ealert%281%29%3C%2Fscript%3E',
+		};
+		const mockRes = {
+			writeHead: vi.fn(),
+			end: vi.fn(),
+		};
+
+		handler(mockReq, mockRes);
+
+		await expect(handle.waitForCode).rejects.toThrow('OAuth authorization failed');
+		const body = mockRes.end.mock.calls[0][0] as string;
+		expect(body).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+		expect(body).not.toContain('<script>alert(1)</script>');
+	});
+
 	it('should return 404 for non-callback paths', async () => {
 		const { startOAuthCallbackServer } = await import('../../src/mcp/mcp-oauth-callback');
 		await startOAuthCallbackServer();
