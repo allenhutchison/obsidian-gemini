@@ -22,7 +22,6 @@ import { AgentViewAttachments } from './agent-view-attachments';
 import { ProjectPickerModal } from './project-picker-modal';
 
 // Import modals from agent-view directory
-import { FilePickerModal } from './file-picker-modal';
 import { SessionListModal } from './session-list-modal';
 import { SkillMentionModal, formatSkillTrigger } from './skill-mention-modal';
 import { SessionSettingsModal } from './session-settings-modal';
@@ -446,51 +445,6 @@ export class AgentView extends ItemView {
 	};
 
 	/**
-	 * Remove a file from context
-	 */
-	private removeContextFile(file: TFile) {
-		this.context.removeContextFile(file, this.currentSession);
-		this.updateSessionHeader();
-	}
-
-	/**
-	 * Show file picker modal
-	 */
-	private async showFilePicker() {
-		if (!this.currentSession) return;
-		const session = this.currentSession;
-		const initialFiles = [...session.context.contextFiles];
-
-		const modal = new FilePickerModal(
-			this.app,
-			(newFiles: TFile[]) => {
-				const newSet = new Set(newFiles);
-				const oldSet = new Set(initialFiles);
-				// Remove files no longer selected
-				initialFiles
-					.filter((f) => !newSet.has(f))
-					.forEach((f) => {
-						this.context.removeContextFile(f, session);
-						const shelfItems = this.shelf.getItems();
-						const match = shelfItems.find((item) => item.type === 'text' && item.path === f.path);
-						if (match) this.shelf.removeItem(match.id);
-					});
-				// Add newly selected files
-				newFiles
-					.filter((f) => !oldSet.has(f))
-					.forEach((f) => {
-						this.context.addFileToContext(f, session);
-						this.shelf.addTextFile(f);
-					});
-				this.updateSessionHeader();
-			},
-			this.plugin,
-			initialFiles
-		);
-		modal.open();
-	}
-
-	/**
 	 * Show skill picker modal for / slash commands
 	 */
 	private async showSkillPicker() {
@@ -714,7 +668,6 @@ export class AgentView extends ItemView {
 	 */
 	private getUICallbacks(): UICallbacks {
 		return {
-			showFilePicker: () => this.showFilePicker(),
 			showFileMention: () => this.attachments.showFileMention(),
 			showSkillPicker: () => this.showSkillPicker(),
 			showSessionList: () => this.showSessionList(),
@@ -723,13 +676,9 @@ export class AgentView extends ItemView {
 			sendMessage: () => this.send.sendMessage(),
 			stopAgentLoop: () => this.send.stopAgentLoop(),
 			togglePlanMode: () => this.send.togglePlanMode(),
-			removeContextFile: (file: TFile) => this.removeContextFile(file),
-			updateSessionHeader: () => this.updateSessionHeader(),
 			updateSessionMetadata: () => this.updateSessionMetadata(),
-			loadSession: (session: ChatSession) => this.loadSession(session),
 			isCurrentSession: (session: ChatSession) => this.isCurrentSession(session),
 			addAttachment: (attachment: InlineAttachment) => this.attachments.addAttachment(attachment),
-			removeAttachment: (id: string) => this.attachments.removeAttachment(id),
 			getAttachments: () => this.shelf?.getPendingAttachments() || [],
 			handleDroppedFiles: (files: TFile[]) => this.attachments.handleDroppedFiles(files),
 			switchProject: () => this.switchProject(),

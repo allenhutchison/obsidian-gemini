@@ -9,7 +9,6 @@ import { WorkspaceLeaf, Notice } from 'obsidian';
 vi.mock('../../src/agent/session-history');
 vi.mock('../../src/tools/tool-registry');
 vi.mock('../../src/tools/execution-engine');
-vi.mock('../../src/ui/agent-view/file-picker-modal');
 vi.mock('../../src/ui/agent-view/session-settings-modal');
 
 // Mock external ESM dependencies
@@ -215,7 +214,6 @@ describe('AgentView UI Tests', () => {
 				removeTrailingTriggerChar: vi.fn(),
 				handleDroppedFiles: vi.fn(),
 				addAttachment: vi.fn(),
-				removeAttachment: vi.fn(),
 			};
 		});
 
