@@ -5,6 +5,8 @@ import summarizeSelectionMd from '../../prompts/bundled-prompts/summarize-select
 import fixGrammarMd from '../../prompts/bundled-prompts/fix-grammar.md';
 import convertToBulletsMd from '../../prompts/bundled-prompts/convert-to-bullets.md';
 
+import { parseFrontmatterList, parseFrontmatterProperty, stripFrontmatter } from '../utils/bundled-frontmatter';
+
 interface BundledPrompt {
 	name: string;
 	description: string;
@@ -12,64 +14,14 @@ interface BundledPrompt {
 	tags: string[];
 }
 
-/**
- * Strip YAML frontmatter from a markdown string, returning only the body.
- */
-function stripFrontmatter(md: string): string {
-	const match = md.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/);
-	if (match) {
-		return md.slice(match[0].length).trim();
-	}
-	return md.trim();
-}
-
-/**
- * Parse frontmatter property from YAML.
- * Simple parser — looks for key: ... line.
- */
-function parseProperty(md: string, key: string): string {
-	const match = md.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-	if (!match) return '';
-	const frontmatter = match[1];
-	const propMatch = frontmatter.match(new RegExp(`^${key}:\\s*(.+)$`, 'm'));
-	if (!propMatch) return '';
-
-	const value = propMatch[1].trim();
-	// Remove quotes if present
-	if (value.startsWith('"') && value.endsWith('"')) {
-		return value.slice(1, -1);
-	}
-	if (value.startsWith("'") && value.endsWith("'")) {
-		return value.slice(1, -1);
-	}
-	return value;
-}
-
-/**
- * Parse tags from frontmatter.
- * Expects format: tags: ["tag1", "tag2"]
- */
-function parseTags(md: string): string[] {
-	const match = md.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-	if (!match) return [];
-	const frontmatter = match[1];
-	const tagsMatch = frontmatter.match(/^tags:\s*\[(.*)\]/m);
-	if (!tagsMatch) return [];
-
-	return tagsMatch[1]
-		.split(',')
-		.map((t) => t.trim().replace(/['"]/g, ''))
-		.filter((t) => t.length > 0);
-}
-
 const prompts: Map<string, BundledPrompt> = new Map();
 
 function registerPrompt(id: string, content: string) {
 	prompts.set(id, {
-		name: parseProperty(content, 'name') || id,
-		description: parseProperty(content, 'description'),
+		name: parseFrontmatterProperty(content, 'name') || id,
+		description: parseFrontmatterProperty(content, 'description'),
 		content: stripFrontmatter(content),
-		tags: parseTags(content),
+		tags: parseFrontmatterList(content, 'tags'),
 	});
 }
 

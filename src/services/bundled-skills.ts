@@ -15,6 +15,8 @@ import recallSessionsSkillMd from '../../prompts/bundled-skills/recall-sessions/
 // Auto-generated help references from docs/ — see scripts/generate-help-references.mjs
 import { helpResources, helpReferencesTable } from './generated-help-references';
 
+import { parseFrontmatterProperty, stripFrontmatter } from '../utils/bundled-frontmatter';
+
 interface BundledSkill {
 	name: string;
 	description: string;
@@ -22,27 +24,9 @@ interface BundledSkill {
 	resources: Map<string, string>;
 }
 
-/**
- * Strip YAML frontmatter from a markdown string, returning only the body.
- */
-function stripFrontmatter(md: string): string {
-	const match = md.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/);
-	if (match) {
-		return md.slice(match[0].length).trim();
-	}
-	return md.trim();
-}
-
-/**
- * Parse the description from YAML frontmatter.
- * Simple parser — looks for `description: ...` line.
- */
+/** Read a bundled skill's `description:` frontmatter line. */
 function parseDescription(md: string): string {
-	const match = md.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-	if (!match) return '';
-	const frontmatter = match[1];
-	const descMatch = frontmatter.match(/^description:\s*(.+)$/m);
-	return descMatch ? descMatch[1].trim() : '';
+	return parseFrontmatterProperty(md, 'description');
 }
 
 const skills: Map<string, BundledSkill> = new Map();
