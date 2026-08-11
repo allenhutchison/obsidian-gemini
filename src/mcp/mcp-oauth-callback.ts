@@ -1,15 +1,6 @@
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { OAUTH_CALLBACK_PORT } from './mcp-oauth-provider';
-
-/** Escape untrusted values for safe HTML embedding. */
-function escapeHtml(value: string): string {
-	return value
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
-		.replace(/"/g, '&quot;')
-		.replace(/'/g, '&#39;');
-}
+import { escapeHtml } from '../utils/html-entities';
 
 /** Default timeout for the callback server (2 minutes) */
 const CALLBACK_TIMEOUT_MS = 120_000;

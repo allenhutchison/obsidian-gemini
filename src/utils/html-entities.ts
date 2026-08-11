@@ -1,10 +1,30 @@
 /**
- * Utility for decoding HTML entities in Gemini API responses.
+ * HTML entity encoding and decoding.
  *
- * Gemini models (especially Flash Lite) sometimes return HTML entities
- * despite system prompt instructions not to. Entities can be double or
- * triple-encoded (e.g., &amp;amp;quot; → &amp;quot; → &quot; → ").
+ * Decoding: Gemini models (especially Flash Lite) sometimes return HTML
+ * entities despite system prompt instructions not to. Entities can be double
+ * or triple-encoded (e.g., &amp;amp;quot; → &amp;quot; → &quot; → ").
+ *
+ * Encoding: {@link escapeHtml} is the shared escaper for the places that build
+ * HTML strings by hand — grounding-citation rendering and the MCP OAuth
+ * callback page. It lives here, in a leaf module both can import, rather than
+ * being re-implemented at each call site.
  */
+
+/**
+ * Escape a string for safe interpolation into HTML text/attribute context.
+ *
+ * Escapes the five significant characters (`& < > " '`). `&` is replaced first
+ * so the entities introduced by the later replacements are not re-escaped.
+ */
+export function escapeHtml(value: string): string {
+	return value
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#39;');
+}
 
 /** Named HTML entities we decode. */
 const NAMED_ENTITIES: Record<string, string> = {

@@ -33,19 +33,10 @@ vi.mock('../../src/mcp/mcp-oauth-provider', () => ({
 // Import after mocks
 import { createServer } from 'http';
 
-// --- escapeHtml is a private function; we test it indirectly through
-//     the server's error response HTML. For direct testing we re-implement
-//     the same logic and verify parity. ---
-
-// Standalone copy of escapeHtml for direct testing (private in source)
-function escapeHtml(value: string): string {
-	return value
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
-		.replace(/"/g, '&quot;')
-		.replace(/'/g, '&#39;');
-}
+// The callback page escapes untrusted query values with the shared
+// `escapeHtml` from src/utils/html-entities; exercise that same function here
+// rather than a local copy, so the two cannot drift apart.
+import { escapeHtml } from '../../src/utils/html-entities';
 
 describe('escapeHtml (pure function)', () => {
 	it('should escape ampersands', () => {
@@ -168,6 +159,27 @@ describe('startOAuthCallbackServer', () => {
 
 		await expect(handle.waitForCode).rejects.toThrow('OAuth authorization failed');
 		expect(mockRes.writeHead).toHaveBeenCalledWith(400, { 'Content-Type': 'text/html' });
+	});
+
+	it('should escape HTML in error_description before writing it into the error page', async () => {
+		const { startOAuthCallbackServer } = await import('../../src/mcp/mcp-oauth-callback');
+		const handle = await startOAuthCallbackServer();
+
+		const handler = (mockServer as any)._handler;
+		const mockReq = {
+			url: '/callback?error=access_denied&error_description=%3Cscript%3Ealert%281%29%3C%2Fscript%3E',
+		};
+		const mockRes = {
+			writeHead: vi.fn(),
+			end: vi.fn(),
+		};
+
+		handler(mockReq, mockRes);
+
+		await expect(handle.waitForCode).rejects.toThrow('OAuth authorization failed');
+		const body = mockRes.end.mock.calls[0][0] as string;
+		expect(body).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+		expect(body).not.toContain('<script>alert(1)</script>');
 	});
 
 	it('should return 404 for non-callback paths', async () => {
