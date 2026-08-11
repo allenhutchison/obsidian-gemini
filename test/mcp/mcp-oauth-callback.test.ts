@@ -33,19 +33,10 @@ vi.mock('../../src/mcp/mcp-oauth-provider', () => ({
 // Import after mocks
 import { createServer } from 'http';
 
-// --- escapeHtml is a private function; we test it indirectly through
-//     the server's error response HTML. For direct testing we re-implement
-//     the same logic and verify parity. ---
-
-// Standalone copy of escapeHtml for direct testing (private in source)
-function escapeHtml(value: string): string {
-	return value
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
-		.replace(/"/g, '&quot;')
-		.replace(/'/g, '&#39;');
-}
+// The callback page escapes untrusted query values with the shared
+// `escapeHtml` from src/utils/html-entities; exercise that same function here
+// rather than a local copy, so the two cannot drift apart.
+import { escapeHtml } from '../../src/utils/html-entities';
 
 describe('escapeHtml (pure function)', () => {
 	it('should escape ampersands', () => {

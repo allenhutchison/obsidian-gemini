@@ -31,20 +31,12 @@
  * guarantee; it must not be weakened without updating every caller.
  */
 
+import { escapeHtml } from '../../../utils/html-entities';
+
 /** A normalized grounding source: an external URL and an optional display title. */
 export interface RenderableGroundingSource {
 	url: string;
 	title?: string;
-}
-
-/** Escape a string for safe interpolation into HTML text/attribute context. */
-export function escapeHtml(value: string): string {
-	return value
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
-		.replace(/"/g, '&quot;')
-		.replace(/'/g, '&#39;');
 }
 
 /** Return `value` only if it's an http(s) URL, else '#' — blocks javascript:/data: hrefs. */

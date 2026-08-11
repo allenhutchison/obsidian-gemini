@@ -1,10 +1,10 @@
 import { describe, test, expect } from 'vitest';
 import {
 	renderGroundingSources,
-	escapeHtml,
 	safeExternalUrl,
 	type RenderableGroundingSource,
 } from '../../../../src/api/providers/gemini/grounding-render';
+import { escapeHtml } from '../../../../src/utils/html-entities';
 
 describe('grounding-render: shared search-grounding renderer', () => {
 	test('no sources -> empty string', () => {
