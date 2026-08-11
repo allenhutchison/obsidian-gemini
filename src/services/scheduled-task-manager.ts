@@ -146,22 +146,12 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 		if (this.initialized && !options?.refresh) return;
 		// Cancel any 500 ms defers still waiting from a previous initialization so
 		// stale callbacks cannot fire against the freshly-loaded state.
-		for (const id of this.pendingDefers) {
-			window.clearTimeout(id);
-		}
-		this.pendingDefers.clear();
+		this.cancelPendingDefers();
 		this.recentlyCreated.clear();
 
 		// Unregister previous listeners before re-registering so settings
 		// changes (e.g. historyFolder rename) don't leave stale handlers active.
-		if (this.metadataCacheHandler) {
-			this.plugin.app.metadataCache.off('changed', this.metadataCacheHandler);
-			this.metadataCacheHandler = null;
-		}
-		if (this.vaultCreateHandler) {
-			this.plugin.app.vault.off('create', this.vaultCreateHandler);
-			this.vaultCreateHandler = null;
-		}
+		this.detachVaultListeners();
 
 		await ensureFolderExists(this.plugin.app.vault, this.scheduledTasksFolder, 'scheduled tasks', this.plugin.logger);
 		await ensureFolderExists(this.plugin.app.vault, this.runsFolder, 'scheduled task runs', this.plugin.logger);
@@ -470,21 +460,11 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 			window.clearInterval(this.tickIntervalId);
 			this.tickIntervalId = null;
 		}
-		if (this.metadataCacheHandler) {
-			this.plugin.app.metadataCache.off('changed', this.metadataCacheHandler);
-			this.metadataCacheHandler = null;
-		}
-		if (this.vaultCreateHandler) {
-			this.plugin.app.vault.off('create', this.vaultCreateHandler);
-			this.vaultCreateHandler = null;
-		}
+		this.detachVaultListeners();
 		// Cancel any 500 ms defers still in flight — their callbacks check
 		// this.initialized before touching state, but clearing here is the
 		// belt-and-suspenders guarantee that no timer fires after teardown.
-		for (const id of this.pendingDefers) {
-			window.clearTimeout(id);
-		}
-		this.pendingDefers.clear();
+		this.cancelPendingDefers();
 		this.tasks.clear();
 		this.state = {};
 		this.recentlyCreated.clear();
@@ -493,6 +473,30 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 	}
 
 	// ── Private ──────────────────────────────────────────────────────────────
+
+	/**
+	 * Detach the metadata-cache and vault-create listeners and drop the stored
+	 * references. Both `initialize()` (re-init) and `destroy()` (teardown) need
+	 * this; the two must stay in step, so they share one implementation.
+	 */
+	private detachVaultListeners(): void {
+		if (this.metadataCacheHandler) {
+			this.plugin.app.metadataCache.off('changed', this.metadataCacheHandler);
+			this.metadataCacheHandler = null;
+		}
+		if (this.vaultCreateHandler) {
+			this.plugin.app.vault.off('create', this.vaultCreateHandler);
+			this.vaultCreateHandler = null;
+		}
+	}
+
+	/** Cancel every in-flight `vaultCreateHandler` defer and forget its timer id. */
+	private cancelPendingDefers(): void {
+		for (const id of this.pendingDefers) {
+			window.clearTimeout(id);
+		}
+		this.pendingDefers.clear();
+	}
 
 	protected parseDefinitionFile(file: TFile): Promise<ScheduledTask | null> {
 		return this.parseTaskFile(file);
