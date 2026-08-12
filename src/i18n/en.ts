@@ -2730,19 +2730,6 @@ export const en = {
 		message: 'Select a file or folder to mention...',
 		context: 'Placeholder of the fuzzy-search modal opened by typing @ in the chat input.',
 	},
-	'agent.filePicker.placeholder': {
-		message: 'Search files to add as context...',
-		context: 'Placeholder of the file-picker modal for adding context files to the session.',
-	},
-	'agent.filePicker.toggleInstruction': {
-		message: 'toggle selection',
-		context:
-			'Instruction hint at the bottom of the file picker, shown after the Enter key symbol. Lowercase by convention.',
-	},
-	'agent.filePicker.confirmInstruction': {
-		message: 'confirm and close',
-		context: 'Instruction hint at the bottom of the file picker, shown after "esc". Lowercase by convention.',
-	},
 	'agent.skillMention.placeholder': {
 		message: 'Select a skill to activate...',
 		context: 'Placeholder of the skill-picker modal opened by typing / in the empty chat input.',

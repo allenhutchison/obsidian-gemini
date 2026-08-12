@@ -2,7 +2,7 @@
  * Utility functions for file and folder filtering operations.
  *
  * These utilities provide consistent folder exclusion logic across both:
- * - UI file pickers/modals (FilePickerModal, FileMentionModal)
+ * - UI file pickers/modals (FileMentionModal)
  * - Agent vault tools (read_file, write_file, list_files, etc.)
  */
 

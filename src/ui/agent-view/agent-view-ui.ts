@@ -25,7 +25,6 @@ import { t } from '../../i18n';
  * Callbacks interface for UI interactions
  */
 export interface UICallbacks {
-	showFilePicker: () => Promise<void>;
 	showFileMention: () => Promise<void>;
 	showSkillPicker: () => Promise<void>;
 	showSessionList: () => Promise<void>;
@@ -33,15 +32,11 @@ export interface UICallbacks {
 	createNewSession: () => Promise<void>;
 	sendMessage: () => Promise<void>;
 	stopAgentLoop: () => void;
-	removeContextFile: (file: TFile) => void;
 	togglePlanMode: () => void;
 
-	updateSessionHeader: () => void;
 	updateSessionMetadata: () => Promise<void>;
-	loadSession: (session: ChatSession) => Promise<void>;
 	isCurrentSession: (session: ChatSession) => boolean;
 	addAttachment: (attachment: InlineAttachment) => void;
-	removeAttachment: (id: string) => void;
 	getAttachments: () => InlineAttachment[];
 	handleDroppedFiles: (files: TFile[]) => void;
 	switchProject: () => void;

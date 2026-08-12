@@ -184,11 +184,4 @@ export class AgentViewAttachments {
 	addAttachment(attachment: InlineAttachment): void {
 		this.ctx.getShelf().addBinaryAttachment(attachment);
 	}
-
-	/**
-	 * Remove an attachment from the shelf
-	 */
-	removeAttachment(id: string): void {
-		this.ctx.getShelf().removeItem(id);
-	}
 }

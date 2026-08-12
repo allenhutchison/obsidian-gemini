@@ -10,7 +10,6 @@ vi.mock('obsidian', async () => ({
 	...(await vi.importActual<any>('../../__mocks__/obsidian.js')),
 }));
 vi.mock('../../src/main');
-vi.mock('../../src/ui/agent-view/file-picker-modal');
 vi.mock('../../src/ui/agent-view/session-list-modal');
 vi.mock('../../src/ui/agent-view/file-mention-modal');
 vi.mock('../../src/ui/agent-view/session-settings-modal');
@@ -82,7 +81,6 @@ describe('AgentViewUI', () => {
 
 		// Setup Callbacks mock
 		callbacks = {
-			showFilePicker: vi.fn().mockResolvedValue(undefined),
 			showFileMention: vi.fn().mockResolvedValue(undefined),
 			showSkillPicker: vi.fn().mockResolvedValue(undefined),
 			showSessionList: vi.fn().mockResolvedValue(undefined),
@@ -91,13 +89,9 @@ describe('AgentViewUI', () => {
 			sendMessage: vi.fn().mockResolvedValue(undefined),
 			stopAgentLoop: vi.fn(),
 			togglePlanMode: vi.fn(),
-			removeContextFile: vi.fn(),
-			updateSessionHeader: vi.fn(),
 			updateSessionMetadata: vi.fn().mockResolvedValue(undefined),
-			loadSession: vi.fn().mockResolvedValue(undefined),
 			isCurrentSession: vi.fn(),
 			addAttachment: vi.fn(),
-			removeAttachment: vi.fn(),
 			getAttachments: vi.fn().mockReturnValue([]),
 			handleDroppedFiles: vi.fn(),
 			switchProject: vi.fn(),
