@@ -43,6 +43,22 @@ const STATE_FILE = 'scheduled-tasks-state.json';
 /** Milliseconds between scheduler ticks (60 s). Same cadence as ChatTimer. */
 const TICK_INTERVAL_MS = 60_000;
 
+/**
+ * Render a string as a single-quoted YAML scalar.
+ *
+ * A single-quoted scalar escapes an embedded `'` by doubling it. Interpolating
+ * the raw value instead terminates the scalar early, which makes the whole
+ * frontmatter block unparseable — and because `parseTaskFile` reads the block
+ * through `metadataCache`, an unparseable block makes the task silently vanish
+ * from the scheduler rather than fail loudly. A user-entered `outputPath` with
+ * an apostrophe ("Allen's Notes/{date}.md") is the realistic way to hit it;
+ * `schedule` is grammar-constrained by `computeNextRunAt` and goes through the
+ * same helper only so the writer has one rule instead of a per-field audit.
+ */
+function yamlSingleQuoted(value: string): string {
+	return `'${value.replace(/'/g, "''")}'`;
+}
+
 // ─── Manager ─────────────────────────────────────────────────────────────────
 
 /**
@@ -575,7 +591,7 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 		prompt: string;
 	}): string {
 		const lines: string[] = ['---'];
-		lines.push(`schedule: '${params.schedule}'`);
+		lines.push(`schedule: ${yamlSingleQuoted(params.schedule)}`);
 
 		const policyLines = formatToolPolicyYaml(params.toolPolicy);
 		if (policyLines) {
@@ -584,11 +600,11 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 
 		const defaultOutputPath = params.slug && normalizePath(`${this.runsFolder}/${params.slug}/{date}.md`);
 		if (params.outputPath && params.outputPath !== defaultOutputPath) {
-			lines.push(`outputPath: '${params.outputPath}'`);
+			lines.push(`outputPath: ${yamlSingleQuoted(params.outputPath)}`);
 		}
 
 		if (params.model) {
-			lines.push(`model: '${params.model}'`);
+			lines.push(`model: ${yamlSingleQuoted(params.model)}`);
 		}
 		if (params.maxIterations !== undefined) {
 			lines.push(`maxIterations: ${params.maxIterations}`);
