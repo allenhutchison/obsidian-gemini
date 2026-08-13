@@ -1674,6 +1674,43 @@ describe('ScheduledTaskManager', () => {
 			const written = (plugin.app.vault.create as Mock).mock.calls[0][1] as string;
 			expect(written).toContain("outputPath: 'Custom/Output/{date}.md'");
 		});
+
+		it('escapes an apostrophe in outputPath so the frontmatter block stays parseable', async () => {
+			const plugin = createMockPlugin();
+			plugin.app.vault.create = vi.fn().mockResolvedValue(undefined);
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			await manager.createTask({
+				slug: 'apostrophe-out',
+				schedule: 'daily',
+				outputPath: "Allen's Notes/{date}.md",
+				prompt: 'Apostrophe in the path.',
+			});
+
+			const written = (plugin.app.vault.create as Mock).mock.calls[0][1] as string;
+			// A single-quoted YAML scalar escapes `'` by doubling it; interpolating
+			// the raw value would terminate the scalar early and break the block.
+			expect(written).toContain("outputPath: 'Allen''s Notes/{date}.md'");
+			expect(written).not.toContain("outputPath: 'Allen's Notes/{date}.md'");
+		});
+
+		it('escapes an apostrophe in model', async () => {
+			const plugin = createMockPlugin();
+			plugin.app.vault.create = vi.fn().mockResolvedValue(undefined);
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			await manager.createTask({
+				slug: 'apostrophe-model',
+				schedule: 'daily',
+				model: "allen's-model",
+				prompt: 'Apostrophe in the model name.',
+			});
+
+			const written = (plugin.app.vault.create as Mock).mock.calls[0][1] as string;
+			expect(written).toContain("model: 'allen''s-model'");
+		});
 	});
 
 	// ── parseTaskFile — model and legacy migration ───────────────────────
