@@ -9,15 +9,18 @@ import { ModelUseCase } from '../../../../src/api/model-use-case';
 // Capture every call to `client.models.generateContent` so tests can assert on
 // the params (system instruction, contents, etc.) the SDK sees. vi.hoisted lets
 // us share the spy with the factory while keeping vitest's mock-hoisting safe.
-const { generateContentMock, interactionsCreateMock, interactionsService } = vi.hoisted(() => {
-	return {
-		generateContentMock: vi.fn(),
-		interactionsCreateMock: vi.fn(),
-		interactionsService: {
-			create: vi.fn(),
-		},
-	};
-});
+const { generateContentMock, generateContentStreamMock, interactionsCreateMock, interactionsService } = vi.hoisted(
+	() => {
+		return {
+			generateContentMock: vi.fn(),
+			generateContentStreamMock: vi.fn(),
+			interactionsCreateMock: vi.fn(),
+			interactionsService: {
+				create: vi.fn(),
+			},
+		};
+	}
+);
 // Keep the create spy name the existing tests use.
 interactionsService.create = interactionsCreateMock;
 
@@ -27,7 +30,7 @@ vi.mock('@google/genai', () => ({
 			getModel: vi.fn(),
 			models: {
 				generateContent: generateContentMock,
-				generateContentStream: vi.fn(),
+				generateContentStream: generateContentStreamMock,
 			},
 			interactions: interactionsService,
 		};
@@ -1590,6 +1593,83 @@ describe('GeminiClient', () => {
 			expect(interactionsCreateMock.mock.calls[0][0].stream).toBe(true);
 			expect(chunks).toEqual([{ text: 'streamed' }]);
 			expect(response.markdown).toBe('streamed');
+		});
+	});
+
+	describe('generateStreamingResponse() cancellation (generateContent transport)', () => {
+		beforeEach(() => {
+			generateContentStreamMock.mockReset();
+			// Stub the plugin surface buildExtendedSystemInstruction depends on.
+			mockPlugin.agentsMemory = { read: vi.fn().mockResolvedValue('') };
+			mockPlugin.skillManager = { getSkillSummaries: vi.fn().mockResolvedValue([]) };
+			mockPlugin.settings = { userName: 'Tester', ragIndexing: { enabled: false } };
+		});
+
+		// A real abort() rejects the SDK's underlying fetch, which propagates out
+		// of the `for await` loop as a rejection. Mimic that here (rather than
+		// hanging on a promise the flag alone can't reach) so the test only passes
+		// when cancel() actually reaches the transport.
+		function pendingUntilAborted(signal?: AbortSignal): Promise<never> {
+			return new Promise((_, reject) => {
+				if (signal?.aborted) {
+					reject(new Error('Aborted'));
+					return;
+				}
+				signal?.addEventListener('abort', () => reject(new Error('Aborted')));
+			});
+		}
+
+		function textChunk(text: string) {
+			return { candidates: [{ content: { parts: [{ text }] } }] };
+		}
+
+		it('cancel() aborts the request signal and returns the accumulated partial response', async () => {
+			let capturedSignal: AbortSignal | undefined;
+			generateContentStreamMock.mockImplementation(async (params: any) => {
+				capturedSignal = params?.config?.abortSignal;
+				return (async function* () {
+					yield textChunk('partial');
+					await pendingUntilAborted(capturedSignal);
+				})();
+			});
+
+			const stream = client.generateStreamingResponse(
+				{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] },
+				() => {}
+			);
+			// Let the first chunk be consumed before cancelling.
+			await new Promise((r) => window.setTimeout(r, 0));
+			stream.cancel();
+			const result = await stream.complete;
+
+			expect(capturedSignal?.aborted).toBe(true);
+			expect(result.markdown).toBe('partial');
+			// A cancelled stream resolves with what it has; it must not reject.
+			expect(mockLogger.error).not.toHaveBeenCalled();
+		});
+
+		it('cancel() during request setup pre-aborts the signal the SDK reads', async () => {
+			let capturedSignal: AbortSignal | undefined;
+			generateContentStreamMock.mockImplementation(async (params: any) => {
+				capturedSignal = params?.config?.abortSignal;
+				return (async function* () {
+					// The await always rejects once cancel() fires, so this yield is
+					// never reached — it is here because a generator must have one.
+					await pendingUntilAborted(capturedSignal);
+					yield textChunk('never reached');
+				})();
+			});
+
+			const stream = client.generateStreamingResponse(
+				{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] },
+				() => {}
+			);
+			// Cancel synchronously, before buildGenerateContentParams has resolved.
+			stream.cancel();
+			const result = await stream.complete;
+
+			expect(capturedSignal?.aborted).toBe(true);
+			expect(result.markdown).toBe('');
 		});
 	});
 });

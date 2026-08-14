@@ -346,6 +346,13 @@ export class GeminiClient implements ModelApi {
 		}
 
 		let cancelled = false;
+		// The `cancelled` flag alone only stops the loop on the *next* chunk, so a
+		// stalled or slow stream keeps the request alive after Stop. Thread an
+		// abort signal into the request from the start — the SDK rejects the
+		// in-flight fetch when it fires, which the cancelled-in-catch arm below
+		// turns into the accumulated partial response. Same shape the sibling
+		// `streamViaInteractions` and the Ollama/OpenAI clients already use.
+		const controller = new AbortController();
 		let accumulatedText = '';
 		let accumulatedRendered = '';
 		let accumulatedThoughts = '';
@@ -354,6 +361,7 @@ export class GeminiClient implements ModelApi {
 
 		const complete = (async (): Promise<ModelResponse> => {
 			const params = await this.buildGenerateContentParams(request);
+			params.config = { ...params.config, abortSignal: controller.signal };
 
 			// Assemble the response from the current accumulator state. Called from
 			// both the success return and the cancelled-in-catch return, which must
@@ -454,6 +462,14 @@ export class GeminiClient implements ModelApi {
 			complete,
 			cancel: () => {
 				cancelled = true;
+				try {
+					// Safe to call at any point: the controller exists before the request
+					// is built, so an abort that lands during setup pre-aborts the signal
+					// the SDK is about to read.
+					controller.abort();
+				} catch (err) {
+					this.plugin?.logger.debug('[GeminiClient] Abort failed:', err);
+				}
 			},
 		};
 	}
