@@ -862,18 +862,7 @@ export class AgentViewMessages {
 				});
 
 				viewChangesBtn.addEventListener('click', () => {
-					void this.openDiffView(
-						diffContext,
-						handleResponse,
-						(view) => {
-							diffViewOpen = true;
-							activeDiffView = view;
-						},
-						() => {
-							diffViewOpen = false;
-							activeDiffView = null;
-						}
-					);
+					openDiffForReview(diffContext);
 				});
 			}
 
@@ -913,6 +902,24 @@ export class AgentViewMessages {
 				this.debouncedScrollToBottom();
 			};
 
+			// Both entry points into the diff view — the "View Changes" button above and
+			// the alwaysShowDiffView auto-open below — need the same arguments and the same
+			// open/close bookkeeping, so they share one call site.
+			const openDiffForReview = (ctx: DiffContext) => {
+				void this.openDiffView(
+					ctx,
+					handleResponse,
+					(view) => {
+						diffViewOpen = true;
+						activeDiffView = view;
+					},
+					() => {
+						diffViewOpen = false;
+						activeDiffView = null;
+					}
+				);
+			};
+
 			// Create named handlers so we can remove them later
 			const allowHandler = () => {
 				// If a diff view is open, get its current (possibly edited) content
@@ -947,18 +954,7 @@ export class AgentViewMessages {
 				this.autoOpenDiffTimeout = window.setTimeout(() => {
 					this.autoOpenDiffTimeout = null;
 					// Fire-and-forget: auto-opening the diff view is a UI side effect.
-					void this.openDiffView(
-						diffContext,
-						handleResponse,
-						(view) => {
-							diffViewOpen = true;
-							activeDiffView = view;
-						},
-						() => {
-							diffViewOpen = false;
-							activeDiffView = null;
-						}
-					);
+					openDiffForReview(diffContext);
 				}, 100);
 			}
 
