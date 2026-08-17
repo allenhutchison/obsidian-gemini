@@ -247,10 +247,12 @@ export class AgentViewUI {
 			if (hasCustomSettings) {
 				// The tooltip line and the badge label below show the same template
 				// name, so it is derived once — the two copies had already drifted to
-				// different fallbacks for a path with no usable file name.
+				// different fallbacks for a path with no usable file name. Only a
+				// trailing `.md` is stripped, so a template whose name contains `.md`
+				// earlier on keeps it.
 				const promptTemplate = currentSession.modelConfig.promptTemplate;
 				const promptName = promptTemplate
-					? promptTemplate.split('/').pop()?.replace('.md', '') || t('agent.header.promptBadgeFallback')
+					? promptTemplate.split('/').pop()?.replace(/\.md$/i, '').trim() || t('agent.header.promptBadgeFallback')
 					: null;
 
 				// Build detailed tooltip
