@@ -2373,6 +2373,11 @@ export const en = {
 		message: 'Prompt: {value}',
 		context: 'Line in the session-settings badge tooltip. {value} is the name of a custom prompt template.',
 	},
+	'agent.header.promptBadgeFallback': {
+		message: 'Custom',
+		context:
+			'Label shown on the session prompt badge (and in its tooltip) when the configured prompt template path has no usable file name.',
+	},
 	'agent.header.menuAria': {
 		message: 'Session menu',
 		context: 'Accessibility label (aria-label) for the hamburger menu button in the session header.',
