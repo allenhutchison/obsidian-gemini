@@ -49,16 +49,7 @@ export class ToolLoopDetector {
 	 * Check if executing this tool call would create a loop
 	 */
 	isLoopDetected(sessionId: string, toolCall: ToolCall): boolean {
-		const key = this.getToolCallKey(toolCall);
-		const history = this.executionHistory.get(sessionId) || [];
-		const now = Date.now();
-
-		// Count recent identical calls
-		const recentIdenticalCalls = history.filter(
-			(record) => record.key === key && now - record.timestamp < this.timeWindowMs
-		);
-
-		return recentIdenticalCalls.length >= this.loopThreshold;
+		return this.getRecentIdenticalCalls(sessionId, toolCall).length >= this.loopThreshold;
 	}
 
 	/**
@@ -67,12 +58,8 @@ export class ToolLoopDetector {
 	getLoopInfo(sessionId: string, toolCall: ToolCall): LoopDetectionInfo {
 		const key = this.getToolCallKey(toolCall);
 		const history = this.executionHistory.get(sessionId) || [];
-		const now = Date.now();
 
-		const recentIdenticalCalls = history.filter(
-			(record) => record.key === key && now - record.timestamp < this.timeWindowMs
-		);
-
+		const recentIdenticalCalls = this.getRecentIdenticalCalls(sessionId, toolCall);
 		const consecutiveCalls = this.countConsecutiveCalls(history, key);
 
 		return {
@@ -89,6 +76,21 @@ export class ToolLoopDetector {
 	 */
 	clearSession(sessionId: string) {
 		this.executionHistory.delete(sessionId);
+	}
+
+	/**
+	 * Records for this session matching the tool call, within the time window.
+	 *
+	 * The `isLoop` decision and the `identicalCallCount` reported alongside it are
+	 * the same count, so both entry points read it from here rather than each
+	 * repeating the key/history/window filter.
+	 */
+	private getRecentIdenticalCalls(sessionId: string, toolCall: ToolCall): ToolExecutionRecord[] {
+		const key = this.getToolCallKey(toolCall);
+		const history = this.executionHistory.get(sessionId) || [];
+		const now = Date.now();
+
+		return history.filter((record) => record.key === key && now - record.timestamp < this.timeWindowMs);
 	}
 
 	/**
