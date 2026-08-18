@@ -486,8 +486,11 @@ export class ContextManager {
 		// Phase 1: try truncating old tool-result payloads. Cheap (no LLM
 		// call), deterministic, and often enough on its own when a single big
 		// `read_file` is responsible for most of the bloat. We reuse the
-		// existing 4-chars-per-token heuristic to estimate the post-truncation
-		// size without spending a `countTokens` roundtrip.
+		// generic DEFAULT_CHARS_PER_TOKEN heuristic to estimate the
+		// post-truncation size without spending a `countTokens` roundtrip
+		// (deliberately the generic constant, not the per-model calibrated
+		// ratio — the calibration is keyed to whole-history char length, and
+		// applying it to a delta would mix two different measurements).
 		//
 		// Phase 2: if truncation alone didn't get us back under threshold, fall
 		// through to summarization. Summarization runs against the truncated
@@ -499,7 +502,7 @@ export class ContextManager {
 			const truncationDelta = JSON.stringify(conversationHistory).length - JSON.stringify(truncatedHistory).length;
 			if (truncationDelta > 0) {
 				this.logger.log(`[ContextManager] Phase 1 (truncation): shed ~${truncationDelta} bytes from old tool results`);
-				postPhase1Tokens = Math.max(0, estimatedTokens - Math.ceil(truncationDelta / 4));
+				postPhase1Tokens = Math.max(0, estimatedTokens - Math.ceil(truncationDelta / DEFAULT_CHARS_PER_TOKEN));
 			}
 		}
 
