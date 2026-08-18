@@ -245,6 +245,16 @@ export class AgentViewUI {
 				currentSession.modelConfig.promptTemplate;
 
 			if (hasCustomSettings) {
+				// The tooltip line and the badge label below show the same template
+				// name, so it is derived once — the two copies had already drifted to
+				// different fallbacks for a path with no usable file name. Only a
+				// trailing `.md` is stripped, so a template whose name contains `.md`
+				// earlier on keeps it.
+				const promptTemplate = currentSession.modelConfig.promptTemplate;
+				const promptName = promptTemplate
+					? promptTemplate.split('/').pop()?.replace(/\.md$/i, '').trim() || t('agent.header.promptBadgeFallback')
+					: null;
+
 				// Build detailed tooltip
 				const tooltipParts: string[] = [];
 
@@ -257,14 +267,12 @@ export class AgentViewUI {
 				if (currentSession.modelConfig.topP !== undefined) {
 					tooltipParts.push(t('agent.header.tooltipTopP', { value: currentSession.modelConfig.topP }));
 				}
-				if (currentSession.modelConfig.promptTemplate) {
-					const promptName = currentSession.modelConfig.promptTemplate.split('/').pop()?.replace('.md', '') || 'custom';
+				if (promptName) {
 					tooltipParts.push(t('agent.header.tooltipPrompt', { value: promptName }));
 				}
 
 				// Show just the prompt template name if present, otherwise show icon
-				if (currentSession.modelConfig.promptTemplate) {
-					const promptName = currentSession.modelConfig.promptTemplate.split('/').pop()?.replace('.md', '') || 'Custom';
+				if (promptName) {
 					leftSection.createSpan({
 						cls: 'gemini-agent-prompt-badge',
 						text: promptName,
