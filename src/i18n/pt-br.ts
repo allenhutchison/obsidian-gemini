@@ -714,6 +714,7 @@ export const ptBR: Partial<Record<TranslationKey, string>> = {
 	'agent.header.tooltipTemperature': 'Temperatura: {value}',
 	'agent.header.tooltipTopP': 'Top-P: {value}',
 	'agent.header.tooltipPrompt': 'Prompt: {value}',
+	'agent.header.promptBadgeFallback': 'Personalizado',
 	'agent.header.menuAria': 'Menu da sessão',
 	'agent.header.projectTooltip': 'Projeto: {name}\n{path}',
 	'agent.header.linkProjectTooltip': 'Clique para vincular um projeto',

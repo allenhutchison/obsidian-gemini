@@ -704,6 +704,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'agent.header.tooltipTemperature': 'Temperatur: {value}',
 	'agent.header.tooltipTopP': 'Top-P: {value}',
 	'agent.header.tooltipPrompt': 'Prompt: {value}',
+	'agent.header.promptBadgeFallback': 'Egendefinert',
 	'agent.header.menuAria': 'Øktmeny',
 	'agent.header.projectTooltip': 'Prosjekt: {name}\n{path}',
 	'agent.header.linkProjectTooltip': 'Klikk for å koble til et prosjekt',

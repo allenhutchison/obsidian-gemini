@@ -705,6 +705,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'agent.header.tooltipTemperature': 'Suhu: {value}',
 	'agent.header.tooltipTopP': 'Top-P: {value}',
 	'agent.header.tooltipPrompt': 'Prompt: {value}',
+	'agent.header.promptBadgeFallback': 'Kustom',
 	'agent.header.menuAria': 'Menu sesi',
 	'agent.header.projectTooltip': 'Proyek: {name}\n{path}',
 	'agent.header.linkProjectTooltip': 'Klik untuk menautkan proyek',

@@ -693,6 +693,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'agent.header.tooltipTemperature': '온도: {value}',
 	'agent.header.tooltipTopP': 'Top-P: {value}',
 	'agent.header.tooltipPrompt': '프롬프트: {value}',
+	'agent.header.promptBadgeFallback': '사용자 정의',
 	'agent.header.menuAria': '세션 메뉴',
 	'agent.header.projectTooltip': '프로젝트: {name}\n{path}',
 	'agent.header.linkProjectTooltip': '클릭하여 프로젝트 연결',

@@ -723,6 +723,7 @@ export const es: Partial<Record<TranslationKey, string>> = {
 	'agent.header.tooltipTemperature': 'Temperatura: {value}',
 	'agent.header.tooltipTopP': 'Top-P: {value}',
 	'agent.header.tooltipPrompt': 'Prompt: {value}',
+	'agent.header.promptBadgeFallback': 'Personalizado',
 	'agent.header.menuAria': 'Menú de sesión',
 	'agent.header.projectTooltip': 'Proyecto: {name}\n{path}',
 	'agent.header.linkProjectTooltip': 'Haz clic para vincular un proyecto',
