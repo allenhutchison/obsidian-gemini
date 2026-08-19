@@ -151,15 +151,23 @@ export class SessionManager {
 	}
 
 	/**
-	 * Get all recent agent sessions
+	 * The `limit` most recently modified session notes in the Agent-Sessions folder,
+	 * newest first. Empty when the folder doesn't exist yet.
 	 */
-	async getRecentAgentSessions(limit = 10): Promise<ChatSession[]> {
+	private listRecentSessionFiles(limit: number): TFile[] {
 		const agentSessionsFolder = this.getAgentSessionsFolder();
 		if (!agentSessionsFolder) return [];
-		const sessionFiles = agentSessionsFolder.children
+		return agentSessionsFolder.children
 			.filter((file): file is TFile => file instanceof TFile && file.extension === 'md')
 			.sort((a, b) => b.stat.mtime - a.stat.mtime)
 			.slice(0, limit);
+	}
+
+	/**
+	 * Get all recent agent sessions
+	 */
+	async getRecentAgentSessions(limit = 10): Promise<ChatSession[]> {
+		const sessionFiles = this.listRecentSessionFiles(limit);
 
 		const sessions: ChatSession[] = [];
 		for (const file of sessionFiles) {
@@ -179,12 +187,7 @@ export class SessionManager {
 	 * Reads raw frontmatter only — no wikilink resolution or TFile construction.
 	 */
 	async getSessionMetadata(limit = 10): Promise<SessionMetadata[]> {
-		const agentSessionsFolder = this.getAgentSessionsFolder();
-		if (!agentSessionsFolder) return [];
-		const sessionFiles = agentSessionsFolder.children
-			.filter((file): file is TFile => file instanceof TFile && file.extension === 'md')
-			.sort((a, b) => b.stat.mtime - a.stat.mtime)
-			.slice(0, limit);
+		const sessionFiles = this.listRecentSessionFiles(limit);
 
 		const results: SessionMetadata[] = [];
 		for (const file of sessionFiles) {
