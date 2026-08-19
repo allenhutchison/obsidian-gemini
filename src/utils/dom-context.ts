@@ -50,14 +50,8 @@ export function insertTextAtCursor(element: HTMLElement, text: string): void {
 		// No selection, append to end
 		element.appendChild(doc.createTextNode(text));
 
-		// Move cursor to end - only if we have a selection object
-		if (selection) {
-			const range = doc.createRange();
-			range.selectNodeContents(element);
-			range.collapse(false);
-			selection.removeAllRanges();
-			selection.addRange(range);
-		}
+		// Move cursor to end - moveCursorToEnd no-ops when there is no selection object
+		moveCursorToEnd(element);
 		return;
 	}
 
@@ -81,11 +75,7 @@ export function insertTextAtCursor(element: HTMLElement, text: string): void {
 		element.appendChild(doc.createTextNode(text));
 
 		// Move cursor to end
-		const range = doc.createRange();
-		range.selectNodeContents(element);
-		range.collapse(false);
-		selection.removeAllRanges();
-		selection.addRange(range);
+		moveCursorToEnd(element);
 	}
 }
 
