@@ -16,6 +16,8 @@ interface VaultInfoCache {
 	vaultInfo: string;
 	fileCount: number;
 	lastModified: number;
+	/** The exclusion set the entry was built under — see `VaultAnalyzer.exclusionKey`. */
+	exclusionKey: string;
 	timestamp: number;
 }
 
@@ -191,12 +193,20 @@ export class VaultAnalyzer {
 		// Calculate vault fingerprint (file count + most recent modification)
 		const lastModified = allFiles.length > 0 ? Math.max(...allFiles.map((f) => f.stat.mtime)) : 0;
 
+		// Every part of the summary below is derived from the exclusion set, so a
+		// changed state folder must miss the cache even when the count and the
+		// newest mtime happen to land on the same values. `historyFolder` is
+		// editable at runtime and does not re-create this service — `saveSettings`
+		// only re-runs `lifecycle.setup()` for API-key/provider/base-URL changes.
+		const exclusionKey = this.exclusionKey();
+
 		// Check if we can use cached data (for large vaults)
 		if (this.vaultInfoCache && fileCount > 1000) {
 			const now = Date.now();
 			const cacheValid =
 				this.vaultInfoCache.fileCount === fileCount &&
 				this.vaultInfoCache.lastModified === lastModified &&
+				this.vaultInfoCache.exclusionKey === exclusionKey &&
 				now - this.vaultInfoCache.timestamp < this.CACHE_TTL_MS;
 
 			if (cacheValid) {
@@ -229,6 +239,7 @@ export class VaultAnalyzer {
 				vaultInfo,
 				fileCount,
 				lastModified,
+				exclusionKey,
 				timestamp: Date.now(),
 			};
 			this.plugin.logger.log('VaultAnalyzer: Cached vault information for large vault');
@@ -305,8 +316,18 @@ export class VaultAnalyzer {
 	 * renamed `_obsidian-notes/` is not wrongly excluded by a bare prefix match.
 	 */
 	private isSystemPath(path: string): boolean {
-		const skipPaths = [this.plugin.settings.historyFolder, this.plugin.app.vault.configDir];
-		return skipPaths.some((skip) => isPathInFolder(path, skip));
+		return (
+			isPathInFolder(path, this.plugin.settings.historyFolder) || isPathInFolder(path, this.plugin.app.vault.configDir)
+		);
+	}
+
+	/**
+	 * Identity of the current exclusion set, for cache validation. Reads the same
+	 * two paths as {@link isSystemPath} — keep them in step. `\n` can't appear in
+	 * a vault path, so it's an unambiguous separator.
+	 */
+	private exclusionKey(): string {
+		return `${this.plugin.settings.historyFolder}\n${this.plugin.app.vault.configDir}`;
 	}
 
 	/** Files that survive {@link isSystemPath}. */

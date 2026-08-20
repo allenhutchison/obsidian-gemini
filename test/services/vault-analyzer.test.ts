@@ -475,6 +475,26 @@ describe('VaultAnalyzer', () => {
 			expect(mockPlugin.logger.log).toHaveBeenCalledWith(expect.stringContaining('Using cached'));
 		});
 
+		it('should not reuse the cache after the state folder changes', () => {
+			// Same file count and same newest mtime under either setting, so only
+			// the exclusion set distinguishes the two results.
+			const inA = createMockFile('A/x.md', 500);
+			const inB = createMockFile('B/y.md', 500);
+			const userFiles = Array.from({ length: 1001 }, (_, i) => createMockFile(`file${i}.md`, 100));
+			mockPlugin.app.vault.getMarkdownFiles.mockReturnValue([inA, inB, ...userFiles]);
+
+			mockPlugin.settings.historyFolder = 'A';
+			const withAExcluded = (analyzer as any).collectVaultInformation();
+			expect(withAExcluded).toContain('B/y');
+			expect(withAExcluded).not.toContain('A/x');
+
+			mockPlugin.settings.historyFolder = 'B';
+			const withBExcluded = (analyzer as any).collectVaultInformation();
+
+			expect(withBExcluded).toContain('A/x');
+			expect(withBExcluded).not.toContain('B/y');
+		});
+
 		it('should not cache for small vaults (<= 1000 files)', () => {
 			const files = [createMockFile('a.md', 100)];
 			mockPlugin.app.vault.getMarkdownFiles.mockReturnValue(files);
