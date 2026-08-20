@@ -41,6 +41,20 @@ export class RagCache {
 	}
 
 	/**
+	 * Build a fresh, empty cache at the current version. `storeName` is carried over
+	 * on a version reset so an existing File Search store isn't orphaned; it defaults
+	 * to empty for the no-file and load-failure paths, which have nothing to carry.
+	 */
+	private static emptyCache(storeName = ''): RagIndexCache {
+		return {
+			version: CACHE_VERSION,
+			storeName,
+			lastSync: 0,
+			files: {},
+		};
+	}
+
+	/**
 	 * Load the index cache from disk
 	 */
 	async loadCache(): Promise<void> {
@@ -74,12 +88,7 @@ export class RagCache {
 							typeof version === 'number' ? version : 'unknown'
 						}, expected ${CACHE_VERSION}), resetting cache`
 					);
-					this._cache = {
-						version: CACHE_VERSION,
-						storeName: typeof parsed.storeName === 'string' ? parsed.storeName : '',
-						lastSync: 0,
-						files: {},
-					};
+					this._cache = RagCache.emptyCache(typeof parsed.storeName === 'string' ? parsed.storeName : '');
 				} else {
 					// Version matched the expected shape — treat as a validated RagIndexCache.
 					this._cache = parsed as unknown as RagIndexCache;
@@ -93,22 +102,12 @@ export class RagCache {
 				this.plugin.logger.log(`RAG Indexing: Loaded cache with ${this._indexedCount} files`);
 			} else {
 				// Initialize empty cache - no file exists
-				this._cache = {
-					version: CACHE_VERSION,
-					storeName: '',
-					lastSync: 0,
-					files: {},
-				};
+				this._cache = RagCache.emptyCache();
 				this._indexedCount = 0;
 			}
 		} catch (error) {
 			this.plugin.logger.error('RAG Indexing: Failed to load cache', error);
-			this._cache = {
-				version: CACHE_VERSION,
-				storeName: '',
-				lastSync: 0,
-				files: {},
-			};
+			this._cache = RagCache.emptyCache();
 			this._indexedCount = 0;
 		}
 	}
