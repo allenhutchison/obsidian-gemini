@@ -4,6 +4,7 @@ import { CustomPrompt, PromptInfo } from './types';
 import { BundledPromptRegistry } from './bundled-prompts';
 import { t } from '../i18n';
 import { asRecord } from '../utils/error-utils';
+import { isPathInFolder } from '../utils/file-utils';
 
 export class PromptManager {
 	constructor(
@@ -78,8 +79,10 @@ export class PromptManager {
 
 		const prompts: PromptInfo[] = [];
 
-		// Use Vault.getMarkdownFiles() and filter by path
-		const markdownFiles = this.vault.getMarkdownFiles().filter((file) => file.path.startsWith(promptsDir));
+		// Use Vault.getMarkdownFiles() and filter by path. Root-anchored
+		// containment, so a sibling like `Prompts-archive/` or a stray
+		// `Prompts.md` next to the folder isn't listed as a custom prompt.
+		const markdownFiles = this.vault.getMarkdownFiles().filter((file) => isPathInFolder(file.path, promptsDir));
 
 		for (const file of markdownFiles) {
 			const prompt = await this.loadPromptFromFile(file.path);

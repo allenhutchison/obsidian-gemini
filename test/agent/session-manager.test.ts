@@ -260,6 +260,37 @@ describe('SessionManager', () => {
 			// Verify context files were parsed correctly
 			expect(session.context.contextFiles).toHaveLength(1);
 		});
+
+		it('should not type a file in a sibling folder as an agent session', async () => {
+			const mockHistoryFile = {
+				// A bare prefix match on `gemini-scribe/Agent-Sessions` would swallow this.
+				path: 'gemini-scribe/Agent-Sessions-archive/old.md',
+				basename: 'old',
+				stat: { ctime: Date.now(), mtime: Date.now() },
+			} as any;
+
+			mockPlugin.app.vault.read.mockResolvedValue('test content');
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter: {} });
+
+			const session = await (sessionManager as any).loadSessionFromFile(mockHistoryFile);
+
+			expect(session.type).toBe(SessionType.NOTE_CHAT);
+		});
+
+		it('should type a file inside the agent sessions folder as an agent session', async () => {
+			const mockHistoryFile = {
+				path: 'gemini-scribe/Agent-Sessions/nested/session.md',
+				basename: 'session',
+				stat: { ctime: Date.now(), mtime: Date.now() },
+			} as any;
+
+			mockPlugin.app.vault.read.mockResolvedValue('test content');
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter: {} });
+
+			const session = await (sessionManager as any).loadSessionFromFile(mockHistoryFile);
+
+			expect(session.type).toBe(SessionType.AGENT_SESSION);
+		});
 	});
 
 	describe('loadSessionFromFile - accessed_files', () => {
