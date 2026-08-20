@@ -229,6 +229,24 @@ describe('VaultAnalyzer', () => {
 			expect(count).toBe(2);
 		});
 
+		it('should not count files inside a nested plugin state folder', () => {
+			// historyFolder nested under a user folder: the parent's count must
+			// match the total, which excludes plugin state.
+			mockPlugin.settings.historyFolder = 'Meta/gemini-scribe';
+
+			const parent = createMockFolder('Meta', 'Meta');
+			const state = createMockFolder('Meta/gemini-scribe', 'gemini-scribe');
+			const note = createMockFile('Meta/note.md');
+			note.extension = 'md';
+			const session = createMockFile('Meta/gemini-scribe/session.md');
+			session.extension = 'md';
+			state.children = [session];
+			parent.children = [note, state];
+
+			const count = (analyzer as any).countMarkdownFilesInFolder(parent);
+			expect(count).toBe(1);
+		});
+
 		it('should return 0 for empty folder', () => {
 			const folder = createMockFolder('empty', 'empty');
 			folder.children = [];
@@ -425,6 +443,56 @@ describe('VaultAnalyzer', () => {
 
 			expect(result1).toBe(result2);
 			expect(mockPlugin.logger.log).toHaveBeenCalledWith(expect.stringContaining('Using cached'));
+		});
+
+		it('should exclude plugin state and config files from the reported count', () => {
+			const files = [
+				createMockFile('notes/a.md', 100),
+				createMockFile('gemini-scribe/Agent-Sessions/session.md', 200),
+				createMockFile('.obsidian/plugins/notes.md', 300),
+			];
+			mockPlugin.app.vault.getMarkdownFiles.mockReturnValue(files);
+
+			const result = (analyzer as any).collectVaultInformation();
+
+			expect(result).toContain('1 markdown files');
+		});
+
+		it('should not invalidate the large-vault cache when only state files change', () => {
+			const userFiles = Array.from({ length: 1001 }, (_, i) => createMockFile(`file${i}.md`, 100));
+			const sessionFile = createMockFile('gemini-scribe/Agent-Sessions/session.md', 500);
+			mockPlugin.app.vault.getMarkdownFiles.mockReturnValue([...userFiles, sessionFile]);
+
+			const result1 = (analyzer as any).collectVaultInformation();
+
+			// The plugin rewrites its own session file on every agent turn.
+			const touchedSession = createMockFile('gemini-scribe/Agent-Sessions/session.md', 9999);
+			mockPlugin.app.vault.getMarkdownFiles.mockReturnValue([...userFiles, touchedSession]);
+
+			const result2 = (analyzer as any).collectVaultInformation();
+
+			expect(result2).toBe(result1);
+			expect(mockPlugin.logger.log).toHaveBeenCalledWith(expect.stringContaining('Using cached'));
+		});
+
+		it('should not reuse the cache after the state folder changes', () => {
+			// Same file count and same newest mtime under either setting, so only
+			// the exclusion set distinguishes the two results.
+			const inA = createMockFile('A/x.md', 500);
+			const inB = createMockFile('B/y.md', 500);
+			const userFiles = Array.from({ length: 1001 }, (_, i) => createMockFile(`file${i}.md`, 100));
+			mockPlugin.app.vault.getMarkdownFiles.mockReturnValue([inA, inB, ...userFiles]);
+
+			mockPlugin.settings.historyFolder = 'A';
+			const withAExcluded = (analyzer as any).collectVaultInformation();
+			expect(withAExcluded).toContain('B/y');
+			expect(withAExcluded).not.toContain('A/x');
+
+			mockPlugin.settings.historyFolder = 'B';
+			const withBExcluded = (analyzer as any).collectVaultInformation();
+
+			expect(withBExcluded).toContain('A/x');
+			expect(withBExcluded).not.toContain('B/y');
 		});
 
 		it('should not cache for small vaults (<= 1000 files)', () => {
