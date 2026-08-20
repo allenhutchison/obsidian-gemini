@@ -179,7 +179,13 @@ export class VaultAnalyzer {
 	 */
 	private collectVaultInformation(): string {
 		const vault = this.plugin.app.vault;
-		const allFiles = vault.getMarkdownFiles();
+		// Exclude the plugin state folder and the Obsidian config directory before
+		// anything is derived from the list. Beyond keeping the reported total
+		// honest, it keeps the large-vault cache usable: the fingerprint below is
+		// the newest mtime, and the plugin rewrites its own `Agent-Sessions/`
+		// files on every agent turn — counting those meant the cache was
+		// invalidated by our own writes and effectively never hit.
+		const allFiles = this.excludeSystemFiles(vault.getMarkdownFiles());
 		const fileCount = allFiles.length;
 
 		// Calculate vault fingerprint (file count + most recent modification)
@@ -285,14 +291,26 @@ export class VaultAnalyzer {
 	}
 
 	/**
+	 * Drop files that live in the plugin state folder or the Obsidian
+	 * configuration directory — neither is user content, so neither belongs in
+	 * anything we count, fingerprint, or show the model.
+	 *
+	 * Root-anchored containment so a sibling like `gemini-scribe-backup/` or a
+	 * renamed `_obsidian-notes/` is not wrongly excluded by a bare prefix match.
+	 */
+	private excludeSystemFiles(files: TFile[]): TFile[] {
+		const skipPaths = [this.plugin.settings.historyFolder, this.plugin.app.vault.configDir];
+		return files.filter((f) => !skipPaths.some((skip) => isPathInFolder(f.path, skip)));
+	}
+
+	/**
 	 * Get a representative sample of file names for topic analysis
 	 */
 	private getSampleFileNames(files: TFile[], limit: number = 20): string[] {
-		// Get files from different parts of the vault for diversity
-		const skipPaths = [this.plugin.settings.historyFolder, this.plugin.app.vault.configDir];
-		// Root-anchored containment so a sibling like `gemini-scribe-backup/` or a
-		// renamed `_obsidian-notes/` is not wrongly excluded by a bare prefix match.
-		const filteredFiles = files.filter((f) => !skipPaths.some((skip) => isPathInFolder(f.path, skip)));
+		// Get files from different parts of the vault for diversity. Callers
+		// inside collectVaultInformation already pass a filtered list; the filter
+		// stays here so the method is correct on its own.
+		const filteredFiles = this.excludeSystemFiles(files);
 
 		// Sort by modification time to get recent files
 		const sortedFiles = filteredFiles.sort((a, b) => b.stat.mtime - a.stat.mtime).slice(0, limit);

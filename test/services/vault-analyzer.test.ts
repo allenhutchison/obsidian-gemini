@@ -427,6 +427,36 @@ describe('VaultAnalyzer', () => {
 			expect(mockPlugin.logger.log).toHaveBeenCalledWith(expect.stringContaining('Using cached'));
 		});
 
+		it('should exclude plugin state and config files from the reported count', () => {
+			const files = [
+				createMockFile('notes/a.md', 100),
+				createMockFile('gemini-scribe/Agent-Sessions/session.md', 200),
+				createMockFile('.obsidian/plugins/notes.md', 300),
+			];
+			mockPlugin.app.vault.getMarkdownFiles.mockReturnValue(files);
+
+			const result = (analyzer as any).collectVaultInformation();
+
+			expect(result).toContain('1 markdown files');
+		});
+
+		it('should not invalidate the large-vault cache when only state files change', () => {
+			const userFiles = Array.from({ length: 1001 }, (_, i) => createMockFile(`file${i}.md`, 100));
+			const sessionFile = createMockFile('gemini-scribe/Agent-Sessions/session.md', 500);
+			mockPlugin.app.vault.getMarkdownFiles.mockReturnValue([...userFiles, sessionFile]);
+
+			const result1 = (analyzer as any).collectVaultInformation();
+
+			// The plugin rewrites its own session file on every agent turn.
+			const touchedSession = createMockFile('gemini-scribe/Agent-Sessions/session.md', 9999);
+			mockPlugin.app.vault.getMarkdownFiles.mockReturnValue([...userFiles, touchedSession]);
+
+			const result2 = (analyzer as any).collectVaultInformation();
+
+			expect(result2).toBe(result1);
+			expect(mockPlugin.logger.log).toHaveBeenCalledWith(expect.stringContaining('Using cached'));
+		});
+
 		it('should not cache for small vaults (<= 1000 files)', () => {
 			const files = [createMockFile('a.md', 100)];
 			mockPlugin.app.vault.getMarkdownFiles.mockReturnValue(files);
