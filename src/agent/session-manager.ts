@@ -9,7 +9,7 @@ import {
 	DestructiveAction,
 } from '../types/agent';
 import type { ObsidianGemini } from '../types/plugin';
-import { sanitizeFileName } from '../utils/file-utils';
+import { isPathInFolder, sanitizeFileName } from '../utils/file-utils';
 import { formatLocalDate } from '../utils/format-utils';
 import { FeatureToolPolicy, clonePolicy } from '../types/tool-policy';
 import { resolveFeatureToolPolicy } from '../services/feature-definition';
@@ -345,8 +345,10 @@ export class SessionManager {
 	private async loadSessionFromFile(file: TFile): Promise<ChatSession> {
 		const frontmatter = asRecord(this.plugin.app.metadataCache.getFileCache(file)?.frontmatter);
 
-		// Determine session type based on folder location
-		const isAgentSession = file.path.startsWith(this.getAgentSessionsFolderPath());
+		// Determine session type based on folder location. Root-anchored
+		// containment, so a sibling like `Agent-Sessions-archive/` isn't
+		// mistyped as an agent session.
+		const isAgentSession = isPathInFolder(file.path, this.getAgentSessionsFolderPath());
 
 		const session: ChatSession = {
 			id: asFrontmatterString(frontmatter.session_id) ?? this.generateSessionId(),

@@ -258,6 +258,46 @@ Content`;
 			});
 		});
 
+		it('should not list files from a sibling folder sharing the prompts prefix', async () => {
+			const mockFolder = Object.create(MockTFolder.prototype);
+			mockFolder.path = 'gemini-scribe/Prompts';
+
+			const inFolder = Object.assign(new TFile(), {
+				path: 'gemini-scribe/Prompts/prompt1.md',
+				basename: 'prompt1',
+			});
+
+			mockVault.getMarkdownFiles.mockReturnValue([
+				inFolder,
+				// Sibling folder and sibling file that a bare prefix match would swallow.
+				Object.assign(new TFile(), { path: 'gemini-scribe/Prompts-archive/old.md', basename: 'old' }),
+				Object.assign(new TFile(), { path: 'gemini-scribe/Prompts.md', basename: 'Prompts' }),
+			]);
+
+			mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
+				if (path === 'gemini-scribe/Prompts') return mockFolder;
+				return Object.assign(new TFile(), { path });
+			});
+
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue({
+				frontmatter: { name: 'Test Prompt', description: 'Test', tags: ['test'] },
+				sections: [
+					{ type: 'yaml', position: { start: { line: 0 }, end: { line: 4 } } },
+					{ type: 'paragraph', position: { start: { line: 5 }, end: { line: 5 } } },
+				],
+			});
+			mockVault.read.mockResolvedValue(`---
+name: "Test Prompt"
+description: "Test"
+tags: [test]
+---
+Content`);
+
+			const result = await promptManager.listAvailablePrompts();
+
+			expect(result.map((p) => p.path)).toEqual(['gemini-scribe/Prompts/prompt1.md']);
+		});
+
 		it('should handle empty prompts directory', async () => {
 			mockVault.adapter.list.mockResolvedValue({
 				files: [],
