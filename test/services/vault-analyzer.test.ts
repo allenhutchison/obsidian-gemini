@@ -229,6 +229,24 @@ describe('VaultAnalyzer', () => {
 			expect(count).toBe(2);
 		});
 
+		it('should not count files inside a nested plugin state folder', () => {
+			// historyFolder nested under a user folder: the parent's count must
+			// match the total, which excludes plugin state.
+			mockPlugin.settings.historyFolder = 'Meta/gemini-scribe';
+
+			const parent = createMockFolder('Meta', 'Meta');
+			const state = createMockFolder('Meta/gemini-scribe', 'gemini-scribe');
+			const note = createMockFile('Meta/note.md');
+			note.extension = 'md';
+			const session = createMockFile('Meta/gemini-scribe/session.md');
+			session.extension = 'md';
+			state.children = [session];
+			parent.children = [note, state];
+
+			const count = (analyzer as any).countMarkdownFilesInFolder(parent);
+			expect(count).toBe(1);
+		});
+
 		it('should return 0 for empty folder', () => {
 			const folder = createMockFolder('empty', 'empty');
 			folder.children = [];

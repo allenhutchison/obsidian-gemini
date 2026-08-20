@@ -287,20 +287,31 @@ export class VaultAnalyzer {
 	 * Count markdown files in a folder (including subfolders)
 	 */
 	private countMarkdownFilesInFolder(folder: TFolder): number {
-		return collectFilesFromFolder(folder, { filter: (f) => f.extension === 'md' }).length;
+		// Prune rather than post-filter: a state folder nested under a user folder
+		// (e.g. `Meta/gemini-scribe/`) would otherwise inflate that parent's count
+		// even though the reported total excludes it.
+		return collectFilesFromFolder(folder, {
+			filter: (f) => f.extension === 'md',
+			prune: (item) => this.isSystemPath(item.path),
+		}).length;
 	}
 
 	/**
-	 * Drop files that live in the plugin state folder or the Obsidian
+	 * Whether a path is inside the plugin state folder or the Obsidian
 	 * configuration directory — neither is user content, so neither belongs in
 	 * anything we count, fingerprint, or show the model.
 	 *
 	 * Root-anchored containment so a sibling like `gemini-scribe-backup/` or a
 	 * renamed `_obsidian-notes/` is not wrongly excluded by a bare prefix match.
 	 */
-	private excludeSystemFiles(files: TFile[]): TFile[] {
+	private isSystemPath(path: string): boolean {
 		const skipPaths = [this.plugin.settings.historyFolder, this.plugin.app.vault.configDir];
-		return files.filter((f) => !skipPaths.some((skip) => isPathInFolder(f.path, skip)));
+		return skipPaths.some((skip) => isPathInFolder(path, skip));
+	}
+
+	/** Files that survive {@link isSystemPath}. */
+	private excludeSystemFiles(files: TFile[]): TFile[] {
+		return files.filter((f) => !this.isSystemPath(f.path));
 	}
 
 	/**
