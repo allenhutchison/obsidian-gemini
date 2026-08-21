@@ -32,6 +32,14 @@ function isHttpTransport(config: MCPServerConfig): boolean {
 	return config.transport === MCP_TRANSPORT_HTTP;
 }
 
+/**
+ * Describe a server config's connection target for the debug log — the URL for
+ * HTTP transports, the command and args for stdio ones.
+ */
+function describeConnectionTarget(config: MCPServerConfig, useHttp: boolean): string {
+	return useHttp ? `url: ${config.url}` : `command: ${config.command}, args: [${config.args.join(', ')}]`;
+}
+
 /** Union type for supported MCP transports */
 type MCPTransport = StdioClientTransportType | StreamableHTTPClientTransport;
 
@@ -255,13 +263,7 @@ export class MCPManager {
 
 		this.updateState(config.name, { status: MCPConnectionStatus.CONNECTING, toolNames: [] });
 
-		if (useHttp) {
-			this.logger.debug(`MCP: Connecting to "${config.name}" — url: ${config.url}`);
-		} else {
-			this.logger.debug(
-				`MCP: Connecting to "${config.name}" — command: ${config.command}, args: [${config.args.join(', ')}]`
-			);
-		}
+		this.logger.debug(`MCP: Connecting to "${config.name}" — ${describeConnectionTarget(config, useHttp)}`);
 
 		let transport: MCPTransport | null = null;
 		try {
@@ -444,13 +446,7 @@ export class MCPManager {
 			throw new Error(`${OFFLINE_ERROR_PREFIX} — cannot test HTTP MCP server`);
 		}
 
-		if (useHttp) {
-			this.logger.debug(`MCP: Test connection to "${config.name}" — url: ${config.url}`);
-		} else {
-			this.logger.debug(
-				`MCP: Test connection to "${config.name}" — command: ${config.command}, args: [${config.args.join(', ')}]`
-			);
-		}
+		this.logger.debug(`MCP: Test connection to "${config.name}" — ${describeConnectionTarget(config, useHttp)}`);
 
 		let transport: MCPTransport | null = null;
 		try {
