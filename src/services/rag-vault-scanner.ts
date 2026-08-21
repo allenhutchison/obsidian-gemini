@@ -268,10 +268,18 @@ export class RagVaultScanner {
 	}
 
 	/**
-	 * Start resume indexing with progress modal.
+	 * Open the progress modal and start a vault index in the background.
+	 *
+	 * Used both when resuming an interrupted index and for the very first index
+	 * of a vault (see `RagIndexingService.initialize`) — the two differ only in
+	 * the message logged if the background index rejects.
 	 * @param progressProvider - The object to pass to the progress modal (typically the orchestrator)
+	 * @param failureLogMessage - Logger message used when the background index rejects
 	 */
-	startResumeIndexing(progressProvider: RagProgressProvider): void {
+	startResumeIndexing(
+		progressProvider: RagProgressProvider,
+		failureLogMessage = 'RAG Indexing: Resume indexing failed'
+	): void {
 		// Fire-and-forget: lazy-load and open the progress modal; indexing itself is handled below.
 		void import('../ui/rag-progress-modal').then(({ RagProgressModal }) => {
 			const progressModal = new RagProgressModal(this.plugin.app, progressProvider, (result) => {
@@ -282,7 +290,7 @@ export class RagVaultScanner {
 
 		// Run indexing in background (don't await - modal handles display)
 		this.indexVault().catch((error) => {
-			this.plugin.logger.error('RAG Indexing: Resume indexing failed', error);
+			this.plugin.logger.error(failureLogMessage, error);
 			new Notice(t('notice.rag.indexingFailed', { error: getErrorMessage(error) }));
 		});
 	}
