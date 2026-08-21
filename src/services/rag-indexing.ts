@@ -6,7 +6,6 @@ import { TFile, Notice } from 'obsidian';
 import type { FileUploader } from '@allenhutchison/gemini-utils';
 import type { ObsidianGemini } from '../types/plugin';
 import { ObsidianVaultAdapter } from './obsidian-file-adapter';
-import { getErrorMessage } from '../utils/error-utils';
 import { t } from '../i18n';
 import { RagCache } from './rag-cache';
 import { RagRateLimiter } from './rag-rate-limiter';
@@ -159,20 +158,9 @@ export class RagIndexingService {
 			if (this.ragCache.indexedCount === 0) {
 				new Notice(t('notice.rag.startingInitial'));
 
-				// Open progress modal for initial indexing
-				// Fire-and-forget: lazy-load and open the progress modal; indexing itself is handled below.
-				void import('../ui/rag-progress-modal').then(({ RagProgressModal }) => {
-					const progressModal = new RagProgressModal(this.plugin.app, this, (result) => {
-						new Notice(t('notice.rag.indexingComplete', { indexed: result.indexed, skipped: result.skipped }));
-					});
-					progressModal.open();
-				});
-
-				// Run indexing in background (don't await - modal handles display)
-				this.indexVault().catch((error) => {
-					this.plugin.logger.error('RAG Indexing: Initial indexing failed', error);
-					new Notice(t('notice.rag.indexingFailed', { error: getErrorMessage(error) }));
-				});
+				// Same open-modal-then-index-in-background sequence the scanner uses when
+				// resuming; this.indexVault() delegates to the scanner's either way.
+				this.vaultScanner.startResumeIndexing(this, 'RAG Indexing: Initial indexing failed');
 			}
 		} catch (error) {
 			this.plugin.logger.error('RAG Indexing: Failed to initialize', error);
