@@ -707,6 +707,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'agent.header.tooltipTemperature': 'Temperatur: {value}',
 	'agent.header.tooltipTopP': 'Top-P: {value}',
 	'agent.header.tooltipPrompt': 'Prompt: {value}',
+	'agent.header.promptBadgeFallback': 'Brugerdefineret',
 	'agent.header.menuAria': 'Sessionsmenu',
 	'agent.header.projectTooltip': 'Projekt: {name}\n{path}',
 	'agent.header.linkProjectTooltip': 'Klik for at tilknytte et projekt',

@@ -720,6 +720,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'agent.header.tooltipTemperature': 'Температура: {value}',
 	'agent.header.tooltipTopP': 'Top-P: {value}',
 	'agent.header.tooltipPrompt': 'Промпт: {value}',
+	'agent.header.promptBadgeFallback': 'Пользовательский',
 	'agent.header.menuAria': 'Меню сессии',
 	'agent.header.projectTooltip': 'Проект: {name}\n{path}',
 	'agent.header.linkProjectTooltip': 'Нажмите, чтобы привязать проект',

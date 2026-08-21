@@ -661,6 +661,7 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'agent.header.tooltipTemperature': '温度：{value}',
 	'agent.header.tooltipTopP': 'Top-P：{value}',
 	'agent.header.tooltipPrompt': '提示词：{value}',
+	'agent.header.promptBadgeFallback': '自定义',
 	'agent.header.menuAria': '会话菜单',
 	'agent.header.projectTooltip': '项目：{name}\n{path}',
 	'agent.header.linkProjectTooltip': '点击以关联项目',

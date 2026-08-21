@@ -659,6 +659,7 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'agent.header.tooltipTemperature': '溫度：{value}',
 	'agent.header.tooltipTopP': 'Top-P：{value}',
 	'agent.header.tooltipPrompt': '提示詞：{value}',
+	'agent.header.promptBadgeFallback': '自訂',
 	'agent.header.menuAria': '對話選單',
 	'agent.header.projectTooltip': '專案：{name}\n{path}',
 	'agent.header.linkProjectTooltip': '點擊以連結專案',

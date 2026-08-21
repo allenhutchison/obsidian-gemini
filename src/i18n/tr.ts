@@ -719,6 +719,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'agent.header.tooltipTemperature': 'Sıcaklık: {value}',
 	'agent.header.tooltipTopP': 'Top-P: {value}',
 	'agent.header.tooltipPrompt': 'Prompt: {value}',
+	'agent.header.promptBadgeFallback': 'Özel',
 	'agent.header.menuAria': 'Oturum menüsü',
 	'agent.header.projectTooltip': 'Proje: {name}\n{path}',
 	'agent.header.linkProjectTooltip': 'Bir projeyi bağlamak için tıklayın',

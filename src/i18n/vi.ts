@@ -708,6 +708,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'agent.header.tooltipTemperature': 'Nhiệt độ: {value}',
 	'agent.header.tooltipTopP': 'Top-P: {value}',
 	'agent.header.tooltipPrompt': 'Prompt: {value}',
+	'agent.header.promptBadgeFallback': 'Tùy chỉnh',
 	'agent.header.menuAria': 'Menu phiên',
 	'agent.header.projectTooltip': 'Dự án: {name}\n{path}',
 	'agent.header.linkProjectTooltip': 'Nhấp để liên kết dự án',

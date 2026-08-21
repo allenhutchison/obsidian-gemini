@@ -709,6 +709,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'agent.header.tooltipTemperature': '温度: {value}',
 	'agent.header.tooltipTopP': 'Top-P: {value}',
 	'agent.header.tooltipPrompt': 'プロンプト: {value}',
+	'agent.header.promptBadgeFallback': 'カスタム',
 	'agent.header.menuAria': 'セッションメニュー',
 	'agent.header.projectTooltip': 'プロジェクト: {name}\n{path}',
 	'agent.header.linkProjectTooltip': 'クリックしてプロジェクトをリンク',

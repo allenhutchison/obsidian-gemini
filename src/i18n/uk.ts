@@ -715,6 +715,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'agent.header.tooltipTemperature': 'Температура: {value}',
 	'agent.header.tooltipTopP': 'Top-P: {value}',
 	'agent.header.tooltipPrompt': 'Промпт: {value}',
+	'agent.header.promptBadgeFallback': 'Власний',
 	'agent.header.menuAria': 'Меню сесії',
 	'agent.header.projectTooltip': 'Проєкт: {name}\n{path}',
 	'agent.header.linkProjectTooltip': "Клацніть, щоб зв'язати проєкт",

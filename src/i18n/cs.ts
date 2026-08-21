@@ -707,6 +707,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'agent.header.tooltipTemperature': 'Teplota: {value}',
 	'agent.header.tooltipTopP': 'Top-P: {value}',
 	'agent.header.tooltipPrompt': 'Prompt: {value}',
+	'agent.header.promptBadgeFallback': 'Vlastní',
 	'agent.header.menuAria': 'Menu relace',
 	'agent.header.projectTooltip': 'Projekt: {name}\n{path}',
 	'agent.header.linkProjectTooltip': 'Kliknutím propojíte projekt',
