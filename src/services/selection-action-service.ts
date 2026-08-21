@@ -16,6 +16,19 @@ export class SelectionActionService {
 	constructor(private plugin: ObsidianGemini) {}
 
 	/**
+	 * Return the editor's current selection, or null after notifying the user
+	 * that nothing is selected. Shared by the three selection-action entry points.
+	 */
+	private requireSelection(editor: Editor): string | null {
+		const selection = editor.getSelection();
+		if (!selection || selection.trim().length === 0) {
+			new Notice(t('notice.selection.noSelection'));
+			return null;
+		}
+		return selection;
+	}
+
+	/**
 	 * Handle "Explain Selection" action:
 	 * 1. Gets the selected text from editor
 	 * 2. Shows prompt selection modal (filtered by selection-action tag)
@@ -23,11 +36,8 @@ export class SelectionActionService {
 	 * 4. Shows response in modal with option to insert as callout
 	 */
 	async handleExplainSelection(editor: Editor, sourceFile: TFile | null): Promise<void> {
-		const selection = editor.getSelection();
-		if (!selection || selection.trim().length === 0) {
-			new Notice(t('notice.selection.noSelection'));
-			return;
-		}
+		const selection = this.requireSelection(editor);
+		if (selection === null) return;
 
 		// Capture selection end position now (before modal opens and potentially clears selection)
 		const selectionEnd = editor.getCursor('to');
@@ -57,11 +67,8 @@ export class SelectionActionService {
 	 * Handle a specific selection prompt
 	 */
 	async handleSelectionPrompt(editor: Editor, sourceFile: TFile | null, prompt: CustomPrompt): Promise<void> {
-		const selection = editor.getSelection();
-		if (!selection || selection.trim().length === 0) {
-			new Notice(t('notice.selection.noSelection'));
-			return;
-		}
+		const selection = this.requireSelection(editor);
+		if (selection === null) return;
 		const selectionEnd = editor.getCursor('to');
 		await this.generateAndShowResponseWithPosition(editor, selection, prompt.content, sourceFile, selectionEnd);
 	}
@@ -74,11 +81,8 @@ export class SelectionActionService {
 	 * 4. Shows response in modal with option to insert as callout
 	 */
 	async handleAskAboutSelection(editor: Editor, sourceFile: TFile | null): Promise<void> {
-		const selection = editor.getSelection();
-		if (!selection || selection.trim().length === 0) {
-			new Notice(t('notice.selection.noSelection'));
-			return;
-		}
+		const selection = this.requireSelection(editor);
+		if (selection === null) return;
 
 		// Show question input modal
 		const questionModal = new AskQuestionModal(this.plugin.app, selection, async (question: string) => {
