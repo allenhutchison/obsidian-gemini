@@ -79,19 +79,8 @@ export class HookRunner {
 	// ── summarize action ─────────────────────────────────────────────────────
 
 	private async runSummarize(isCancelled: () => boolean): Promise<string | undefined> {
-		if (isCancelled()) return undefined;
-		const file = this.resolveTriggerFile();
+		const file = this.resolveMarkdownTriggerFile('summarize', isCancelled);
 		if (!file) return undefined;
-		// Existing summary feature only supports markdown — non-md fires are a
-		// silent no-op rather than a failure, so a hook with a broad pathGlob
-		// that catches images doesn't pollute the failure counter.
-		if (file.extension !== 'md') {
-			this.plugin.logger.log(
-				`[HookRunner] Hook "${this.ctx.hook.slug}" — summarize: skipping non-markdown file ${file.path}`
-			);
-			return undefined;
-		}
-		if (isCancelled()) return undefined;
 		const summarizer = this.plugin.summarizer ?? new GeminiSummary(this.plugin);
 		await summarizer.summarizeFile(file);
 		// summarize writes back to frontmatter on the original file rather
@@ -103,16 +92,8 @@ export class HookRunner {
 	// ── rewrite action ───────────────────────────────────────────────────────
 
 	private async runRewrite(isCancelled: () => boolean): Promise<string | undefined> {
-		if (isCancelled()) return undefined;
-		const file = this.resolveTriggerFile();
+		const file = this.resolveMarkdownTriggerFile('rewrite', isCancelled);
 		if (!file) return undefined;
-		if (file.extension !== 'md') {
-			this.plugin.logger.log(
-				`[HookRunner] Hook "${this.ctx.hook.slug}" — rewrite: skipping non-markdown file ${file.path}`
-			);
-			return undefined;
-		}
-		if (isCancelled()) return undefined;
 		const instructions = renderPrompt(this.ctx.hook.prompt, this.promptVars());
 		const rewriter = new SelectionRewriter(this.plugin);
 		await rewriter.rewriteFile(file, instructions);
@@ -166,6 +147,32 @@ export class HookRunner {
 			throw new Error(`[HookRunner] Command "${commandId}" not found or refused to run`);
 		}
 		return undefined;
+	}
+
+	/**
+	 * Shared preamble for the markdown-only actions (summarize, rewrite): honour
+	 * cancellation on both sides of the lookup, resolve the trigger file, and skip
+	 * non-markdown fires.
+	 *
+	 * The summary and rewrite features only support markdown — a non-md fire is a
+	 * silent no-op rather than a failure, so a hook with a broad pathGlob that
+	 * catches images doesn't pollute the failure counter.
+	 *
+	 * Returns `undefined` when the caller should skip (cancelled, file gone, or
+	 * not markdown); the skip reason is logged here.
+	 */
+	private resolveMarkdownTriggerFile(action: string, isCancelled: () => boolean): TFile | undefined {
+		if (isCancelled()) return undefined;
+		const file = this.resolveTriggerFile();
+		if (!file) return undefined;
+		if (file.extension !== 'md') {
+			this.plugin.logger.log(
+				`[HookRunner] Hook "${this.ctx.hook.slug}" — ${action}: skipping non-markdown file ${file.path}`
+			);
+			return undefined;
+		}
+		if (isCancelled()) return undefined;
+		return file;
 	}
 
 	private resolveTriggerFile(): TFile | undefined {
