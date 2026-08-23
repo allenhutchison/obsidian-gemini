@@ -34,7 +34,7 @@ export class ToolLoopDetector {
 		}
 
 		const history = this.executionHistory.get(sessionId)!;
-		history.push({ key, timestamp, toolCall });
+		history.push({ key, timestamp });
 
 		// Keep history size manageable
 		if (history.length > this.maxHistorySize) {
@@ -56,16 +56,11 @@ export class ToolLoopDetector {
 	 * Get loop detection info for a tool call
 	 */
 	getLoopInfo(sessionId: string, toolCall: ToolCall): LoopDetectionInfo {
-		const key = this.getToolCallKey(toolCall);
-		const history = this.executionHistory.get(sessionId) || [];
-
 		const recentIdenticalCalls = this.getRecentIdenticalCalls(sessionId, toolCall);
-		const consecutiveCalls = this.countConsecutiveCalls(history, key);
 
 		return {
 			isLoop: recentIdenticalCalls.length >= this.loopThreshold,
 			identicalCallCount: recentIdenticalCalls.length,
-			consecutiveCallCount: consecutiveCalls,
 			timeWindowMs: this.timeWindowMs,
 			lastCallTimestamp: recentIdenticalCalls[recentIdenticalCalls.length - 1]?.timestamp,
 		};
@@ -119,21 +114,6 @@ export class ToolLoopDetector {
 	}
 
 	/**
-	 * Count consecutive calls with the same key
-	 */
-	private countConsecutiveCalls(history: ToolExecutionRecord[], targetKey: string): number {
-		let count = 0;
-		for (let i = history.length - 1; i >= 0; i--) {
-			if (history[i].key === targetKey) {
-				count++;
-			} else {
-				break;
-			}
-		}
-		return count;
-	}
-
-	/**
 	 * Clean up entries older than the time window
 	 */
 	private cleanupOldEntries(sessionId: string) {
@@ -149,16 +129,20 @@ export class ToolLoopDetector {
 	}
 }
 
+/**
+ * One recorded call. Only the derived {@link key} and the timestamp are kept —
+ * matching and windowing are both done on those, so holding the original
+ * `ToolCall` (and its arguments) here would retain it for the life of the
+ * session's history for no reader.
+ */
 interface ToolExecutionRecord {
 	key: string;
 	timestamp: number;
-	toolCall: ToolCall;
 }
 
 export interface LoopDetectionInfo {
 	isLoop: boolean;
 	identicalCallCount: number;
-	consecutiveCallCount: number;
 	timeWindowMs: number;
 	lastCallTimestamp?: number;
 }

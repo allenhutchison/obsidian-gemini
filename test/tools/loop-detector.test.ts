@@ -154,7 +154,6 @@ describe('ToolLoopDetector', () => {
 
 		expect(info.isLoop).toBe(false);
 		expect(info.identicalCallCount).toBe(2);
-		expect(info.consecutiveCallCount).toBe(2);
 		expect(info.timeWindowMs).toBe(60000);
 		expect(info.lastCallTimestamp).toBeDefined();
 	});
