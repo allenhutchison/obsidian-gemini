@@ -234,7 +234,7 @@ In v4.0+, context is manually managed through session-based file selection:
 
 ### Data Privacy
 
-- **Provider-dependent** - Requests for a feature go to whichever provider serves it: Google for Gemini, your local Ollama daemon, or OpenAI (or a compatible server) for OpenAI. See [Provider Capabilities](/reference/provider-capabilities#privacy-semantics) for exactly what's routed where.
+- **Provider-dependent** - Requests for a feature go to whichever provider serves it: Google for Gemini, your Ollama server (local by default, but configurable to a remote host), or OpenAI (or a compatible server) for OpenAI. See [Provider Capabilities](/reference/provider-capabilities#privacy-semantics) for exactly what's routed where.
 - **Local storage** - Chat history stays in your vault
 - **Optional proxy** - The [Custom API Endpoint](#custom-api-endpoint) setting can route Gemini requests through a proxy or gateway you configure; by default no intermediate server is involved
 - **Encryption** - Consider vault encryption for sensitive data
