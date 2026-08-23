@@ -25,7 +25,7 @@ When you connect an MCP server to Gemini Scribe, its tools appear alongside the 
 
 ### Prerequisites
 
-- A Google AI API key configured in the plugin
+- A working model provider configured in the plugin (Gemini, Ollama, or OpenAI) so the agent can drive tool calls
 - An MCP server to connect to (see [Finding Servers](#finding-servers) below)
 - For **stdio** servers: Desktop platform (Windows, macOS, Linux) with the server installed locally
 - For **HTTP** servers: A running MCP server accessible via URL
