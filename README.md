@@ -83,7 +83,7 @@ _A large feature release — a full visual refresh plus smarter, more responsive
 - **Projects:** Create scoped agent profiles for different areas of your vault. A project bundles custom instructions, file scope, skill selection, and permission overrides into a single configuration. The agent auto-detects projects from your folder structure and applies project-specific behavior — including scoped file discovery, filtered skills, and per-tool permission overrides. See the [Projects guide](https://allenhutchison.github.io/obsidian-gemini/guide/projects) for details and the [blog post](https://allen.hutchison.org/2026/04/09/scoping-ai-context-with-projects-in-gemini-scribe/) for a walkthrough.
 - **Agent Skills:** Create, edit, and use extensible skill packages that give the agent specialized knowledge and workflows. Skills follow the [agentskills.io](https://agentskills.io) specification and are stored in your plugin state folder. The agent automatically discovers available skills and activates them on demand. Update existing skills via the `edit_skill` tool with diff review.
 - **Built-in Prompt templates:** The plugin uses carefully crafted Handlebars templates for system prompts, agent prompts, summarization prompts, selection rewrite prompts, and completion prompts. These ensure consistent and effective AI interaction.
-- **Data Privacy:** All interactions with the Gemini API are done directly from your machine. No data is sent to any third-party servers other than Google's. Agent session history is stored locally in your Obsidian vault as markdown files.
+- **Data Privacy:** Requests for a feature go straight to whichever provider serves it — Google for Gemini, your local Ollama daemon, or OpenAI (or a compatible server) for OpenAI — with no intermediate server unless you configure one yourself (e.g. a custom Gemini API endpoint). See [Provider Capabilities](docs/reference/provider-capabilities.md#privacy-semantics) for the full breakdown. Agent session history is stored locally in your Obsidian vault as markdown files.
 - **Robust Session Management:**
   - Persistent agent sessions that survive restarts
   - Session-specific permissions and settings
@@ -115,8 +115,8 @@ _A large feature release — a full visual refresh plus smarter, more responsive
 
 2.  **Manual Installation:**
     - Download the latest release from the [GitHub Releases](https://github.com/allenhutchison/obsidian-gemini/releases) page (you'll need `main.js`, `manifest.json`, and `styles.css`).
-    - Create a folder named `obsidian-gemini` inside your vault's `.obsidian/plugins/` directory.
-    - Copy the downloaded files into the `obsidian-gemini` folder.
+    - Create a folder named `gemini-scribe` inside your vault's `.obsidian/plugins/` directory.
+    - Copy the downloaded files into the `gemini-scribe` folder.
     - In Obsidian, go to Settings → Community plugins and enable "Gemini Scribe".
 
 ## Configuration

@@ -17,8 +17,8 @@ Welcome to Gemini Scribe, an Obsidian plugin that integrates Google's Gemini AI 
 ### Manual Installation
 
 1. Download the latest release from the [GitHub Releases](https://github.com/allenhutchison/obsidian-gemini/releases) page (you'll need `main.js`, `manifest.json`, and `styles.css`)
-2. Create a folder named `obsidian-gemini` inside your vault's `.obsidian/plugins/` directory
-3. Copy the downloaded files into the `obsidian-gemini` folder
+2. Create a folder named `gemini-scribe` inside your vault's `.obsidian/plugins/` directory
+3. Copy the downloaded files into the `gemini-scribe` folder
 4. In Obsidian, go to Settings → Community plugins and enable "Gemini Scribe"
 
 ## Quick Start
