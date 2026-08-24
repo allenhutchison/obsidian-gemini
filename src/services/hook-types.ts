@@ -6,6 +6,25 @@ import type { FeatureToolPolicy } from '../types/tool-policy';
  * depend on them without importing each other (see #1155). hook-manager.ts
  * re-exports everything here, so external import paths are unchanged.
  */
+// ─── Defaults ─────────────────────────────────────────────────────────────────
+//
+// These live in the leaf (rather than in hook-manager.ts) because both the
+// manager and the management modal need them: the manager applies them when
+// creating/parsing a hook, and the modal seeds its form, placeholder, and
+// field description from the same numbers. A second copy in the UI would let
+// the two drift, so the modal shows one default while the manager writes
+// another.
+
+/** Default per-(hook, file) debounce window (ms). Resets on every matching event. */
+export const DEFAULT_DEBOUNCE_MS = 5000;
+
+/**
+ * Default cooldown after a hook fire completes — further (hook, file) events
+ * within this window are suppressed to prevent self-retrigger when the hook's
+ * agent run wrote to the same file that triggered it.
+ */
+export const DEFAULT_COOLDOWN_MS = 30_000;
+
 // ─── Public types ─────────────────────────────────────────────────────────────
 
 export type HookTrigger = 'file-created' | 'file-modified' | 'file-deleted' | 'file-renamed';

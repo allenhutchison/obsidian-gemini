@@ -1,5 +1,6 @@
 import { Notice, Setting, setIcon } from 'obsidian';
 import type { Hook, HookAction, HookCreateParams, HookState, HookTrigger, HooksState } from '../services/hook-manager';
+import { DEFAULT_COOLDOWN_MS, DEFAULT_DEBOUNCE_MS } from '../services/hook-types';
 import type { FeatureToolPolicy } from '../types/tool-policy';
 import { DEFAULT_HEADLESS_MAX_ITERATIONS } from '../agent/agent-loop';
 import { ManagementModalBase } from './components/management-modal-base';
@@ -20,9 +21,6 @@ const ACTION_OPTIONS = [
 	{ value: 'rewrite', labelKey: 'hooks.actionRewrite' },
 	{ value: 'command', labelKey: 'hooks.actionCommand' },
 ] as const;
-
-const DEFAULT_DEBOUNCE_MS = 5000;
-const DEFAULT_COOLDOWN_MS = 30_000;
 
 /**
  * Full CRUD management modal for lifecycle hooks. Extends the shared
