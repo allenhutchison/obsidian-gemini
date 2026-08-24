@@ -49,7 +49,7 @@ export type {
 	HookTrigger,
 	HookUpdateParams,
 } from './hook-types';
-export { DEFAULT_COOLDOWN_MS, DEFAULT_DEBOUNCE_MS, renderPrompt } from './hook-types';
+export { renderPrompt } from './hook-types';
 
 // Hook slugs become file basenames inside `Hooks/`, so we mirror the same
 // constraints the skills system uses: lowercase ASCII letters/digits/hyphens,
