@@ -12,6 +12,7 @@ import type {
 	HookTrigger,
 	HookUpdateParams,
 } from './hook-types';
+import { DEFAULT_COOLDOWN_MS, DEFAULT_DEBOUNCE_MS } from './hook-types';
 import {
 	extractMarkdownBody,
 	migrateLegacyEnabledTools,
@@ -26,16 +27,6 @@ import { matchesFrontmatterFilter, matchesGlob } from './hook-matcher';
 
 const HOOKS_FOLDER = 'Hooks';
 const STATE_FILE = 'hooks-state.json';
-
-/** Default per-(hook, file) debounce window (ms). Resets on every matching event. */
-const DEFAULT_DEBOUNCE_MS = 5000;
-
-/**
- * Default cooldown after a hook fire completes — further (hook, file) events
- * within this window are suppressed to prevent self-retrigger when the hook's
- * agent run wrote to the same file that triggered it.
- */
-const DEFAULT_COOLDOWN_MS = 30_000;
 
 /** Hard loop ceiling: max fires per (hook, file) inside the loop window. */
 const HARD_LOOP_LIMIT = 5;
@@ -58,7 +49,7 @@ export type {
 	HookTrigger,
 	HookUpdateParams,
 } from './hook-types';
-export { renderPrompt } from './hook-types';
+export { DEFAULT_COOLDOWN_MS, DEFAULT_DEBOUNCE_MS, renderPrompt } from './hook-types';
 
 // Hook slugs become file basenames inside `Hooks/`, so we mirror the same
 // constraints the skills system uses: lowercase ASCII letters/digits/hyphens,
