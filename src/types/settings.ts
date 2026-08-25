@@ -99,8 +99,6 @@ export interface ObsidianGeminiSettings {
 	loopDetectionEnabled: boolean;
 	loopDetectionThreshold: number;
 	loopDetectionTimeWindowSeconds: number;
-	// Trusted Mode (legacy — migrated to toolPolicy)
-	alwaysAllowReadWrite: boolean;
 	// Tool policy settings
 	toolPolicy: ToolPolicySettings;
 	// Version tracking for update notifications

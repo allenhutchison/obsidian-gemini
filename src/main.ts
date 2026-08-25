@@ -99,8 +99,6 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	loopDetectionEnabled: true,
 	loopDetectionThreshold: 3,
 	loopDetectionTimeWindowSeconds: 30,
-	// Trusted Mode (legacy — migrated to toolPolicy)
-	alwaysAllowReadWrite: false,
 	// Tool policy settings
 	toolPolicy: { ...DEFAULT_TOOL_POLICY },
 	// Version tracking for update notifications
@@ -510,19 +508,25 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		// after ModelListProvider has loaded the cached remote model list. Running it here
 		// against DEFAULT_GEMINI_MODELS would use a stale list.
 
-		// Migrate legacy alwaysAllowReadWrite → toolPolicy
+		// Migrate legacy alwaysAllowReadWrite → toolPolicy, then drop the key.
+		// The removal is deliberately outside the `!data.toolPolicy` guard: a
+		// migrated install that still carries the key (written back before the key
+		// was dropped from DEFAULT_SETTINGS) must be cleaned up too, or it lingers
+		// and can re-drive the preset if `toolPolicy` ever goes missing.
 		const legacyAllowReadWrite = data.alwaysAllowReadWrite;
-		if (legacyAllowReadWrite !== undefined && !data.toolPolicy) {
-			this.settings.toolPolicy = {
-				activePreset: legacyAllowReadWrite ? PolicyPreset.EDIT_MODE : PolicyPreset.CAUTIOUS,
-				toolPermissions: {},
-			};
+		if (legacyAllowReadWrite !== undefined) {
+			if (!data.toolPolicy) {
+				this.settings.toolPolicy = {
+					activePreset: legacyAllowReadWrite ? PolicyPreset.EDIT_MODE : PolicyPreset.CAUTIOUS,
+					toolPermissions: {},
+				};
+				this.logger?.log(
+					`Migrated alwaysAllowReadWrite=${legacyAllowReadWrite ? 'true' : 'false'} → toolPolicy.activePreset=${this.settings.toolPolicy.activePreset}`
+				);
+			}
 			// Clear the legacy setting
 			delete (this.settings as { alwaysAllowReadWrite?: unknown }).alwaysAllowReadWrite;
 			await this.saveData(this.settings);
-			this.logger?.log(
-				`Migrated alwaysAllowReadWrite=${legacyAllowReadWrite ? 'true' : 'false'} → toolPolicy.activePreset=${this.settings.toolPolicy.activePreset}`
-			);
 		}
 	}
 
