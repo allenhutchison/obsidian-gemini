@@ -11,6 +11,7 @@ import { getErrorMessage } from '../utils/error-utils';
 import { t, type TranslationKey } from '../i18n';
 import type { SettingsSectionContext } from './settings-helpers';
 import { getOllamaModelForRole, remoteHostForModel, type ModelProvider, type ModelRole } from '../models';
+import { normalizeStateFolderPath } from '../utils/settings-migrations';
 import {
 	activeProviders,
 	isProviderActive,
@@ -161,6 +162,9 @@ async function renderGeneralSection(
 		.addText((text) => {
 			new FolderSuggest(app, text.inputEl, (folder) => {
 				plugin.settings.historyFolder = folder;
+				// FolderSuggest writes clean TFolder paths, but hand-typed text can
+				// still reach this callback; normalize before it persists (#1374).
+				normalizeStateFolderPath(plugin.settings);
 				debouncedSave();
 			});
 			text.setValue(plugin.settings.historyFolder);

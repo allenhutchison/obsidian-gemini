@@ -1,4 +1,5 @@
-import { migrateInteractionsApiDefault } from '../../src/utils/settings-migrations';
+import { migrateInteractionsApiDefault, normalizeStateFolderPath } from '../../src/utils/settings-migrations';
+import { shouldExcludePath } from '../../src/utils/file-utils';
 
 describe('migrateInteractionsApiDefault', () => {
 	it('flips an existing opt-in-era install (persisted false, no marker) to on and marks it', () => {
@@ -40,5 +41,52 @@ describe('migrateInteractionsApiDefault', () => {
 		expect(migrateInteractionsApiDefault(settings, {})).toBe(false);
 		expect(migrateInteractionsApiDefault(settings, null)).toBe(false);
 		expect(migrateInteractionsApiDefault(settings, undefined)).toBe(false);
+	});
+});
+
+describe('normalizeStateFolderPath', () => {
+	it('strips a hand-typed trailing slash', () => {
+		const settings = { historyFolder: 'gemini-scribe/' };
+		expect(normalizeStateFolderPath(settings)).toBe(true);
+		expect(settings.historyFolder).toBe('gemini-scribe');
+	});
+
+	it('collapses duplicate internal slashes', () => {
+		const settings = { historyFolder: 'gemini-scribe//Agent-Sessions' };
+		expect(normalizeStateFolderPath(settings)).toBe(true);
+		expect(settings.historyFolder).toBe('gemini-scribe/Agent-Sessions');
+	});
+
+	it('strips a leading slash and trims whitespace', () => {
+		const settings = { historyFolder: '  /gemini-scribe/ ' };
+		expect(normalizeStateFolderPath(settings)).toBe(true);
+		expect(settings.historyFolder).toBe('gemini-scribe');
+	});
+
+	it('leaves a clean value untouched', () => {
+		const settings = { historyFolder: 'gemini-scribe' };
+		expect(normalizeStateFolderPath(settings)).toBe(false);
+		expect(settings.historyFolder).toBe('gemini-scribe');
+	});
+
+	it('leaves an empty value alone (broader validation is out of scope, #1374)', () => {
+		const settings = { historyFolder: '' };
+		expect(normalizeStateFolderPath(settings)).toBe(false);
+
+		const whitespaceOnly = { historyFolder: '   ' };
+		expect(normalizeStateFolderPath(whitespaceOnly)).toBe(false);
+	});
+
+	it('a repaired setting regains exclusion (#1374 end-to-end)', () => {
+		// The failure mode: a trailing-slash folder defeats isPathInFolder's
+		// prefix check, so nothing is "inside" the state folder and exclusions
+		// fail open. After the load boundary repairs the value, exclusion works.
+		const before = { historyFolder: 'gemini-scribe/' };
+		expect(shouldExcludePath('gemini-scribe/Agent-Sessions/run.md', before.historyFolder, '.obsidian')).toBe(false);
+
+		normalizeStateFolderPath(before);
+		expect(shouldExcludePath('gemini-scribe/Agent-Sessions/run.md', before.historyFolder, '.obsidian')).toBe(true);
+		expect(shouldExcludePath('gemini-scribe', before.historyFolder, '.obsidian')).toBe(true);
+		expect(shouldExcludePath('gemini-scribe-backup', before.historyFolder, '.obsidian')).toBe(false);
 	});
 });
