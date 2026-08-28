@@ -887,7 +887,7 @@ describe('ToolExecutionEngine - getAvailableToolsDescription', () => {
 	});
 });
 
-describe('ToolExecutionEngine - Execution History Management', () => {
+describe('ToolExecutionEngine - Session state lifecycle (#1387)', () => {
 	let plugin: any;
 	let registry: ToolRegistry;
 	let engine: ToolExecutionEngine;
@@ -897,14 +897,19 @@ describe('ToolExecutionEngine - Execution History Management', () => {
 		description: 'noop',
 		category: ToolCategory.READ_ONLY,
 		classification: ToolClassification.READ,
-		parameters: { type: 'object' as const, properties: {}, required: [] },
+		parameters: {
+			type: 'object' as const,
+			properties: { a: { type: 'number' as const, description: 'loop detector probe' } },
+			required: [],
+		},
 		execute: vi.fn().mockResolvedValue({ success: true, data: {} }),
 	};
 
 	beforeEach(() => {
 		plugin = {
 			settings: {
-				loopDetectionThreshold: 99,
+				loopDetectionEnabled: true,
+				loopDetectionThreshold: 2,
 				loopDetectionTimeWindowSeconds: 60,
 			},
 			logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
@@ -919,15 +924,11 @@ describe('ToolExecutionEngine - Execution History Management', () => {
 		vi.clearAllMocks();
 	});
 
-	it('returns empty array for unknown session', () => {
-		expect(engine.getExecutionHistory('unknown-session')).toEqual([]);
-	});
-
-	it('records execution history and retrieves it', async () => {
-		const context = {
+	const sessionContext = (id: string) =>
+		({
 			plugin,
 			session: {
-				id: 'history-session',
+				id,
 				type: 'agent-session',
 				context: {
 					contextFiles: [],
@@ -936,38 +937,29 @@ describe('ToolExecutionEngine - Execution History Management', () => {
 					requireConfirmation: [],
 				},
 			},
-		} as any;
+		}) as any;
 
-		await engine.executeTool({ name: 'noop', arguments: {} }, context, denyProvider);
-		await engine.executeTool({ name: 'noop', arguments: {} }, context, denyProvider);
+	const identicalCall = { name: 'noop', arguments: { a: 1 } };
 
-		const history = engine.getExecutionHistory('history-session');
-		expect(history).toHaveLength(2);
-		expect(history[0].toolName).toBe('noop');
-		expect(history[0].result.success).toBe(true);
-		expect(history[0].timestamp).toBeInstanceOf(Date);
+	it('flags a loop once identical calls reach the threshold', async () => {
+		await engine.executeTool(identicalCall, sessionContext('flag-session'), denyProvider);
+		await engine.executeTool(identicalCall, sessionContext('flag-session'), denyProvider);
+		const flagged = await engine.executeTool(identicalCall, sessionContext('flag-session'), denyProvider);
+		expect(flagged.success).toBe(false);
+		expect(flagged.loopDetected).toBe(true);
 	});
 
-	it('clears execution history for a session', async () => {
-		const context = {
-			plugin,
-			session: {
-				id: 'clear-session',
-				type: 'agent-session',
-				context: {
-					contextFiles: [],
-					contextDepth: 2,
-					enabledTools: [ToolCategory.READ_ONLY],
-					requireConfirmation: [],
-				},
-			},
-		} as any;
+	it('clearLoopDetectorSession drops the recorded calls so detection restarts (#1387)', async () => {
+		const context = sessionContext('shrink-session');
+		await engine.executeTool(identicalCall, context, denyProvider);
+		await engine.executeTool(identicalCall, context, denyProvider);
+		engine.clearLoopDetectorSession('shrink-session');
 
-		await engine.executeTool({ name: 'noop', arguments: {} }, context, denyProvider);
-		expect(engine.getExecutionHistory('clear-session')).toHaveLength(1);
-
-		engine.clearExecutionHistory('clear-session');
-		expect(engine.getExecutionHistory('clear-session')).toEqual([]);
+		// Without the clear, the next identical call would be flagged at the
+		// threshold; with the session state released it runs again.
+		const result = await engine.executeTool(identicalCall, context, denyProvider);
+		expect(result.success).toBe(true);
+		expect(result.loopDetected).toBeUndefined();
 	});
 });
 

@@ -97,6 +97,7 @@ interface Harness {
 	trashFile: ReturnType<typeof vi.fn>;
 	onSelect: ReturnType<typeof vi.fn>;
 	onDelete: ReturnType<typeof vi.fn>;
+	clearLoopDetectorSession: ReturnType<typeof vi.fn>;
 	contentEl: HTMLElement;
 }
 
@@ -120,8 +121,10 @@ async function openModal(sessions: ChatSession[]): Promise<Harness> {
 		fileManager: { trashFile },
 	} as unknown as App;
 
+	const clearLoopDetectorSession = vi.fn();
 	const plugin = {
 		settings: { historyFolder: 'gemini-scribe' },
+		toolExecutionEngine: { clearLoopDetectorSession },
 		sessionManager: {
 			loadSession: vi.fn((path: string) => Promise.resolve(sessions.find((s) => s.historyPath === path) ?? null)),
 			createAgentSession: vi.fn(),
@@ -135,7 +138,7 @@ async function openModal(sessions: ChatSession[]): Promise<Harness> {
 	const modal = new SessionListModal(app, plugin, { onSelect, onDelete }, null);
 	await modal.onOpen();
 
-	return { modal, trashFile, onSelect, onDelete, contentEl: (modal as any).contentEl };
+	return { modal, trashFile, onSelect, onDelete, clearLoopDetectorSession, contentEl: (modal as any).contentEl };
 }
 
 /** The rendered rows, in display order. */
@@ -192,6 +195,23 @@ describe('SessionListModal inline delete confirmation', () => {
 		} finally {
 			vi.unstubAllGlobals();
 		}
+	});
+
+	it('releases the tool-loop detector records when the session is deleted (#1387)', async () => {
+		const { contentEl, clearLoopDetectorSession } = await openModal([makeSession('a', 'Alpha')]);
+		const row = rows(contentEl)[0];
+		click(deleteButton(row));
+		click(confirmButton(row)!);
+		await vi.waitFor(() => expect(clearLoopDetectorSession).toHaveBeenCalledWith('a'));
+	});
+
+	it('does not release loop-detector state when cancelled (#1387)', async () => {
+		const { contentEl, clearLoopDetectorSession } = await openModal([makeSession('a', 'Alpha')]);
+		const row = rows(contentEl)[0];
+		click(deleteButton(row));
+		click(cancelButton(row)!);
+		await new Promise((resolve) => window.setTimeout(resolve, 0));
+		expect(clearLoopDetectorSession).not.toHaveBeenCalled();
 	});
 
 	it('deletes only after the confirm button is clicked', async () => {

@@ -197,3 +197,30 @@ describe('ToolLoopDetector', () => {
 		expect(detector.isLoopDetected(sessionId, toolCall)).toBe(true);
 	});
 });
+
+describe('ToolLoopDetector - key cleanup (#1387)', () => {
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it('deletes the session key when cleanup empties it, instead of parking an empty array', () => {
+		// A zero-second window means nothing survives cleanup: the just-recorded
+		// entry is already expired, so the key is dropped entirely rather than
+		// left as an empty array the session's lifetime would keep alive.
+		const detector = new ToolLoopDetector(2, 0);
+		detector.recordExecution('s1', { name: 'read_file', arguments: {} });
+
+		const internal = detector as unknown as { executionHistory: Map<string, unknown[]> };
+		expect(internal.executionHistory.has('s1')).toBe(false);
+	});
+
+	it('keeps the session key while at least one entry is still within the window', () => {
+		vi.useFakeTimers();
+		const detector = new ToolLoopDetector(2, 60);
+		detector.recordExecution('s1', { name: 'read_file', arguments: {} });
+
+		const internal = detector as unknown as { executionHistory: Map<string, unknown[]> };
+		expect(internal.executionHistory.has('s1')).toBe(true);
+		expect(internal.executionHistory.get('s1')).toHaveLength(1);
+	});
+});

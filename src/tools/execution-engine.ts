@@ -19,7 +19,6 @@ import type { ObsidianGemini } from '../types/plugin';
 export class ToolExecutionEngine {
 	private plugin: ObsidianGemini;
 	private registry: ToolRegistry;
-	private executionHistory: Map<string, ToolExecution[]> = new Map();
 	private loopDetector: ToolLoopDetector;
 
 	constructor(plugin: ObsidianGemini, registry: ToolRegistry) {
@@ -153,17 +152,6 @@ export class ToolExecutionEngine {
 			// Execute the tool
 			const result = await tool.execute(toolCall.arguments, context);
 
-			// Record execution in history
-			const execution: ToolExecution = {
-				toolName: tool.name,
-				parameters: toolCall.arguments,
-				result: result,
-				timestamp: new Date(),
-				confirmed: requiresConfirmation,
-			};
-
-			this.addToHistory(context.session.id, execution);
-
 			return result;
 		} catch (error) {
 			const errorMessage = getRawErrorMessageOr(error, 'Unknown error');
@@ -218,26 +206,13 @@ export class ToolExecutionEngine {
 	}
 
 	/**
-	 * Add execution to history
+	 * Release per-session state for a session that is being deleted.
+	 *
+	 * Clears the tool loop detector's recorded calls for the session so its key
+	 * does not live on for the rest of the plugin process (#1387). Called from
+	 * the session-deletion path (`SessionListModal.deleteSession`).
 	 */
-	private addToHistory(sessionId: string, execution: ToolExecution) {
-		const history = this.executionHistory.get(sessionId) || [];
-		history.push(execution);
-		this.executionHistory.set(sessionId, history);
-	}
-
-	/**
-	 * Get execution history for a session
-	 */
-	getExecutionHistory(sessionId: string): ToolExecution[] {
-		return this.executionHistory.get(sessionId) || [];
-	}
-
-	/**
-	 * Clear execution history for a session
-	 */
-	clearExecutionHistory(sessionId: string) {
-		this.executionHistory.delete(sessionId);
+	clearLoopDetectorSession(sessionId: string): void {
 		this.loopDetector.clearSession(sessionId);
 	}
 
