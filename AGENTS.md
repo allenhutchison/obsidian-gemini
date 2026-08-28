@@ -328,7 +328,7 @@ The maintainer's half of the pipeline (reviewing plans, approving, answering que
 For creating pull requests, use the **create-pr** skill which enforces the PR template and runs all pre-flight checks.
 
 - Write concise, imperative commit subjects (`Fix agent session cleanup`, `Improve prompt builder`); reference issues/PRs with `#123`
-- Commit generated artifacts (`main.js`, `manifest.json`, `versions.json`) alongside source changes; use `npm run version` for releases
+- Commit generated artifacts (`manifest.json`, `styles.css`, `versions.json`) alongside source changes; `main.js` is a gitignored build output and is never committed. Use `npm run version` for releases
 - **MANDATORY**: Include documentation updates in the same PR/commit as code changes (see Documentation Maintenance section)
 - PRs should explain motivation, highlight user-visible impact, list automated/manual tests, and attach screenshots or vault clips for UI tweaks
 - Flag reviewers who own the affected area and mention required follow-up or rollout notes
