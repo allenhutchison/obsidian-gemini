@@ -8,6 +8,8 @@
  * merged settings, whose defaults already backfill new fields.
  */
 
+import { normalizePath } from 'obsidian';
+
 /**
  * Default-on rollout for the Interactions API transport (#1017).
  *
@@ -31,4 +33,40 @@ export function migrateInteractionsApiDefault(
 		return true;
 	}
 	return false;
+}
+
+/**
+ * Normalize the state-folder setting (`settings.historyFolder`) at the settings
+ * boundary (#1374).
+ *
+ * The state folder is set from a free-text field and is the argument
+ * `isPathInFolder` is built on: `path === folder || path.startsWith(folder + '/')`.
+ * A persisted trailing (or duplicate/leading) slash makes both arms dead —
+ * containment reports that nothing lives inside the folder — so every exclusion
+ * built on the setting silently stops excluding (file mention modal, tool
+ * guards) and every `${historyFolder}/...` path doubles its slash.
+ *
+ * Normalizing here (not inside `isPathInFolder`) keeps the predicate pure and
+ * fixes both the containment checks and the path building in one place; the
+ * load-time call covers vaults that already persisted a malformed value.
+ *
+ * @param settings - settings object with the `historyFolder` field (mutated in place)
+ * @returns true if the value was malformed and has been rewritten
+ */
+export function normalizeStateFolderPath(settings: { historyFolder: string }): boolean {
+	if (!settings.historyFolder) {
+		return false;
+	}
+	// normalizePath leaves surrounding whitespace untouched on some inputs;
+	// trim explicitly so the result is unambiguous.
+	const candidate = settings.historyFolder.trim();
+	if (!candidate) {
+		return false;
+	}
+	const normalized = normalizePath(candidate);
+	if (normalized === settings.historyFolder) {
+		return false;
+	}
+	settings.historyFolder = normalized;
+	return true;
 }

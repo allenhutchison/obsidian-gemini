@@ -99,6 +99,7 @@ UI sections without a dedicated topic in this reference: _Vault search index_ (c
 - **Type**: String
 - **Default**: `gemini-scribe`
 - **Description**: Folder where plugin stores history, prompts, and sessions
+- **Notes**: The value is normalized on load and when saved (via `normalizePath` semantics) — a hand-typed trailing, leading, or duplicate slash is corrected automatically, so folder exclusion and subfolder paths never break on a malformed state-folder path.
 - **Structure**:
   ```text
   gemini-scribe/

@@ -9,7 +9,7 @@ import { GeminiHistory } from './history/history';
 import { GeminiCompletions } from './completions';
 import { Notice } from 'obsidian';
 import { getDefaultModelForRole, migrateOllamaModelSetting } from './models';
-import { migrateInteractionsApiDefault } from './utils/settings-migrations';
+import { migrateInteractionsApiDefault, normalizeStateFolderPath } from './utils/settings-migrations';
 import { isProviderActive, routingKey, sanitizeProviderOverrides } from './api/provider-routing';
 import { getCapabilities } from './api/providers/registry';
 import { ModelManager } from './services/model-manager';
@@ -453,6 +453,15 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		// the module-level default. sanitizeProviderOverrides always returns a
 		// fresh object, and drops anything a hand-edited data.json got wrong.
 		this.settings.providerOverrides = sanitizeProviderOverrides(this.settings.providerOverrides);
+
+		// The state folder comes from a free-text field, so a hand-typed trailing
+		// (or duplicate/leading) slash can persist to data.json — and it silently
+		// defeats every exclusion and subfolder path built on historyFolder
+		// (#1374). Repair it once on load so the stored value is always clean.
+		if (normalizeStateFolderPath(this.settings)) {
+			await this.saveData(this.settings);
+			this.logger?.log('Normalized the state folder setting (historyFolder)');
+		}
 
 		// One-time migration: split the Ollama model out of the shared chatModelName
 		// field so switching providers no longer clobbers either choice. See
