@@ -35,10 +35,6 @@ export class ToolRegistrar {
 	private static readonly CORE_SOURCES: ToolSource[] = [
 		{ name: 'vault', getTools: () => getVaultTools() },
 		{
-			name: 'vault-extended',
-			getTools: () => import('../tools/vault-tools-extended').then((m) => m.getExtendedVaultTools()),
-		},
-		{
 			name: 'web',
 			useCase: 'webSearch',
 			getTools: () => import('../tools/web-tools').then((m) => m.getWebTools()),

@@ -1,5 +1,12 @@
+/**
+ * Tests for UpdateFrontmatterTool — moved here from the former flat
+ * `test/tools/vault-tools-extended.test.ts` alongside the tool's move into
+ * `src/tools/vault/` (#1310). The tool resolves paths through the shared
+ * `resolvePathToFile`, so these tests exercise real resolution against a mock
+ * vault (direct paths, .md fallback, wikilinks, system-folder exclusion).
+ */
 import { TFile } from 'obsidian';
-import { getExtendedVaultTools } from '../../../src/tools/vault-tools-extended';
+import { UpdateFrontmatterTool } from '../../../src/tools/vault';
 import type { Tool } from '../../../src/tools/types';
 import { ToolExecutionContext } from '../../../src/tools/types';
 import { ToolCategory } from '../../../src/types/agent';
@@ -11,13 +18,19 @@ type ToolWithOptionals = Tool & {
 	confirmationMessage: NonNullable<Tool['confirmationMessage']>;
 };
 
-function getToolByName(name: string): ToolWithOptionals {
-	const tool = getExtendedVaultTools().find(
+let tool: ToolWithOptionals;
+
+function getTool(): ToolWithOptionals {
+	const candidates: Tool[] = [new UpdateFrontmatterTool()];
+	const found = candidates.find(
 		(t): t is ToolWithOptionals =>
-			t.name === name && typeof t.getProgressDescription === 'function' && typeof t.confirmationMessage === 'function'
+			typeof t.getProgressDescription === 'function' && typeof t.confirmationMessage === 'function'
 	);
-	if (!tool) throw new Error(`Tool not found: ${name}`);
-	return tool;
+	if (!found) {
+		throw new Error('UpdateFrontmatterTool is missing the optional methods the tests exercise');
+	}
+	tool = found;
+	return found;
 }
 
 vi.mock('obsidian', async () => ({
@@ -72,14 +85,10 @@ function makeTFile(path: string, extension = 'md'): TFile {
 	return file;
 }
 
-// ─── UpdateFrontmatterTool ───────────────────────────────────────────────────
-
 describe('UpdateFrontmatterTool', () => {
-	let tool: ToolWithOptionals;
-
 	beforeEach(() => {
 		vi.clearAllMocks();
-		tool = getToolByName('update_frontmatter');
+		getTool();
 	});
 
 	// ── Static properties ────────────────────────────────────────────────
@@ -312,228 +321,5 @@ describe('UpdateFrontmatterTool', () => {
 		const result = await tool.execute({ path: 'notes/foo.md', key: 'k', value: 'v' }, makeContext(plugin));
 		expect(result.success).toBe(false);
 		expect(result.error).toContain('Unknown error');
-	});
-});
-
-// ─── AppendContentTool ───────────────────────────────────────────────────────
-
-describe('AppendContentTool', () => {
-	let tool: ToolWithOptionals;
-
-	beforeEach(() => {
-		vi.clearAllMocks();
-		tool = getToolByName('append_content');
-	});
-
-	// ── Static properties ────────────────────────────────────────────────
-
-	it('has correct metadata', () => {
-		expect(tool.name).toBe('append_content');
-		expect(tool.displayName).toBe('Append Content');
-		expect(tool.category).toBe(ToolCategory.VAULT_OPERATIONS);
-		expect(tool.classification).toBe(ToolClassification.WRITE);
-		expect(tool.requiresConfirmation).toBe(true);
-	});
-
-	it('confirmationMessage formats params and truncates long content', () => {
-		const shortMsg = tool.confirmationMessage({ path: 'notes/foo.md', content: 'hello' });
-		expect(shortMsg).toContain('notes/foo.md');
-		expect(shortMsg).toContain('hello');
-
-		const longContent = 'x'.repeat(300);
-		const longMsg = tool.confirmationMessage({ path: 'notes/foo.md', content: longContent });
-		expect(longMsg).toContain('...');
-	});
-
-	it('getProgressDescription shows path when available', () => {
-		expect(tool.getProgressDescription({ path: 'notes/foo.md' })).toBe('Appending to notes/foo.md');
-	});
-
-	it('getProgressDescription shows generic when path is empty', () => {
-		expect(tool.getProgressDescription({ path: '' })).toBe('Appending content');
-	});
-
-	// ── Successful append ────────────────────────────────────────────────
-
-	it('appends content to a file found by direct path', async () => {
-		const plugin = createMockPlugin();
-		const file = makeTFile('notes/foo.md');
-		plugin.app.vault.getAbstractFileByPath.mockReturnValue(file);
-		plugin.app.vault.read.mockResolvedValue('existing content');
-
-		const result = await tool.execute({ path: 'notes/foo.md', content: 'new text' }, makeContext(plugin));
-
-		expect(result.success).toBe(true);
-		expect(result.data.action).toBe('appended');
-		expect(plugin.app.vault.append).toHaveBeenCalledWith(file, '\nnew text');
-	});
-
-	it('does not prepend newline when file ends with newline', async () => {
-		const plugin = createMockPlugin();
-		const file = makeTFile('notes/foo.md');
-		plugin.app.vault.getAbstractFileByPath.mockReturnValue(file);
-		plugin.app.vault.read.mockResolvedValue('existing content\n');
-
-		await tool.execute({ path: 'notes/foo.md', content: 'new text' }, makeContext(plugin));
-
-		expect(plugin.app.vault.append).toHaveBeenCalledWith(file, 'new text');
-	});
-
-	it('does not prepend newline when content starts with newline', async () => {
-		const plugin = createMockPlugin();
-		const file = makeTFile('notes/foo.md');
-		plugin.app.vault.getAbstractFileByPath.mockReturnValue(file);
-		plugin.app.vault.read.mockResolvedValue('existing content');
-
-		await tool.execute({ path: 'notes/foo.md', content: '\nnew text' }, makeContext(plugin));
-
-		expect(plugin.app.vault.append).toHaveBeenCalledWith(file, '\nnew text');
-	});
-
-	it('does not prepend newline when file is empty', async () => {
-		const plugin = createMockPlugin();
-		const file = makeTFile('notes/foo.md');
-		plugin.app.vault.getAbstractFileByPath.mockReturnValue(file);
-		plugin.app.vault.read.mockResolvedValue('');
-
-		await tool.execute({ path: 'notes/foo.md', content: 'first content' }, makeContext(plugin));
-
-		expect(plugin.app.vault.append).toHaveBeenCalledWith(file, 'first content');
-	});
-
-	// ── .md extension fallback ───────────────────────────────────────────
-
-	it('appends .md when the path is missing the extension', async () => {
-		const plugin = createMockPlugin();
-		const file = makeTFile('notes/foo.md');
-		plugin.app.vault.getAbstractFileByPath.mockImplementation((p: string) => (p === 'notes/foo.md' ? file : null));
-		plugin.app.vault.read.mockResolvedValue('');
-
-		const result = await tool.execute({ path: 'notes/foo', content: 'new' }, makeContext(plugin));
-		expect(result.success).toBe(true);
-	});
-
-	// ── Wikilink resolution ──────────────────────────────────────────────
-
-	it('resolves wikilink paths', async () => {
-		const plugin = createMockPlugin();
-		const file = makeTFile('notes/foo.md');
-		plugin.app.metadataCache.getFirstLinkpathDest.mockReturnValue(file);
-		plugin.app.vault.read.mockResolvedValue('');
-
-		const result = await tool.execute({ path: '[[foo]]', content: 'appended' }, makeContext(plugin));
-		expect(result.success).toBe(true);
-	});
-
-	// ── _replaceFullContent ──────────────────────────────────────────────
-
-	it('replaces full content when _replaceFullContent is set', async () => {
-		const plugin = createMockPlugin();
-		const file = makeTFile('notes/foo.md');
-		plugin.app.vault.getAbstractFileByPath.mockReturnValue(file);
-
-		const result = await tool.execute(
-			{ path: 'notes/foo.md', content: 'replaced', _replaceFullContent: true },
-			makeContext(plugin)
-		);
-
-		expect(result.success).toBe(true);
-		expect(result.data.action).toBe('replaced');
-		expect(result.data.userEdited).toBe(false);
-		expect(plugin.app.vault.modify).toHaveBeenCalledWith(file, 'replaced');
-		expect(plugin.app.vault.append).not.toHaveBeenCalled();
-	});
-
-	it('sets userEdited flag when _userEdited is true', async () => {
-		const plugin = createMockPlugin();
-		const file = makeTFile('notes/foo.md');
-		plugin.app.vault.getAbstractFileByPath.mockReturnValue(file);
-
-		const result = await tool.execute(
-			{ path: 'notes/foo.md', content: 'edited', _replaceFullContent: true, _userEdited: true },
-			makeContext(plugin)
-		);
-
-		expect(result.data.userEdited).toBe(true);
-	});
-
-	// ── System folder exclusion ──────────────────────────────────────────
-
-	it('rejects paths inside the history folder', async () => {
-		const plugin = createMockPlugin();
-		const file = makeTFile('gemini-scribe/some.md');
-		plugin.app.vault.getAbstractFileByPath.mockReturnValue(file);
-		const result = await tool.execute({ path: 'gemini-scribe/some.md', content: 'x' }, makeContext(plugin));
-		expect(result.success).toBe(false);
-		expect(result.error).toContain('File not found');
-		expect(plugin.app.vault.append).not.toHaveBeenCalled();
-		expect(plugin.app.vault.modify).not.toHaveBeenCalled();
-	});
-
-	it('rejects wikilink that resolves to a file inside the history folder', async () => {
-		// Regression for issue #910: a bare wikilink like "Foo" could resolve via
-		// metadataCache.getFirstLinkpathDest() to a file inside gemini-scribe/Skills/,
-		// and the prior inline resolver skipped the exclusion check on the resolved path,
-		// letting vault.append() write into the plugin's state folder.
-		const plugin = createMockPlugin();
-		const skillFile = makeTFile('gemini-scribe/Skills/Foo/SKILL.md');
-		plugin.app.metadataCache.getFirstLinkpathDest.mockReturnValue(skillFile);
-		const result = await tool.execute({ path: 'Foo', content: 'appended' }, makeContext(plugin));
-		expect(result.success).toBe(false);
-		expect(result.error).toContain('File not found');
-		expect(plugin.app.vault.append).not.toHaveBeenCalled();
-		expect(plugin.app.vault.modify).not.toHaveBeenCalled();
-	});
-
-	// ── File not found ───────────────────────────────────────────────────
-
-	it('returns error when file is not found', async () => {
-		const plugin = createMockPlugin();
-		const result = await tool.execute({ path: 'nonexistent.md', content: 'x' }, makeContext(plugin));
-		expect(result.success).toBe(false);
-		expect(result.error).toContain('File not found');
-	});
-
-	it('returns error when resolved file is not a TFile', async () => {
-		const plugin = createMockPlugin();
-		// Return a non-TFile object (e.g. a folder)
-		plugin.app.vault.getAbstractFileByPath.mockReturnValue({ path: 'folder' });
-		const result = await tool.execute({ path: 'folder', content: 'x' }, makeContext(plugin));
-		expect(result.success).toBe(false);
-		expect(result.error).toContain('File not found');
-	});
-
-	// ── Error handling ───────────────────────────────────────────────────
-
-	it('catches errors and returns a failure result', async () => {
-		const plugin = createMockPlugin();
-		const file = makeTFile('notes/foo.md');
-		plugin.app.vault.getAbstractFileByPath.mockReturnValue(file);
-		plugin.app.vault.read.mockRejectedValue(new Error('Read failed'));
-
-		const result = await tool.execute({ path: 'notes/foo.md', content: 'x' }, makeContext(plugin));
-		expect(result.success).toBe(false);
-		expect(result.error).toContain('Read failed');
-	});
-
-	it('handles non-Error thrown values', async () => {
-		const plugin = createMockPlugin();
-		const file = makeTFile('notes/foo.md');
-		plugin.app.vault.getAbstractFileByPath.mockReturnValue(file);
-		plugin.app.vault.read.mockRejectedValue('string error');
-
-		const result = await tool.execute({ path: 'notes/foo.md', content: 'x' }, makeContext(plugin));
-		expect(result.success).toBe(false);
-		expect(result.error).toContain('Unknown error');
-	});
-});
-
-// ─── getExtendedVaultTools ───────────────────────────────────────────────────
-
-describe('getExtendedVaultTools', () => {
-	it('returns both tools', () => {
-		const tools = getExtendedVaultTools();
-		expect(tools).toHaveLength(2);
-		expect(tools.map((t) => t.name)).toEqual(['update_frontmatter', 'append_content']);
 	});
 });
