@@ -2,6 +2,7 @@ import { Tool, ToolResult, ToolExecutionContext, ToolParams, DiffContext, Confir
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
 import { resolvePathToFile, safeReadFileForDiff } from './utils';
+import { truncateForPreview } from '../../utils/format-utils';
 import { t } from '../../i18n';
 import { getRawErrorMessageOr } from '../../utils/error-utils';
 
@@ -38,7 +39,7 @@ export class AppendContentTool implements Tool {
 	};
 
 	confirmationMessage = (params: { path: string; content: string }) => {
-		const preview = `${params.content.substring(0, 200)}${params.content.length > 200 ? '...' : ''}`;
+		const preview = truncateForPreview(params.content);
 		return t('tool.confirm.appendFile', { path: params.path, preview });
 	};
 

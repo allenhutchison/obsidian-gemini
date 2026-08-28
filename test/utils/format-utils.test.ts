@@ -1,4 +1,46 @@
-import { formatLocalDate, formatLocalTimestamp, formatFileSize } from '../../src/utils/format-utils';
+import {
+	formatLocalDate,
+	formatLocalTimestamp,
+	formatFileSize,
+	truncateForPreview,
+} from '../../src/utils/format-utils';
+
+describe('truncateForPreview', () => {
+	const OLD_EXPR = (text: string) => `${text.substring(0, 200)}${text.length > 200 ? '...' : ''}`;
+
+	it('returns text under the limit unchanged', () => {
+		expect(truncateForPreview('short text')).toBe('short text');
+	});
+
+	it('returns text of exactly 200 chars unchanged (no ellipsis)', () => {
+		const exact = 'x'.repeat(200);
+		expect(truncateForPreview(exact)).toBe(exact);
+	});
+
+	it('cuts text over the limit and appends the ASCII ellipsis', () => {
+		const long = 'y'.repeat(300);
+		expect(truncateForPreview(long)).toBe('y'.repeat(200) + '...');
+	});
+
+	it('respects a custom max', () => {
+		expect(truncateForPreview('abcdef', 3)).toBe('abc...');
+		expect(truncateForPreview('abc', 3)).toBe('abc');
+	});
+
+	it('handles the empty string', () => {
+		expect(truncateForPreview('')).toBe('');
+	});
+
+	it('is byte-identical to the hand-rolled expression it replaces (#1292)', () => {
+		for (const text of ['', 'x'.repeat(1), 'x'.repeat(199), 'x'.repeat(200), 'x'.repeat(201), 'x'.repeat(500)]) {
+			expect(truncateForPreview(text)).toBe(OLD_EXPR(text));
+		}
+	});
+
+	it('preserves ellipsis style on truncation boundaries', () => {
+		expect(truncateForPreview('a'.repeat(201)).length).toBe(203);
+	});
+});
 
 describe('formatFileSize', () => {
 	it('should format 0 bytes', () => {

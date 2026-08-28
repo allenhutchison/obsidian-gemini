@@ -2,6 +2,7 @@ import { Tool, ToolResult, ToolExecutionContext, ToolParams, DiffContext, Confir
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
 import { TFile, normalizePath } from 'obsidian';
+import { truncateForPreview } from '../../utils/format-utils';
 import { ensureFolderExists, shouldExcludePathForPlugin } from '../../utils/file-utils';
 import { guardExcludedPath, safeReadFileForDiff } from './utils';
 import { t } from '../../i18n';
@@ -42,7 +43,7 @@ export class WriteFileTool implements Tool {
 		if (params.summary) {
 			return t('tool.confirm.writeFileSummary', { path: params.path, summary: params.summary });
 		}
-		const preview = `${params.content.substring(0, 200)}${params.content.length > 200 ? '...' : ''}`;
+		const preview = truncateForPreview(params.content);
 		return t('tool.confirm.writeFile', { path: params.path, preview });
 	};
 
