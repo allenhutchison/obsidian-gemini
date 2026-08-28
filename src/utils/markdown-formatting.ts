@@ -4,7 +4,8 @@
  * Gemini returns text with single newlines between paragraphs, but Obsidian's
  * markdown renderer requires double newlines for paragraph breaks. This module
  * converts single newlines to double newlines while preserving table formatting,
- * which relies on single newlines between rows.
+ * which relies on single newlines between rows, and fenced code blocks, whose
+ * content must pass through verbatim (#1379).
  *
  * Also handles unescaping of WikiLinks that Gemini sometimes wraps in backtick
  * code spans or backslash-escapes, which prevents Obsidian from rendering them
@@ -29,12 +30,43 @@ export function formatModelMessage(text: string): string {
 	const lines = text.split('\n');
 	const formattedLines: string[] = [];
 	let inTable = false;
+	// Set to the marker that opened the fence ('```' or '~~~'); the fence only
+	// closes on the same marker, so a ``` line inside a ~~~ fence stays content.
+	let fenceMarker: '```' | '~~~' | null = null;
 	let previousLineWasEmpty = true;
 
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i];
 		const nextLine = lines[i + 1];
 		const trimmedLine = line.trim();
+
+		// Track fenced code blocks: fenced content passes through verbatim —
+		// blank-line insertion inside a fence double-spaces every code line. A
+		// fence only closes on the marker that opened it, so a ``` line inside a
+		// ~~~ fence stays fence content.
+		const fenceMarkerLine = trimmedLine.startsWith('~~~')
+			? ('~~~' as const)
+			: trimmedLine.startsWith('```')
+				? ('```' as const)
+				: null;
+		if (fenceMarker || fenceMarkerLine) {
+			const isClosing = fenceMarker !== null && fenceMarkerLine === fenceMarker;
+			const isOpening = fenceMarker === null && fenceMarkerLine !== null;
+			formattedLines.push(line);
+			if (isClosing) {
+				fenceMarker = null;
+				// Blank line after a closing fence when followed by text — mirrors
+				// the paragraph-break rule so the next line starts its own block.
+				if (nextLine && nextLine.trim() !== '' && formattedLines[formattedLines.length - 1] !== '') {
+					formattedLines.push('');
+				}
+			} else if (isOpening) {
+				inTable = false; // a fence can never be part of a table
+				fenceMarker = fenceMarkerLine;
+			}
+			previousLineWasEmpty = trimmedLine === '';
+			continue;
+		}
 
 		const lineHasPipe = hasUnescapedPipe(line);
 		const isTableDivider = tableDividerRe.test(line);
@@ -44,18 +76,17 @@ export function formatModelMessage(text: string): string {
 		if ((isTableRow || isTableDivider) && !inTable) {
 			inTable = true;
 			// Add empty line before table if needed
-			if (!previousLineWasEmpty && formattedLines.length > 0) {
+			if (!previousLineWasEmpty && formattedLines.length > 0 && formattedLines[formattedLines.length - 1] !== '') {
 				formattedLines.push('');
 			}
 		}
 
-		// Add the current line
-		formattedLines.push(line);
-
-		// Check if we're ending a table
+		// Check if we're ending a table: the first non-empty line without a pipe
+		// ends it, and the separating blank line goes BEFORE that line — so the
+		// table closes as its own block and never leaves a trailing newline at
+		// end of message.
 		if (inTable && !lineHasPipe && trimmedLine !== '') {
 			inTable = false;
-			// Add empty line after table if not already blank
 			if (formattedLines[formattedLines.length - 1] !== '') {
 				formattedLines.push('');
 			}
@@ -63,6 +94,9 @@ export function formatModelMessage(text: string): string {
 			// Empty line also ends a table
 			inTable = false;
 		}
+
+		// Add the current line
+		formattedLines.push(line);
 
 		// For non-table content, add empty line between paragraphs
 		if (
