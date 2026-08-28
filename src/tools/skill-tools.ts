@@ -2,6 +2,7 @@ import { Tool, ToolResult, ToolExecutionContext, ToolParams, DiffContext, Confir
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import { getRawErrorMessage } from '../utils/error-utils';
+import { truncateForPreview } from '../utils/format-utils';
 import { t } from '../i18n';
 import { normalizePath } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
@@ -171,7 +172,7 @@ export class CreateSkillTool implements Tool {
 	requiresConfirmation = true;
 
 	confirmationMessage = (params: { name: string; description: string }) => {
-		const preview = `${params.description.substring(0, 200)}${params.description.length > 200 ? '...' : ''}`;
+		const preview = truncateForPreview(params.description);
 		return t('tool.confirm.createSkill', { name: params.name, description: preview });
 	};
 

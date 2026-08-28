@@ -47,3 +47,21 @@ export function formatFileSize(bytes: number): string {
 
 	return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
+
+/**
+ * Truncate free-form text for a confirmation-dialog preview (#1292).
+ *
+ * Encodes the three decisions every tool confirmation preview shares: the cut
+ * length (200 chars by default), the ASCII `...` ellipsis (not `…`), and the
+ * "only append when actually truncated" rule — at exactly `max` characters the
+ * text is returned unchanged. Output must stay byte-identical to the previous
+ * hand-rolled sites; changing the limit or the ellipsis is a separate,
+ * i18n-aware change.
+ *
+ * @param text - The text to preview (model-supplied content, a description…)
+ * @param max - Maximum preview length; longer text is cut and suffixed
+ * @returns The original text when it fits, otherwise the first `max` characters plus `...`
+ */
+export function truncateForPreview(text: string, max = 200): string {
+	return text.length > max ? text.slice(0, max) + '...' : text;
+}

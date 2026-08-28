@@ -2,6 +2,7 @@ import { Tool, ToolResult, ToolExecutionContext, ToolParams } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import { getRawErrorMessage } from '../utils/error-utils';
+import { truncateForPreview } from '../utils/format-utils';
 import { t } from '../i18n';
 
 /**
@@ -31,7 +32,7 @@ export class UpdateMemoryTool implements Tool {
 	requiresConfirmation = true;
 
 	confirmationMessage = (params: { content: string }) => {
-		const preview = `${params.content.substring(0, 200)}${params.content.length > 200 ? '...' : ''}`;
+		const preview = truncateForPreview(params.content);
 		return t('tool.confirm.addMemory', { preview });
 	};
 
