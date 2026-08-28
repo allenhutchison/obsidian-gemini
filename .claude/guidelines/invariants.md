@@ -5,7 +5,7 @@ diff against. Breaking one of these is a correctness or architecture regression,
 
 ## API layer: Factory + Decorator, capability-routed
 
-```
+```text
 src/main.ts → ModelClientFactory.createFromPlugin() → GeminiClient | OllamaClient | OpenAIClient → RetryDecorator → ModelApi
 ```
 
