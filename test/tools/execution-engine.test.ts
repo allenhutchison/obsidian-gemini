@@ -1,7 +1,6 @@
 import { ToolExecutionEngine } from '../../src/tools/execution-engine';
 import { ToolRegistry } from '../../src/tools/tool-registry';
-import { ReadFileTool, ListFilesTool, WriteFileTool } from '../../src/tools/vault';
-import { getExtendedVaultTools } from '../../src/tools/vault-tools-extended';
+import { AppendContentTool, ReadFileTool, ListFilesTool, WriteFileTool } from '../../src/tools/vault';
 import { ToolCategory } from '../../src/types/agent';
 import { ToolClassification } from '../../src/types/tool-policy';
 import { IConfirmationProvider, Tool } from '../../src/tools/types';
@@ -1121,7 +1120,7 @@ describe('ToolExecutionEngine - Confirmation Flow', () => {
 	it('flips append_content to a full overwrite when the user edits the diff', async () => {
 		// The append→overwrite flip now lives in AppendContentTool.applyConfirmedEdit;
 		// register the real tool so the engine exercises that hook end-to-end.
-		const appendTool = getExtendedVaultTools().find((tt) => tt.name === 'append_content')!;
+		const appendTool = new AppendContentTool();
 		registry.registerTool(appendTool);
 
 		const context = {

@@ -8,6 +8,8 @@ import { MoveFileTool } from './move-file-tool';
 import { SearchFilesTool } from './search-files-tool';
 import { SearchFileContentsTool } from './search-file-contents-tool';
 import { GetWorkspaceStateTool } from './get-workspace-state-tool';
+import { UpdateFrontmatterTool } from './update-frontmatter-tool';
+import { AppendContentTool } from './append-content-tool';
 
 export { ReadFileTool } from './read-file-tool';
 export { WriteFileTool } from './write-file-tool';
@@ -18,6 +20,8 @@ export { MoveFileTool } from './move-file-tool';
 export { SearchFilesTool } from './search-files-tool';
 export { SearchFileContentsTool } from './search-file-contents-tool';
 export { GetWorkspaceStateTool } from './get-workspace-state-tool';
+export { UpdateFrontmatterTool } from './update-frontmatter-tool';
+export { AppendContentTool } from './append-content-tool';
 
 /**
  * Get all available vault tools
@@ -33,5 +37,9 @@ export function getVaultTools(): Tool[] {
 		new SearchFilesTool(),
 		new SearchFileContentsTool(),
 		new GetWorkspaceStateTool(),
+		// Last two: moved from the flat src/tools/vault-tools-extended.ts, keeping
+		// the registration order the tools had there (#1310).
+		new UpdateFrontmatterTool(),
+		new AppendContentTool(),
 	];
 }
