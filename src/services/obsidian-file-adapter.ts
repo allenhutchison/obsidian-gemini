@@ -229,7 +229,7 @@ export class ObsidianVaultAdapter implements FileSystemAdapter {
 
 		// Check user-configured exclude folders
 		for (const folder of this.excludeFolders) {
-			if (filePath.startsWith(folder + '/') || filePath === folder) {
+			if (isPathInFolder(filePath, folder)) {
 				return false;
 			}
 		}

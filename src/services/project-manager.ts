@@ -8,6 +8,7 @@ import {
 	parseToolPolicyFrontmatter,
 	serializeToolPolicy,
 } from '../types/tool-policy';
+import { isPathInFolder } from '../utils/file-utils';
 
 /** Regex to strip dataview/dataviewjs/bases fenced code blocks from body text */
 const UNSUPPORTED_CODE_BLOCK_RE = /```(?:dataview|dataviewjs|bases?)[\s\S]*?```/g;
@@ -93,8 +94,8 @@ export class ProjectManager {
 
 		for (const project of this.projectCache.values()) {
 			const root = project.rootPath;
-			// Root '' matches everything; otherwise check prefix with trailing /
-			const isMatch = root === '' ? true : path.startsWith(root + '/') || path === root;
+			// Root '' matches everything; otherwise require root-anchored containment
+			const isMatch = root === '' ? true : isPathInFolder(path, root);
 			if (isMatch && root.length > bestLength) {
 				bestMatch = project;
 				bestLength = root.length;

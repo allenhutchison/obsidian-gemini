@@ -293,8 +293,7 @@ export class ImageGeneration {
 		if (historyFolder) {
 			const normalizedHistoryFolder = normalizePath(historyFolder);
 			const backgroundTasksFolder = normalizePath(`${normalizedHistoryFolder}/Background-Tasks`);
-			const insideStateFolder =
-				normalizedFilePath === normalizedHistoryFolder || normalizedFilePath.startsWith(normalizedHistoryFolder + '/');
+			const insideStateFolder = isPathInFolder(normalizedFilePath, normalizedHistoryFolder);
 			const insideBackgroundTasks = normalizedFilePath.startsWith(backgroundTasksFolder + '/');
 			if (insideStateFolder && !insideBackgroundTasks) {
 				throw new Error(`Output path cannot be inside the plugin state folder: "${outputPath}"`);
