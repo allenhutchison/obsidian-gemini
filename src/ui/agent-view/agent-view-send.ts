@@ -572,15 +572,7 @@ To reference an attachment in your response, use the path shown above.`;
 						const response = await streamResponse.complete;
 						this.currentStreamingResponse = null;
 
-						// Emit usage metadata via event bus (contextManager subscribes)
-						if (response.usageMetadata) {
-							await this.ctx.plugin.agentEventBus?.emit('apiResponseReceived', {
-								usageMetadata: response.usageMetadata,
-								modelName,
-							});
-						} else {
-							this.ctx.plugin.logger.debug('[AgentView] Streaming response had no usageMetadata');
-						}
+						await this.emitUsageMetadata(response, modelName, 'Streaming');
 
 						// Model reasoning for this turn — prefer the completed response's
 						// thoughts; fall back to whatever streamed into the progress bar.
@@ -664,15 +656,7 @@ To reference an attachment in your response, use the path shown above.`;
 					this.ctx.plugin.logger.log('Agent view using non-streaming API');
 					const response = await modelApi.generateModelResponse(request);
 
-					// Emit usage metadata via event bus (contextManager subscribes)
-					if (response.usageMetadata) {
-						await this.ctx.plugin.agentEventBus?.emit('apiResponseReceived', {
-							usageMetadata: response.usageMetadata,
-							modelName,
-						});
-					} else {
-						this.ctx.plugin.logger.debug('[AgentView] Non-streaming response had no usageMetadata');
-					}
+					await this.emitUsageMetadata(response, modelName, 'Non-streaming');
 
 					// Update progress to show response received
 					this.ctx.progress.update(t('agent.progress.processing'), 'waiting');
@@ -732,6 +716,31 @@ To reference an attachment in your response, use the path shown above.`;
 
 			// Always update token usage display after any message completion
 			await this.ctx.updateTokenUsage();
+		}
+	}
+
+	/**
+	 * Publish a model response's usage metadata on the event bus (contextManager
+	 * subscribes) so the token display reflects the turn. Shared by the streaming
+	 * and non-streaming send paths, which previously carried the same eight-line
+	 * emit-or-debug-log block with only the log prefix differing.
+	 *
+	 * `pathLabel` names the send path in the debug log ('Streaming' /
+	 * 'Non-streaming'); it is logger output, so it stays English per the i18n rule
+	 * in `.claude/guidelines/coding.md`.
+	 */
+	private async emitUsageMetadata(
+		response: Pick<ModelResponse, 'usageMetadata'>,
+		modelName: string,
+		pathLabel: string
+	): Promise<void> {
+		if (response.usageMetadata) {
+			await this.ctx.plugin.agentEventBus?.emit('apiResponseReceived', {
+				usageMetadata: response.usageMetadata,
+				modelName,
+			});
+		} else {
+			this.ctx.plugin.logger.debug(`[AgentView] ${pathLabel} response had no usageMetadata`);
 		}
 	}
 
