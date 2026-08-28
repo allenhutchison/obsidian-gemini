@@ -5,7 +5,7 @@ import { ModelClientFactory } from '../api';
 import { AgentsMemoryData } from './agents-memory';
 import { VaultAnalysisModal } from '../ui/vault-analysis-modal';
 import { collectFilesFromFolder } from '../utils/folder-walk';
-import { isPathInFolder } from '../utils/file-utils';
+import { shouldExcludePathForPlugin } from '../utils/file-utils';
 import { t } from '../i18n';
 import { asRecord, getRawErrorMessageOr } from '../utils/error-utils';
 
@@ -258,8 +258,7 @@ export class VaultAnalyzer {
 		let structure = '';
 
 		// Skip system folders (the Obsidian config dir may be renamed from `.obsidian`)
-		const skipFolders = [this.plugin.app.vault.configDir, this.plugin.settings.historyFolder];
-		if (skipFolders.includes(folder.path)) {
+		if (this.isSystemPath(folder.path)) {
 			return '';
 		}
 
@@ -312,13 +311,12 @@ export class VaultAnalyzer {
 	 * configuration directory — neither is user content, so neither belongs in
 	 * anything we count, fingerprint, or show the model.
 	 *
-	 * Root-anchored containment so a sibling like `gemini-scribe-backup/` or a
-	 * renamed `_obsidian-notes/` is not wrongly excluded by a bare prefix match.
+	 * Delegates to the shared helper so the containment semantics (root-anchored,
+	 * so a sibling like `gemini-scribe-backup/` or a renamed `_obsidian-notes/` is
+	 * not wrongly excluded by a bare prefix match) live in exactly one place.
 	 */
 	private isSystemPath(path: string): boolean {
-		return (
-			isPathInFolder(path, this.plugin.settings.historyFolder) || isPathInFolder(path, this.plugin.app.vault.configDir)
-		);
+		return shouldExcludePathForPlugin(path, this.plugin);
 	}
 
 	/**
