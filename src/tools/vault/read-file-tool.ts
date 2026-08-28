@@ -52,8 +52,7 @@ export class ReadFileTool implements Tool {
 
 			// Allow reading agent session history files (needed by recall_sessions tool)
 			const agentSessionsFolder = normalizePath(`${plugin.settings.historyFolder}/Agent-Sessions`);
-			const isAgentSessionPath =
-				normalizedPath === agentSessionsFolder || normalizedPath.startsWith(agentSessionsFolder + '/');
+			const isAgentSessionPath = isPathInFolder(normalizedPath, agentSessionsFolder);
 			const isObsidianPath = isPathInFolder(normalizedPath, plugin.app.vault.configDir);
 
 			// Check if path is excluded (allow agent session files, but never the Obsidian config dir)

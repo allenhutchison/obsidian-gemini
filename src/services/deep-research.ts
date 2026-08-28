@@ -363,8 +363,7 @@ export class DeepResearchService {
 		if (historyFolder) {
 			const normalizedHistoryFolder = normalizePath(historyFolder);
 			const backgroundTasksFolder = normalizePath(`${normalizedHistoryFolder}/Background-Tasks`);
-			const insideStateFolder =
-				normalizedPath === normalizedHistoryFolder || normalizedPath.startsWith(normalizedHistoryFolder + '/');
+			const insideStateFolder = isPathInFolder(normalizedPath, normalizedHistoryFolder);
 			const insideBackgroundTasks = normalizedPath.startsWith(backgroundTasksFolder + '/');
 			if (insideStateFolder && !insideBackgroundTasks) {
 				throw new Error(
