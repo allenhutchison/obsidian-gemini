@@ -3,17 +3,29 @@
 Repo-specific invariants that CI **doesn't** fully catch and that a reviewer/audit must check a
 diff against. Breaking one of these is a correctness or architecture regression, not a style nit.
 
-## API layer: Factory + Decorator
+## API layer: Factory + Decorator, capability-routed
 
 ```
-src/main.ts → ModelClientFactory.createFromPlugin() → GeminiClient | OllamaClient → RetryDecorator → ModelApi
+src/main.ts → ModelClientFactory.createFromPlugin() → GeminiClient | OllamaClient | OpenAIClient → RetryDecorator → ModelApi
 ```
 
-- The factory (`src/api/factory.ts`) branches on `settings.provider` to instantiate a `GeminiClient`
-  or `OllamaClient`, wrapped by `RetryDecorator` (exponential backoff) for resilience.
+- Each call resolves its provider **independently** via `resolveProviderOrDefault(settings, useCase)`
+  (`src/api/provider-routing.ts`), which consults `settings.providerOverrides[useCase]` before
+  falling back to the primary `settings.provider`. The factory (`src/api/factory.ts`) instantiates a
+  `GeminiClient`, `OllamaClient`, or `OpenAIClient` from the resolved provider, wrapped by
+  `RetryDecorator` (exponential backoff) for resilience.
+- **Routing never silently substitutes a different provider.** Capability-gated features resolve via
+  `resolveProvider`, and a `null` result means the feature stays **off** — substituting a cloud
+  provider for a local one (or vice versa) would send vault data somewhere the user never opted
+  into. `resolveProviderOrDefault` exists only for the use cases every provider supports (chat,
+  summary, completions, rewrite).
 - All provider implementations conform to the `ModelApi` interface; provider-specific code stays
-  encapsulated under `src/api/providers/{gemini,ollama}/`. Don't leak provider specifics upward.
-- The factory serves distinct use cases (chat, summary, completions, rewrite) — keep them distinct.
+  encapsulated under `src/api/providers/{gemini,ollama,openai}/`. Don't leak provider specifics
+  upward: the capability matrix (which provider can serve which use case) lives in the leaf module
+  `src/api/providers/registry.ts`, and the routing helpers in the leaf module
+  `src/api/provider-routing.ts` — consume them instead of branching on provider name literals.
+- The factory serves distinct use cases (chat, summary, completions, rewrite, webSearch, rag,
+  imageGen) — keep them distinct.
 
 ## Session-history parser invariant
 
@@ -56,9 +68,10 @@ otherwise).
 
 ## Generated artifacts & state layout
 
-- `main.js`, `manifest.json`, `styles.css` are committed at the **repo root** for Obsidian —
-  commit them alongside source changes. Version fields in `package.json` / `manifest.json` /
-  `versions.json` are managed by `npm version` only (see `release.md`) — never hand-edit.
+- `manifest.json` and `styles.css` are committed at the **repo root** for Obsidian. `main.js` is a
+  build output and is **gitignored** — never commit it. Version fields in `package.json` /
+  `manifest.json` / `versions.json` are managed by `npm version` only (see `release.md`) — never
+  hand-edit.
 - `src/services/generated-help-references.ts` is auto-generated at build from `docs/guide/` and
   `docs/reference/`; adding/removing a markdown file there updates the bundled help skill
   automatically — never hand-edit the generated file.
