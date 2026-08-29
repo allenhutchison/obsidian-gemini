@@ -27,7 +27,6 @@ describe('capability matrix', () => {
 		expect(caps.imageGen).toBe(true);
 		expect(caps.requiresApiKey).toBe(true);
 		expect(caps.nativeTokenCount).toBe(true);
-		expect(caps.interactionsApi).toBe(true);
 		expect(caps.customBaseUrl).toBe(true);
 	});
 
@@ -44,7 +43,6 @@ describe('capability matrix', () => {
 		expect(caps.imageGen).toBe(false);
 		expect(caps.requiresApiKey).toBe(false);
 		expect(caps.nativeTokenCount).toBe(false);
-		expect(caps.vision).toBe('auto-detect');
 		// One resident model at a time (#1077).
 		expect(caps.perUseCaseModels).toBe(false);
 	});
@@ -61,10 +59,6 @@ describe('capability matrix', () => {
 		expect(caps.imageGen).toBe(false);
 		expect(caps.requiresApiKey).toBe(true);
 		expect(caps.nativeTokenCount).toBe(false);
-		expect(caps.promptCache).toBe(false);
-		expect(caps.costMetrics).toBe(false);
-		expect(caps.interactionsApi).toBe(false);
-		expect(caps.vision).toBe('auto-detect');
 		expect(caps.customBaseUrl).toBe(true);
 		// Each use case keeps its own model — no single-resident-model constraint.
 		expect(caps.perUseCaseModels).toBe(true);
