@@ -19,7 +19,6 @@ export class ImageGeneration {
 				apiKey: plugin.apiKey,
 				temperature: plugin.settings.temperature,
 				topP: plugin.settings.topP,
-				streamingEnabled: false,
 			},
 			this.prompts,
 			plugin

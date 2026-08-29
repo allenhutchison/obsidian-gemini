@@ -84,7 +84,6 @@ export class OpenAIClient implements ModelApi {
 		this.config = {
 			temperature: 0.7,
 			topP: 1,
-			streamingEnabled: true,
 			...config,
 		};
 		this.plugin = plugin;

@@ -4,5 +4,4 @@ export interface OllamaClientConfig {
 	temperature?: number;
 	topP?: number;
 	maxOutputTokens?: number;
-	streamingEnabled?: boolean;
 }

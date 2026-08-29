@@ -89,7 +89,6 @@ export class GeminiClient implements ModelApi {
 		this.config = {
 			temperature: 1.0,
 			topP: 0.95,
-			streamingEnabled: true,
 			...config,
 		};
 		this.plugin = plugin;
