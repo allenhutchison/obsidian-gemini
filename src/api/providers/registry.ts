@@ -55,28 +55,18 @@ export interface ProviderCapabilities {
 	rag: boolean;
 	imageGen: boolean;
 
-	// --- Behavioural traits ---
-	/**
-	 * `'always'` — every model accepts image input.
-	 * `'auto-detect'` — varies per model, probed at runtime.
-	 * `'never'` — text only.
-	 */
-	vision: 'always' | 'auto-detect' | 'never';
+	// --- Behavioural traits with live readers ---
 	/** Exposes a real token-counting endpoint (otherwise we estimate chars-per-token). */
 	nativeTokenCount: boolean;
-	/** Reports cached-prompt token counts in usage metadata. */
-	promptCache: boolean;
-	/** Requests have a per-token cost worth reporting. */
-	costMetrics: boolean;
-	/** Supports the Interactions API transport. */
-	interactionsApi: boolean;
 	/** Honours the `customBaseUrl` setting. */
 	customBaseUrl: boolean;
 	/**
-	 * Different models can be configured per use case without a runtime penalty.
-	 * False for Ollama, which keeps a single model resident — diverging models
-	 * thrashes RAM/VRAM on every switch (#1077), so its per-use-case model
-	 * fields default to inheriting the chat model.
+	 * Descriptive-only until #703 wires the settings ladder through this flag:
+	 * a real consumer exists (the per-use-case model pickers and their model
+	 * defaults) but currently branches on the provider name (#1298). False for
+	 * Ollama, which keeps a single model resident — diverging models thrash
+	 * RAM/VRAM on every switch (#1077), so its per-use-case model fields
+	 * default to inheriting the chat model.
 	 */
 	perUseCaseModels: boolean;
 	/** Requests need an API key before the provider can be initialized. */
@@ -104,11 +94,7 @@ export const PROVIDERS: Record<ModelProvider, ProviderDefinition> = {
 			webSearch: true,
 			rag: true,
 			imageGen: true,
-			vision: 'always',
 			nativeTokenCount: true,
-			promptCache: true,
-			costMetrics: true,
-			interactionsApi: true,
 			customBaseUrl: true,
 			perUseCaseModels: true,
 			requiresApiKey: true,
@@ -127,11 +113,7 @@ export const PROVIDERS: Record<ModelProvider, ProviderDefinition> = {
 			webSearch: false,
 			rag: false,
 			imageGen: false,
-			vision: 'auto-detect',
 			nativeTokenCount: false,
-			promptCache: false,
-			costMetrics: false,
-			interactionsApi: false,
 			customBaseUrl: false,
 			perUseCaseModels: false,
 			requiresApiKey: false,
@@ -156,11 +138,7 @@ export const PROVIDERS: Record<ModelProvider, ProviderDefinition> = {
 			webSearch: false,
 			rag: false,
 			imageGen: false,
-			vision: 'auto-detect',
 			nativeTokenCount: false,
-			promptCache: false,
-			costMetrics: false,
-			interactionsApi: false,
 			customBaseUrl: true,
 			perUseCaseModels: true,
 			requiresApiKey: true,
