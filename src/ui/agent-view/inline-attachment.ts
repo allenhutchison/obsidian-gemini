@@ -30,6 +30,15 @@ export function generateAttachmentId(): string {
 }
 
 /**
+ * Estimate the decoded byte size of pending attachments from their base64
+ * payloads (3 bytes per 4 base64 chars, rounded up). Shared by every path that
+ * seeds the cumulative size used against GEMINI_INLINE_DATA_LIMIT (#1363).
+ */
+export function estimateAttachmentBytes(attachments: InlineAttachment[]): number {
+	return attachments.reduce((sum, a) => sum + Math.ceil((a.base64.length * 3) / 4), 0);
+}
+
+/**
  * Convert a File or Blob to base64
  */
 export function fileToBase64(file: File | Blob): Promise<string> {

@@ -6,7 +6,9 @@ import { AgentViewShelf, getTextFilesFromFolder } from './agent-view-shelf';
 import { FileMentionModal } from './file-mention-modal';
 import { getContextSelection, createContextRange } from '../../utils/dom-context';
 import { shouldExcludePathForPlugin } from '../../utils/file-utils';
-import { rasterizeSvg } from '../../utils/svg-rasterizer';
+import { classifyFile, FileCategory } from '../../utils/file-classification';
+import { estimateAttachmentBytes } from './inline-attachment';
+import { attachVaultBinaryFile } from './attach-vault-file';
 import type { ObsidianGemini } from '../../types/plugin';
 import { t } from '../../i18n';
 
@@ -26,8 +28,9 @@ export interface AttachmentsContext {
 }
 
 /**
- * Handles file attachment operations for the agent view:
- * drag-and-drop, paste, @ mention file picker, and attachment persistence.
+ * Handles the @ mention file picker and attachment persistence for the agent
+ * view. Drag-and-drop and paste live in `AgentViewUI` (agent-view-ui.ts); both
+ * paths share the vault-binary pipeline in `attach-vault-file.ts` (#1363).
  */
 export class AgentViewAttachments {
 	constructor(private ctx: AttachmentsContext) {}
@@ -63,8 +66,6 @@ export class AgentViewAttachments {
 					if (!(fileOrFolder instanceof TFile)) return;
 
 					// Classify the file to determine text vs binary handling
-					const { classifyFile, FileCategory, arrayBufferToBase64, detectWebmMimeType, GEMINI_INLINE_DATA_LIMIT } =
-						await import('../../utils/file-classification');
 					const classification = classifyFile(fileOrFolder.extension);
 
 					if (classification.category === FileCategory.TEXT) {
@@ -76,47 +77,32 @@ export class AgentViewAttachments {
 						classification.category === FileCategory.GEMINI_BINARY ||
 						classification.category === FileCategory.SVG
 					) {
-						// Handle binary/SVG file — create inline attachment (same as drag-drop).
-						// SVG is rasterized to PNG; other binaries are inlined as-is.
+						// Handle binary/SVG file — create inline attachment (same as drag-drop),
+						// via the shared vault-binary pipeline (#1363).
 						try {
-							const buffer = await this.ctx.app.vault.readBinary(fileOrFolder);
-							const existing = this.ctx.getShelf().getPendingAttachments();
-							const cumulativeSize =
-								existing.reduce((sum, a) => sum + Math.ceil((a.base64.length * 3) / 4), 0) + buffer.byteLength;
-
-							if (cumulativeSize > GEMINI_INLINE_DATA_LIMIT) {
-								new Notice(t('agent.attachments.fileTooLarge', { name: fileOrFolder.name }), 5000);
-								return;
-							}
-
-							let base64: string;
-							let mimeType: string;
-							if (classification.category === FileCategory.SVG) {
-								try {
-									base64 = await rasterizeSvg(buffer, fileOrFolder.extension.toLowerCase() === 'svgz');
-									mimeType = 'image/png';
-								} catch (rasterErr) {
-									this.ctx.plugin.logger.error(`Failed to rasterize SVG ${fileOrFolder.path}:`, rasterErr);
+							const alreadyUsed = estimateAttachmentBytes(this.ctx.getShelf().getPendingAttachments());
+							const result = await attachVaultBinaryFile(
+								this.ctx.app,
+								fileOrFolder,
+								alreadyUsed,
+								this.ctx.plugin.logger
+							);
+							switch (result.kind) {
+								case 'too-large':
+									new Notice(t('agent.attachments.fileTooLarge', { name: fileOrFolder.name }), 5000);
+									return;
+								case 'raster-failed':
 									new Notice(t('agent.attachments.attachFailed', { name: fileOrFolder.name }));
 									return;
-								}
-							} else {
-								base64 = arrayBufferToBase64(buffer);
-								mimeType =
-									fileOrFolder.extension.toLowerCase() === 'webm'
-										? detectWebmMimeType(buffer)
-										: classification.mimeType;
+								case 'read-failed':
+									this.ctx.plugin.logger.error(`Failed to attach ${fileOrFolder.path}:`, result.error);
+									new Notice(t('agent.attachments.attachFailed', { name: fileOrFolder.name }));
+									return;
+								case 'ok':
+									this.addAttachment(result.attachment);
+									new Notice(t('agent.attachments.attached', { name: fileOrFolder.name }), 2000);
+									return;
 							}
-							const { generateAttachmentId } = await import('./inline-attachment');
-							const attachment: InlineAttachment = {
-								base64,
-								mimeType,
-								id: generateAttachmentId(),
-								vaultPath: fileOrFolder.path,
-								fileName: fileOrFolder.name,
-							};
-							this.addAttachment(attachment);
-							new Notice(t('agent.attachments.attached', { name: fileOrFolder.name }), 2000);
 						} catch (err) {
 							this.ctx.plugin.logger.error(`Failed to attach ${fileOrFolder.path}:`, err);
 							new Notice(t('agent.attachments.attachFailed', { name: fileOrFolder.name }));

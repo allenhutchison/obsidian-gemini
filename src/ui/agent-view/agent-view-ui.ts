@@ -6,18 +6,14 @@ import { sanitizeFileName, shouldExcludePathForPlugin } from '../../utils/file-u
 import { collectFilesFromFolder } from '../../utils/folder-walk';
 import {
 	InlineAttachment,
-	generateAttachmentId,
+	estimateAttachmentBytes,
 	fileToBase64,
+	generateAttachmentId,
 	getMimeType,
 	isSupportedImageType,
 } from './inline-attachment';
-import {
-	classifyFile,
-	FileCategory,
-	arrayBufferToBase64,
-	detectWebmMimeType,
-	GEMINI_INLINE_DATA_LIMIT,
-} from '../../utils/file-classification';
+import { attachVaultBinaryFile } from './attach-vault-file';
+import { classifyFile, FileCategory, GEMINI_INLINE_DATA_LIMIT } from '../../utils/file-classification';
 import { rasterizeSvg } from '../../utils/svg-rasterizer';
 import { t } from '../../i18n';
 
@@ -641,50 +637,23 @@ export class AgentViewUI {
 					const sizeLimitExceeded: string[] = [];
 
 					for (const file of binaryFiles) {
-						try {
-							const buffer = await this.app.vault.readBinary(file);
-							cumulativeSize += buffer.byteLength;
-
-							if (cumulativeSize > GEMINI_INLINE_DATA_LIMIT) {
+						const result = await attachVaultBinaryFile(this.app, file, cumulativeSize, this.plugin.logger);
+						switch (result.kind) {
+							case 'ok':
+								callbacks.addAttachment(result.attachment);
+								cumulativeSize += result.bytes;
+								binaryCount++;
+								break;
+							case 'too-large':
 								sizeLimitExceeded.push(file.name);
-								cumulativeSize -= buffer.byteLength;
-								continue;
-							}
-
-							const classification = classifyFile(file.extension);
-							let base64: string;
-							let mimeType: string;
-							if (classification.category === FileCategory.SVG) {
-								// SVG can't be inlined directly — rasterize to PNG. On failure
-								// (malformed SVG, unresolvable refs), fall back to the
-								// unsupported-file notice rather than sending raw XML.
-								try {
-									base64 = await rasterizeSvg(buffer, file.extension.toLowerCase() === 'svgz');
-									mimeType = 'image/png';
-								} catch (rasterErr) {
-									this.plugin.logger.error(`Failed to rasterize SVG ${file.path}:`, rasterErr);
-									unsupportedExts.push(`.${file.extension}`);
-									cumulativeSize -= buffer.byteLength;
-									continue;
-								}
-							} else {
-								base64 = arrayBufferToBase64(buffer);
-								// For .webm files, detect audio vs video from container header
-								mimeType =
-									file.extension.toLowerCase() === 'webm' ? detectWebmMimeType(buffer) : classification.mimeType;
-							}
-							const attachment: InlineAttachment = {
-								base64,
-								mimeType,
-								id: generateAttachmentId(),
-								vaultPath: file.path,
-								fileName: file.name,
-							};
-							callbacks.addAttachment(attachment);
-							binaryCount++;
-						} catch (err) {
-							this.plugin.logger.error(`Failed to read binary file ${file.path}:`, err);
-							new Notice(t('agent.attachments.attachFailed', { name: file.name }));
+								break;
+							case 'raster-failed':
+								unsupportedExts.push(`.${file.extension}`);
+								break;
+							case 'read-failed':
+								this.plugin.logger.error(`Failed to read binary file ${file.path}:`, result.error);
+								new Notice(t('agent.attachments.attachFailed', { name: file.name }));
+								break;
 						}
 					}
 
@@ -883,7 +852,7 @@ export class AgentViewUI {
 	 * Compute the cumulative base64 byte size of all existing attachments.
 	 */
 	private getCurrentAttachmentSize(callbacks: UICallbacks): number {
-		return callbacks.getAttachments().reduce((sum, a) => sum + Math.ceil((a.base64.length * 3) / 4), 0);
+		return estimateAttachmentBytes(callbacks.getAttachments());
 	}
 
 	/**
