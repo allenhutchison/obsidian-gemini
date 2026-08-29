@@ -205,6 +205,18 @@ describe('SessionListModal inline delete confirmation', () => {
 		await vi.waitFor(() => expect(clearLoopDetectorSession).toHaveBeenCalledWith('a'));
 	});
 
+	it('does not release loop-detector state when trashing fails (#1387 review regression)', async () => {
+		const { contentEl, trashFile, clearLoopDetectorSession } = await openModal([makeSession('a', 'Alpha')]);
+		trashFile.mockRejectedValueOnce(new Error('trash failed'));
+		const row = rows(contentEl)[0];
+		click(deleteButton(row));
+		click(confirmButton(row)!);
+		await vi.waitFor(() => expect(trashFile).toHaveBeenCalled());
+		// Give the rejected promise a tick to surface in deleteSession's catch.
+		await new Promise((resolve) => window.setTimeout(resolve, 0));
+		expect(clearLoopDetectorSession).not.toHaveBeenCalled();
+	});
+
 	it('does not release loop-detector state when cancelled (#1387)', async () => {
 		const { contentEl, clearLoopDetectorSession } = await openModal([makeSession('a', 'Alpha')]);
 		const row = rows(contentEl)[0];

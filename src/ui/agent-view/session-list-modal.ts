@@ -343,11 +343,11 @@ export class SessionListModal extends Modal {
 		try {
 			const file = this.app.vault.getAbstractFileByPath(session.historyPath);
 			if (file) {
-				// Release per-session engine state (tool-loop detector records) so
-				// the deleted session's key does not linger for the process lifetime (#1387)
-				this.plugin.toolExecutionEngine.clearLoopDetectorSession(session.id);
-
 				await this.app.fileManager.trashFile(file);
+				// Release per-session engine state (tool-loop detector records) only
+				// after the file deletion succeeded — if trashing failed the session
+				// remains, so its detection state must survive too (#1387).
+				this.plugin.toolExecutionEngine.clearLoopDetectorSession(session.id);
 				new Notice(t('agent.sessionList.deleted', { title: session.title }));
 
 				// Reload the list and refresh filter state

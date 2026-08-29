@@ -113,6 +113,21 @@ describe('formatModelMessage', () => {
 		expect(output).toBe('~~~\ntext\n```inline\ntext2\n~~~\n\nAfter');
 	});
 
+	it('a closing fence may not carry trailing text (```nope stays content, CommonMark)', () => {
+		const input = '```\ncode\n```nope\nmore\n```';
+		expect(formatModelMessage(input)).toBe('```\ncode\n```nope\nmore\n```');
+	});
+
+	it('a longer closing run inside a shorter fence still closes (CommonMark)', () => {
+		const input = '```\ncode\n`````\nAfter';
+		expect(formatModelMessage(input)).toBe('```\ncode\n`````\n\nAfter');
+	});
+
+	it('a shorter closing run does not close a longer fence (CommonMark)', () => {
+		const input = '````\ncode\n```\nmore\n````';
+		expect(formatModelMessage(input)).toBe('````\ncode\n```\nmore\n````');
+	});
+
 	it('does not double-space table rows that appear between two fences', () => {
 		const input = '```\npre\n```\n| A | B |\n| --- | --- |\n```\npost\n```';
 		const output = formatModelMessage(input);
@@ -159,6 +174,19 @@ describe('unescapeWikiLinks', () => {
 	it('preserves wikilinks inside tilde-fenced code blocks', () => {
 		const input = '~~~\n`[[code link]]`\n~~~';
 		expect(unescapeWikiLinks(input)).toBe(input);
+	});
+
+	it('a mismatched fence run inside a fence does not split it (unescape pairing)', () => {
+		// Old splitter tilted on the first ~~~ run and let the escaped link be
+		// rewritten outside the still-open ``` fence; the strict parser keeps
+		// the whole block fenced.
+		const input = '```\n~~~\n\\[\\[a\\]\\]\n~~~\n```';
+		expect(unescapeWikiLinks(input)).toBe(input);
+	});
+
+	it('an escaped wikilink after a properly closed fence is still unescaped', () => {
+		const input = '```\ncode\n```\n\\[\\[real\\]\\]';
+		expect(unescapeWikiLinks(input)).toBe('```\ncode\n```\n[[real]]');
 	});
 
 	// --- Backslash escaping ---
