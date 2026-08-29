@@ -21,8 +21,6 @@ export type {
 	AgentContext,
 	SessionModelConfig,
 	ChatSession,
-	ChatMessage,
-	ToolExecution,
 } from './types/agent';
 
 // Tool System Types
