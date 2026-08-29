@@ -125,7 +125,13 @@ export class ToolLoopDetector {
 			(record) => now - record.timestamp < this.timeWindowMs * 2 // Keep 2x window for analysis
 		);
 
-		this.executionHistory.set(sessionId, filtered);
+		// When everything expires, drop the key entirely instead of parking an
+		// empty array under it — otherwise a dead session's key lives forever.
+		if (filtered.length === 0) {
+			this.executionHistory.delete(sessionId);
+		} else {
+			this.executionHistory.set(sessionId, filtered);
+		}
 	}
 }
 
