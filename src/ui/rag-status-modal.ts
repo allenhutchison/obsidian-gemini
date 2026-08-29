@@ -65,7 +65,14 @@ export class RagStatusModal extends Modal {
 
 	private renderTabs(container: HTMLElement): void {
 		const tabsEl = container.createDiv({ cls: 'rag-status-tabs' });
+		this.populateTabs(tabsEl);
+	}
 
+	/**
+	 * Fills an already-placed tab strip with the three tabs. Shared by the initial render and the
+	 * refresh path, which differ only in where the container is placed.
+	 */
+	private populateTabs(tabsEl: HTMLElement): void {
 		// Overview tab
 		this.createTab(tabsEl, 'overview', t('ragStatus.tabOverview'));
 
@@ -178,21 +185,7 @@ export class RagStatusModal extends Modal {
 		if (header) {
 			const tabsEl = contentEl.createDiv({ cls: 'rag-status-tabs' });
 			header.insertAdjacentElement('afterend', tabsEl);
-
-			// Overview tab
-			this.createTab(tabsEl, 'overview', t('ragStatus.tabOverview'));
-
-			// Files tab with count
-			this.createTab(
-				tabsEl,
-				'files',
-				t('ragStatus.tabFiles', { count: this.statusInfo.indexedCount.toLocaleString() })
-			);
-
-			// Failures tab with count
-			if (this.statusInfo.failedCount > 0) {
-				this.createTab(tabsEl, 'failures', t('ragStatus.tabFailures', { count: this.statusInfo.failedCount }));
-			}
+			this.populateTabs(tabsEl);
 		}
 
 		if (contentContainer) {
