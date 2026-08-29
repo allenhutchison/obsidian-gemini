@@ -110,6 +110,34 @@ describe('attachVaultBinaryFile', () => {
 		}
 	});
 
+	it('enforces the budget against the converted PNG bytes, not the SVG source', async () => {
+		// A small SVG whose rasterization explodes past the 20 MB budget: the
+		// source-side pre-check passes, the converted-payload check rejects it
+		// (#1412 review).
+		rasterizeSvg.mockResolvedValue('A'.repeat(Math.ceil(((GEMINI_INLINE_DATA_LIMIT + 1024) * 4) / 3)));
+		const result = await attachVaultBinaryFile(
+			mockVault(bufferOf([1])),
+			makeFile('icon.svg', 'svg'),
+			0,
+			logger as unknown as Parameters<typeof attachVaultBinaryFile>[3]
+		);
+		expect(result.kind).toBe('too-large');
+	});
+
+	it('reports converted bytes on ok for an SVG and accepts them at the budget edge', async () => {
+		rasterizeSvg.mockResolvedValue('AB=='); // decodes to 1 byte
+		const result = await attachVaultBinaryFile(
+			mockVault(bufferOf([123, 45])),
+			makeFile('icon.svg', 'svg'),
+			GEMINI_INLINE_DATA_LIMIT - 3,
+			logger as unknown as Parameters<typeof attachVaultBinaryFile>[3]
+		);
+		// Source (2 bytes) passes the pre-check; the converted payload (1 byte)
+		// fits the budget — ok, with converted bytes reported.
+		expect(result.kind).toBe('ok');
+		if (result.kind === 'ok') expect(result.bytes).toBe(1);
+	});
+
 	it('returns raster-failed when rasterization rejects', async () => {
 		rasterizeSvg.mockRejectedValue(new Error('bad svg'));
 		const result = await attachVaultBinaryFile(
@@ -174,12 +202,22 @@ describe('attachVaultBinaryFile', () => {
 });
 
 describe('estimateAttachmentBytes', () => {
-	it('sums ceil(base64 length * 3 / 4) across attachments', async () => {
+	it('sums decoded bytes across attachments (3 per 4-char group)', () => {
 		const attachments = [
-			{ base64: 'A'.repeat(12), mimeType: 'image/png', id: '1' } as InlineAttachment,
-			{ base64: 'B'.repeat(13), mimeType: 'image/png', id: '2' } as InlineAttachment,
+			{ base64: 'A'.repeat(12), mimeType: 'image/png', id: '1' } as InlineAttachment, // 9 bytes
+			{ base64: 'B'.repeat(12), mimeType: 'image/png', id: '2' } as InlineAttachment, // 9 bytes
 		];
-		expect(estimateAttachmentBytes(attachments)).toBe(9 + 10);
+		expect(estimateAttachmentBytes(attachments)).toBe(18);
+	});
+
+	it('excludes base64 padding from the estimate (#1412 review)', () => {
+		// 'YQ==' decodes to 1 byte, not 3.
+		const attachments = [
+			{ base64: 'YQ==', mimeType: 'image/png', id: '1' } as InlineAttachment,
+			{ base64: 'YQf=', mimeType: 'image/png', id: '2' } as InlineAttachment,
+			{ base64: 'YQFj', mimeType: 'image/png', id: '3' } as InlineAttachment,
+		];
+		expect(estimateAttachmentBytes(attachments)).toBe(1 + 2 + 3);
 	});
 
 	it('returns zero for an empty shelf', () => {

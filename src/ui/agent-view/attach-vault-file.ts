@@ -21,7 +21,7 @@ import {
 	detectWebmMimeType,
 } from '../../utils/file-classification';
 import { rasterizeSvg } from '../../utils/svg-rasterizer';
-import { generateAttachmentId, type InlineAttachment } from './inline-attachment';
+import { base64DecodedBytes, generateAttachmentId, type InlineAttachment } from './inline-attachment';
 import type { Logger } from '../../utils/logger';
 
 export type VaultAttachmentResult =
@@ -68,6 +68,7 @@ export async function attachVaultBinaryFile(
 	const classification = classifyFile(file.extension);
 	let base64: string;
 	let mimeType: string;
+	let bytes = buffer.byteLength;
 	if (classification.category === FileCategory.SVG) {
 		// SVG can't be inlined directly — rasterize to PNG. On failure
 		// (malformed SVG, unresolvable refs), fall back to the caller's
@@ -79,6 +80,14 @@ export async function attachVaultBinaryFile(
 			logger.error(`Failed to rasterize SVG ${file.path}:`, rasterErr);
 			return { kind: 'raster-failed' };
 		}
+		// The rasterized PNG can be larger than the source SVG (it's a decoded
+		// bitmap), so the budget — checked above against the small source file —
+		// has to hold for the converted payload too (#1412 review).
+		const convertedBytes = base64DecodedBytes(base64);
+		if (alreadyUsedBytes + convertedBytes > GEMINI_INLINE_DATA_LIMIT) {
+			return { kind: 'too-large' };
+		}
+		bytes = convertedBytes;
 	} else {
 		base64 = arrayBufferToBase64(buffer);
 		// For .webm files, detect audio vs video from container header
@@ -94,6 +103,6 @@ export async function attachVaultBinaryFile(
 			vaultPath: file.path,
 			fileName: file.name,
 		},
-		bytes: buffer.byteLength,
+		bytes,
 	};
 }
