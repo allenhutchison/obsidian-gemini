@@ -30,9 +30,11 @@ export function formatModelMessage(text: string): string {
 	const lines = text.split('\n');
 	const formattedLines: string[] = [];
 	let inTable = false;
-	// Set to the marker that opened the fence ('```' or '~~~'); the fence only
-	// closes on the same marker, so a ``` line inside a ~~~ fence stays content.
-	let fenceMarker: '```' | '~~~' | null = null;
+	// Set to the fence run that opened the block ('```', '```…', '~~~'…): the
+	// fence only closes on the same character with an equal-or-longer run
+	// followed by whitespace only, per CommonMark — so a '```ts' line inside a
+	// ```-fence stays content (#1379).
+	let fenceMarker: string | null = null;
 	let previousLineWasEmpty = true;
 
 	for (let i = 0; i < lines.length; i++) {
@@ -41,17 +43,14 @@ export function formatModelMessage(text: string): string {
 		const trimmedLine = line.trim();
 
 		// Track fenced code blocks: fenced content passes through verbatim —
-		// blank-line insertion inside a fence double-spaces every code line. A
-		// fence only closes on the marker that opened it, so a ``` line inside a
-		// ~~~ fence stays fence content.
-		const fenceMarkerLine = trimmedLine.startsWith('~~~')
-			? ('~~~' as const)
-			: trimmedLine.startsWith('```')
-				? ('```' as const)
-				: null;
-		if (fenceMarker || fenceMarkerLine) {
-			const isClosing = fenceMarker !== null && fenceMarkerLine === fenceMarker;
-			const isOpening = fenceMarker === null && fenceMarkerLine !== null;
+		// blank-line insertion inside a fence double-spaces every code line. Per
+		// CommonMark the fence closes on the same character with an
+		// equal-or-longer run followed by whitespace only — a '```ts' or
+		// '~~~text' line inside a fence stays content.
+		if (fenceMarker) {
+			const closeMatch = trimmedLine.match(/^(`{3,}|~{3,})\s*$/);
+			const isClosing =
+				closeMatch !== null && closeMatch[1][0] === fenceMarker[0] && closeMatch[1].length >= fenceMarker.length;
 			formattedLines.push(line);
 			if (isClosing) {
 				fenceMarker = null;
@@ -60,11 +59,17 @@ export function formatModelMessage(text: string): string {
 				if (nextLine && nextLine.trim() !== '' && formattedLines[formattedLines.length - 1] !== '') {
 					formattedLines.push('');
 				}
-			} else if (isOpening) {
-				inTable = false; // a fence can never be part of a table
-				fenceMarker = fenceMarkerLine;
 			}
 			previousLineWasEmpty = trimmedLine === '';
+			continue;
+		}
+
+		const fenceOpen = trimmedLine.match(/^(`{3,}|~{3,})/);
+		if (fenceOpen) {
+			inTable = false; // a fence can never be part of a table
+			formattedLines.push(line);
+			fenceMarker = fenceOpen[1];
+			previousLineWasEmpty = false;
 			continue;
 		}
 

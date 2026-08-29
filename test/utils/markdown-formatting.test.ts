@@ -113,6 +113,21 @@ describe('formatModelMessage', () => {
 		expect(output).toBe('~~~\ntext\n```inline\ntext2\n~~~\n\nAfter');
 	});
 
+	it('a closing fence may not carry trailing text (```nope stays content, CommonMark)', () => {
+		const input = '```\ncode\n```nope\nmore\n```';
+		expect(formatModelMessage(input)).toBe('```\ncode\n```nope\nmore\n```');
+	});
+
+	it('a longer closing run inside a shorter fence still closes (CommonMark)', () => {
+		const input = '```\ncode\n`````\nAfter';
+		expect(formatModelMessage(input)).toBe('```\ncode\n`````\n\nAfter');
+	});
+
+	it('a shorter closing run does not close a longer fence (CommonMark)', () => {
+		const input = '````\ncode\n```\nmore\n````';
+		expect(formatModelMessage(input)).toBe('````\ncode\n```\nmore\n````');
+	});
+
 	it('does not double-space table rows that appear between two fences', () => {
 		const input = '```\npre\n```\n| A | B |\n| --- | --- |\n```\npost\n```';
 		const output = formatModelMessage(input);
