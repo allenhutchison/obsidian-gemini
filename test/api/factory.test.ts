@@ -57,7 +57,6 @@ function createMockPlugin(overrides?: Record<string, any>) {
 			completionsModelName: 'gemini-2.0-flash-lite',
 			temperature: 1.0,
 			topP: 0.95,
-			streamingEnabled: true,
 			maxRetries: 3,
 			initialBackoffDelay: 1000,
 			ollamaBaseUrl: 'http://localhost:11434',
@@ -395,7 +394,6 @@ describe('ModelClientFactory', () => {
 				model: 'custom-model',
 				temperature: 0.5,
 				topP: 0.9,
-				streamingEnabled: false,
 			};
 			ModelClientFactory.createCustom(config);
 
@@ -404,7 +402,7 @@ describe('ModelClientFactory', () => {
 		});
 
 		it('should use default retry config when no plugin provided', () => {
-			const config = { apiKey: 'key', model: 'model', temperature: 1, topP: 1, streamingEnabled: true };
+			const config = { apiKey: 'key', model: 'model', temperature: 1, topP: 1 };
 			ModelClientFactory.createCustom(config);
 
 			expect(MockRetryDecorator).toHaveBeenCalledWith(
@@ -416,7 +414,7 @@ describe('ModelClientFactory', () => {
 
 		it('should use plugin retry config when plugin is provided', () => {
 			const plugin = createMockPlugin({ maxRetries: 10, initialBackoffDelay: 5000 });
-			const config = { apiKey: 'key', model: 'model', temperature: 1, topP: 1, streamingEnabled: true };
+			const config = { apiKey: 'key', model: 'model', temperature: 1, topP: 1 };
 			ModelClientFactory.createCustom(config, undefined, plugin);
 
 			expect(MockRetryDecorator).toHaveBeenCalledWith(

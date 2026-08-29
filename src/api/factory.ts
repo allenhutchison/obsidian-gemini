@@ -82,7 +82,6 @@ export class ModelClientFactory {
 				model: modelName,
 				temperature: settings.temperature ?? 0.7,
 				topP: settings.topP ?? 1,
-				streamingEnabled: settings.streamingEnabled ?? true,
 				...overrides,
 			};
 			const client = new OllamaClient(config, prompts, plugin);
@@ -96,7 +95,6 @@ export class ModelClientFactory {
 				model: modelName,
 				temperature: settings.temperature ?? 0.7,
 				topP: settings.topP ?? 1,
-				streamingEnabled: settings.streamingEnabled ?? true,
 				...overrides,
 			};
 			const client = new OpenAIClient(config, prompts, plugin);
@@ -109,7 +107,6 @@ export class ModelClientFactory {
 			useCase,
 			temperature: settings.temperature ?? 1.0,
 			topP: settings.topP ?? 0.95,
-			streamingEnabled: settings.streamingEnabled ?? true,
 			useInteractionsApi: settings.useInteractionsApi ?? false,
 			...overrides,
 		};

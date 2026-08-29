@@ -7,5 +7,4 @@ export interface OpenAIClientConfig {
 	model?: string;
 	temperature?: number;
 	topP?: number;
-	streamingEnabled?: boolean;
 }
