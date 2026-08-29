@@ -15,6 +15,25 @@
 /** Matches a markdown table divider line (e.g. | --- | :---: |). */
 const tableDividerRe = /^[\s|]*[:?-]+\s*\|/;
 
+/**
+ * The fence run starting `trimmedLine`, if any (three or more backticks or
+ * tildes). An opening fence may carry an info string after the run.
+ */
+function fenceRun(trimmedLine: string): string | null {
+	return trimmedLine.match(/^(`{3,}|~{3,})/)?.[1] ?? null;
+}
+
+/**
+ * True when `trimmedLine` closes the fence opened with `marker`, per
+ * CommonMark: the same character, an equal-or-longer run, and whitespace only
+ * after it — so a '```ts' line inside a ```-fence is content, a longer run
+ * closes a shorter opener, and a shorter run does not close a longer opener.
+ */
+function isFenceClose(trimmedLine: string, marker: string): boolean {
+	const closeMatch = trimmedLine.match(/^(`{3,}|~{3,})\s*$/);
+	return closeMatch !== null && closeMatch[1][0] === marker[0] && closeMatch[1].length >= marker.length;
+}
+
 /** Returns true if the line contains at least one unescaped pipe character. */
 function hasUnescapedPipe(line: string): boolean {
 	return line.split('\\|').join('').includes('|');
@@ -48,9 +67,7 @@ export function formatModelMessage(text: string): string {
 		// equal-or-longer run followed by whitespace only — a '```ts' or
 		// '~~~text' line inside a fence stays content.
 		if (fenceMarker) {
-			const closeMatch = trimmedLine.match(/^(`{3,}|~{3,})\s*$/);
-			const isClosing =
-				closeMatch !== null && closeMatch[1][0] === fenceMarker[0] && closeMatch[1].length >= fenceMarker.length;
+			const isClosing = isFenceClose(trimmedLine, fenceMarker);
 			formattedLines.push(line);
 			if (isClosing) {
 				fenceMarker = null;
@@ -64,11 +81,11 @@ export function formatModelMessage(text: string): string {
 			continue;
 		}
 
-		const fenceOpen = trimmedLine.match(/^(`{3,}|~{3,})/);
+		const fenceOpen = fenceRun(trimmedLine);
 		if (fenceOpen) {
 			inTable = false; // a fence can never be part of a table
 			formattedLines.push(line);
-			fenceMarker = fenceOpen[1];
+			fenceMarker = fenceOpen;
 			previousLineWasEmpty = false;
 			continue;
 		}
@@ -133,9 +150,41 @@ export function formatModelMessage(text: string): string {
 export function unescapeWikiLinks(text: string): string {
 	if (!text) return text;
 
-	// Split on fenced code blocks (``` … ``` or ~~~ … ~~~), preserving delimiters.
-	// Odd-indexed segments are inside code fences.
-	const parts = text.split(/((?:`{3,}|~{3,})[\s\S]*?(?:`{3,}|~{3,}))/);
+	// Segment the text around fenced code blocks, preserving delimiters and
+	// using the same CommonMark open/close rules as formatModelMessage (same
+	// character, equal-or-longer run, whitespace-only trailer) so an embedded
+	// mismatched run can't split a fence and leak later content out of it.
+	// Even-indexed segments are outside code fences; odd-indexed are inside.
+	const parts: string[] = [];
+	let current = '';
+	let fenceMarker: string | null = null;
+	const lines = text.split('\n');
+	for (let idx = 0; idx < lines.length; idx++) {
+		const sep = idx < lines.length - 1 ? '\n' : '';
+		const line = lines[idx];
+		const trimmedLine = line.trim();
+		if (fenceMarker) {
+			if (isFenceClose(trimmedLine, fenceMarker)) {
+				fenceMarker = null;
+				parts.push(current + line + sep);
+				current = '';
+				continue;
+			}
+			current += line + sep;
+			continue;
+		}
+		const openRun = fenceRun(trimmedLine);
+		if (openRun) {
+			// Flush the outside-fence text so far; the fence from its opening
+			// delimiter through the close is one fenced segment.
+			parts.push(current);
+			current = line + sep;
+			fenceMarker = openRun;
+			continue;
+		}
+		current += line + sep;
+	}
+	parts.push(current);
 
 	for (let i = 0; i < parts.length; i++) {
 		if (i % 2 !== 0) continue; // Skip fenced code blocks

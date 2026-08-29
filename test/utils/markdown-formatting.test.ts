@@ -176,6 +176,19 @@ describe('unescapeWikiLinks', () => {
 		expect(unescapeWikiLinks(input)).toBe(input);
 	});
 
+	it('a mismatched fence run inside a fence does not split it (unescape pairing)', () => {
+		// Old splitter tilted on the first ~~~ run and let the escaped link be
+		// rewritten outside the still-open ``` fence; the strict parser keeps
+		// the whole block fenced.
+		const input = '```\n~~~\n\\[\\[a\\]\\]\n~~~\n```';
+		expect(unescapeWikiLinks(input)).toBe(input);
+	});
+
+	it('an escaped wikilink after a properly closed fence is still unescaped', () => {
+		const input = '```\ncode\n```\n\\[\\[real\\]\\]';
+		expect(unescapeWikiLinks(input)).toBe('```\ncode\n```\n[[real]]');
+	});
+
 	// --- Backslash escaping ---
 	it('fixes fully backslash-escaped wikilinks', () => {
 		expect(unescapeWikiLinks('See \\[\\[My Note\\]\\] for details')).toBe('See [[My Note]] for details');
