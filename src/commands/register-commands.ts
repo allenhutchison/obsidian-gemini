@@ -109,13 +109,13 @@ export function registerCommands(plugin: ObsidianGemini): void {
 		},
 	});
 
-	// View scheduled tasks (read-only legacy — kept for backwards compatibility)
+	// View scheduled tasks — kept as its own command ID so existing hotkey bindings survive
 	plugin.addCommand({
 		id: 'view-scheduled-tasks',
 		name: t('command.viewScheduledTasks'),
 		callback: async () => {
-			const { ScheduledTasksModal } = await import('../ui/scheduled-tasks-modal');
-			new ScheduledTasksModal(plugin.app, plugin).open();
+			const { SchedulerManagementModal } = await import('../ui/scheduler-management-modal');
+			new SchedulerManagementModal(plugin.app, plugin, 'list').open();
 		},
 	});
 
