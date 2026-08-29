@@ -36,8 +36,11 @@ describe('formatModelMessage', () => {
 	it('adds blank line after a table when followed by text', () => {
 		const input = '| A | B |\n| --- | --- |\n| 1 | 2 |\nSome text after';
 		const result = formatModelMessage(input);
-		// The first non-pipe line ends the table; a blank line is inserted after it
-		expect(result).toContain('| 1 | 2 |\nSome text after\n');
+		// The first non-pipe line ends the table; the separating blank line sits
+		// between the table and the following text (#1379: previously the blank
+		// landed after the first non-table line, leaving a trailing newline when
+		// the text was the last line of the message).
+		expect(result).toBe('| A | B |\n| --- | --- |\n| 1 | 2 |\n\nSome text after');
 	});
 
 	it('handles table with leading whitespace in divider', () => {
@@ -80,6 +83,66 @@ describe('formatModelMessage', () => {
 		expect(elapsed).toBeLessThan(1000);
 	});
 
+	// --- Fenced code blocks (#1379) ---
+	it('leaves fenced code content untouched (no double-spacing inside fences)', () => {
+		const input = 'Here is code:\n```ts\nconst a = 1;\nconst b = 2;\n```\nDone.';
+		// Paragraph break before the fence, blank between paragraphs — but the
+		// code lines themselves are never touched.
+		expect(formatModelMessage(input)).toBe('Here is code:\n\n```ts\nconst a = 1;\nconst b = 2;\n```\n\nDone.');
+	});
+
+	it('leaves tilde-fenced content untouched', () => {
+		const input = 'Text:\n~~~\nconst a = 1;\nconst b = 2;\n~~~\nAfter';
+		expect(formatModelMessage(input)).toBe('Text:\n\n~~~\nconst a = 1;\nconst b = 2;\n~~~\n\nAfter');
+	});
+
+	it('does not treat fence content as table rows (pipes inside fences)', () => {
+		const input = '~~~\n| fake | table |\n| --- | --- |\n~~~';
+		expect(formatModelMessage(input)).toBe('~~~\n| fake | table |\n| --- | --- |\n~~~');
+	});
+
+	it('fence immediately after a paragraph line still gets its opening paragraph break', () => {
+		const input = 'Here is code:\n```ts\nconst a = 1;\n```';
+		expect(formatModelMessage(input)).toBe('Here is code:\n\n```ts\nconst a = 1;\n```');
+	});
+
+	it('a fence does not close on a mismatched marker (``` inside ~~~)', () => {
+		const input = '~~~\ntext\n```inline\ntext2\n~~~\nAfter';
+		const output = formatModelMessage(input);
+		// Everything inside the ~~~ fence stays verbatim, including the ``` line
+		expect(output).toBe('~~~\ntext\n```inline\ntext2\n~~~\n\nAfter');
+	});
+
+	it('a closing fence may not carry trailing text (```nope stays content, CommonMark)', () => {
+		const input = '```\ncode\n```nope\nmore\n```';
+		expect(formatModelMessage(input)).toBe('```\ncode\n```nope\nmore\n```');
+	});
+
+	it('a longer closing run inside a shorter fence still closes (CommonMark)', () => {
+		const input = '```\ncode\n`````\nAfter';
+		expect(formatModelMessage(input)).toBe('```\ncode\n`````\n\nAfter');
+	});
+
+	it('a shorter closing run does not close a longer fence (CommonMark)', () => {
+		const input = '````\ncode\n```\nmore\n````';
+		expect(formatModelMessage(input)).toBe('````\ncode\n```\nmore\n````');
+	});
+
+	it('does not double-space table rows that appear between two fences', () => {
+		const input = '```\npre\n```\n| A | B |\n| --- | --- |\n```\npost\n```';
+		const output = formatModelMessage(input);
+		expect(output).toContain('| A | B |\n| --- | --- |');
+		expect(output).not.toContain('| A | B |\n\n| --- |');
+	});
+
+	// --- Table-end single blank line (modal fork drift) ---
+	it('emits exactly one blank line after a table followed by text', () => {
+		const input = '| A | B |\n| --- | --- |\n| 1 | 2 |\nTail';
+		const output = formatModelMessage(input);
+		expect(output).not.toContain('\n\n\n');
+		expect(output.endsWith('Tail')).toBe(true);
+	});
+
 	// --- WikiLink unescaping integration ---
 	it('unescapes backtick-wrapped wikilinks through formatModelMessage', () => {
 		const input = 'See `[[My Note]]` for details\nMore text';
@@ -111,6 +174,19 @@ describe('unescapeWikiLinks', () => {
 	it('preserves wikilinks inside tilde-fenced code blocks', () => {
 		const input = '~~~\n`[[code link]]`\n~~~';
 		expect(unescapeWikiLinks(input)).toBe(input);
+	});
+
+	it('a mismatched fence run inside a fence does not split it (unescape pairing)', () => {
+		// Old splitter tilted on the first ~~~ run and let the escaped link be
+		// rewritten outside the still-open ``` fence; the strict parser keeps
+		// the whole block fenced.
+		const input = '```\n~~~\n\\[\\[a\\]\\]\n~~~\n```';
+		expect(unescapeWikiLinks(input)).toBe(input);
+	});
+
+	it('an escaped wikilink after a properly closed fence is still unescaped', () => {
+		const input = '```\ncode\n```\n\\[\\[real\\]\\]';
+		expect(unescapeWikiLinks(input)).toBe('```\ncode\n```\n[[real]]');
 	});
 
 	// --- Backslash escaping ---
