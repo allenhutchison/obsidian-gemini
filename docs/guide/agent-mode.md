@@ -192,7 +192,7 @@ For detailed information about context files and advanced usage, see the [Contex
 - Access previous sessions from the dropdown
 - Configure session-specific settings
 - Sessions are automatically titled with a YYYY-MM-DD date prefix and AI-generated description after the first exchange
-- Rename a session by double-clicking its title in the agent header; the history file is renamed to match. If another session file already carries that name, a numeric suffix is added (`My Session-1.md`) so the rename never fails
+- Rename a session by double-clicking its title in the agent header; the history file is renamed to match. If another session file already carries that name, a numeric suffix is added (`My Session-1.md`). If no free name can be claimed, or the file cannot be renamed, the session keeps its existing history filename — the new title still applies
 - All files the agent reads or writes during a session are tracked in `accessed_files` frontmatter for auditing and session recall
 - Tool execution summaries are logged to session history as collapsible callout blocks (controlled by the `logToolExecution` setting)
 

@@ -150,13 +150,19 @@ export class AgentViewSession {
 	}
 
 	/**
-	 * Update session metadata in the history file
+	 * Update session metadata in the history file.
+	 *
+	 * @param session - The session to persist. Defaults to the active session.
+	 *                  Pass an explicit session when the caller has been holding
+	 *                  it across an await and the active session may have changed
+	 *                  underneath it.
 	 */
-	async updateSessionMetadata() {
-		if (!this.currentSession) return;
+	async updateSessionMetadata(session?: ChatSession) {
+		const target = session ?? this.currentSession;
+		if (!target) return;
 
 		try {
-			await this.plugin.sessionHistory.updateSessionMetadata(this.currentSession);
+			await this.plugin.sessionHistory.updateSessionMetadata(target);
 		} catch (error) {
 			this.plugin.logger.error('Failed to update session metadata:', error);
 		}
@@ -195,23 +201,27 @@ export class AgentViewSession {
 	 * Triggered by the turnEnd event bus hook.
 	 */
 	async autoLabelSessionIfNeeded() {
-		if (!this.currentSession) return;
+		// Snapshot the session before any await. Title generation is a model call
+		// that takes seconds; if the user switches sessions while it is in flight,
+		// every later `this.currentSession` read resolves to a *different* session,
+		// and we would write this session's generated title onto that one —
+		// renaming its history file and persisting its metadata. Mirrors the
+		// `editingSession` guard the manual title edit already uses.
+		const session = this.currentSession;
+		if (!session) return;
 
 		// Check if this is still using a default title
-		if (
-			!this.currentSession.title.startsWith('Agent Session') &&
-			!this.currentSession.title.startsWith('New Agent Session')
-		) {
+		if (!session.title.startsWith('Agent Session') && !session.title.startsWith('New Agent Session')) {
 			return; // Already has a custom title
 		}
 
 		// Check if we've already attempted to label this session
-		if (this.currentSession.metadata?.autoLabeled) {
+		if (session.metadata?.autoLabeled) {
 			return;
 		}
 
 		// Get the conversation history
-		const history = await this.plugin.sessionHistory.getHistoryForSession(this.currentSession);
+		const history = await this.plugin.sessionHistory.getHistoryForSession(session);
 
 		// Need at least a user message and a model response
 		const hasUserMessage = history.some((entry) => entry.role === 'user');
@@ -225,7 +235,7 @@ export class AgentViewSession {
 			// Truncate model response to avoid sending too much
 			const modelSummary = firstModelMsg.length > 500 ? firstModelMsg.slice(0, 500) + '...' : firstModelMsg;
 
-			const contextFiles = this.currentSession.context.contextFiles.map((f) => f.basename).join(', ');
+			const contextFiles = session.context.contextFiles.map((f) => f.basename).join(', ');
 
 			const titlePrompt = `Based on this conversation, suggest a concise title (max 40 characters) that captures the main topic or purpose. Return only the title text, no quotes or explanation.
 
@@ -256,29 +266,32 @@ Assistant: ${modelSummary}`;
 				const fullTitle = `${datePrefix} ${generatedTitle}`;
 
 				// Update session title
-				this.currentSession.title = fullTitle;
+				session.title = fullTitle;
 
 				// Mark session as auto-labeled to prevent multiple attempts
-				if (!this.currentSession.metadata) {
-					this.currentSession.metadata = {};
+				if (!session.metadata) {
+					session.metadata = {};
 				}
-				this.currentSession.metadata.autoLabeled = true;
+				session.metadata.autoLabeled = true;
 
 				// Rename the history file to match the generated title. Collision
 				// handling (unique-suffix resolution + retry) lives in the shared
 				// helper; the title is still applied when the rename is skipped.
-				this.currentSession.historyPath = await renameSessionHistoryFile(
+				session.historyPath = await renameSessionHistoryFile(
 					this.app,
-					this.currentSession.historyPath,
+					session.historyPath,
 					fullTitle,
 					this.plugin.logger
 				);
 
-				// Update session metadata
-				await this.updateSessionMetadata();
+				// Persist the session we labelled, not whichever one is active now.
+				await this.updateSessionMetadata(session);
 
-				// Update UI
-				this.updateSessionHeader();
+				// The header renders the *active* session, so only refresh it when
+				// the session we just labelled is still the one on screen.
+				if (this.isCurrentSession(session)) {
+					this.updateSessionHeader();
+				}
 
 				this.plugin.logger.log(`Auto-labeled session: ${fullTitle}`);
 			}
