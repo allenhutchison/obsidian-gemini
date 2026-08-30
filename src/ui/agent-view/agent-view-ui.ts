@@ -2,7 +2,8 @@ import { App, Menu, TFile, TFolder, Notice, setIcon, setTooltip } from 'obsidian
 import type { ObsidianGemini } from '../../types/plugin';
 import { ChatSession } from '../../types/agent';
 import { insertTextAtCursor, moveCursorToEnd, execContextCommand } from '../../utils/dom-context';
-import { sanitizeFileName, shouldExcludePathForPlugin } from '../../utils/file-utils';
+import { shouldExcludePathForPlugin } from '../../utils/file-utils';
+import { renameSessionHistoryFile } from '../../agent/session-rename';
 import { collectFilesFromFolder } from '../../utils/folder-walk';
 import {
 	InlineAttachment,
@@ -162,19 +163,19 @@ export class AgentViewUI {
 					const newTitle = input.value.trim();
 					if (!newTitle || newTitle === editingSession.title) return;
 
-					// Rename file if it exists
-					const oldPath = editingSession.historyPath;
-					const sanitizedTitle = sanitizeFileName(newTitle);
-					const newPath = oldPath.substring(0, oldPath.lastIndexOf('/') + 1) + sanitizedTitle + '.md';
-					const oldFile = this.plugin.app.vault.getAbstractFileByPath(oldPath);
-					if (oldFile) {
-						await this.plugin.app.fileManager.renameFile(oldFile, newPath);
-						// The rename itself acts on `oldFile` by reference so it always
-						// targets the correct file even if the session switched during
-						// the await — but we must re-validate before continuing to
-						// mutate session state and call the zero-arg metadata callback.
-						editingSession.historyPath = newPath;
-					}
+					// Rename the history file to match the new title. The shared helper
+					// resolves a numeric-suffixed path when another session file already
+					// carries that name, so a duplicate title no longer throws away the
+					// user's edit. The rename acts on the looked-up file by reference so
+					// it always targets the correct file even if the session switched
+					// during the await — but we must re-validate before continuing to
+					// mutate session state and call the zero-arg metadata callback.
+					editingSession.historyPath = await renameSessionHistoryFile(
+						this.plugin.app,
+						editingSession.historyPath,
+						newTitle,
+						this.plugin.logger
+					);
 
 					editingSession.title = newTitle;
 
