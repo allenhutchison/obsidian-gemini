@@ -72,7 +72,7 @@ function makeHarness(existingPaths: string[], oldPath: string) {
 	} as any;
 	manager.setCurrentSession(session);
 
-	return { manager, session, existing, renameFile, logError, logWarn };
+	return { manager, session, existing, renameFile, logError, logWarn, plugin, uiCallbacks };
 }
 
 describe('AgentViewSession.autoLabelSessionIfNeeded rename collisions', () => {
@@ -192,5 +192,47 @@ describe('AgentViewSession.autoLabelSessionIfNeeded rename collisions', () => {
 		expect(session.title).toBe(`${datePrefix} ${generatedTitle}`);
 		expect(session.metadata.autoLabeled).toBe(true);
 		expect(logError).not.toHaveBeenCalled();
+	});
+
+	test('labels the session it started on when the user switches mid-generation', async () => {
+		// Title generation is a model call taking seconds. If the active session
+		// changes while it is in flight, every write must still land on the
+		// session the title was generated for — not on whichever one is on screen
+		// when the await resolves.
+		const oldPath = `${SESSIONS_DIR}Agent Session 1.md`;
+		const { manager, session, plugin, uiCallbacks, renameFile } = makeHarness([], oldPath);
+
+		const otherPath = `${SESSIONS_DIR}Agent Session 9.md`;
+		const otherSession = {
+			id: 's2',
+			title: 'Agent Session 2026-07-16',
+			metadata: {},
+			historyPath: otherPath,
+			context: { contextFiles: [] },
+		} as any;
+		generateModelResponse.mockImplementationOnce(async () => {
+			manager.setCurrentSession(otherSession); // user switches sessions
+			return { markdown: generatedTitle };
+		});
+
+		await manager.autoLabelSessionIfNeeded();
+
+		// The rename and the persisted metadata target the original session.
+		expect(renameFile).toHaveBeenCalledWith(expect.objectContaining({ path: oldPath }), targetPath);
+		expect(session.title).toBe(`${datePrefix} ${generatedTitle}`);
+		expect(session.historyPath).toBe(targetPath);
+		expect(session.metadata.autoLabeled).toBe(true);
+		expect(plugin.sessionHistory.updateSessionMetadata).toHaveBeenCalledWith(session);
+
+		// The session the user switched to is untouched — no borrowed title, no
+		// rename, and not marked auto-labeled (which would block its own title).
+		expect(otherSession.title).toBe('Agent Session 2026-07-16');
+		expect(otherSession.historyPath).toBe(otherPath);
+		expect(otherSession.metadata.autoLabeled).toBeUndefined();
+		expect(plugin.sessionHistory.updateSessionMetadata).not.toHaveBeenCalledWith(otherSession);
+
+		// The header renders the active session, so it must not be refreshed for
+		// a session that is no longer on screen.
+		expect(uiCallbacks.updateSessionHeader).not.toHaveBeenCalled();
 	});
 });
