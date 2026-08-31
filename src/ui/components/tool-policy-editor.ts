@@ -9,6 +9,7 @@ import {
 	ToolClassification,
 	ToolPermission,
 	clonePolicy,
+	policiesEqual,
 } from '../../types/tool-policy';
 import { t } from '../../i18n';
 
@@ -79,6 +80,7 @@ export class ToolPolicyEditor {
 	 * No-op if the new value is structurally equal to the current state.
 	 */
 	setValue(next: FeatureToolPolicy | undefined): void {
+		if (policiesEqual(this.state, next)) return;
 		this.state = clonePolicy(next);
 		this.render();
 	}

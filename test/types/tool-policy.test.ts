@@ -13,6 +13,7 @@ import {
 	parseToolPolicyFrontmatter,
 	serializeToolPolicy,
 	clonePolicy,
+	policiesEqual,
 	FeatureToolPolicy,
 	ToolPolicySettings,
 } from '../../src/types/tool-policy';
@@ -312,6 +313,44 @@ describe('tool-policy types', () => {
 
 		it('returns undefined for undefined input', () => {
 			expect(clonePolicy(undefined)).toBeUndefined();
+		});
+	});
+
+	describe('policiesEqual', () => {
+		it('treats undefined as equal only to undefined', () => {
+			expect(policiesEqual(undefined, undefined)).toBe(true);
+			expect(policiesEqual(undefined, {})).toBe(false);
+			expect(policiesEqual({}, undefined)).toBe(false);
+		});
+
+		it('compares presets', () => {
+			expect(policiesEqual({ preset: PolicyPreset.YOLO }, { preset: PolicyPreset.YOLO })).toBe(true);
+			expect(policiesEqual({ preset: PolicyPreset.YOLO }, { preset: PolicyPreset.CAUTIOUS })).toBe(false);
+			expect(policiesEqual({ preset: PolicyPreset.YOLO }, {})).toBe(false);
+		});
+
+		it('treats absent and empty overrides as equal', () => {
+			expect(policiesEqual({}, { overrides: {} })).toBe(true);
+			expect(policiesEqual({ overrides: {} }, {})).toBe(true);
+		});
+
+		it('compares overrides key-by-key, order-insensitive', () => {
+			const a: FeatureToolPolicy = {
+				overrides: { read_file: ToolPermission.APPROVE, delete_file: ToolPermission.DENY },
+			};
+			const b: FeatureToolPolicy = {
+				overrides: { delete_file: ToolPermission.DENY, read_file: ToolPermission.APPROVE },
+			};
+			expect(policiesEqual(a, b)).toBe(true);
+		});
+
+		it('detects added, removed, and changed override entries', () => {
+			const base: FeatureToolPolicy = { overrides: { read_file: ToolPermission.APPROVE } };
+			expect(policiesEqual(base, { overrides: { read_file: ToolPermission.DENY } })).toBe(false);
+			expect(policiesEqual(base, { overrides: {} })).toBe(false);
+			expect(
+				policiesEqual(base, { overrides: { read_file: ToolPermission.APPROVE, web_fetch: ToolPermission.DENY } })
+			).toBe(false);
 		});
 	});
 });
