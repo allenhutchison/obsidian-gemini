@@ -2,6 +2,7 @@ import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import { getRawErrorMessage } from '../utils/error-utils';
+import { executeWithRetry } from '../utils/retry';
 import { resolveGenerateContentModel } from '../models';
 
 /**
@@ -205,17 +206,26 @@ export class RagSearchTool implements Tool {
 			// Use the configured chat model for consistency; an interactions-only
 			// chat model falls back to the bundled default since File Search runs
 			// on generateContent.
-			const response = await ai.models.generateContent({
-				model: resolveGenerateContentModel(plugin.settings.chatModelName),
-				contents: `Search for information about: ${params.query}\n\nProvide a summary of the most relevant findings from the indexed documents. Include specific file references when available.`,
-				config: {
-					tools: [
-						{
-							fileSearch: fileSearchConfig,
+			//
+			// Wrapped in executeWithRetry like every other direct SDK call site
+			// (web-fetch, the grounding tools, the RAG vault scanner): a transient
+			// 429/5xx here otherwise fails the tool call outright.
+			const response = await executeWithRetry(
+				() =>
+					ai.models.generateContent({
+						model: resolveGenerateContentModel(plugin.settings.chatModelName),
+						contents: `Search for information about: ${params.query}\n\nProvide a summary of the most relevant findings from the indexed documents. Include specific file references when available.`,
+						config: {
+							tools: [
+								{
+									fileSearch: fileSearchConfig,
+								},
+							],
 						},
-					],
-				},
-			});
+					}),
+				undefined,
+				{ operationName: 'RagSearchTool.generateContent', logger: plugin.logger }
+			);
 
 			// Extract results from response
 			const results: RagSearchResult[] = [];
