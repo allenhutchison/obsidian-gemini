@@ -115,11 +115,6 @@
 			"value": "gemini-omni-1.1-flash",
 			"label": "Gemini Omni 1.1 Flash",
 			"maxTemperature": 2
-		},
-		{
-			"value": "gemini-3.5-transcribe",
-			"label": "Gemini 3.5 Transcribe",
-			"maxTemperature": 2
 		}
 	]
 }
