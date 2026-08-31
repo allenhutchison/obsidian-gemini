@@ -22,7 +22,7 @@ vi.mock('../../src/utils/file-utils', async (importOriginal) => ({
 	ensureFolderExists: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../../src/services/skill-manager', () => ({
+vi.mock('../../src/utils/frontmatter-offset', () => ({
 	findFrontmatterEndOffset: vi.fn().mockReturnValue(undefined),
 }));
 
@@ -1206,7 +1206,7 @@ describe('HookManager discoverHooks via initialize()', () => {
 	});
 
 	it('skips agent-task hooks with no prompt body', async () => {
-		const { findFrontmatterEndOffset } = await import('../../src/services/skill-manager');
+		const { findFrontmatterEndOffset } = await import('../../src/utils/frontmatter-offset');
 		(findFrontmatterEndOffset as any).mockReturnValueOnce(0);
 
 		const plugin = makeDiscoveryPlugin([

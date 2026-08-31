@@ -1,5 +1,5 @@
 import { App, FuzzySuggestModal } from 'obsidian';
-import type { SkillSummary } from '../../services/skill-manager';
+import type { SkillSummary } from '../../services/skill-types';
 import { t } from '../../i18n';
 
 /**

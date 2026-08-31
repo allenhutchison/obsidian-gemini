@@ -70,11 +70,6 @@ vi.mock('../../src/utils/file-utils', () => ({
 	ensureParentFolderExists: vi.fn().mockResolvedValue(undefined),
 }));
 
-// findFrontmatterEndOffset — return undefined (no frontmatter in test content)
-vi.mock('../../src/services/skill-manager', () => ({
-	findFrontmatterEndOffset: vi.fn().mockReturnValue(undefined),
-}));
-
 // ─── computeNextRunAt ─────────────────────────────────────────────────────────
 
 describe('computeNextRunAt', () => {
