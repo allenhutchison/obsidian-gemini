@@ -1,4 +1,5 @@
 import { ToolResult } from '../tools/types';
+import { getFileName } from './file-utils';
 
 /** Tools where result.data.path represents a targeted file access */
 const TRACKED_TOOLS = new Set([
@@ -62,7 +63,7 @@ export function extractAccessedPaths(toolResults: readonly ToolResultEntry[]): s
  * Non-md files keep their extension: images/photo.png → [[photo.png]]
  */
 export function pathToWikilink(path: string): string {
-	const filename = path.substring(path.lastIndexOf('/') + 1);
+	const filename = getFileName(path);
 	const basename = filename.endsWith('.md') ? filename.slice(0, -3) : filename;
 	return `[[${basename}]]`;
 }

@@ -4,6 +4,9 @@ import {
 	shouldExcludePathForPlugin,
 	createFileFilter,
 	ensureFolderExists,
+	ensureParentFolderExists,
+	getFileName,
+	getParentPath,
 	isPathInFolder,
 } from '../../src/utils/file-utils';
 import { TFile, TFolder, Vault, Notice, normalizePath } from 'obsidian';
@@ -301,6 +304,87 @@ describe('file-utils', () => {
 
 			// normalizePath mock just returns the input, but verifies it was called
 			expect(normalizePath).toHaveBeenCalledWith('normalized/path');
+		});
+	});
+
+	describe('getParentPath', () => {
+		it('returns the folder prefix for nested paths', () => {
+			expect(getParentPath('a/b/c.md')).toBe('a/b');
+			expect(getParentPath('folder/note.md')).toBe('folder');
+		});
+
+		it('returns null at the vault root', () => {
+			expect(getParentPath('out.md')).toBeNull();
+			expect(getParentPath('README')).toBeNull();
+		});
+
+		it('produces no trailing slash for a top-level folder', () => {
+			expect(getParentPath('folder/sub/file.md')).toBe('folder/sub');
+			expect(getParentPath('x/file.md')).toBe('x');
+		});
+
+		it('is not confused by a dot inside a folder name', () => {
+			expect(getParentPath('my.notes/README.md')).toBe('my.notes');
+			expect(getParentPath('v1.2/notes/a.md')).toBe('v1.2/notes');
+		});
+	});
+
+	describe('getFileName', () => {
+		it('returns the final path segment', () => {
+			expect(getFileName('folder/sub/note.md')).toBe('note.md');
+			expect(getFileName('a/b.png')).toBe('b.png');
+		});
+
+		it('returns the input unchanged for root-level paths', () => {
+			expect(getFileName('out.md')).toBe('out.md');
+			expect(getFileName('README')).toBe('README');
+		});
+
+		it('keeps dotfiles intact', () => {
+			expect(getFileName('folder/.obsidian.app.css')).toBe('.obsidian.app.css');
+		});
+	});
+
+	describe('ensureParentFolderExists', () => {
+		let mockVault: {
+			getAbstractFileByPath: Mock;
+			createFolder: Mock;
+			adapter: { exists: Mock };
+		};
+
+		beforeEach(() => {
+			mockVault = {
+				getAbstractFileByPath: vi.fn(),
+				createFolder: vi.fn(),
+				adapter: { exists: vi.fn().mockResolvedValue(false) },
+			};
+		});
+
+		it('is a no-op for a root-level path — no existence checks, no create', async () => {
+			await ensureParentFolderExists(mockVault as unknown as Vault, 'out.md');
+
+			expect(mockVault.getAbstractFileByPath).not.toHaveBeenCalled();
+			expect(mockVault.adapter.exists).not.toHaveBeenCalled();
+			expect(mockVault.createFolder).not.toHaveBeenCalled();
+		});
+
+		it('delegates to ensureFolderExists with the derived parent', async () => {
+			const folder = Object.assign(new TFolder(), { path: 'folder' });
+			mockVault.getAbstractFileByPath.mockReturnValue(folder);
+
+			await ensureParentFolderExists(mockVault as unknown as Vault, 'folder/out.md', 'parent directory');
+
+			expect(mockVault.getAbstractFileByPath).toHaveBeenCalledWith('folder');
+			expect(mockVault.createFolder).not.toHaveBeenCalled();
+		});
+
+		it('creates a missing nested parent and propagates context and errors', async () => {
+			mockVault.getAbstractFileByPath.mockReturnValue(null);
+			mockVault.createFolder.mockRejectedValue(new Error('Disk full'));
+
+			await expect(
+				ensureParentFolderExists(mockVault as unknown as Vault, 'a/b/out.md', 'image output folder')
+			).rejects.toThrow('Failed to create folder "a/b" (image output folder): Disk full');
 		});
 	});
 });

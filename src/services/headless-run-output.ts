@@ -1,5 +1,5 @@
 import { Vault, normalizePath } from 'obsidian';
-import { ensureFolderExists } from '../utils/file-utils';
+import { ensureParentFolderExists } from '../utils/file-utils';
 import { getRawErrorMessage } from '../utils/error-utils';
 import type { Logger } from '../utils/logger';
 
@@ -117,10 +117,7 @@ export interface WriteHeadlessOutputParams {
 export async function writeHeadlessOutput(params: WriteHeadlessOutputParams): Promise<string> {
 	const { vault, outputPath, header, content, folderLabel, logger, retry } = params;
 
-	const parentPath = outputPath.includes('/') ? outputPath.slice(0, outputPath.lastIndexOf('/')) : null;
-	if (parentPath) {
-		await ensureFolderExists(vault, parentPath, folderLabel, logger);
-	}
+	await ensureParentFolderExists(vault, outputPath, folderLabel, logger);
 
 	const fullContent = header + content;
 

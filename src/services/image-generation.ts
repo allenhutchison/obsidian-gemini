@@ -3,7 +3,7 @@ import { Notice, App, MarkdownView, Modal, Setting, TextAreaComponent, TFile, no
 import { BaseModelRequest, GeminiClient, ModelClientFactory } from '../api';
 import { GeminiPrompts } from '../prompts';
 import { getErrorMessage, getRawErrorMessageOr } from '../utils/error-utils';
-import { ensureFolderExists, isPathInFolder } from '../utils/file-utils';
+import { ensureParentFolderExists, isPathInFolder } from '../utils/file-utils';
 import { t } from '../i18n';
 
 export class ImageGeneration {
@@ -333,10 +333,7 @@ export class ImageGeneration {
 
 			// Ensure the parent folder exists before writing — createBinary will fail
 			// if any intermediate directory in the path is missing.
-			const parentPath = resolvedPath.includes('/') ? resolvedPath.slice(0, resolvedPath.lastIndexOf('/')) : null;
-			if (parentPath) {
-				await ensureFolderExists(this.plugin.app.vault, parentPath, 'image output folder', this.plugin.logger);
-			}
+			await ensureParentFolderExists(this.plugin.app.vault, resolvedPath, 'image output folder', this.plugin.logger);
 		} else {
 			resolvedPath = await this.resolveDefaultOutputPath(prompt);
 		}
