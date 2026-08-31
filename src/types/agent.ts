@@ -150,55 +150,6 @@ export interface SessionMetadata {
 }
 
 /**
- * Message within a chat session
- */
-export interface ChatMessage {
-	/** Unique message ID */
-	id: string;
-
-	/** Message role */
-	role: 'user' | 'assistant' | 'system';
-
-	/** Message content */
-	content: string;
-
-	/** Timestamp */
-	timestamp: Date;
-
-	/** Tools used in this message (for assistant messages) */
-	toolsUsed?: ToolExecution[];
-
-	/** Context that was active when this message was sent */
-	contextSnapshot?: {
-		files: string[]; // File paths
-	};
-}
-
-/**
- * Information about a tool execution
- */
-export interface ToolExecution {
-	/** Tool name/identifier */
-	name: string;
-
-	/** Tool category */
-	category: ToolCategory;
-
-	/** Parameters passed to the tool */
-	parameters: Record<string, unknown>;
-
-	/** Tool execution result */
-	result?: unknown;
-
-	/** Any error that occurred */
-	error?: string;
-
-	/** Whether user confirmation was required/given */
-	confirmationRequired?: boolean;
-	confirmationGiven?: boolean;
-}
-
-/**
  * Default agent contexts for different use cases
  */
 export const DEFAULT_CONTEXTS = {

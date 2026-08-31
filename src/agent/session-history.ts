@@ -124,7 +124,6 @@ export class SessionHistory {
 			temperature: entry.metadata?.temperature,
 			topP: entry.metadata?.topP,
 			customPrompt: entry.metadata?.customPrompt,
-			toolsUsed: [], // TODO: Add tool support later
 			isDefined: (value: unknown) => value !== undefined,
 		});
 
