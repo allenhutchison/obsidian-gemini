@@ -1,6 +1,6 @@
 {
 	"version": 1,
-	"lastUpdated": "2026-08-17T08:29:01.769Z",
+	"lastUpdated": "2026-08-31T15:35:57.213Z",
 	"models": [
 		{
 			"value": "gemini-pro-latest",
@@ -109,6 +109,11 @@
 		{
 			"value": "gemini-3.7-flash",
 			"label": "Gemini 3.7 Flash",
+			"maxTemperature": 2
+		},
+		{
+			"value": "gemini-omni-1.1-flash",
+			"label": "Gemini Omni 1.1 Flash",
 			"maxTemperature": 2
 		}
 	]

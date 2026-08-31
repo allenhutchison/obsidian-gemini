@@ -42,6 +42,10 @@ const EXCLUDE_PATTERNS = [
 	// out even if ListModels still advertises it. Settings migration lives in
 	// RETIRED_MODEL_SUCCESSORS in src/models.ts.
 	'gemini-3-pro-preview',
+	// Speech-to-text specialization models — they accept generateContent but are
+	// not general-purpose chat/summary/rewrite models, so they don't belong in
+	// the picker (#1432 curation).
+	'transcribe',
 ];
 
 async function fetchAllModels(apiKey) {
