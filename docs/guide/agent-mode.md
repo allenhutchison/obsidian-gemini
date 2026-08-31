@@ -107,7 +107,7 @@ When you drop a file, the plugin classifies it based on its extension:
 
 **SVG Handling:**
 
-Gemini's API can't process `image/svg+xml` directly, so SVG (and gzip-compressed `.svgz`) files are **rasterized to PNG on your device** before being sent — whether you drag, paste, `@`-mention, or have the agent read them with the Read File tool. Rasterization renders the SVG onto a white background (so transparent artwork like handwritten ink strokes stays legible for OCR) and caps the longest edge at 2048px to keep the payload within the inline-data limit. If an SVG can't be rendered (malformed markup or unresolvable external references), it's skipped with the same "unsupported file type" notice rather than sending unusable data.
+Gemini's API can't process `image/svg+xml` directly, so SVG (and gzip-compressed `.svgz`) files are **rasterized to PNG on your device** before being sent — whether you drag, paste, `@`-mention, or have the agent read them with the Read File tool. Rasterization renders the SVG onto a white background (so transparent artwork like handwritten ink strokes stays legible for OCR) and caps the longest edge at 2048px to keep the payload within the inline-data limit. The rasterized PNG is a decoded bitmap, so it can be far larger than the source SVG; the 20 MB inline-data budget applies to the converted PNG, and an SVG whose rasterized output would exceed it is rejected with the same size-limit notice as any other oversized file. If an SVG can't be rendered (malformed markup or unresolvable external references), it's skipped with the same "unsupported file type" notice rather than sending unusable data.
 
 **How It Works:**
 

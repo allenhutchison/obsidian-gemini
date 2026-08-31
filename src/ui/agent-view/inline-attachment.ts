@@ -4,6 +4,7 @@
  */
 
 import { App } from 'obsidian';
+import { base64DecodedBytes as base64DecodedBytesImpl } from '../../utils/file-classification';
 import { ensureFolderExists } from '../../utils/file-utils';
 
 /**
@@ -30,13 +31,11 @@ export function generateAttachmentId(): string {
 }
 
 /**
- * Decoded byte size of a base64 payload (no data URI), padding excluded
- * (so 'YQ==' counts as 1 byte, not 3).
+ * Decoded byte size of a base64 payload. Implementation lives in
+ * `file-classification.ts` (the shared leaf, #1430); re-exported here so the
+ * attachment helpers and their existing importers keep one import path.
  */
-export function base64DecodedBytes(base64: string): number {
-	const padding = base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0;
-	return Math.floor(((base64.length - padding) * 3) / 4);
-}
+export const base64DecodedBytes = base64DecodedBytesImpl;
 
 /**
  * Estimate the decoded byte size of pending attachments from their base64

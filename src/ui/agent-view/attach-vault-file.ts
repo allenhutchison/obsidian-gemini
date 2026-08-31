@@ -20,7 +20,7 @@ import {
 	classifyFile,
 	detectWebmMimeType,
 } from '../../utils/file-classification';
-import { rasterizeSvg } from '../../utils/svg-rasterizer';
+import { rasterizeSvg, SvgTooLargeError } from '../../utils/svg-rasterizer';
 import { base64DecodedBytes, generateAttachmentId, type InlineAttachment } from './inline-attachment';
 import type { Logger } from '../../utils/logger';
 
@@ -72,22 +72,25 @@ export async function attachVaultBinaryFile(
 	if (classification.category === FileCategory.SVG) {
 		// SVG can't be inlined directly — rasterize to PNG. On failure
 		// (malformed SVG, unresolvable refs), fall back to the caller's
-		// unsupported-file notice rather than sending raw XML.
+		// unsupported-file notice rather than sending raw XML. The rasterized
+		// PNG is a decoded bitmap that can dwarf the source file, so the budget
+		// holds for the converted payload too — enforced inside rasterizeSvg
+		// via the remaining budget (#1412 review, #1430).
 		try {
-			base64 = await rasterizeSvg(buffer, file.extension.toLowerCase() === 'svgz');
+			base64 = await rasterizeSvg(
+				buffer,
+				file.extension.toLowerCase() === 'svgz',
+				GEMINI_INLINE_DATA_LIMIT - alreadyUsedBytes
+			);
 			mimeType = 'image/png';
 		} catch (rasterErr) {
+			if (rasterErr instanceof SvgTooLargeError) {
+				return { kind: 'too-large' };
+			}
 			logger.error(`Failed to rasterize SVG ${file.path}:`, rasterErr);
 			return { kind: 'raster-failed' };
 		}
-		// The rasterized PNG can be larger than the source SVG (it's a decoded
-		// bitmap), so the budget — checked above against the small source file —
-		// has to hold for the converted payload too (#1412 review).
-		const convertedBytes = base64DecodedBytes(base64);
-		if (alreadyUsedBytes + convertedBytes > GEMINI_INLINE_DATA_LIMIT) {
-			return { kind: 'too-large' };
-		}
-		bytes = convertedBytes;
+		bytes = base64DecodedBytes(base64);
 	} else {
 		base64 = arrayBufferToBase64(buffer);
 		// For .webm files, detect audio vs video from container header

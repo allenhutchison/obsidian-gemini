@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { gzipSync } from 'zlib';
 import {
 	rasterizeSvg,
+	SvgTooLargeError,
 	computeScaledDimensions,
 	isSvgExtension,
 	SVG_RASTER_MAX_EDGE,
@@ -185,5 +186,29 @@ describe('rasterizeSvg', () => {
 		imageBehavior = 'error';
 		const buffer = new TextEncoder().encode('<not-svg>').buffer;
 		await expect(rasterizeSvg(buffer, false)).rejects.toThrow(/Failed to load SVG/);
+	});
+
+	it('throws SvgTooLargeError when the converted payload exceeds budgetBytes', async () => {
+		const buffer = new TextEncoder().encode(SIMPLE_SVG).buffer;
+		// The mocked toDataURL yields 'UE5HREFUQQ==' → 7 decoded bytes
+		// (floor((12 chars − 2 padding) × 3 / 4)).
+		await expect(rasterizeSvg(buffer, false, 6)).rejects.toBeInstanceOf(SvgTooLargeError);
+	});
+
+	it('throws SvgTooLargeError with the decoded byte count on the error', async () => {
+		const buffer = new TextEncoder().encode(SIMPLE_SVG).buffer;
+		const rejection = rasterizeSvg(buffer, false, 1);
+		await expect(rejection).rejects.toMatchObject({ decodedBytes: 7 });
+	});
+
+	it('returns the payload unchanged when it fits within budgetBytes', async () => {
+		const buffer = new TextEncoder().encode(SIMPLE_SVG).buffer;
+		// Exactly 7 decoded bytes — the boundary is inclusive.
+		await expect(rasterizeSvg(buffer, false, 7)).resolves.toBe('UE5HREFUQQ==');
+	});
+
+	it('is unbounded when budgetBytes is omitted', async () => {
+		const buffer = new TextEncoder().encode(SIMPLE_SVG).buffer;
+		await expect(rasterizeSvg(buffer, false)).resolves.toBe('UE5HREFUQQ==');
 	});
 });
