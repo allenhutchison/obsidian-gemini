@@ -25,6 +25,7 @@ const mockEnsureFolderExists = vi.fn().mockResolvedValue(undefined);
 vi.mock('../../src/utils/file-utils', async () => ({
 	...(await vi.importActual<any>('../../src/utils/file-utils')),
 	ensureFolderExists: (...args: any[]) => mockEnsureFolderExists(...args),
+	ensureParentFolderExists: vi.fn().mockResolvedValue(undefined),
 	sanitizeFileName: (name: string) =>
 		name
 			.replace(/[\\/:*?"<>|]/g, '-')

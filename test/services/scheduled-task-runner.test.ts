@@ -13,6 +13,7 @@ vi.mock('obsidian', () => ({
 
 vi.mock('../../src/utils/file-utils', () => ({
 	ensureFolderExists: vi.fn().mockResolvedValue(undefined),
+	ensureParentFolderExists: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('../../src/utils/format-utils', () => ({

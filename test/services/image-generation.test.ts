@@ -40,6 +40,7 @@ vi.mock('../../src/prompts', () => ({
 vi.mock('../../src/utils/file-utils', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../../src/utils/file-utils')>()),
 	ensureFolderExists: vi.fn().mockResolvedValue(undefined),
+	ensureParentFolderExists: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { Notice } from 'obsidian';
@@ -429,16 +430,16 @@ describe('ImageGeneration.saveImageToVault (private)', () => {
 		await expect(save(emptyBase64, 'test')).rejects.toThrow(/Invalid base64 image data.*Empty image data/);
 	});
 
-	it('calls validateOutputPath and ensureFolderExists when an explicit outputPath is provided', async () => {
-		const { ensureFolderExists } = await import('../../src/utils/file-utils');
+	it('calls validateOutputPath and ensureParentFolderExists when an explicit outputPath is provided', async () => {
+		const { ensureParentFolderExists } = await import('../../src/utils/file-utils');
 		const validBase64 = btoa('fake-png-data');
 
 		const result = await save(validBase64, 'test', 'images/subfolder/out.jpg');
 
 		expect(result).toBe('images/subfolder/out.png');
-		expect(ensureFolderExists).toHaveBeenCalledWith(
+		expect(ensureParentFolderExists).toHaveBeenCalledWith(
 			mockPlugin.app.vault,
-			'images/subfolder',
+			'images/subfolder/out.png',
 			'image output folder',
 			mockPlugin.logger
 		);
@@ -453,13 +454,21 @@ describe('ImageGeneration.saveImageToVault (private)', () => {
 		expect(createBinaryMock).toHaveBeenCalled();
 	});
 
-	it('does NOT call ensureFolderExists when file is in the vault root (no slash in path)', async () => {
-		const { ensureFolderExists } = await import('../../src/utils/file-utils');
+	it('routes a vault-root path through ensureParentFolderExists, which no-ops it', async () => {
+		const { ensureParentFolderExists } = await import('../../src/utils/file-utils');
 		const validBase64 = btoa('fake-png-data');
 
 		await save(validBase64, 'test', 'root-image.png');
 
-		expect(ensureFolderExists).not.toHaveBeenCalled();
+		// The root-level no-op decision lives inside the shared helper now
+		// (unit-tested in test/utils/file-utils.test.ts); the write path
+		// unconditionally delegates to it.
+		expect(ensureParentFolderExists).toHaveBeenCalledWith(
+			mockPlugin.app.vault,
+			'root-image.png',
+			'image output folder',
+			mockPlugin.logger
+		);
 		expect(createBinaryMock).toHaveBeenCalledWith('root-image.png', expect.any(ArrayBuffer));
 	});
 });

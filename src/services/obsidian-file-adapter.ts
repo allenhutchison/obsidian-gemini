@@ -4,7 +4,7 @@ import type { FileSystemAdapter, FileInfo, FileContent } from '@allenhutchison/g
 // The MIME helpers are runtime values — import them from the built-in-free
 // `/mime` subpath so this module never pulls Node built-ins at load (#1154).
 import { getMimeTypeWithFallback, isExtensionSupportedWithFallback } from '@allenhutchison/gemini-utils/mime';
-import { isPathInFolder } from '../utils/file-utils';
+import { getFileName, isPathInFolder } from '../utils/file-utils';
 
 /**
  * Obsidian Vault adapter for the gemini-utils FileSystemAdapter interface.
@@ -199,7 +199,7 @@ export class ObsidianVaultAdapter implements FileSystemAdapter {
 		if (this.includeAttachments) {
 			// Extract extension safely - handle files without extensions or dotfiles
 			// Use the filename part only to avoid matching dots in folder paths
-			const filename = filePath.substring(filePath.lastIndexOf('/') + 1);
+			const filename = getFileName(filePath);
 			const dotIdx = filename.lastIndexOf('.');
 			if (dotIdx <= 0) {
 				// No extension (dotIdx === -1) or dotfile (dotIdx === 0) - not indexable

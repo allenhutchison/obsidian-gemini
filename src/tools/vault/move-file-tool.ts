@@ -2,7 +2,7 @@ import { Tool, ToolResult, ToolExecutionContext } from '../types';
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
 import { normalizePath } from 'obsidian';
-import { ensureFolderExists } from '../../utils/file-utils';
+import { ensureParentFolderExists } from '../../utils/file-utils';
 import { guardExcludedPath, resolvePathToFileOrFolder } from './utils';
 import { t } from '../../i18n';
 import { getRawErrorMessageOr } from '../../utils/error-utils';
@@ -100,10 +100,7 @@ export class MoveFileTool implements Tool {
 			}
 
 			// Ensure target directory exists (for files and folders)
-			const targetDir = targetNormalizedPath.substring(0, targetNormalizedPath.lastIndexOf('/'));
-			if (targetDir) {
-				await ensureFolderExists(plugin.app.vault, targetDir, 'target directory', plugin.logger);
-			}
+			await ensureParentFolderExists(plugin.app.vault, targetNormalizedPath, 'target directory', plugin.logger);
 
 			// Perform the rename/move (use fileManager to update internal links)
 			await plugin.app.fileManager.renameFile(sourceItem, targetNormalizedPath);

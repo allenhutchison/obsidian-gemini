@@ -159,6 +159,45 @@ export async function ensureFolderExists(
 }
 
 /**
+ * Derive the parent folder of a file path, or `null` at the vault root.
+ *
+ * The null-at-root contract is the edge case every former inline copy of this
+ * operation re-decided (five sites, four spellings — see #1425); it lives here
+ * now. No trailing slash is produced, and a folder name containing a dot
+ * (`my.notes/README.md`) is not mistaken for an extension boundary.
+ */
+export function getParentPath(path: string): string | null {
+	const lastSlash = path.lastIndexOf('/');
+	return lastSlash > 0 ? path.substring(0, lastSlash) : null;
+}
+
+/**
+ * Derive the final path segment — the file name with no folder prefix.
+ * Returns the input unchanged when it contains no slash (already a root file).
+ */
+export function getFileName(path: string): string {
+	const lastSlash = path.lastIndexOf('/');
+	return lastSlash >= 0 ? path.substring(lastSlash + 1) : path;
+}
+
+/**
+ * Ensure the parent folder of `filePath` exists, creating it (and any
+ * intermediate folders) if needed. The shared operation every write path
+ * performs before its first write to a vault path; a no-op for root-level
+ * paths (`out.md`) where there is no parent to create.
+ */
+export async function ensureParentFolderExists(
+	vault: Vault,
+	filePath: string,
+	context?: string,
+	logger?: Logger
+): Promise<void> {
+	const parentPath = getParentPath(filePath);
+	if (!parentPath) return;
+	await ensureFolderExists(vault, parentPath, context, logger);
+}
+
+/**
  * Sanitize a string for use as a file name by removing or replacing
  * characters forbidden on most operating systems.
  */

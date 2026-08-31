@@ -67,6 +67,7 @@ vi.mock('obsidian', () => ({
 // ensureFolderExists is a no-op in tests
 vi.mock('../../src/utils/file-utils', () => ({
 	ensureFolderExists: vi.fn().mockResolvedValue(undefined),
+	ensureParentFolderExists: vi.fn().mockResolvedValue(undefined),
 }));
 
 // findFrontmatterEndOffset — return undefined (no frontmatter in test content)

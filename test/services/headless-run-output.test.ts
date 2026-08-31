@@ -17,11 +17,13 @@ vi.mock('obsidian', () => ({
 
 // vi.mock factories are hoisted above the file body, so the spy must be created
 // in a hoisted scope (and mock-prefixed) for the factory to reference it safely.
-const { mockEnsureFolderExists } = vi.hoisted(() => ({
+const { mockEnsureFolderExists, mockEnsureParentFolderExists } = vi.hoisted(() => ({
 	mockEnsureFolderExists: vi.fn().mockResolvedValue(undefined),
+	mockEnsureParentFolderExists: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('../../src/utils/file-utils', () => ({
 	ensureFolderExists: mockEnsureFolderExists,
+	ensureParentFolderExists: mockEnsureParentFolderExists,
 }));
 
 /** Build a minimal Vault stub with controllable existence + create behavior. */
@@ -35,6 +37,7 @@ function makeVault(opts?: { exists?: (path: string) => boolean; create?: Mock })
 
 beforeEach(() => {
 	mockEnsureFolderExists.mockClear();
+	mockEnsureParentFolderExists.mockClear();
 });
 
 describe('resolveOutputPath', () => {
@@ -136,7 +139,15 @@ describe('writeHeadlessOutput — no retry (scheduled-task shape)', () => {
 		});
 
 		expect(written).toBe('Runs/task/2026-04-18.md');
-		expect(mockEnsureFolderExists).toHaveBeenCalledWith(vault, 'Runs/task', 'scheduled task output folder', undefined);
+		// The write path hands the full file path to the shared helper; the
+		// parent derivation it performs internally is unit-tested in
+		// test/utils/file-utils.test.ts.
+		expect(mockEnsureParentFolderExists).toHaveBeenCalledWith(
+			vault,
+			'Runs/task/2026-04-18.md',
+			'scheduled task output folder',
+			undefined
+		);
 		expect(create).toHaveBeenCalledWith('Runs/task/2026-04-18.md', '---\nscheduled_task: "task"\n---\n\nBody text');
 	});
 
@@ -156,10 +167,13 @@ describe('writeHeadlessOutput — no retry (scheduled-task shape)', () => {
 		expect(create).toHaveBeenCalledWith('Runs/task/2026-04-18-1.md', 'H\nB');
 	});
 
-	it('skips folder creation for a top-level (folderless) path', async () => {
+	it('hands the path to ensureParentFolderExists even at the vault root', async () => {
 		const vault = makeVault({ exists: () => false });
 		await writeHeadlessOutput({ vault, outputPath: 'out.md', header: 'H\n', content: 'B', folderLabel: 'x' });
-		expect(mockEnsureFolderExists).not.toHaveBeenCalled();
+		// The root-level no-op lives inside the shared helper now (unit-tested
+		// in test/utils/file-utils.test.ts); what this test pins is that the
+		// write path always routes through it with the full file path.
+		expect(mockEnsureParentFolderExists).toHaveBeenCalledWith(vault, 'out.md', 'x', undefined);
 	});
 
 	it('propagates a non-"already exists" create error unchanged', async () => {
