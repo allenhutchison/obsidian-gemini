@@ -469,11 +469,16 @@ describe('ToolPolicyEditor', () => {
 			expect(mount.querySelector('.gemini-tool-policy-editor-preset-row')).toBeNull();
 		});
 
-		it('still does not emit on a genuine rebuild', () => {
+		it('does not emit when the value is equal, and still does not emit on a genuine rebuild', () => {
 			makeEditor({ preset: PolicyPreset.CAUTIOUS });
 
-			editor!.setValue({ preset: PolicyPreset.YOLO });
+			// The early return must not emit...
+			editor!.setValue({ preset: PolicyPreset.CAUTIOUS });
+			expect(onChange).not.toHaveBeenCalled();
 
+			// ...and neither does a real rebuild: setValue is a programmatic
+			// refresh, not a user edit, whichever branch it takes.
+			editor!.setValue({ preset: PolicyPreset.YOLO });
 			expect(onChange).not.toHaveBeenCalled();
 		});
 
