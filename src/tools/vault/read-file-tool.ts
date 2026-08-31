@@ -127,12 +127,10 @@ export class ReadFileTool implements Tool {
 				// to PNG so the agent can actually view/OCR it. On failure, return an error
 				// string rather than sending anything unusable to the API.
 				const buffer = await plugin.app.vault.readBinary(file);
-				if (buffer.byteLength > GEMINI_INLINE_DATA_LIMIT) {
-					return { success: false, error: `File too large for inline processing (max 20 MB): ${file.name}` };
-				}
 				try {
-					// The rasterized PNG is a decoded bitmap that can dwarf the source
-					// SVG, so the budget holds for the converted payload too (#1430).
+					// No source-byte gate: the payload actually sent is the rasterized
+					// PNG, which can be far smaller than a bulky source SVG. The budget
+					// holds for the converted payload, enforced inside rasterizeSvg (#1430).
 					const base64 = await rasterizeSvg(buffer, file.extension.toLowerCase() === 'svgz', GEMINI_INLINE_DATA_LIMIT);
 					return {
 						success: true,

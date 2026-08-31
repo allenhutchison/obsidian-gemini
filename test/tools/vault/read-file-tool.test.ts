@@ -483,6 +483,26 @@ describe('ReadFileTool', () => {
 		expect(result.error).toContain('Disk read failure');
 	});
 
+	it('accepts a bulky source SVG whose rasterized PNG fits the budget (#1434 review)', async () => {
+		const svgFile = new TFile();
+		(svgFile as any).path = 'poster.svg';
+		(svgFile as any).name = 'poster.svg';
+		(svgFile as any).extension = 'svg';
+		(svgFile as any).stat = { size: 21 * 1024 * 1024, mtime: Date.now(), ctime: Date.now() };
+
+		mockVault.getAbstractFileByPath.mockReturnValue(svgFile);
+		// Source SVG is over the 20 MB limit, but the rasterized PNG is tiny —
+		// the source gate no longer applies to SVGs; only the converted payload counts.
+		mockVault.readBinary.mockResolvedValue(new ArrayBuffer(21 * 1024 * 1024));
+		mockRasterizeSvg.mockResolvedValue('AB=='); // 1 decoded byte
+
+		const result = await tool.execute({ path: 'poster.svg' }, mockContext);
+
+		expect(result.success).toBe(true);
+		expect(result.data.size).toBe(1);
+		expect(result.inlineData).toEqual([{ base64: 'AB==', mimeType: 'image/png' }]);
+	});
+
 	it('should return progress description with path', () => {
 		expect(tool.getProgressDescription({ path: 'notes/test.md' })).toBe('Reading notes/test.md');
 	});

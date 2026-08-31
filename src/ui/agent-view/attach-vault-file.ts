@@ -34,10 +34,11 @@ export type VaultAttachmentResult =
  * Read a vault file as an inline attachment, honoring the shared 20 MB budget.
  *
  * `alreadyUsedBytes` is the caller's current attachment total (each path seeds
- * it its own way). The helper reads the file, checks the budget, rasterizes
- * SVG/SVGZ to PNG or base64-encodes the raw buffer (sniffing audio vs video
- * for `.webm`), and returns the built record plus the file's raw byte length
- * on success. Failure kinds never log by themselves except the rasterize
+ * it its own way). The helper reads the file, checks the source-byte budget
+ * (skipped for SVGs, where the payload actually sent is the rasterized PNG),
+ * rasterizes SVG/SVGZ to PNG or base64-encodes the raw buffer (sniffing audio
+ * vs video for `.webm`), and returns the built record plus the byte count on
+ * success. Failure kinds never log by themselves except the rasterize
  * failure, whose message is byte-identical in both call sites today — the
  * `read-failed` error is returned instead so each caller logs its own wording
  * (drop says "Failed to read…", @-mention says "Failed to attach…").
@@ -61,11 +62,15 @@ export async function attachVaultBinaryFile(
 		return { kind: 'read-failed', error: err };
 	}
 
-	if (alreadyUsedBytes + buffer.byteLength > GEMINI_INLINE_DATA_LIMIT) {
+	const classification = classifyFile(file.extension);
+
+	if (classification.category !== FileCategory.SVG && alreadyUsedBytes + buffer.byteLength > GEMINI_INLINE_DATA_LIMIT) {
 		return { kind: 'too-large' };
 	}
+	// SVGs skip the source-byte gate: the payload actually sent is the
+	// rasterized PNG, which can be far smaller than a bulky source SVG —
+	// only the post-rasterize budget (enforced inside rasterizeSvg) applies.
 
-	const classification = classifyFile(file.extension);
 	let base64: string;
 	let mimeType: string;
 	let bytes = buffer.byteLength;
