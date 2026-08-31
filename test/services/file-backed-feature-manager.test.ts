@@ -8,12 +8,6 @@ vi.mock('obsidian', () => ({
 	TFile: class {},
 }));
 
-// feature-definition pulls skill-manager for findFrontmatterEndOffset — stub it
-// so the base's dependency graph stays light in this unit test.
-vi.mock('../../src/services/skill-manager', () => ({
-	findFrontmatterEndOffset: vi.fn().mockReturnValue(undefined),
-}));
-
 // ─── Test doubles ───────────────────────────────────────────────────────────
 
 interface TestDef extends FileBackedDefinition {

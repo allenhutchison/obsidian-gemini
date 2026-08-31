@@ -9,14 +9,14 @@ import {
 } from '../../src/services/feature-definition';
 import { PolicyPreset } from '../../src/types/tool-policy';
 
-// feature-definition.ts pulls findFrontmatterEndOffset from skill-manager;
-// mock it so the heavy skill-manager module is not loaded and
-// extractMarkdownBody's own slice/trim logic can be exercised in isolation.
-vi.mock('../../src/services/skill-manager', () => ({
+// feature-definition.ts pulls findFrontmatterEndOffset from the
+// frontmatter-offset leaf; mock it so extractMarkdownBody's own slice/trim
+// logic can be exercised in isolation from the scanner.
+vi.mock('../../src/utils/frontmatter-offset', () => ({
 	findFrontmatterEndOffset: vi.fn(),
 }));
 
-import { findFrontmatterEndOffset } from '../../src/services/skill-manager';
+import { findFrontmatterEndOffset } from '../../src/utils/frontmatter-offset';
 
 // ─── JsonSidecarStateStore ───────────────────────────────────────────────────
 
