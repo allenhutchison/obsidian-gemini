@@ -307,6 +307,24 @@ export function clonePolicy(policy: FeatureToolPolicy | undefined): FeatureToolP
 }
 
 /**
+ * Structurally compare two FeatureToolPolicy values. Absent vs. empty
+ * `overrides` count as equal (they serialize identically); everything else is
+ * compared field-by-field. Used by ToolPolicyEditor.setValue to skip
+ * re-renders when the host modal re-applies an unchanged policy.
+ */
+export function policiesEqual(a: FeatureToolPolicy | undefined, b: FeatureToolPolicy | undefined): boolean {
+	if (a === b) return true;
+	if (!a || !b) return false;
+	if (a.preset !== b.preset) return false;
+	const aOverrides = a.overrides ?? {};
+	const bOverrides = b.overrides ?? {};
+	const aKeys = Object.keys(aOverrides);
+	const bKeys = Object.keys(bOverrides);
+	if (aKeys.length !== bKeys.length) return false;
+	return aKeys.every((key) => aOverrides[key] === bOverrides[key]);
+}
+
+/**
  * Serialize a FeatureToolPolicy back to a plain frontmatter-friendly object.
  * Returns undefined when the policy is effectively empty.
  */
