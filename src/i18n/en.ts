@@ -1192,56 +1192,6 @@ export const en = {
 		message: 'Start fresh',
 		context: 'Warning-styled button in the resume-indexing modal that restarts indexing from scratch.',
 	},
-	'scheduledTasks.title': {
-		message: 'Scheduled tasks',
-		context: 'Heading of the modal listing scheduled agent tasks with their next-run time and status.',
-	},
-	'scheduledTasks.managerUnavailable': {
-		message: 'Scheduled task manager not available.',
-		context: 'Error text in the scheduled tasks modal when the scheduler service is not running.',
-	},
-	'scheduledTasks.empty': {
-		message: 'No scheduled tasks found. Create a markdown file in the Scheduled-Tasks folder to get started.',
-		context:
-			'Empty state of the scheduled tasks modal. "Scheduled-Tasks" is a literal folder name; do not translate it.',
-	},
-	'scheduledTasks.badgeDisabled': {
-		message: '{schedule} · disabled',
-		context:
-			'Badge next to a task. {schedule} is the raw schedule string (e.g. "daily 09:00"); translate only "disabled".',
-	},
-	'scheduledTasks.badgePaused': {
-		message: '{schedule} · paused',
-		context:
-			'Badge next to a task paused due to repeated errors. {schedule} is the raw schedule string; translate only "paused".',
-	},
-	'scheduledTasks.onceComplete': {
-		message: 'Once — complete',
-		context: 'Shown in place of the next-run time for one-time tasks that already ran.',
-	},
-	'scheduledTasks.nextRun': {
-		message: 'Next: {time}',
-		context: 'Metadata row showing the next scheduled run. {time} is a formatted date or "Once — complete".',
-	},
-	'scheduledTasks.lastRun': {
-		message: 'Last: {time}',
-		context: 'Metadata row showing the last run time. {time} is a formatted date.',
-	},
-	'scheduledTasks.resetButton': { message: 'Reset', context: 'Button that re-enables a task paused due to errors.' },
-	'scheduledTasks.resetting': {
-		message: 'Resetting...',
-		context: 'Transient button label while the reset is in progress.',
-	},
-	'scheduledTasks.runNowButton': { message: 'Run now', context: 'Button that immediately runs a scheduled task.' },
-	'scheduledTasks.running': {
-		message: 'Running...',
-		context: 'Transient button label while a task run is being submitted.',
-	},
-	'scheduledTasks.submitted': {
-		message: 'Submitted',
-		context: 'Button label after a task run was successfully submitted.',
-	},
-	'scheduledTasks.runError': { message: 'Error', context: 'Button label when running a scheduled task failed.' },
 	'updateNotice.versionInfo': {
 		message: "You've been updated to version {version}",
 		context: 'Line in the plugin update modal. {version} is a semver string like 4.2.0.',
@@ -2894,7 +2844,7 @@ export const en = {
 	},
 	'command.viewScheduledTasks': {
 		message: 'View scheduled tasks',
-		context: 'Command palette entry for the legacy read-only scheduled tasks modal.',
+		context: 'Command palette entry that opens the scheduled task manager on its task list.',
 	},
 	'command.switchProject': {
 		message: 'Switch project',

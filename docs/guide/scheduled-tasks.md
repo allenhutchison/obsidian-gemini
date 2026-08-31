@@ -147,9 +147,9 @@ From the Scheduler you can:
 
 You can also open the create form directly: **Command Palette → New scheduled task**.
 
-### Read-Only Status View
+### Open the Task List Directly
 
-For a lightweight read-only summary, use **Command Palette → View scheduled tasks**. This panel shows the same task list without edit controls.
+**Command Palette → View scheduled tasks** opens the same manager on its task list. It used to open a separate read-only panel; that panel was removed, and the command now opens the full manager, so any hotkey you bound to it still works and lands on the list view.
 
 ## Output Files
 
