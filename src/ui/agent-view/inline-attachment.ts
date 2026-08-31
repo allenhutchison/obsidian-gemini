@@ -30,6 +30,24 @@ export function generateAttachmentId(): string {
 }
 
 /**
+ * Decoded byte size of a base64 payload (no data URI), padding excluded
+ * (so 'YQ==' counts as 1 byte, not 3).
+ */
+export function base64DecodedBytes(base64: string): number {
+	const padding = base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0;
+	return Math.floor(((base64.length - padding) * 3) / 4);
+}
+
+/**
+ * Estimate the decoded byte size of pending attachments from their base64
+ * payloads. Shared by every path that seeds the cumulative size used against
+ * GEMINI_INLINE_DATA_LIMIT (#1363).
+ */
+export function estimateAttachmentBytes(attachments: InlineAttachment[]): number {
+	return attachments.reduce((sum, a) => sum + base64DecodedBytes(a.base64), 0);
+}
+
+/**
  * Convert a File or Blob to base64
  */
 export function fileToBase64(file: File | Blob): Promise<string> {
