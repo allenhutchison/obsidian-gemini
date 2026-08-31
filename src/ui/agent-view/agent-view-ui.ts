@@ -7,6 +7,7 @@ import { renameSessionHistoryFile } from '../../agent/session-rename';
 import { collectFilesFromFolder } from '../../utils/folder-walk';
 import {
 	InlineAttachment,
+	base64DecodedBytes,
 	estimateAttachmentBytes,
 	fileToBase64,
 	generateAttachmentId,
@@ -15,7 +16,7 @@ import {
 } from './inline-attachment';
 import { attachVaultBinaryFile } from './attach-vault-file';
 import { classifyFile, FileCategory, GEMINI_INLINE_DATA_LIMIT } from '../../utils/file-classification';
-import { rasterizeSvg } from '../../utils/svg-rasterizer';
+import { rasterizeSvg, SvgTooLargeError } from '../../utils/svg-rasterizer';
 import { t } from '../../i18n';
 
 /**
@@ -864,17 +865,25 @@ export class AgentViewUI {
 	private isSvgFile(file: File): boolean {
 		return file.type === 'image/svg+xml' || /\.svgz?$/i.test(file.name);
 	}
-
 	/**
 	 * Rasterize an external SVG/SVGZ File to a PNG inline attachment and add it.
-	 * Returns true if an attachment was added. On rasterization failure, logs and
-	 * returns false so the caller can count it as unsupported.
+	 * The budget is what remains of the shared inline-data limit after the
+	 * caller's current total (`GEMINI_INLINE_DATA_LIMIT - cumulativeSize`); the
+	 * rasterized PNG is a decoded bitmap that can dwarf the small source file, so
+	 * the converted payload — not `file.size` — is what has to fit (#1430).
+	 * Returns the attachment's decoded byte count on success, `null` on
+	 * rasterization failure (the caller counts it as unsupported), and
+	 * `'too-large'` when the converted payload exceeds the budget.
 	 */
-	private async attachExternalSvgFile(file: File, callbacks: UICallbacks): Promise<boolean> {
+	private async attachExternalSvgFile(
+		file: File,
+		callbacks: UICallbacks,
+		budgetBytes: number
+	): Promise<number | 'too-large' | null> {
 		try {
 			const buffer = await file.arrayBuffer();
 			const isSvgz = /\.svgz$/i.test(file.name) || file.type === 'application/gzip';
-			const base64 = await rasterizeSvg(buffer, isSvgz);
+			const base64 = await rasterizeSvg(buffer, isSvgz, budgetBytes);
 			const attachment: InlineAttachment = {
 				base64,
 				mimeType: 'image/png',
@@ -882,10 +891,11 @@ export class AgentViewUI {
 				fileName: file.name || undefined,
 			};
 			callbacks.addAttachment(attachment);
-			return true;
+			return base64DecodedBytes(base64);
 		} catch (err) {
+			if (err instanceof SvgTooLargeError) return 'too-large';
 			this.plugin.logger.error('Failed to rasterize external SVG:', err);
-			return false;
+			return null;
 		}
 	}
 
@@ -897,8 +907,10 @@ export class AgentViewUI {
 	 * cumulative-size check against `GEMINI_INLINE_DATA_LIMIT` (breaks on
 	 * overflow) → `fileToBase64` → build `InlineAttachment` → `addAttachment` →
 	 * bump counters, with an `isSvgFile` branch delegating to
-	 * `attachExternalSvgFile` (rasterization) and a trailing
-	 * `else if (image/*) unsupportedCount++`. The distinct post-loop notice
+	 * `attachExternalSvgFile` (rasterization against the remaining budget; the
+	 * rasterized payload — not the source file — is what must fit, #1430) and a
+	 * trailing `else if (image/*) unsupportedCount++`. The running total counts
+	 * decoded payload bytes in both branches. The distinct post-loop notice
 	 * logic stays in each caller.
 	 *
 	 * The paste-only `e.preventDefault()` is parameterized via
@@ -940,22 +952,26 @@ export class AgentViewUI {
 						id: generateAttachmentId(),
 					};
 					callbacks.addAttachment(attachment);
-					cumulativeSize += file.size;
+					// Both branches count the decoded payload, so the running total
+					// is one formula regardless of attachment kind (#1430).
+					cumulativeSize += base64DecodedBytes(base64);
 					imagesProcessed++;
 				} catch (err) {
 					this.plugin.logger.error('Failed to process attachment image:', err);
 					new Notice(t('agent.attachments.imageAttachFailed'));
 				}
 			} else if (this.isSvgFile(file)) {
-				// External SVG/SVGZ — rasterize to PNG before inlining.
-				if (cumulativeSize + file.size > GEMINI_INLINE_DATA_LIMIT) {
+				// External SVG/SVGZ — rasterize to PNG before inlining. The gate and
+				// the running total both hold for the converted payload, not the
+				// source file size (#1430).
+				notifyFirstImage();
+				const result = await this.attachExternalSvgFile(file, callbacks, GEMINI_INLINE_DATA_LIMIT - cumulativeSize);
+				if (typeof result === 'number') {
+					cumulativeSize += result;
+					imagesProcessed++;
+				} else if (result === 'too-large') {
 					new Notice(t('agent.attachments.sizeLimitReached'));
 					break;
-				}
-				notifyFirstImage();
-				if (await this.attachExternalSvgFile(file, callbacks)) {
-					cumulativeSize += file.size;
-					imagesProcessed++;
 				} else {
 					unsupportedCount++;
 				}
@@ -968,7 +984,7 @@ export class AgentViewUI {
 
 	/**
 	 * Asynchronously loads project info and updates the project badge.
-	 * Skips the update if the badge has been detached (e.g. session changed).
+	 * Skips the update if the badge has been detached (e.g., session changed).
 	 */
 	private async updateProjectBadge(badge: HTMLElement, nameSpan: HTMLSpanElement, projectPath: string): Promise<void> {
 		try {

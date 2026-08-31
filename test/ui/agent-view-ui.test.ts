@@ -595,17 +595,51 @@ describe('AgentViewUI', () => {
 		});
 
 		it('delegates SVG files to attachExternalSvgFile (success counts as processed)', async () => {
-			const svgSpy = vi.spyOn(agentViewUI as any, 'attachExternalSvgFile').mockResolvedValue(true);
+			// New contract (#1430): the delegate returns the decoded payload size
+			// (a number) on success, not a boolean.
+			const svgSpy = vi.spyOn(agentViewUI as any, 'attachExternalSvgFile').mockResolvedValue(500);
 			const result = await run([imageFile('icon.svg', 'image/svg+xml')]);
 			expect(svgSpy).toHaveBeenCalledTimes(1);
+			// The remaining budget is passed as the third argument.
+			expect(svgSpy).toHaveBeenCalledWith(expect.anything(), callbacks, GEMINI_INLINE_DATA_LIMIT);
 			expect(result).toEqual({ imagesProcessed: 1, unsupportedCount: 0 });
 		});
 
 		it('counts an SVG that fails rasterization as unsupported', async () => {
-			vi.spyOn(agentViewUI as any, 'attachExternalSvgFile').mockResolvedValue(false);
+			vi.spyOn(agentViewUI as any, 'attachExternalSvgFile').mockResolvedValue(null);
 			const result = await run([imageFile('icon.svg', 'image/svg+xml')]);
 			expect(result).toEqual({ imagesProcessed: 0, unsupportedCount: 1 });
 			expect(callbacks.addAttachment).not.toHaveBeenCalled();
+		});
+
+		it('breaks with a size-limit notice when the rasterized SVG payload is too large (#1430)', async () => {
+			vi.spyOn(agentViewUI as any, 'attachExternalSvgFile').mockResolvedValue('too-large');
+			const result = await run([imageFile('icon.svg', 'image/svg+xml')]);
+			expect(result).toEqual({ imagesProcessed: 0, unsupportedCount: 0 });
+			expect(callbacks.addAttachment).not.toHaveBeenCalled();
+			expect(Notice).toHaveBeenCalledWith(expect.stringContaining('20 MB'));
+		});
+
+		it('rejects a second SVG whose rasterized total exceeds the budget (#1430)', async () => {
+			// First SVG rasterizes to 12 MB of decoded payload, second to 9 MB.
+			// The old code counted file.size (a few KB each), so both attached
+			// and silently overspent the 20 MB budget; the running total now
+			// holds the converted bytes, so the second is rejected.
+			const svgSpy = vi
+				.spyOn(agentViewUI as any, 'attachExternalSvgFile')
+				.mockResolvedValueOnce(12 * 1024 * 1024)
+				.mockResolvedValueOnce('too-large');
+			const result = await run([imageFile('first.svg', 'image/svg+xml'), imageFile('second.svg', 'image/svg+xml')]);
+			expect(result).toEqual({ imagesProcessed: 1, unsupportedCount: 0 });
+			// Second call got the remaining budget after the first attachment
+			// (20 MB − 12 MB = 8 MB), which the caller-side stub sees as its
+			// third argument — the running total held the converted bytes.
+			expect(svgSpy).toHaveBeenLastCalledWith(
+				expect.anything(),
+				callbacks,
+				GEMINI_INLINE_DATA_LIMIT - 12 * 1024 * 1024
+			);
+			expect(Notice).toHaveBeenCalledWith(expect.stringContaining('20 MB'));
 		});
 
 		it('ignores non-image files', async () => {

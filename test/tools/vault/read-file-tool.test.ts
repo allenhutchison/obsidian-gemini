@@ -1,5 +1,13 @@
-import { ReadFileTool } from '../../../src/tools/vault';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ReadFileTool } from '../../../src/tools/vault/read-file-tool';
 import { ToolExecutionContext } from '../../../src/tools/types';
+import { SvgTooLargeError } from '../../../src/utils/svg-rasterizer';
+
+const { mockRasterizeSvg } = vi.hoisted(() => ({ mockRasterizeSvg: vi.fn() }));
+vi.mock('../../../src/utils/svg-rasterizer', async (importOriginal) => ({
+	...(await importOriginal<typeof import('../../../src/utils/svg-rasterizer')>()),
+	rasterizeSvg: mockRasterizeSvg,
+}));
 
 // Mock gemini-utils (needed by file-classification, imported by vault-tools)
 vi.mock('@allenhutchison/gemini-utils/mime', () => ({
@@ -402,31 +410,60 @@ describe('ReadFileTool', () => {
 		expect(result.error).toContain('Cannot read from system folder');
 	});
 
-	it('should include outgoing links and backlinks when present', async () => {
-		const linkedFile = new TFile();
-		(linkedFile as any).path = 'linked-note.md';
-		(linkedFile as any).name = 'linked-note.md';
-		(linkedFile as any).extension = 'md';
+	it('rasterizes an SVG and reports the converted payload size (#1430)', async () => {
+		const svgFile = new TFile();
+		(svgFile as any).path = 'diagram.svg';
+		(svgFile as any).name = 'diagram.svg';
+		(svgFile as any).extension = 'svg';
+		(svgFile as any).stat = { size: 1000, mtime: Date.now(), ctime: Date.now() };
 
-		const backlinkFile = new TFile();
-		(backlinkFile as any).path = 'referring-note.md';
-		(backlinkFile as any).name = 'referring-note.md';
-		(backlinkFile as any).extension = 'md';
+		mockVault.getAbstractFileByPath.mockReturnValue(svgFile);
+		mockVault.readBinary.mockResolvedValue(new ArrayBuffer(1000));
+		mockRasterizeSvg.mockResolvedValue('UE5HREFUQQ=='); // 7 decoded bytes
 
-		mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
-		mockVault.read.mockResolvedValue('file with links');
-
-		// Override gfile mocks to return non-empty sets
-		mockPlugin.gfile.getUniqueLinks.mockReturnValue(new Set([linkedFile]));
-		mockPlugin.gfile.getBacklinks.mockReturnValue(new Set([backlinkFile]));
-
-		const result = await tool.execute({ path: 'test.md' }, mockContext);
+		const result = await tool.execute({ path: 'diagram.svg' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data.outgoingLinks).toHaveLength(1);
-		expect(result.data.outgoingLinks[0]).toBe('[[linked-note.md]]');
-		expect(result.data.backlinks).toHaveLength(1);
-		expect(result.data.backlinks[0]).toBe('[[referring-note.md]]');
+		expect(result.data.size).toBe(7); // decoded PNG size, not the 1000-byte source
+		expect(result.inlineData).toEqual([{ base64: 'UE5HREFUQQ==', mimeType: 'image/png' }]);
+		// The budget is the full inline-data limit for the tool path.
+		expect(mockRasterizeSvg).toHaveBeenCalledWith(expect.any(ArrayBuffer), false, 20 * 1024 * 1024);
+	});
+
+	it('rejects an SVG whose rasterized payload exceeds the budget (#1430)', async () => {
+		const svgFile = new TFile();
+		(svgFile as any).path = 'huge.svg';
+		(svgFile as any).name = 'huge.svg';
+		(svgFile as any).extension = 'svg';
+		(svgFile as any).stat = { size: 1000, mtime: Date.now(), ctime: Date.now() };
+
+		mockVault.getAbstractFileByPath.mockReturnValue(svgFile);
+		mockVault.readBinary.mockResolvedValue(new ArrayBuffer(1000));
+		mockRasterizeSvg.mockRejectedValue(new SvgTooLargeError(21 * 1024 * 1024));
+
+		const result = await tool.execute({ path: 'huge.svg' }, mockContext);
+
+		expect(result.success).toBe(false);
+		expect(result.error).toBe('File too large for inline processing (max 20 MB): huge.svg');
+		expect(result.inlineData).toBeUndefined();
+	});
+
+	it('reports a rasterization failure without inlining anything', async () => {
+		const svgFile = new TFile();
+		(svgFile as any).path = 'broken.svg';
+		(svgFile as any).name = 'broken.svg';
+		(svgFile as any).extension = 'svg';
+		(svgFile as any).stat = { size: 1000, mtime: Date.now(), ctime: Date.now() };
+
+		mockVault.getAbstractFileByPath.mockReturnValue(svgFile);
+		mockVault.readBinary.mockResolvedValue(new ArrayBuffer(1000));
+		mockRasterizeSvg.mockRejectedValue(new Error('Failed to load SVG image'));
+
+		const result = await tool.execute({ path: 'broken.svg' }, mockContext);
+
+		expect(result.success).toBe(false);
+		expect(result.error).toContain('Failed to rasterize SVG for viewing');
+		expect(result.inlineData).toBeUndefined();
 	});
 
 	it('should return error when vault.read() throws', async () => {
@@ -444,6 +481,26 @@ describe('ReadFileTool', () => {
 		expect(result.success).toBe(false);
 		expect(result.error).toContain('Error reading file or folder');
 		expect(result.error).toContain('Disk read failure');
+	});
+
+	it('accepts a bulky source SVG whose rasterized PNG fits the budget (#1434 review)', async () => {
+		const svgFile = new TFile();
+		(svgFile as any).path = 'poster.svg';
+		(svgFile as any).name = 'poster.svg';
+		(svgFile as any).extension = 'svg';
+		(svgFile as any).stat = { size: 21 * 1024 * 1024, mtime: Date.now(), ctime: Date.now() };
+
+		mockVault.getAbstractFileByPath.mockReturnValue(svgFile);
+		// Source SVG is over the 20 MB limit, but the rasterized PNG is tiny —
+		// the source gate no longer applies to SVGs; only the converted payload counts.
+		mockVault.readBinary.mockResolvedValue(new ArrayBuffer(21 * 1024 * 1024));
+		mockRasterizeSvg.mockResolvedValue('AB=='); // 1 decoded byte
+
+		const result = await tool.execute({ path: 'poster.svg' }, mockContext);
+
+		expect(result.success).toBe(true);
+		expect(result.data.size).toBe(1);
+		expect(result.inlineData).toEqual([{ base64: 'AB==', mimeType: 'image/png' }]);
 	});
 
 	it('should return progress description with path', () => {

@@ -180,3 +180,14 @@ export function arrayBufferToBase64(buffer: ArrayBuffer): string {
 	}
 	return btoa(chunks.join(''));
 }
+
+/**
+ * Decoded byte size of a base64 payload (no data URI prefix), padding excluded
+ * (so 'YQ==' counts as 1 byte, not 3). The single decoded-size formula shared
+ * by the inline-attachment estimate, the SVG rasterizer's budget check, and the
+ * converted-payload re-check in the attachment pipeline (#1412 review).
+ */
+export function base64DecodedBytes(base64: string): number {
+	const padding = base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0;
+	return Math.floor(((base64.length - padding) * 3) / 4);
+}

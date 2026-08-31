@@ -11,8 +11,24 @@
  * point (drag, paste, @-mention, ReadFileTool) shares this one implementation.
  */
 
+import { base64DecodedBytes } from './file-classification';
+
 /** Longest-edge cap for the rasterized PNG (px). Bounds the base64 payload and keeps OCR legible. */
 export const SVG_RASTER_MAX_EDGE = 2048;
+
+/**
+ * Thrown by {@link rasterizeSvg} when `budgetBytes` is given and the rasterized
+ * PNG decodes to more than that many bytes. The converted payload — a decoded
+ * bitmap — can be orders of magnitude larger than the source SVG, so callers
+ * that enforce an inline-data budget against it catch this and report
+ * "too large" instead of sending an over-budget part (#1430).
+ */
+export class SvgTooLargeError extends Error {
+	constructor(public readonly decodedBytes: number) {
+		super(`Rasterized SVG payload is too large (${decodedBytes} bytes)`);
+		this.name = 'SvgTooLargeError';
+	}
+}
 
 /** Fallback dimension (px) used when an SVG declares no intrinsic size and no viewBox. */
 const SVG_FALLBACK_SIZE = 512;
@@ -128,11 +144,17 @@ function loadSvgImage(url: string): Promise<HTMLImageElement> {
  *
  * @param buffer - Raw file bytes (`.svg` XML or gzip-compressed `.svgz`).
  * @param isSvgz - Whether `buffer` is gzip-compressed and must be inflated first.
+ * @param budgetBytes - Optional ceiling on the *decoded* PNG payload. When the
+ *   rasterized output exceeds it, {@link SvgTooLargeError} is thrown — the
+ *   bitmap is already allocated at that point, but the over-budget part never
+ *   reaches the caller. Omit for an unbounded conversion (callers with no
+ *   inline-data budget).
  * @returns Base64 PNG payload (no `data:` URI prefix).
+ * @throws {@link SvgTooLargeError} when `budgetBytes` is exceeded.
  * @throws If the SVG cannot be decompressed, parsed, loaded, or rasterized —
  *   callers fall back to the existing "unsupported file type" notice.
  */
-export async function rasterizeSvg(buffer: ArrayBuffer, isSvgz: boolean): Promise<string> {
+export async function rasterizeSvg(buffer: ArrayBuffer, isSvgz: boolean, budgetBytes?: number): Promise<string> {
 	const svgBuffer = isSvgz ? await gunzip(buffer) : buffer;
 	const svgText = new TextDecoder('utf-8').decode(new Uint8Array(svgBuffer));
 
@@ -175,6 +197,12 @@ export async function rasterizeSvg(buffer: ArrayBuffer, isSvgz: boolean): Promis
 		const base64 = dataUrl.split(',')[1];
 		if (!base64) {
 			throw new Error('SVG rasterization produced no PNG data');
+		}
+		// A decoded bitmap can dwarf its source SVG; when the caller enforces an
+		// inline-data budget, hold it against the converted payload (#1430).
+		const decodedBytes = base64DecodedBytes(base64);
+		if (budgetBytes !== undefined && decodedBytes > budgetBytes) {
+			throw new SvgTooLargeError(decodedBytes);
 		}
 		return base64;
 	} finally {

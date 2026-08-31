@@ -20,9 +20,11 @@ vi.mock('obsidian', async () => {
 // Rasterization is mocked: the helper only forwards the buffer and maps a
 // rejection to `raster-failed`; the renderer itself has its own tests.
 const rasterizeSvg = vi.fn();
-vi.mock('../../../src/utils/svg-rasterizer', () => ({
+vi.mock('../../../src/utils/svg-rasterizer', async () => ({
+	...(await vi.importActual<any>('../../../src/utils/svg-rasterizer')),
 	rasterizeSvg: (...args: unknown[]) => rasterizeSvg(...args),
 }));
+import { SvgTooLargeError } from '../../../src/utils/svg-rasterizer';
 
 const logger = { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() };
 
@@ -102,7 +104,7 @@ describe('attachVaultBinaryFile', () => {
 			logger as unknown as Parameters<typeof attachVaultBinaryFile>[3]
 		);
 
-		expect(rasterizeSvg).toHaveBeenCalledWith(expect.anything(), true);
+		expect(rasterizeSvg).toHaveBeenCalledWith(expect.anything(), true, GEMINI_INLINE_DATA_LIMIT);
 		expect(result.kind).toBe('ok');
 		if (result.kind === 'ok') {
 			expect(result.attachment.mimeType).toBe('image/png');
@@ -110,11 +112,12 @@ describe('attachVaultBinaryFile', () => {
 		}
 	});
 
-	it('enforces the budget against the converted PNG bytes, not the SVG source', async () => {
-		// A small SVG whose rasterization explodes past the 20 MB budget: the
-		// source-side pre-check passes, the converted-payload check rejects it
-		// (#1412 review).
-		rasterizeSvg.mockResolvedValue('A'.repeat(Math.ceil(((GEMINI_INLINE_DATA_LIMIT + 1024) * 4) / 3)));
+	it('maps the rasterizer budget rejection to too-large (#1430)', async () => {
+		// The converted-payload budget now lives inside rasterizeSvg (passed as
+		// the remaining budget); when it blows the budget it throws
+		// SvgTooLargeError, which maps to the same 'too-large' result the inline
+		// check used to produce (#1412 review, #1430).
+		rasterizeSvg.mockRejectedValue(new SvgTooLargeError(GEMINI_INLINE_DATA_LIMIT + 1024));
 		const result = await attachVaultBinaryFile(
 			mockVault(bufferOf([1])),
 			makeFile('icon.svg', 'svg'),
@@ -136,6 +139,25 @@ describe('attachVaultBinaryFile', () => {
 		// fits the budget — ok, with converted bytes reported.
 		expect(result.kind).toBe('ok');
 		if (result.kind === 'ok') expect(result.bytes).toBe(1);
+	});
+
+	it('accepts a bulky source SVG whose rasterized PNG fits the budget (no source gate) (#1434 review)', async () => {
+		// A >20 MB source SVG can rasterize to a small PNG (the rasterizer caps
+		// the canvas at 2048px); the source-byte gate must not reject it — only
+		// the converted payload counts.
+		const bulky = bufferOf(new Array(GEMINI_INLINE_DATA_LIMIT + 1024).fill(0x20));
+		rasterizeSvg.mockResolvedValue('AB=='); // decodes to 1 byte
+		const result = await attachVaultBinaryFile(
+			mockVault(bulky),
+			makeFile('poster.svg', 'svg'),
+			0,
+			logger as unknown as Parameters<typeof attachVaultBinaryFile>[3]
+		);
+		expect(result.kind).toBe('ok');
+		if (result.kind === 'ok') {
+			expect(result.bytes).toBe(1);
+			expect(rasterizeSvg).toHaveBeenCalledWith(expect.anything(), false, GEMINI_INLINE_DATA_LIMIT);
+		}
 	});
 
 	it('returns raster-failed when rasterization rejects', async () => {

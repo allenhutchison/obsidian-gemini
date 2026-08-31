@@ -9,9 +9,10 @@ import {
 	FileCategory,
 	GEMINI_INLINE_DATA_LIMIT,
 	arrayBufferToBase64,
+	base64DecodedBytes,
 	detectWebmMimeType,
 } from '../../utils/file-classification';
-import { rasterizeSvg } from '../../utils/svg-rasterizer';
+import { rasterizeSvg, SvgTooLargeError } from '../../utils/svg-rasterizer';
 import { resolvePathToFileOrFolder, toFileEntry } from './utils';
 
 /**
@@ -126,17 +127,28 @@ export class ReadFileTool implements Tool {
 				// to PNG so the agent can actually view/OCR it. On failure, return an error
 				// string rather than sending anything unusable to the API.
 				const buffer = await plugin.app.vault.readBinary(file);
-				if (buffer.byteLength > GEMINI_INLINE_DATA_LIMIT) {
-					return { success: false, error: `File too large for inline processing (max 20 MB): ${file.name}` };
-				}
 				try {
-					const base64 = await rasterizeSvg(buffer, file.extension.toLowerCase() === 'svgz');
+					// No source-byte gate: the payload actually sent is the rasterized
+					// PNG, which can be far smaller than a bulky source SVG. The budget
+					// holds for the converted payload, enforced inside rasterizeSvg (#1430).
+					const base64 = await rasterizeSvg(buffer, file.extension.toLowerCase() === 'svgz', GEMINI_INLINE_DATA_LIMIT);
 					return {
 						success: true,
-						data: { path: file.path, type: 'binary_file', mimeType: 'image/png', size: buffer.byteLength },
+						data: {
+							path: file.path,
+							type: 'binary_file',
+							mimeType: 'image/png',
+							size: base64DecodedBytes(base64),
+						},
 						inlineData: [{ base64, mimeType: 'image/png' }],
 					};
 				} catch (rasterErr) {
+					if (rasterErr instanceof SvgTooLargeError) {
+						return {
+							success: false,
+							error: `File too large for inline processing (max 20 MB): ${file.name}`,
+						};
+					}
 					return {
 						success: false,
 						error: `Failed to rasterize SVG for viewing: ${file.name} (${getRawErrorMessageOr(rasterErr, 'Unknown error')})`,

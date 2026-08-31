@@ -20,7 +20,7 @@ import {
 	classifyFile,
 	detectWebmMimeType,
 } from '../../utils/file-classification';
-import { rasterizeSvg } from '../../utils/svg-rasterizer';
+import { rasterizeSvg, SvgTooLargeError } from '../../utils/svg-rasterizer';
 import { base64DecodedBytes, generateAttachmentId, type InlineAttachment } from './inline-attachment';
 import type { Logger } from '../../utils/logger';
 
@@ -34,10 +34,11 @@ export type VaultAttachmentResult =
  * Read a vault file as an inline attachment, honoring the shared 20 MB budget.
  *
  * `alreadyUsedBytes` is the caller's current attachment total (each path seeds
- * it its own way). The helper reads the file, checks the budget, rasterizes
- * SVG/SVGZ to PNG or base64-encodes the raw buffer (sniffing audio vs video
- * for `.webm`), and returns the built record plus the file's raw byte length
- * on success. Failure kinds never log by themselves except the rasterize
+ * it its own way). The helper reads the file, checks the source-byte budget
+ * (skipped for SVGs, where the payload actually sent is the rasterized PNG),
+ * rasterizes SVG/SVGZ to PNG or base64-encodes the raw buffer (sniffing audio
+ * vs video for `.webm`), and returns the built record plus the byte count on
+ * success. Failure kinds never log by themselves except the rasterize
  * failure, whose message is byte-identical in both call sites today — the
  * `read-failed` error is returned instead so each caller logs its own wording
  * (drop says "Failed to read…", @-mention says "Failed to attach…").
@@ -61,33 +62,40 @@ export async function attachVaultBinaryFile(
 		return { kind: 'read-failed', error: err };
 	}
 
-	if (alreadyUsedBytes + buffer.byteLength > GEMINI_INLINE_DATA_LIMIT) {
+	const classification = classifyFile(file.extension);
+
+	if (classification.category !== FileCategory.SVG && alreadyUsedBytes + buffer.byteLength > GEMINI_INLINE_DATA_LIMIT) {
 		return { kind: 'too-large' };
 	}
+	// SVGs skip the source-byte gate: the payload actually sent is the
+	// rasterized PNG, which can be far smaller than a bulky source SVG —
+	// only the post-rasterize budget (enforced inside rasterizeSvg) applies.
 
-	const classification = classifyFile(file.extension);
 	let base64: string;
 	let mimeType: string;
 	let bytes = buffer.byteLength;
 	if (classification.category === FileCategory.SVG) {
 		// SVG can't be inlined directly — rasterize to PNG. On failure
 		// (malformed SVG, unresolvable refs), fall back to the caller's
-		// unsupported-file notice rather than sending raw XML.
+		// unsupported-file notice rather than sending raw XML. The rasterized
+		// PNG is a decoded bitmap that can dwarf the source file, so the budget
+		// holds for the converted payload too — enforced inside rasterizeSvg
+		// via the remaining budget (#1412 review, #1430).
 		try {
-			base64 = await rasterizeSvg(buffer, file.extension.toLowerCase() === 'svgz');
+			base64 = await rasterizeSvg(
+				buffer,
+				file.extension.toLowerCase() === 'svgz',
+				GEMINI_INLINE_DATA_LIMIT - alreadyUsedBytes
+			);
 			mimeType = 'image/png';
 		} catch (rasterErr) {
+			if (rasterErr instanceof SvgTooLargeError) {
+				return { kind: 'too-large' };
+			}
 			logger.error(`Failed to rasterize SVG ${file.path}:`, rasterErr);
 			return { kind: 'raster-failed' };
 		}
-		// The rasterized PNG can be larger than the source SVG (it's a decoded
-		// bitmap), so the budget — checked above against the small source file —
-		// has to hold for the converted payload too (#1412 review).
-		const convertedBytes = base64DecodedBytes(base64);
-		if (alreadyUsedBytes + convertedBytes > GEMINI_INLINE_DATA_LIMIT) {
-			return { kind: 'too-large' };
-		}
-		bytes = convertedBytes;
+		bytes = base64DecodedBytes(base64);
 	} else {
 		base64 = arrayBufferToBase64(buffer);
 		// For .webm files, detect audio vs video from container header
