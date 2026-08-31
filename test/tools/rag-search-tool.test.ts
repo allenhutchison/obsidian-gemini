@@ -1,5 +1,19 @@
 import { RagSearchTool, getRagTools } from '../../src/tools/rag-search-tool';
 import { ToolExecutionContext } from '../../src/tools/types';
+import { executeWithRetry } from '../../src/utils/retry';
+
+// Run the wrapped operation with near-zero backoff so the retry test stays fast
+// and deterministic, matching the convention in grounding-tool-runner.test.ts.
+vi.mock('../../src/utils/retry', async () => {
+	const actual = await vi.importActual<any>('../../src/utils/retry');
+	return {
+		...actual,
+		executeWithRetry: vi.fn().mockImplementation((operation, _config, options) => {
+			const fastConfig = { maxRetries: 2, initialDelayMs: 1, maxDelayMs: 1, jitter: false };
+			return actual.executeWithRetry(operation, fastConfig, options);
+		}),
+	};
+});
 
 describe('RagSearchTool', () => {
 	let tool: RagSearchTool;
@@ -310,6 +324,34 @@ describe('RagSearchTool', () => {
 					],
 				},
 			});
+		});
+
+		it('should route the search through executeWithRetry', async () => {
+			mockAi.models.generateContent.mockResolvedValue({
+				text: 'Search results',
+				candidates: [{ groundingMetadata: { groundingChunks: [] } }],
+			});
+
+			await tool.execute({ query: 'test' }, mockContext);
+
+			expect(executeWithRetry).toHaveBeenCalledWith(
+				expect.any(Function),
+				undefined,
+				expect.objectContaining({ operationName: 'RagSearchTool.generateContent' })
+			);
+		});
+
+		it('should retry a transient API failure and succeed', async () => {
+			const transient = Object.assign(new Error('Service Unavailable'), { status: 503 });
+			mockAi.models.generateContent.mockRejectedValueOnce(transient).mockResolvedValue({
+				text: 'Search results',
+				candidates: [{ groundingMetadata: { groundingChunks: [] } }],
+			});
+
+			const result = await tool.execute({ query: 'test' }, mockContext);
+
+			expect(mockAi.models.generateContent).toHaveBeenCalledTimes(2);
+			expect(result.success).toBe(true);
 		});
 
 		it('should execute search with folder filter', async () => {
