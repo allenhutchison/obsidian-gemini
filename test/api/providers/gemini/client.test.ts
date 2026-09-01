@@ -3,8 +3,9 @@ import { GoogleGenAI } from '@google/genai';
 import { GeminiClient } from '../../../../src/api/providers/gemini/client';
 import type { GeminiClientConfig } from '../../../../src/api/providers/gemini/config';
 import { GeminiPrompts } from '../../../../src/prompts';
-import type { ExtendedModelRequest } from '../../../../src/api/interfaces/model-api';
+import type { ExtendedModelRequest, ToolCall } from '../../../../src/api/interfaces/model-api';
 import { ModelUseCase } from '../../../../src/api/model-use-case';
+import { buildToolHistoryTurns, type ToolCallResultPair } from '../../../../src/agent/agent-loop-helpers';
 
 // Capture every call to `client.models.generateContent` so tests can assert on
 // the params (system instruction, contents, etc.) the SDK sees. vi.hoisted lets
@@ -1179,16 +1180,29 @@ describe('GeminiClient', () => {
 
 		test('replays history as typed steps incl. function call/result round-trip', async () => {
 			const client = makeInteractionsClient();
+			// Build the history the way production does — via buildToolHistoryTurns
+			// from a ToolCall + ToolCallResultPair — so this fixture cannot diverge
+			// from the shape buildFunctionResponseParts actually emits (#1398: the
+			// old hand-written Content literal carried a functionResponse.id that
+			// no production path ever produced).
+			const conversationHistory = buildToolHistoryTurns({
+				conversationHistory: [{ role: 'user', parts: [{ text: 'read foo.md' }] }],
+				userMessage: '',
+				toolCalls: [{ id: 'c1', name: 'read_file', arguments: { path: 'foo.md' } }],
+				toolResults: [
+					{
+						toolName: 'read_file',
+						toolArguments: { path: 'foo.md' },
+						result: { success: true, data: { content: 'hi' } },
+						id: 'c1',
+					},
+				],
+			});
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'and now?',
 				kind: 'extended',
-				conversationHistory: [
-					{ role: 'user', parts: [{ text: 'read foo.md' }] },
-					{ role: 'model', parts: [{ functionCall: { id: 'c1', name: 'read_file', args: { path: 'foo.md' } } }] },
-					{ role: 'user', parts: [{ functionResponse: { id: 'c1', name: 'read_file', response: { content: 'hi' } } }] },
-					{ role: 'model', parts: [{ text: 'foo.md says hi' }] },
-				],
+				conversationHistory,
 			});
 
 			const params = interactionsCreateMock.mock.calls[0][0];
@@ -1201,11 +1215,59 @@ describe('GeminiClient', () => {
 					name: 'read_file',
 					// Plain string, never a content array — the array form is a
 					// "multimodal function response" that Gemini 2.5 rejects with a 400.
-					result: JSON.stringify({ content: 'hi' }),
+					result: JSON.stringify({ success: true, data: { content: 'hi' } }),
 				},
-				{ type: 'model_output', content: [{ type: 'text', text: 'foo.md says hi' }] },
 				{ type: 'user_input', content: [{ type: 'text', text: 'and now?' }] },
 			]);
+		});
+
+		test('pairs function_result.call_id with function_call.id after a priority reorder (#1398)', async () => {
+			const client = makeInteractionsClient();
+			// The model emitted [delete_file, read_file]; the sort reorders to
+			// [read_file, delete_file] before execution. The replayed history
+			// must still pair each function_result with its own function_call
+			// id — this is exactly the case where name-based pairing breaks
+			// under two same-name calls or cross-name reordering.
+			const toolCalls: ToolCall[] = [
+				{ id: 'call_d1', name: 'delete_file', arguments: { path: 'a.md' } },
+				{ id: 'call_r1', name: 'read_file', arguments: { path: 'b.md' } },
+			];
+			const toolResults: ToolCallResultPair[] = [
+				{ toolName: 'read_file', toolArguments: { path: 'b.md' }, result: { success: true, data: {} }, id: 'call_r1' },
+				{
+					toolName: 'delete_file',
+					toolArguments: { path: 'a.md' },
+					result: { success: true, data: {} },
+					id: 'call_d1',
+				},
+			];
+			const conversationHistory = buildToolHistoryTurns({
+				conversationHistory: [{ role: 'user', parts: [{ text: 'read b.md then delete a.md' }] }],
+				userMessage: '',
+				toolCalls,
+				toolResults,
+			});
+			// Sanity: the call parts are in model order, responses in execution order.
+			const callParts = conversationHistory
+				.flatMap((c) => c.parts)
+				.filter((p): p is NonNullable<typeof p> => p?.functionCall !== undefined);
+			expect(callParts.map((p) => p.functionCall!.id)).toEqual(['call_d1', 'call_r1']);
+
+			await client.generateModelResponse({
+				prompt: '',
+				userMessage: 'done?',
+				kind: 'extended',
+				conversationHistory,
+			});
+
+			const params = interactionsCreateMock.mock.calls[0][0];
+			const results = params.input.filter((s: { type: string }) => s.type === 'function_result');
+			const calls = params.input.filter((s: { type: string }) => s.type === 'function_call');
+			// Every call_id references a function_call id that exists in the same input.
+			for (const r of results) {
+				expect(calls.some((c: { id?: string }) => c.id === r.call_id)).toBe(true);
+			}
+			expect(results.map((r: { call_id: string }) => r.call_id)).toEqual(['call_r1', 'call_d1']);
 		});
 
 		test('maps inline image attachments to image content items', async () => {

@@ -15,11 +15,18 @@ import type { ToolResult } from '../tools/types';
  * A tool call paired with its execution result. Carries the original args
  * alongside so emitters that need both (e.g. agent event bus) get a single
  * record instead of having to zip two arrays.
+ *
+ * `id` is the model-assigned tool-call correlation id (present on Interactions
+ * `function_call` steps and OpenAI tool calls; absent on plain generateContent).
+ * Carried through so the replayed `functionResponse` part can reference the
+ * same id the `functionCall` part emitted — the Interactions API pairs a
+ * result to its call by `call_id`, and OpenAI by `tool_call_id` (#1398).
  */
 export interface ToolCallResultPair {
 	toolName: string;
 	toolArguments: Record<string, unknown>;
 	result: ToolResult;
+	id?: string;
 }
 
 /**
@@ -109,6 +116,10 @@ export function buildFunctionResponseParts(toolResults: ToolCallResultPair[]): P
 				functionResponse: {
 					name: tr.toolName,
 					response: resultWithoutInlineData,
+					// Reference the id the functionCall part emitted, so
+					// Interactions `call_id` and OpenAI `tool_call_id` pair the
+					// result to its own call rather than by name (#1398).
+					...(tr.id && { id: tr.id }),
 				},
 			},
 		];
