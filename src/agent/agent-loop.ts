@@ -343,8 +343,19 @@ export class AgentLoop {
 				}
 			}
 
-			// Sort and execute this batch
-			const sortedToolCalls = sortToolCallsByPriority(currentToolCalls);
+			// Sort and execute this batch. Priority comes from each tool's declared
+			// classification (#1424); a name missing from the registry sorts into the
+			// EXTERNAL fallback band and is logged so a missing registration
+			// surfaces instead of silently mis-sorting.
+			const unresolvable = new Set<string>();
+			const sortedToolCalls = sortToolCallsByPriority(currentToolCalls, (name) => {
+				const classification = plugin.toolRegistry?.getTool(name)?.classification;
+				if (classification === undefined) unresolvable.add(name);
+				return classification;
+			});
+			for (const name of unresolvable) {
+				plugin.logger.warn(`[AgentLoop] Tool "${name}" is not in the registry; sorting it before writes.`);
+			}
 			await this.safeHook('onToolBatchStart', plugin, () => hooks?.onToolBatchStart?.(sortedToolCalls, iterations));
 			iterations++;
 			const toolResults = await this.executeToolBatch(sortedToolCalls, toolContext, options);

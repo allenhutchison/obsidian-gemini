@@ -1,4 +1,5 @@
 import type { Mock } from 'vitest';
+import { ToolClassification } from '../../src/types/tool-policy';
 import { AgentLoop } from '../../src/agent/agent-loop';
 import type {
 	ToolCall,
@@ -21,11 +22,24 @@ const confirmationProvider: IConfirmationProvider = {
 // Build a minimal plugin stub with just enough surface for AgentLoop and the
 // followup helpers to walk through. Each test customises only what it cares about.
 function buildPlugin(overrides: any = {}) {
+	// Classifications mirror the real registry so the classification-derived
+	// tool sort (#1424) behaves identically to production in these tests.
+	const classifications: Record<string, ToolClassification> = {
+		read_file: ToolClassification.READ,
+		list_files: ToolClassification.READ,
+		get_workspace_state: ToolClassification.READ,
+		write_file: ToolClassification.WRITE,
+		create_folder: ToolClassification.WRITE,
+		delete_file: ToolClassification.DESTRUCTIVE,
+		move_file: ToolClassification.DESTRUCTIVE,
+		google_search: ToolClassification.EXTERNAL,
+	};
 	const toolRegistry = {
 		getTool: vi.fn().mockImplementation(function (name: string) {
 			return {
 				name,
 				displayName: name,
+				classification: classifications[name],
 			};
 		}),
 		getEnabledTools: vi.fn().mockReturnValue([]),
