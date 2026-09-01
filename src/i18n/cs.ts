@@ -658,6 +658,9 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'Žádná aktivní relace',
 	'agent.tokens.usage': 'Tokeny: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'Tokeny: ~{used} / {limit} ({percent}%) · {cached}% v mezipaměti',
+	'agent.tokens.usageThoughts': 'Tokeny: ~{used} / {limit} ({percent}%) · {thoughts} uvažování',
+	'agent.tokens.usageCachedThoughts':
+		'Tokeny: ~{used} / {limit} ({percent}%) · {cached}% v mezipaměti · {thoughts} uvažování',
 	'agent.empty.example.findTagged': 'Najít všechny poznámky označené #important',
 	'agent.empty.example.weeklySummary': 'Vytvořit týdenní shrnutí mých poznámek ze schůzek',
 	'agent.empty.example.research': 'Prozkoumat metody produktivity a vytvořit poznámky',

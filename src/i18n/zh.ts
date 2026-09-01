@@ -613,6 +613,8 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': '无活动会话',
 	'agent.tokens.usage': 'Token: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'Token: ~{used} / {limit} ({percent}%) · {cached}% 已缓存',
+	'agent.tokens.usageThoughts': 'Tokens: ~{used} / {limit} ({percent}%) · {thoughts} 推理',
+	'agent.tokens.usageCachedThoughts': 'Tokens: ~{used} / {limit} ({percent}%) · {cached}% 已缓存 · {thoughts} 推理',
 	'agent.empty.example.findTagged': '查找所有带有 #important 标签的笔记',
 	'agent.empty.example.weeklySummary': '为我的会议笔记创建周报',
 	'agent.empty.example.research': '研究生产力方法并创建笔记',

@@ -670,6 +670,9 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'Aktif oturum yok',
 	'agent.tokens.usage': 'Token: ~{used} / {limit} (%{percent})',
 	'agent.tokens.usageCached': 'Token: ~{used} / {limit} (%{percent}) · %{cached} önbelleğe alındı',
+	'agent.tokens.usageThoughts': 'Token: ~{used} / {limit} ({percent}%) · {thoughts} akıl yürütme',
+	'agent.tokens.usageCachedThoughts':
+		'Token: ~{used} / {limit} ({percent}%) · %{cached} önbelleğe alınmış · {thoughts} akıl yürütme',
 	'agent.empty.example.findTagged': '#important ile etiketlenmiş tüm notları bul',
 	'agent.empty.example.weeklySummary': 'Toplantı notlarımın haftalık özetini oluştur',
 	'agent.empty.example.research': 'Verimlilik yöntemlerini araştır ve notlar oluştur',

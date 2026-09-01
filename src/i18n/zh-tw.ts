@@ -611,6 +611,8 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': '無作用中的工作階段',
 	'agent.tokens.usage': 'Token：~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'Token：~{used} / {limit} ({percent}%) · 已快取 {cached}%',
+	'agent.tokens.usageThoughts': 'Tokens: ~{used} / {limit} ({percent}%) · {thoughts} 推理',
+	'agent.tokens.usageCachedThoughts': 'Tokens: ~{used} / {limit} ({percent}%) · {cached}% 已快取 · {thoughts} 推理',
 	'agent.empty.example.findTagged': '尋找所有標記為 #important 的筆記',
 	'agent.empty.example.weeklySummary': '建立我的會議記錄每週摘要',
 	'agent.empty.example.research': '研究生產力方法並建立筆記',

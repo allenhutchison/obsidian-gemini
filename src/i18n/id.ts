@@ -656,6 +656,9 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'Tidak ada sesi aktif',
 	'agent.tokens.usage': 'Token: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'Token: ~{used} / {limit} ({percent}%) · {cached}% di-cache',
+	'agent.tokens.usageThoughts': 'Token: ~{used} / {limit} ({percent}%) · {thoughts} penalaran',
+	'agent.tokens.usageCachedThoughts':
+		'Token: ~{used} / {limit} ({percent}%) · {cached}% di-cache · {thoughts} penalaran',
 	'agent.empty.example.findTagged': 'Temukan semua catatan yang ditandai dengan #important',
 	'agent.empty.example.weeklySummary': 'Buat ringkasan mingguan dari catatan rapat saya',
 	'agent.empty.example.research': 'Riset metode produktivitas dan buat catatan',

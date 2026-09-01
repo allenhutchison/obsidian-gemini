@@ -660,6 +660,9 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'アクティブなセッションがありません',
 	'agent.tokens.usage': 'トークン: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'トークン: ~{used} / {limit} ({percent}%) · {cached}% キャッシュ済み',
+	'agent.tokens.usageThoughts': 'トークン: ~{used} / {limit} ({percent}%) · {thoughts} 推論',
+	'agent.tokens.usageCachedThoughts':
+		'トークン: ~{used} / {limit} ({percent}%) · {cached}% キャッシュ · {thoughts} 推論',
 	'agent.empty.example.findTagged': '#important タグの付いたすべてのノートを検索する',
 	'agent.empty.example.weeklySummary': '会議メモの週次サマリーを作成する',
 	'agent.empty.example.research': '生産性向上メソッドを調査してノートを作成する',

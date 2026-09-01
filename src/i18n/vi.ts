@@ -659,6 +659,9 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'Không có phiên hoạt động nào',
 	'agent.tokens.usage': 'Token: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'Token: ~{used} / {limit} ({percent}%) · đã lưu đệm {cached}%',
+	'agent.tokens.usageThoughts': 'Token: ~{used} / {limit} ({percent}%) · {thoughts} suy luận',
+	'agent.tokens.usageCachedThoughts':
+		'Token: ~{used} / {limit} ({percent}%) · {cached}% đã cache · {thoughts} suy luận',
 	'agent.empty.example.findTagged': 'Tìm tất cả ghi chú được gắn thẻ #important',
 	'agent.empty.example.weeklySummary': 'Tạo bản tóm tắt tuần cho các ghi chú cuộc họp của tôi',
 	'agent.empty.example.research': 'Nghiên cứu các phương pháp tăng năng suất và tạo ghi chú',
