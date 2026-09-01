@@ -168,6 +168,66 @@ describe('ContextManager', () => {
 		});
 	});
 
+	test('should log reasoning tokens when the provider reports them (#1437)', () => {
+		contextManager.updateUsageMetadata({
+			promptTokenCount: 10000,
+			totalTokenCount: 11000,
+			thoughtsTokenCount: 2500,
+		});
+
+		expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('thoughts=2500'));
+	});
+
+	test('should not log a thoughts segment when the provider omits reasoning tokens', () => {
+		contextManager.updateUsageMetadata({
+			promptTokenCount: 10000,
+			totalTokenCount: 11000,
+		});
+
+		expect(mockLogger.log).toHaveBeenCalledWith(expect.not.stringContaining('thoughts='));
+	});
+
+	test('should surface reasoning tokens through getTokenUsage for the readout', async () => {
+		contextManager.updateUsageMetadata({
+			promptTokenCount: 10000,
+			totalTokenCount: 11000,
+			thoughtsTokenCount: 2500,
+		});
+
+		const usage = await contextManager.getTokenUsage('gemini-2.5-flash');
+		expect(usage.thoughtsTokens).toBe(2500);
+	});
+
+	test('should omit thoughtsTokens from the readout when the provider does not report them', async () => {
+		contextManager.updateUsageMetadata({
+			promptTokenCount: 10000,
+			totalTokenCount: 11000,
+		});
+
+		const usage = await contextManager.getTokenUsage('gemini-2.5-flash');
+		expect(usage.thoughtsTokens).toBeUndefined();
+	});
+
+	test('should preserve the full consumed field set of UsageMetadata (drift guard, #1437)', () => {
+		// The shared UsageMetadata type is the contract between API producers
+		// (gemini, ollama, openai clients) and this consumer. If a producer adds
+		// a field this consumer's cache doesn't round-trip, or a consumer starts
+		// reading one the producers stopped sending, that divergence must fail
+		// here rather than type-check silently through structural compatibility.
+		const sample = {
+			promptTokenCount: 1,
+			candidatesTokenCount: 2,
+			totalTokenCount: 3,
+			cachedContentTokenCount: 4,
+			thoughtsTokenCount: 5,
+		};
+		contextManager.updateUsageMetadata(sample);
+		// The log line reads prompt/total/cached/thoughts; getTokenUsage reads
+		// prompt/cached/thoughts. Together they touch every declared field.
+		expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('prompt=1, total=3, cached=4'));
+		expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('thoughts=5'));
+	});
+
 	describe('setUsageMetadata', () => {
 		test('should force-set metadata even if lower than cached', async () => {
 			contextManager.updateUsageMetadata({ promptTokenCount: 50000, totalTokenCount: 60000 });

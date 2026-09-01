@@ -79,15 +79,12 @@ export interface TokenUsageInfo {
 	percentUsed: number;
 	/** Tokens served from Gemini's implicit cache */
 	cachedTokens: number;
+	/** Reasoning (thinking) tokens of the last response; undefined for providers that don't report them */
+	thoughtsTokens?: number;
 }
 
-export interface UsageMetadata {
-	promptTokenCount?: number;
-	candidatesTokenCount?: number;
-	totalTokenCount?: number;
-	cachedContentTokenCount?: number;
-	thoughtsTokenCount?: number;
-}
+export type { UsageMetadata } from '../api/interfaces/usage-metadata';
+import type { UsageMetadata } from '../api/interfaces/usage-metadata';
 
 /**
  * ContextManager monitors token usage and compacts conversation history
@@ -202,19 +199,18 @@ export class ContextManager {
 
 	/**
 	 * Format usage metadata for a one-line debug log, including cached-prefix
-	 * share so cache effectiveness is observable per request.
+	 * ratio and, when the provider reports them, reasoning tokens (#1437).
 	 */
 	private formatUsageForLog(metadata: UsageMetadata): string {
 		const prompt = metadata.promptTokenCount ?? 0;
 		const total = metadata.totalTokenCount ?? 0;
 		const cached = metadata.cachedContentTokenCount ?? 0;
 		const ratio = prompt > 0 ? Math.round((cached / prompt) * 100) : 0;
-		return `prompt=${prompt}, total=${total}, cached=${cached} (${ratio}%)`;
+		const thoughts = metadata.thoughtsTokenCount;
+		return `prompt=${prompt}, total=${total}, cached=${cached} (${ratio}%)${thoughts !== undefined ? `, thoughts=${thoughts}` : ''}`;
 	}
 
 	/**
-	 * Get the input token limit for a given model.
-	 *
 	 * Keyed off the model's own provider rather than a global setting: with
 	 * per-use-case routing a single session can touch models from more than one
 	 * provider, and a 1M-token Gemini limit applied to a 32k local model would
@@ -294,11 +290,13 @@ export class ContextManager {
 		const inputTokenLimit = await this.getInputTokenLimit(modelName);
 		const estimatedTokens = this.lastUsageMetadata?.promptTokenCount ?? 0;
 		const cachedTokens = this.lastUsageMetadata?.cachedContentTokenCount ?? 0;
+		const thoughtsTokens = this.lastUsageMetadata?.thoughtsTokenCount;
 		return {
 			estimatedTokens,
 			inputTokenLimit,
 			percentUsed: inputTokenLimit > 0 ? Math.round((estimatedTokens / inputTokenLimit) * 100 * 10) / 10 : 0,
 			cachedTokens,
+			...(thoughtsTokens !== undefined && { thoughtsTokens }),
 		};
 	}
 

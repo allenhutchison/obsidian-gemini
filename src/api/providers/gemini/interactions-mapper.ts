@@ -260,6 +260,8 @@ function mapInteractionUsage(usage: unknown): ModelResponse['usageMetadata'] | u
 		candidatesTokenCount: u.total_output_tokens,
 		totalTokenCount: u.total_tokens,
 		cachedContentTokenCount: u.total_cached_tokens,
+		// Reasoning tokens, broken out of total_tokens for thinking models (#1437).
+		...(u.thoughts_token_count !== undefined && { thoughtsTokenCount: u.thoughts_token_count }),
 	};
 }
 
