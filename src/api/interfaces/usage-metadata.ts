@@ -28,6 +28,13 @@ export interface UsageMetadata {
 	 * omit it, which is honest rather than zero. Included in
 	 * `totalTokenCount` either way, so the aggregate is correct regardless;
 	 * this field attributes the reasoning share of it.
+	 *
+	 * Calibration note (#1437 follow-up): reasoning tokens are output-side and
+	 * occupy no context-window space on subsequent requests — reasoning
+	 * persisted back into history returns as ordinary prompt text, already
+	 * counted inside `promptTokenCount`. The compaction threshold correctly
+	 * stays prompt-based; adding this field to that comparison would
+	 * over-count and trigger premature compaction.
 	 */
 	thoughtsTokenCount?: number;
 }
