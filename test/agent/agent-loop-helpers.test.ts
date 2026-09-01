@@ -1,5 +1,6 @@
 import {
 	sortToolCallsByPriority,
+	classificationToPriority,
 	buildFunctionCallParts,
 	buildFunctionResponseParts,
 	buildToolHistoryTurns,
@@ -9,14 +10,27 @@ import {
 	DEFAULT_TOOL_RESPONSE_TRUNCATE_BYTES,
 	ToolCallResultPair,
 } from '../../src/agent/agent-loop-helpers';
+import { ToolClassification } from '../../src/types/tool-policy';
 import type { ToolCall } from '../../src/api/interfaces/model-api';
+
+/** The registry-style resolver production callers pass: name → classification. */
+const resolve = (name: string): ToolClassification | undefined =>
+	({
+		read_file: ToolClassification.READ,
+		list_files: ToolClassification.READ,
+		delete_file: ToolClassification.DESTRUCTIVE,
+		write_file: ToolClassification.WRITE,
+		mystery_tool: undefined,
+		another_unknown: undefined,
+	})[name];
 
 describe('sortToolCallsByPriority', () => {
 	test('orders reads before writes and deletes', () => {
 		const calls = [{ name: 'delete_file' }, { name: 'write_file' }, { name: 'read_file' }, { name: 'list_files' }];
 
-		const sorted = sortToolCallsByPriority(calls);
+		const sorted = sortToolCallsByPriority(calls, resolve);
 
+		// Stable within the read band: model-emitted order (read_file before list_files) is kept.
 		expect(sorted.map((c) => c.name)).toEqual(['read_file', 'list_files', 'write_file', 'delete_file']);
 	});
 
@@ -29,7 +43,7 @@ describe('sortToolCallsByPriority', () => {
 			{ name: 'another_unknown' },
 		];
 
-		const sorted = sortToolCallsByPriority(calls);
+		const sorted = sortToolCallsByPriority(calls, resolve);
 
 		// Reads first, then unknowns (stable order between them), then writes, then destructive
 		expect(sorted.map((c) => c.name)).toEqual([
@@ -40,7 +54,6 @@ describe('sortToolCallsByPriority', () => {
 			'delete_file',
 		]);
 	});
-
 	test('all known READ-classified tools sort before any write/destructive (regression for missing custom reads)', () => {
 		const reads = [
 			'read_file',
@@ -55,10 +68,20 @@ describe('sortToolCallsByPriority', () => {
 		];
 		const writes = ['write_file', 'create_folder', 'update_frontmatter', 'append_content', 'update_memory'];
 		const destructive = ['move_file', 'delete_file'];
+		// Every name resolves to its declared classification — a registry-style
+		// resolver built from ToolClassification directly, no hand-written map.
+		const registryResolve = (name: string): ToolClassification | undefined =>
+			reads.includes(name)
+				? ToolClassification.READ
+				: writes.includes(name)
+					? ToolClassification.WRITE
+					: destructive.includes(name)
+						? ToolClassification.DESTRUCTIVE
+						: undefined;
 
 		// Interleave: every read alternated with a delete — sort must still pull all reads first
 		const interleaved = reads.flatMap((r) => [{ name: 'delete_file' }, { name: r }]);
-		const sorted = sortToolCallsByPriority(interleaved);
+		const sorted = sortToolCallsByPriority(interleaved, registryResolve);
 
 		// First N positions must all be the reads (any order); after that, no read may appear.
 		const firstN = sorted.slice(0, reads.length).map((c) => c.name);
@@ -73,6 +96,25 @@ describe('sortToolCallsByPriority', () => {
 		expect(restNames.some((n) => reads.includes(n))).toBe(false);
 	});
 
+	test('a DESTRUCTIVE tool absent from any hardcoded list still sorts after every write (#1424)', () => {
+		// The case the old hand-maintained map could not express: a new
+		// destructive tool needs no map entry — its declared classification
+		// puts it in the destructive band on its own.
+		const resolveNew = (name: string): ToolClassification | undefined =>
+			name === 'shred_vault'
+				? ToolClassification.DESTRUCTIVE
+				: name === 'write_file'
+					? ToolClassification.WRITE
+					: name === 'read_file'
+						? ToolClassification.READ
+						: undefined;
+		const calls = [{ name: 'shred_vault' }, { name: 'write_file' }, { name: 'read_file' }];
+
+		const sorted = sortToolCallsByPriority(calls, resolveNew);
+
+		expect(sorted.map((c) => c.name)).toEqual(['read_file', 'write_file', 'shred_vault']);
+	});
+
 	test('preserves relative order for equal-priority calls', () => {
 		const calls = [
 			{ name: 'read_file', tag: 'a' },
@@ -80,7 +122,7 @@ describe('sortToolCallsByPriority', () => {
 			{ name: 'read_file', tag: 'c' },
 		];
 
-		const sorted = sortToolCallsByPriority(calls);
+		const sorted = sortToolCallsByPriority(calls, resolve);
 
 		expect(sorted.map((c) => c.tag)).toEqual(['a', 'b', 'c']);
 	});
@@ -89,13 +131,27 @@ describe('sortToolCallsByPriority', () => {
 		const calls = [{ name: 'delete_file' }, { name: 'read_file' }];
 		const original = [...calls];
 
-		sortToolCallsByPriority(calls);
+		sortToolCallsByPriority(calls, resolve);
 
 		expect(calls).toEqual(original);
 	});
 
 	test('handles empty array', () => {
-		expect(sortToolCallsByPriority([])).toEqual([]);
+		expect(sortToolCallsByPriority([], resolve)).toEqual([]);
+	});
+});
+
+describe('classificationToPriority', () => {
+	test('bands read < external < write < destructive', () => {
+		expect(classificationToPriority(ToolClassification.READ)).toBeLessThan(
+			classificationToPriority(ToolClassification.EXTERNAL)
+		);
+		expect(classificationToPriority(ToolClassification.EXTERNAL)).toBeLessThan(
+			classificationToPriority(ToolClassification.WRITE)
+		);
+		expect(classificationToPriority(ToolClassification.WRITE)).toBeLessThan(
+			classificationToPriority(ToolClassification.DESTRUCTIVE)
+		);
 	});
 });
 

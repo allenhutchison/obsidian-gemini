@@ -1,5 +1,6 @@
 import type { Content, Part } from '@google/genai';
 import type { ToolCall } from '../api/interfaces/model-api';
+import { ToolClassification } from '../types/tool-policy';
 import type { ToolResult } from '../tools/types';
 
 /**
@@ -22,67 +23,49 @@ export interface ToolCallResultPair {
 }
 
 /**
- * Tool execution priority. Reads run before writes, writes before deletes —
- * so a model that emits "delete A" and "read A" in the same response can't
- * lose data to the race. Lower number = earlier execution.
- *
- * Grouped by classification (band gaps make it obvious where a new tool slots
- * in by category): READS 1–19, EXTERNAL 20–29, WRITES 30–39, DESTRUCTIVE 40+.
- * Unknown tools fall to the END of the EXTERNAL band (29) — safer than after
- * deletes, since most unknown tools added later will be reads or writes, and
- * if it really is destructive the explicit entry should be added.
- *
- * When adding a new tool, add it here too. Any READ-classified tool MUST sort
- * before write_file (30) to satisfy the reads-before-writes invariant.
+ * Execution-priority band for a tool classification. Reads run before
+ * external calls, external before writes, writes before deletes — so a model
+ * that emits "delete A" and "read A" in the same response can't lose data to
+ * the race (#1424). The band is derived from the classification every tool
+ * already declares, so a new tool can't silently sort into the wrong band.
+ * Lower number = earlier execution.
  */
-const TOOL_PRIORITY: Record<string, number> = {
-	// ── READS (1–19) ────────────────────────────────────────────────────────
-	read_file: 1,
-	list_files: 2,
-	find_files_by_name: 3,
-	find_files_by_content: 4,
-	get_workspace_state: 5,
-	read_memory: 6,
-	recall_sessions: 7,
-	vault_semantic_search: 8,
-	activate_skill: 9,
-	// ── EXTERNAL (20–29) ────────────────────────────────────────────────────
-	google_search: 20,
-	fetch_url: 21,
-	deep_research: 22,
-	google_maps: 23,
-	// ── WRITES (30–39) ──────────────────────────────────────────────────────
-	write_file: 30,
-	create_folder: 31,
-	update_frontmatter: 32,
-	append_content: 33,
-	update_memory: 34,
-	create_skill: 35,
-	edit_skill: 36,
-	generate_image: 37,
-	// ── DESTRUCTIVE (40+) ───────────────────────────────────────────────────
-	move_file: 40,
-	delete_file: 41,
-};
-
-/**
- * Default priority for tools not in TOOL_PRIORITY — bottom of the EXTERNAL
- * band so unknowns run after all known reads but before any known writes or
- * destructive operations. Conservative choice: if a future tool is added but
- * its priority entry is forgotten, it still won't race destructive ops.
- */
-const UNKNOWN_TOOL_PRIORITY = 29;
+export function classificationToPriority(c: ToolClassification): number {
+	switch (c) {
+		case ToolClassification.READ:
+			return 10;
+		case ToolClassification.EXTERNAL:
+			return 20;
+		case ToolClassification.WRITE:
+			return 30;
+		case ToolClassification.DESTRUCTIVE:
+			return 40;
+	}
+}
 
 /**
  * Sort tool calls so reads execute before writes/deletes.
- * Stable: equal-priority calls retain their original relative order.
+ *
+ * Priority comes from each tool's declared classification via `resolve`; the
+ * map is injected so this module stays pure and registry-free. Within a band
+ * the sort is stable — calls keep the model's emitted order — which is safe:
+ * cross-tool ordering inside a band (e.g. a write's parent folder) is handled
+ * by the tools themselves, not by sort order. A name the resolver can't
+ * resolve falls to the END of the EXTERNAL band (29) — after all known reads,
+ * before any known write/destructive — the same conservative fallback the old
+ * hand-maintained map used.
  */
-export function sortToolCallsByPriority<T extends { name: string }>(toolCalls: T[]): T[] {
-	return [...toolCalls].sort((a, b) => {
-		const pa = TOOL_PRIORITY[a.name] ?? UNKNOWN_TOOL_PRIORITY;
-		const pb = TOOL_PRIORITY[b.name] ?? UNKNOWN_TOOL_PRIORITY;
-		return pa - pb;
-	});
+export function sortToolCallsByPriority<T extends { name: string }>(
+	toolCalls: T[],
+	resolve: (name: string) => ToolClassification | undefined
+): T[] {
+	return [...toolCalls].sort((a, b) => resolvePriority(a.name, resolve) - resolvePriority(b.name, resolve));
+}
+
+/** Band for a resolvable name; the EXTERNAL-band fallback (29) otherwise. */
+function resolvePriority(name: string, resolve: (name: string) => ToolClassification | undefined): number {
+	const classification = resolve(name);
+	return classification === undefined ? 29 : classificationToPriority(classification);
 }
 
 /**
