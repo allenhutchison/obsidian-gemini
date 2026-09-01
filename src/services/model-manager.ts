@@ -16,7 +16,6 @@ import { ParameterValidationService, ParameterRanges } from './parameter-validat
 
 export interface ModelUpdateOptions {
 	forceRefresh?: boolean;
-	preserveUserCustomizations?: boolean;
 }
 
 export class ModelManager {

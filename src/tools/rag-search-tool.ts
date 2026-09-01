@@ -11,7 +11,6 @@ import { resolveGenerateContentModel } from '../models';
 interface RagSearchResult {
 	path?: string;
 	excerpt: string;
-	relevance?: number;
 }
 
 /**
