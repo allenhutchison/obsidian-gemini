@@ -330,8 +330,8 @@ Advanced settings for developers and power users. Access by clicking "Show advan
 - **Type**: Boolean
 - **Default**: `false`
 - **Description**: Display estimated token count in the agent input area
-- **Display format**: `Tokens: ~N / M (X%)` showing total prompt tokens, model limit, and percentage used. When part of the prompt was served from Gemini's cache, an additional `· Y% cached` suffix appears
-- **How it works**: Token counts update live after each API response, including during tool call chains. Gemini's implicit caching means repeated content (system prompt, tool definitions) is often served from cache — the cached percentage rewards stable prefixes (system prompt, pinned history)
+- **Display format**: `Tokens: ~N / M (X%)` showing total prompt tokens, model limit, and percentage used. When part of the prompt was served from Gemini's cache, an additional `· Y% cached` suffix appears; when the model reports its reasoning (thinking) token count for the last response, a `· Z reasoning` suffix appears. Both suffixes can appear together
+- **How it works**: Token counts update live after each API response, including during tool call chains. Gemini's implicit caching means repeated content (system prompt, tool definitions) is often served from cache — the cached percentage rewards stable prefixes (system prompt, pinned history). The reasoning count appears only for models that report thinking tokens (Gemini thinking models); reasoning tokens are output-side and included in the response's total, so they don't count against the context window the percentage measures
 - **Visual indicators**:
   - Normal (muted text) — well under threshold
   - Yellow — approaching compaction threshold (≥80% of threshold)

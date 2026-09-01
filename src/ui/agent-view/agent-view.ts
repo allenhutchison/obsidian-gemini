@@ -2,6 +2,7 @@ import { ItemView, MarkdownView, Platform, WorkspaceLeaf, TFile, Notice } from '
 import { getActiveChatModel } from '../../models';
 import { ChatSession, SessionModelConfig } from '../../types/agent';
 import { isSameSession } from './session-identity';
+import { formatTokenUsageLine } from './token-usage-format';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type { ObsidianGemini } from '../../types/plugin';
 import type { Tool, ToolResult } from '../../tools/types';
@@ -806,20 +807,7 @@ export class AgentView extends ItemView {
 			this.tokenUsageContainer.empty();
 
 			const tokenText = this.tokenUsageContainer.createSpan({ cls: 'gemini-agent-token-text' });
-			const usageVars = {
-				used: usage.estimatedTokens.toLocaleString(),
-				limit: usage.inputTokenLimit.toLocaleString(),
-				percent: usage.percentUsed,
-			};
-			if (usage.cachedTokens > 0 && usage.estimatedTokens > 0) {
-				// Cached ratio reflects how much of the current prompt was served
-				// from Gemini's implicit/explicit cache — a positive signal that
-				// rewards stable prefixes (system prompt, pinned history).
-				const cachedPercent = Math.round((usage.cachedTokens / usage.estimatedTokens) * 100);
-				tokenText.textContent = t('agent.tokens.usageCached', { ...usageVars, cached: cachedPercent });
-			} else {
-				tokenText.textContent = t('agent.tokens.usage', usageVars);
-			}
+			tokenText.textContent = formatTokenUsageLine(usage);
 
 			// Add warning class if approaching threshold
 			const threshold = this.plugin.settings.contextCompactionThreshold;

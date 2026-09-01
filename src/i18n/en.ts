@@ -2190,6 +2190,16 @@ export const en = {
 		context:
 			'Token usage indicator variant when part of the prompt was served from cache. {cached} is the cached percentage. Keep the middle-dot separator.',
 	},
+	'agent.tokens.usageThoughts': {
+		message: 'Tokens: ~{used} / {limit} ({percent}%) · {thoughts} reasoning',
+		context:
+			'Token usage indicator variant when the model reports reasoning (thinking) tokens for the last response. {thoughts} is the formatted reasoning-token count. Keep the middle-dot separator.',
+	},
+	'agent.tokens.usageCachedThoughts': {
+		message: 'Tokens: ~{used} / {limit} ({percent}%) · {cached}% cached · {thoughts} reasoning',
+		context:
+			'Token usage indicator variant when the prompt was partly served from cache AND the model reported reasoning tokens. {cached} is the cached percentage, {thoughts} the formatted reasoning-token count. Keep the middle-dot separators.',
+	},
 	'agent.empty.example.findTagged': {
 		message: 'Find all notes tagged with #important',
 		context:
