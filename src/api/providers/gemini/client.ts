@@ -665,6 +665,11 @@ export class GeminiClient implements ModelApi {
 					candidatesTokenCount: response.usageMetadata.candidatesTokenCount,
 					totalTokenCount: response.usageMetadata.totalTokenCount,
 					cachedContentTokenCount: response.usageMetadata.cachedContentTokenCount,
+					// Reasoning tokens for thinking models — the SDK reports them
+					// here and they are folded into totalTokenCount (#1437).
+					...(response.usageMetadata.thoughtsTokenCount !== undefined && {
+						thoughtsTokenCount: response.usageMetadata.thoughtsTokenCount,
+					}),
 				},
 			}),
 		};

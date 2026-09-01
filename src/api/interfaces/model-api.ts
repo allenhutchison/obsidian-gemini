@@ -4,6 +4,7 @@
 
 import { CustomPrompt } from '../../prompts/types';
 import type { Content } from '@google/genai';
+import type { UsageMetadata } from './usage-metadata';
 
 /**
  * Represents a response from a model.
@@ -17,18 +18,7 @@ export interface ModelResponse {
 	rendered: string;
 	thoughts?: string;
 	toolCalls?: ToolCall[];
-	usageMetadata?: {
-		promptTokenCount?: number;
-		candidatesTokenCount?: number;
-		totalTokenCount?: number;
-		/**
-		 * Portion of `promptTokenCount` served from Gemini's implicit or explicit
-		 * content cache. Present on responses where the request matched a cached
-		 * prefix; omitted otherwise. Used to surface caching effectiveness in the
-		 * token readout UI and debug logs.
-		 */
-		cachedContentTokenCount?: number;
-	};
+	usageMetadata?: UsageMetadata;
 }
 
 /**

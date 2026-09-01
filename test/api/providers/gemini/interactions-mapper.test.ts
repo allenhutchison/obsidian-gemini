@@ -44,6 +44,38 @@ describe('InteractionStreamAccumulator', () => {
 		expect(response.toolCalls).toBeUndefined();
 	});
 
+	test('maps thoughts_token_count into thoughtsTokenCount for thinking models (#1437)', () => {
+		const { response } = run([
+			{ event_type: 'interaction.created', interaction: { id: 'int_1' } },
+			{
+				event_type: 'interaction.completed',
+				interaction: {
+					usage: { total_input_tokens: 4, total_output_tokens: 2, total_tokens: 9, thoughts_token_count: 3 },
+				},
+			},
+		]);
+
+		expect(response.usageMetadata).toEqual({
+			promptTokenCount: 4,
+			candidatesTokenCount: 2,
+			totalTokenCount: 9,
+			cachedContentTokenCount: undefined,
+			thoughtsTokenCount: 3,
+		});
+	});
+
+	test('omits thoughtsTokenCount when the interaction reports no reasoning tokens', () => {
+		const { response } = run([
+			{ event_type: 'interaction.created', interaction: { id: 'int_1' } },
+			{
+				event_type: 'interaction.completed',
+				interaction: { usage: { total_input_tokens: 4, total_output_tokens: 2, total_tokens: 6 } },
+			},
+		]);
+
+		expect(response.usageMetadata).not.toHaveProperty('thoughtsTokenCount');
+	});
+
 	test('surfaces thought_summary deltas as thought chunks and accumulates thoughts', () => {
 		const { response, chunks } = run([
 			{ event_type: 'step.start', index: 0, step: { type: 'thought' } },

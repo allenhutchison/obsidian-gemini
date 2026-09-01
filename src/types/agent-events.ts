@@ -1,6 +1,6 @@
 import { ChatSession } from './agent';
 import { ToolResult } from '../tools/types';
-import type { UsageMetadata } from '../services/context-manager';
+import type { UsageMetadata } from '../api/interfaces/usage-metadata';
 
 /**
  * Handler priority levels. Lower numbers execute first.
