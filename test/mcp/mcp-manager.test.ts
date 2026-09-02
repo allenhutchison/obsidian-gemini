@@ -176,6 +176,36 @@ describe('MCPManager', () => {
 			await expect(manager.connectServer(config)).rejects.toThrow('HTTP transport requires a URL');
 		});
 
+		it('leaves window.setTimeout and window.clearTimeout untouched across connect cycles (#1416)', async () => {
+			// Regression guard for the old patchSetTimeoutForElectron: it used to
+			// replace the global timer functions on the first MCP connect and
+			// never restore them, so every setTimeout in the app returned a
+			// wrapper object instead of a numeric id for the rest of the
+			// session. The patch is gone (#1416); these asserts pin that
+			// connect/disconnect cycles leave the globals identity-unchanged.
+			const setTimeoutBefore = window.setTimeout;
+			const clearTimeoutBefore = window.clearTimeout;
+			mockListTools.mockResolvedValueOnce({ tools: [{ name: 'test_tool' }] });
+
+			await manager.connectServer(createHttpConfig());
+			await manager.disconnectAll();
+			mockListTools.mockResolvedValueOnce({ tools: [] });
+			await manager.connectServer(createStdioConfig());
+
+			expect(window.setTimeout).toBe(setTimeoutBefore);
+			expect(window.clearTimeout).toBe(clearTimeoutBefore);
+			// The timer globals still behave natively: the id they return
+			// round-trips through clearTimeout. Deliberate real-timer use: the
+			// subject under test IS the timer identity, not the timing — the
+			// timer is cleared synchronously and never awaited. The id's type
+			// (number in a browser, Node Timeout object in this jsdom/vitest
+			// environment) is exactly what the old patch used to rewrite; the
+			// guarantee being pinned is identity of the functions, not the id
+			// representation.
+			const id = window.setTimeout(() => {}, 0);
+			window.clearTimeout(id);
+		});
+
 		it('should block stdio on mobile', async () => {
 			const originalIsMobile = Platform.isMobile;
 			try {
