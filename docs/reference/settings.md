@@ -383,7 +383,7 @@ Advanced settings for developers and power users. Access by clicking "Show advan
 - **Type**: Number
 - **Default**: `3`
 - **Description**: Maximum number of retry attempts when a model request fails
-- **Note**: Uses exponential backoff between retries
+- **Note**: Uses exponential backoff between retries. Applies to streaming and non-streaming requests alike, which share one retry policy.
 
 #### Initial Backoff Delay
 
@@ -391,7 +391,8 @@ Advanced settings for developers and power users. Access by clicking "Show advan
 - **Type**: Number (milliseconds)
 - **Default**: `1000`
 - **Description**: Initial delay before the first retry attempt
-- **Note**: Subsequent retries use exponential backoff (2x, 4x, 8x, etc.)
+- **Note**: Subsequent retries use exponential backoff (2x, 4x, 8x, etc.), plus up to 10% random jitter so that several clients retrying after the same rate limit don't do so in lockstep. Each wait is capped at 60 seconds, so a large initial delay cannot push a retry arbitrarily far out.
+- **Note**: When the API supplies its own retry delay (a `RetryInfo` hint on a 429), that value is used instead of the backoff — also capped at 60 seconds.
 
 ### Model Parameters
 
