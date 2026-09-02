@@ -672,6 +672,9 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'Nessuna sessione attiva',
 	'agent.tokens.usage': 'Token: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'Token: ~{used} / {limit} ({percent}%) · {cached}% in cache',
+	'agent.tokens.usageThoughts': 'Token: ~{used} / {limit} ({percent}%) · {thoughts} di ragionamento',
+	'agent.tokens.usageCachedThoughts':
+		'Token: ~{used} / {limit} ({percent}%) · {cached}% in cache · {thoughts} di ragionamento',
 	'agent.empty.example.findTagged': 'Trova tutte le note con tag #important',
 	'agent.empty.example.weeklySummary': 'Crea un riepilogo settimanale delle mie note di riunione',
 	'agent.empty.example.research': 'Fai ricerche sui metodi di produttività e crea note',

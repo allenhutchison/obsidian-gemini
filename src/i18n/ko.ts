@@ -645,6 +645,8 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': '활성화된 세션이 없습니다',
 	'agent.tokens.usage': '토큰: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': '토큰: ~{used} / {limit} ({percent}%) · {cached}% 캐시됨',
+	'agent.tokens.usageThoughts': '토큰: ~{used} / {limit} ({percent}%) · {thoughts} 추론',
+	'agent.tokens.usageCachedThoughts': '토큰: ~{used} / {limit} ({percent}%) · {cached}% 캐시됨 · {thoughts} 추론',
 	'agent.empty.example.findTagged': '#important 태그가 지정된 모든 노트 찾기',
 	'agent.empty.example.weeklySummary': '회의록의 주간 요약 생성하기',
 	'agent.empty.example.research': '생산성 방법론을 조사하고 노트 만들기',

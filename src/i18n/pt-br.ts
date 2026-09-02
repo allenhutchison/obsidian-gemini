@@ -664,6 +664,9 @@ export const ptBR: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'Nenhuma sessão ativa',
 	'agent.tokens.usage': 'Tokens: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'Tokens: ~{used} / {limit} ({percent}%) · {cached}% em cache',
+	'agent.tokens.usageThoughts': 'Tokens: ~{used} / {limit} ({percent}%) · {thoughts} de raciocínio',
+	'agent.tokens.usageCachedThoughts':
+		'Tokens: ~{used} / {limit} ({percent}%) · {cached}% em cache · {thoughts} de raciocínio',
 	'agent.empty.example.findTagged': 'Encontrar todas as notas com a tag #important',
 	'agent.empty.example.weeklySummary': 'Criar um resumo semanal das minhas notas de reunião',
 	'agent.empty.example.research': 'Pesquisar métodos de produtividade e criar notas',

@@ -665,6 +665,9 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'Немає активного сеансу',
 	'agent.tokens.usage': 'Токени: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'Токени: ~{used} / {limit} ({percent}%) · {cached}% кешовано',
+	'agent.tokens.usageThoughts': 'Токени: ~{used} / {limit} ({percent}%) · {thoughts} міркування',
+	'agent.tokens.usageCachedThoughts':
+		'Токени: ~{used} / {limit} ({percent}%) · {cached}% кешовано · {thoughts} міркування',
 	'agent.empty.example.findTagged': 'Знайти всі нотатки з тегом #important',
 	'agent.empty.example.weeklySummary': 'Створити щотижневий підсумок моїх нотаток із зустрічей',
 	'agent.empty.example.research': 'Дослідити методи продуктивності та створити нотатки',

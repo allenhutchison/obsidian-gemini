@@ -670,6 +670,9 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'Нет активной сессии',
 	'agent.tokens.usage': 'Токены: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'Токены: ~{used} / {limit} ({percent}%) · {cached}% кэшировано',
+	'agent.tokens.usageThoughts': 'Токены: ~{used} / {limit} ({percent}%) · {thoughts} рассуждения',
+	'agent.tokens.usageCachedThoughts':
+		'Токены: ~{used} / {limit} ({percent}%) · {cached}% кэшировано · {thoughts} рассуждения',
 	'agent.empty.example.findTagged': 'Найти все заметки с тегом #important',
 	'agent.empty.example.weeklySummary': 'Создать еженедельную сводку моих заметок о встречах',
 	'agent.empty.example.research': 'Исследовать методы продуктивности и создать заметки',

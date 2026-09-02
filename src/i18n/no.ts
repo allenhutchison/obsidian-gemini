@@ -655,6 +655,9 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'Ingen aktiv økt',
 	'agent.tokens.usage': 'Tokens: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'Tokens: ~{used} / {limit} ({percent}%) · {cached}% hurtiglagret',
+	'agent.tokens.usageThoughts': 'Tokens: ~{used} / {limit} ({percent}%) · {thoughts} resonnering',
+	'agent.tokens.usageCachedThoughts':
+		'Tokens: ~{used} / {limit} ({percent}%) · {cached}% mellomlagret · {thoughts} resonnering',
 	'agent.empty.example.findTagged': 'Finn alle notater tagget med #important',
 	'agent.empty.example.weeklySummary': 'Opprett et ukentlig sammendrag av møtenotatene mine',
 	'agent.empty.example.research': 'Gjør research på produktivitetsmetoder og opprett notater',

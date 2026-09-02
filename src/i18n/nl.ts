@@ -664,6 +664,9 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'Geen actieve sessie',
 	'agent.tokens.usage': 'Tokens: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'Tokens: ~{used} / {limit} ({percent}%) · {cached}% gecached',
+	'agent.tokens.usageThoughts': 'Tokens: ~{used} / {limit} ({percent}%) · {thoughts} redenering',
+	'agent.tokens.usageCachedThoughts':
+		'Tokens: ~{used} / {limit} ({percent}%) · {cached}% gecached · {thoughts} redenering',
 	'agent.empty.example.findTagged': 'Vind alle notities met de tag #important',
 	'agent.empty.example.weeklySummary': 'Maak een wekelijks overzicht van mijn vergadernotities',
 	'agent.empty.example.research': 'Doe onderzoek naar productiviteitsmethoden en maak notities',
