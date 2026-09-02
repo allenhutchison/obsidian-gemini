@@ -3752,6 +3752,154 @@ export const en = {
 		context:
 			'Synthetic user message automatically sent after the user approves a plan, triggering the agent execution loop. Not user-typed.',
 	},
+
+	// Model API error guidance (src/utils/error-utils.ts). These sentences are shown to users —
+	// sometimes interpolated into a longer notice, sometimes as the entire notice. Several are
+	// near-identical in English, so each context names the condition that produces it.
+	'error.unknown': {
+		message: 'An unknown error occurred',
+		context: 'Shown when the failure carried no error value at all (null/undefined).',
+	},
+	'error.openaiInvalidKey': {
+		message: 'Invalid OpenAI API key. Please check the API key in Settings → Gemini Scribe.',
+		context:
+			'HTTP 401 from an OpenAI-compatible provider. "Gemini Scribe" is the plugin name and stays untranslated; "Settings" is Obsidian\'s settings window.',
+	},
+	'error.modelNotOnEndpoint': {
+		message: 'Model not available on this endpoint. Please check your model settings or the configured base URL.',
+		context:
+			'HTTP 404 from an OpenAI-compatible provider: the server is reachable but does not serve the selected model. "Base URL" is the server address the user configured.',
+	},
+	'error.serverUnreachable': {
+		message:
+			'Could not connect to the model server. If you configured a custom base URL (LM Studio, MLX, etc.), make sure the server is running and the base URL in settings is correct.',
+		context:
+			'The OpenAI-compatible client could not open a connection at all. "LM Studio" and "MLX" are product names and stay untranslated.',
+	},
+	'error.invalidApiKey': {
+		message: 'Invalid API key. Please check your model provider credentials in settings.',
+		context: 'The provider rejected the configured API key. Generic across providers.',
+	},
+	'error.authFailed': {
+		message:
+			'Authentication failed. Please verify your model provider credentials and that your account has access to this model.',
+		context:
+			'The credentials were accepted but the account lacks permission for this model (forbidden/unauthorized), as opposed to the key itself being invalid.',
+	},
+	'error.quotaExhausted': {
+		message:
+			'Free-tier quota exhausted for this model. Try switching to a different model (e.g., Gemini Flash) or enable billing in Google AI Studio.',
+		context:
+			'Permanent quota exhaustion — retrying will not help. "Gemini Flash" and "Google AI Studio" are product names and stay untranslated.',
+	},
+	'error.rateLimit': {
+		message: 'API rate limit exceeded. Please wait a moment and try again.',
+		context: 'Transient rate limiting, detected from the error message rather than an HTTP status code.',
+	},
+	'error.ollamaModelNotPulled': {
+		message: 'Ollama model not pulled. Run: ollama pull {model}',
+		context:
+			'The local Ollama server does not have the model downloaded yet. "ollama pull {model}" is a shell command and must stay verbatim; {model} is the model name.',
+	},
+	'error.modelNotAvailable': {
+		message: 'The selected model is not available. Please check your model settings.',
+		context: 'The provider reported the model does not exist, with no provider-specific remedy to offer.',
+	},
+	'error.ollamaUnreachable': {
+		message:
+			'Could not connect to the Ollama daemon. Make sure `ollama serve` is running and the base URL in settings is correct.',
+		context:
+			'A network failure that looks like it targeted a local Ollama endpoint. "ollama serve" is a shell command and must stay verbatim.',
+	},
+	'error.network': {
+		message: 'Network error: Unable to reach the model API. Please check your connection.',
+		context: 'A generic connectivity failure that was not attributable to a specific provider.',
+	},
+	'error.timeout': {
+		message: 'Request timed out. The API took too long to respond. Please try again.',
+		context: 'The request was abandoned after the provider took too long, detected from the error message.',
+	},
+	'error.serviceUnavailable': {
+		message: 'The model API is temporarily unavailable. Please try again later.',
+		context: 'A provider-side outage detected from the error message rather than an HTTP status code.',
+	},
+	'error.safetyBlocked': {
+		message: 'Content was blocked by safety filters. Please rephrase your request.',
+		context: "The provider's content-safety filters rejected the request or the response.",
+	},
+	'error.tokenLimit': {
+		message: 'Request exceeds token limit. Please reduce the length of your message or conversation history.',
+		context:
+			'The prompt plus conversation history exceeded the model\'s context window. "Token" is the standard LLM unit of text.',
+	},
+	'error.apiPrefix': {
+		message: 'API error: {message}',
+		context:
+			'Wrapper around a provider error we could not classify. {message} is the provider\'s own text and arrives in English; only the "API error" prefix is translated.',
+	},
+	'error.communicationFailed': {
+		message: 'An error occurred while communicating with the model API',
+		context: 'Fallback for an error object that carried no usable message at all.',
+	},
+	'error.unknownCommunication': {
+		message: 'An unknown error occurred while communicating with the model API',
+		context: 'Last-resort fallback when nothing about the error value could be interpreted.',
+	},
+	'error.http.badRequest': {
+		message: 'Bad request: The API request was invalid. Please check your message and try again.',
+		context: 'HTTP 400 from the model API.',
+	},
+	'error.http.unauthorized': {
+		message: 'Authentication failed: Invalid API key. Please check your model provider credentials in settings.',
+		context: 'HTTP 401 from the model API.',
+	},
+	'error.http.forbidden': {
+		message: 'Access forbidden: The model provider denied access to this model or feature.',
+		context: 'HTTP 403 from the model API.',
+	},
+	'error.http.notFound': {
+		message: 'Model not found: The selected model is not available. Please check your model settings.',
+		context: 'HTTP 404 from the model API.',
+	},
+	'error.http.rateLimit': {
+		message: 'Rate limit exceeded: Too many requests. Please wait a moment and try again.',
+		context: 'HTTP 429 from the model API, for transient rate limiting rather than exhausted quota.',
+	},
+	'error.http.serverError': {
+		message: 'Server error: The model API encountered an internal error. Please try again later.',
+		context: 'HTTP 500 from the model API.',
+	},
+	'error.http.serviceUnavailable': {
+		message: 'Service unavailable: The model API is temporarily down. Please try again later.',
+		context: 'HTTP 503 from the model API.',
+	},
+	'error.http.gatewayTimeout': {
+		message: 'Gateway timeout: The API request took too long. Please try again.',
+		context: 'HTTP 504 from the model API.',
+	},
+	'error.http.serverErrorWithCode': {
+		message: 'Server error ({statusCode}): The model API is experiencing issues. Please try again later.',
+		context: 'Any other 5xx status. {statusCode} is the numeric HTTP status code.',
+	},
+	'error.http.clientErrorWithCode': {
+		message: 'Client error ({statusCode}): {message}',
+		context:
+			"Any other 4xx status where the provider supplied detail text. {statusCode} is the numeric HTTP status; {message} is the provider's own text and arrives in English.",
+	},
+	'error.http.clientErrorWithCodeNoDetail': {
+		message: 'Client error ({statusCode}): Please check your request and try again.',
+		context:
+			'Any other 4xx status where the provider supplied no detail text. {statusCode} is the numeric HTTP status.',
+	},
+	'error.http.genericWithCode': {
+		message: 'HTTP error {statusCode}: {message}',
+		context:
+			"A non-4xx, non-5xx status carrying detail text. {statusCode} is the numeric HTTP status; {message} is the provider's own text and arrives in English.",
+	},
+	'error.http.genericWithCodeNoDetail': {
+		message: 'HTTP error {statusCode}: An unexpected error occurred.',
+		context: 'A non-4xx, non-5xx status with no detail text. {statusCode} is the numeric HTTP status.',
+	},
 } as const satisfies Record<string, SourceString>;
 
 export type TranslationKey = keyof typeof en;
