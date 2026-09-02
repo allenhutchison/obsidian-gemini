@@ -1,6 +1,7 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MCPToolWrapper } from '../../src/mcp/mcp-tool-wrapper';
 import { MCP_CALL_TOOL_TIMEOUT_MS } from '../../src/mcp/mcp-constants';
+import { ToolClassification } from '../../src/types/tool-policy';
 
 function makeClient(callToolImpl: () => Promise<any>) {
 	return {
@@ -69,6 +70,26 @@ describe('MCPToolWrapper', () => {
 
 			expect(result.success).toBe(false);
 			expect(result.error).toBe('bad input');
+		});
+	});
+
+	describe('classification from annotations (#1449)', () => {
+		it('derives DESTRUCTIVE from destructiveHint and EXTERNAL by default', () => {
+			const client = makeClient(() => Promise.resolve({ content: [] }));
+			const destructive = new MCPToolWrapper(client, 'srv', {
+				name: 'remove_file',
+				annotations: { destructiveHint: true },
+			});
+			const plain = new MCPToolWrapper(client, 'srv', { name: 'query' });
+			const readOnly = new MCPToolWrapper(client, 'srv', {
+				name: 'lookup',
+				annotations: { readOnlyHint: true },
+			});
+
+			expect(destructive.classification).toBe(ToolClassification.DESTRUCTIVE);
+			expect(plain.classification).toBe(ToolClassification.EXTERNAL);
+			// readOnlyHint is never honored from an untrusted server.
+			expect(readOnly.classification).toBe(ToolClassification.EXTERNAL);
 		});
 	});
 });
