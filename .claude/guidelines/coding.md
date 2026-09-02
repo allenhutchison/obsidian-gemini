@@ -64,6 +64,18 @@ module both import — never import the manager back. See `invariants.md` for th
 `ToolExecutionContext.plugin` is already typed `ObsidianGemini` — use `context.plugin` directly,
 no cast.
 
+## Wiring interfaces carry only what is read
+
+When you add a field to a context, callback, or capability interface (`SendContext`,
+`UICallbacks`, `AgentViewContext` — imported as `ToolsContext` in `agent-view.ts` —
+`ProviderCapabilities`, …), wire it to a consumer in the same change. Don't populate a field
+speculatively for a future caller: `npm run knip` resolves exported symbols, not per-field
+reachability through an object literal, so an unread field on a live interface populated at a live
+construction site is invisible to it — born dead, and still dead with every check green
+(#1298, #1300, #1301). The removal half matters as much: when the last reader of a field goes,
+delete the field and its population site with it, or whatever they reached becomes unreachable and
+stays (that is how #1301 kept a 170-line modal no caller could open).
+
 ## Platform guards
 
 Desktop-only APIs (Electron, MCP, Node.js) must be guarded with Obsidian's `Platform` checks
