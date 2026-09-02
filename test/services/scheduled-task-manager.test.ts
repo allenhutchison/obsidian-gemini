@@ -3,6 +3,7 @@ import { TFile as MockTFile } from 'obsidian';
 import { ScheduledTaskManager, computeNextRunAt, ScheduledTask } from '../../src/services/scheduled-task-manager';
 import { MAX_CONSECUTIVE_FAILURES } from '../../src/services/failure-pause-tracker';
 import { PolicyPreset, ToolPermission } from '../../src/types/tool-policy';
+import { load as parseYaml } from 'js-yaml';
 
 // executeTask dynamically imports ScheduledTaskRunner; stub it with a controllable
 // run() so the wiring tests can drive resolve (success) and reject (failure) paths.
@@ -1706,6 +1707,31 @@ describe('ScheduledTaskManager', () => {
 
 			const written = (plugin.app.vault.create as Mock).mock.calls[0][1] as string;
 			expect(written).toContain("model: 'allen''s-model'");
+		});
+
+		// The parse-back regression net #1352 asked for. The scheduler half of
+		// this change is code motion, so this is also what pins that the move
+		// changed nothing observable.
+		it('round-trips outputPath and model through a real YAML parse', async () => {
+			const plugin = createMockPlugin();
+			plugin.app.vault.create = vi.fn().mockResolvedValue(undefined);
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			const nasty = `Allen's "Notes": {date}.md`;
+			await manager.createTask({
+				slug: 'round-trip',
+				schedule: 'daily',
+				outputPath: nasty,
+				model: 'line1\nline2',
+				prompt: 'Round trip.',
+			});
+
+			const written = (plugin.app.vault.create as Mock).mock.calls[0][1] as string;
+			const parsed = parseYaml(written.split('---\n')[1]) as Record<string, any>;
+			expect(parsed.outputPath).toBe(nasty);
+			expect(parsed.model).toBe('line1\nline2');
+			expect(parsed.schedule).toBe('daily');
 		});
 	});
 

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { TFile as MockTFile } from 'obsidian';
 import { HookManager, renderPrompt, type Hook } from '../../src/services/hook-manager';
 import { PolicyPreset } from '../../src/types/tool-policy';
+import { load as parseYaml } from 'js-yaml';
 
 // ─── Module mocks ────────────────────────────────────────────────────────────
 
@@ -762,6 +763,40 @@ describe('HookManager serializeHook – edge cases via createHook', () => {
 	// `yaml-scalar.test.ts` proves the emitter's escaping round-trips; these
 	// prove each field actually reaches it.
 	const HOSTILE = `a'b"c: d`;
+
+	// The regression net #1352 asked for, and the one that would have caught
+	// #1347 before it shipped: serialize a definition whose free-text fields all
+	// carry hostile characters, parse the emitted frontmatter with the parser
+	// Obsidian actually uses, and assert every field comes back unchanged.
+	it('round-trips every free-text field through a real YAML parse', async () => {
+		const plugin = createPluginWithVaultStore();
+		const manager = newManager(plugin);
+		const nasty = `a'b"c: d`;
+		const multiline = `line1\nline2`;
+		await manager.createHook({
+			slug: 'round-trip',
+			trigger: 'file-modified',
+			action: 'agent-task',
+			prompt: 'Do stuff',
+			pathGlob: nasty,
+			model: nasty,
+			outputPath: multiline,
+			commandId: `#lead\ttab`,
+			enabledSkills: [nasty, multiline, '*alias'],
+			frontmatterFilter: { [nasty]: nasty, [multiline]: 'v', plain: true },
+		});
+
+		const content = plugin.__files.get('gemini-scribe/Hooks/round-trip.md') as string;
+		const frontmatter = content.split('---\n')[1];
+		const parsed = parseYaml(frontmatter) as Record<string, any>;
+
+		expect(parsed.pathGlob).toBe(nasty);
+		expect(parsed.model).toBe(nasty);
+		expect(parsed.outputPath).toBe(multiline);
+		expect(parsed.commandId).toBe(`#lead\ttab`);
+		expect(parsed.enabledSkills).toEqual([nasty, multiline, '*alias']);
+		expect(parsed.frontmatterFilter).toEqual({ [nasty]: nasty, [multiline]: 'v', plain: true });
+	});
 
 	it('quotes every free-text string field, including hostile values', async () => {
 		const plugin = createPluginWithVaultStore();
