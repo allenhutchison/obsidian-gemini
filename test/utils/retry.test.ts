@@ -480,6 +480,65 @@ describe('retry utilities', () => {
 				expect(await promise).toBe('ok');
 				expect(op).toHaveBeenCalledTimes(2);
 			});
+
+			test('aborts during the backoff sleep, cutting the wait short (#1448)', async () => {
+				const op = vi.fn().mockRejectedValueOnce(new Error('fail')).mockResolvedValue('ok');
+				let cancelled = false;
+
+				const promise = executeWithRetry(
+					op,
+					{ maxRetries: 3, initialDelayMs: 5000, jitter: false },
+					{
+						operationName: 'cancellable',
+						shouldAbort: () => cancelled,
+					}
+				);
+				const assertion = expect(promise).rejects.toThrow('cancellable was cancelled');
+				// First attempt fails; the 500ms backoff is scheduled.
+				await vi.advanceTimersByTimeAsync(0);
+				cancelled = true;
+				// One poll interval observes the cancellation — the sleep must NOT
+				// need to run its full 500ms before the abort throws.
+				await vi.advanceTimersByTimeAsync(100);
+				await assertion;
+				expect(op).toHaveBeenCalledTimes(1);
+			});
+
+			test('a backoff that elapses without cancellation still retries normally', async () => {
+				const op = vi.fn().mockRejectedValueOnce(new Error('fail')).mockResolvedValue('ok');
+				let polls = 0;
+				const promise = executeWithRetry(
+					op,
+					{ maxRetries: 3, initialDelayMs: 300, jitter: false },
+					{
+						operationName: 'cancellable',
+						shouldAbort: () => {
+							polls++;
+							return false;
+						},
+					}
+				);
+				await vi.runAllTimersAsync();
+
+				expect(await promise).toBe('ok');
+				// The sleep was sliced into poll-interval checks, and none aborted.
+				expect(polls).toBeGreaterThanOrEqual(1);
+				expect(op).toHaveBeenCalledTimes(2);
+			});
+
+			test('a delay shorter than the poll interval sleeps uninterruptibly and unchanged', async () => {
+				const op = vi.fn().mockRejectedValueOnce(new Error('fail')).mockResolvedValue('ok');
+
+				const promise = executeWithRetry(
+					op,
+					{ maxRetries: 3, initialDelayMs: 50, jitter: false },
+					{ operationName: 'cancellable', shouldAbort: () => false }
+				);
+				await vi.runAllTimersAsync();
+
+				expect(await promise).toBe('ok');
+				expect(op).toHaveBeenCalledTimes(2);
+			});
 		});
 	});
 });

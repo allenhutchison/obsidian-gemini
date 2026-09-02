@@ -1,5 +1,5 @@
 import { RetryDecorator, ApiRetryConfig } from '../../src/api/retry-decorator';
-import { ModelApi, BaseModelRequest, ModelResponse, StreamingModelResponse } from '../../src/api/interfaces/model-api';
+import { ModelApi, BaseModelRequest, ModelResponse } from '../../src/api/interfaces/model-api';
 import { Logger } from '../../src/utils/logger';
 
 // Minimal mock for ModelApi
@@ -341,11 +341,31 @@ describe('RetryDecorator', () => {
 			const assertion = expect(stream.complete).rejects.toThrow('Stream was cancelled');
 			// Advance past the first failure but not past the full sleep
 			await vi.advanceTimersByTimeAsync(100);
-			// Cancel during the retry sleep
+			// Cancel during the retry sleep…
 			stream.cancel();
-			// Advance past the sleep so attemptStream runs and sees cancelled=true
-			await vi.advanceTimersByTimeAsync(10000);
+			// …and the sleep must abort without its full duration elapsing:
+			// a 100ms slice re-checks the flag, so advancing one poll interval
+			// rejects. Advancing the full 5000ms backoff is NOT required.
+			await vi.advanceTimersByTimeAsync(100);
 			await assertion;
+			// The second attempt (which the old behavior needed) never ran.
+			expect(api.generateStreamingResponse).toHaveBeenCalledTimes(1);
+		});
+
+		test('cancel() during a long backoff rejects promptly, without waiting out the delay (#1448)', async () => {
+			const error = Object.assign(new Error('Internal server error'), { status: 500 });
+			const api = createMockApi([error, successResponse]);
+			const decorator = new RetryDecorator(api, createRetryConfig({ initialBackoffDelay: 30000 }));
+
+			const stream = decorator.generateStreamingResponse(dummyRequest, vi.fn());
+			const assertion = expect(stream.complete).rejects.toThrow('Stream was cancelled');
+			await vi.advanceTimersByTimeAsync(100); // first attempt fails, backoff (5000ms) scheduled
+			stream.cancel();
+			// One abort-poll interval is enough — the sleep is cut short instead of
+			// running the full backoff.
+			await vi.advanceTimersByTimeAsync(100);
+			await assertion;
+			expect(api.generateStreamingResponse).toHaveBeenCalledTimes(1);
 		});
 	});
 
