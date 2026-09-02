@@ -2,6 +2,7 @@ import { Platform, TAbstractFile, TFile, normalizePath } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { ensureFolderExists, shouldExcludePath } from '../utils/file-utils';
 import { formatToolPolicyYaml } from './feature-policy-yaml';
+import { yamlScalar } from './yaml-scalar';
 import type {
 	Hook,
 	HookAction,
@@ -325,12 +326,18 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 		lines.push(`trigger: '${params.trigger}'`);
 		lines.push(`action: '${params.action}'`);
 
-		if (params.pathGlob) lines.push(`pathGlob: ${JSON.stringify(params.pathGlob)}`);
+		if (params.pathGlob) lines.push(`pathGlob: ${yamlScalar(params.pathGlob)}`);
 
 		if (params.frontmatterFilter && Object.keys(params.frontmatterFilter).length > 0) {
 			lines.push('frontmatterFilter:');
 			for (const [key, value] of Object.entries(params.frontmatterFilter)) {
-				lines.push(`  ${key}: ${JSON.stringify(value)}`);
+				// The key is user-authored free text, so it needs the same quoting as
+				// any other string. The value is typed `unknown` and must keep its YAML
+				// type (a boolean filter has to parse back as a boolean, not `'true'`),
+				// so only string values go through the string emitter; everything else
+				// stays on JSON.stringify, which is a valid YAML flow scalar.
+				const emitted = typeof value === 'string' ? yamlScalar(value) : JSON.stringify(value);
+				lines.push(`  ${yamlScalar(key)}: ${emitted}`);
 			}
 		}
 
@@ -352,13 +359,13 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 		const skills = params.enabledSkills ?? [];
 		if (skills.length > 0) {
 			lines.push('enabledSkills:');
-			for (const s of skills) lines.push(`  - ${s}`);
+			for (const s of skills) lines.push(`  - ${yamlScalar(s)}`);
 		}
 
-		if (params.model) lines.push(`model: ${JSON.stringify(params.model)}`);
+		if (params.model) lines.push(`model: ${yamlScalar(params.model)}`);
 		if (params.maxIterations !== undefined) lines.push(`maxIterations: ${params.maxIterations}`);
-		if (params.outputPath) lines.push(`outputPath: ${JSON.stringify(params.outputPath)}`);
-		if (params.commandId) lines.push(`commandId: ${JSON.stringify(params.commandId)}`);
+		if (params.outputPath) lines.push(`outputPath: ${yamlScalar(params.outputPath)}`);
+		if (params.commandId) lines.push(`commandId: ${yamlScalar(params.commandId)}`);
 
 		// Defaults are enabled=true, desktopOnly=true, focusFile=false —
 		// only write when the user picked the non-default value.
