@@ -1,4 +1,5 @@
 import { FeatureToolPolicy, PolicyPreset, serializeToolPolicy } from '../types/tool-policy';
+import { yamlScalar } from './yaml-scalar';
 
 /**
  * Translate a legacy `enabledTools` category array (the pre-unified-policy
@@ -55,7 +56,10 @@ export function formatToolPolicyYaml(policy: FeatureToolPolicy | undefined): str
 	if (overrides && Object.keys(overrides).length > 0) {
 		lines.push('  overrides:');
 		for (const [tool, perm] of Object.entries(overrides)) {
-			lines.push(`    ${tool}: ${perm}`);
+			// Tool names reach here from MCP servers (via `sanitizeName`, which permits
+			// `:` and `.`), so the key is not a closed union and gets the shared string
+			// emitter. `perm` is a ToolPermission member and stays raw.
+			lines.push(`    ${yamlScalar(tool)}: ${perm}`);
 		}
 	}
 	return lines;

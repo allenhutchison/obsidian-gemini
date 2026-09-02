@@ -1128,7 +1128,7 @@ describe('ScheduledTaskManager', () => {
 			const written = (plugin.app.vault.create as Mock).mock.calls[0][1] as string;
 			expect(written).toContain('toolPolicy:');
 			expect(written).toContain('preset: edit_mode');
-			expect(written).toContain('write_file: deny');
+			expect(written).toContain("'write_file': deny");
 		});
 
 		it('omits optional fields from serialized content when not set', async () => {
