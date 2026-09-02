@@ -73,8 +73,9 @@ speculatively for a caller that doesn't exist yet: `npm run knip` resolves expor
 per-field reachability through an object literal, and both the interface and the method the field
 targets are live — so a field can be born dead and stay dead indefinitely with every check green.
 The reverse holds too: when you remove the last reader of a field, remove the field and its
-population site in the same change, or the next reader-less block of code (a modal, a handler)
-becomes unreachable without anything flagging it.
+population site in the same change. Otherwise the field stays reader-less, and whatever it fed —
+a modal, a handler — can be left unreachable with every check still green (#1301's orphaned
+170-line modal).
 
 ## Platform guards
 
