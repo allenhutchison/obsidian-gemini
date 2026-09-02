@@ -144,7 +144,7 @@ When an MCP server is connected:
 2. It queries the server for its list of tools via the MCP protocol
 3. Each tool is registered in the plugin's tool system with a namespaced name (`mcp__<server>__<tool>`)
 4. When the agent calls a tool, the plugin forwards the request to the MCP server and returns the result
-5. The confirmation flow works the same as built-in tools — untrusted tools require approval
+5. The confirmation flow works the same as built-in tools — untrusted tools require approval. Each tool's **classification** (which permission preset and safety band it lands in) defaults to _external_; if the server declares a tool with the MCP `destructiveHint` annotation, the tool is classified **destructive** and is gated (and execution-ordered) as strictly as the built-in delete tools. The plugin only ever makes MCP tools _stricter_ based on server hints — never more permissive — since those hints come from an untrusted party
 
 ## Troubleshooting
 

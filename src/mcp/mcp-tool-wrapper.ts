@@ -3,6 +3,7 @@ import { Tool, ToolResult, ToolExecutionContext, ToolParameterSchema } from '../
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import { MCP_CALL_TOOL_TIMEOUT_MS } from './mcp-constants';
+import { classificationFromAnnotations, type MCPToolAnnotations } from './mcp-classification';
 import { withTimeout } from '../utils/timeout';
 import { asRecord, getRawErrorMessage } from '../utils/error-utils';
 
@@ -11,11 +12,14 @@ import { asRecord, getRawErrorMessage } from '../utils/error-utils';
  *
  * The `inputSchema` is external JSON Schema (the SDK types property values as
  * bare `object`), so `properties` values stay `unknown` and are narrowed at the
- * point of use (see `convertInputSchema`).
+ * point of use (see `convertInputSchema`). `annotations` are the server's
+ * declared hints — mapped to a classification by `classificationFromAnnotations`
+ * (destructiveHint only; see mcp-classification.ts for the trust policy).
  */
 interface MCPToolDefinition {
 	name: string;
 	description?: string;
+	annotations?: MCPToolAnnotations;
 	inputSchema?: {
 		type?: string;
 		properties?: Record<string, unknown>;
@@ -31,7 +35,8 @@ export class MCPToolWrapper implements Tool {
 	readonly name: string;
 	readonly displayName: string;
 	readonly category: string = ToolCategory.EXTERNAL_MCP;
-	readonly classification: ToolClassification = ToolClassification.EXTERNAL;
+	/** Derived from the server's destructiveHint (EXTERNAL by default) — see mcp-classification.ts */
+	readonly classification: ToolClassification;
 	readonly description: string;
 	readonly parameters: ToolParameterSchema;
 
@@ -45,6 +50,7 @@ export class MCPToolWrapper implements Tool {
 		this.displayName = `${serverName}: ${toolDef.name}`;
 		this.description = toolDef.description || `MCP tool "${toolDef.name}" from server "${serverName}"`;
 		this.parameters = convertInputSchema(toolDef.inputSchema);
+		this.classification = classificationFromAnnotations(toolDef.annotations);
 	}
 
 	async execute(params: Record<string, unknown>, _context: ToolExecutionContext): Promise<ToolResult> {
