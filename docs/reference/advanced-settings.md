@@ -103,6 +103,13 @@ Configure how the plugin handles API failures:
 6. Wait quadruple the delay (e.g., 4 seconds)
 7. Final attempt or success
 
+Two details apply to every wait above:
+
+- **Jitter**: up to 10% is added at random to each delay, so several requests that hit the same rate limit don't all retry at the same instant.
+- **60-second ceiling**: no single wait exceeds 60 seconds, however large the initial backoff delay is set.
+
+If the API returns its own retry hint (Google sends one with some rate-limit errors), that delay is used in place of the calculated backoff — subject to the same 60-second ceiling. Streaming and non-streaming requests follow the identical policy.
+
 ## Model Discovery
 
 Model discovery is automatic — no configuration is required. On startup, the plugin fetches the latest available Gemini models from GitHub and caches the result for 24 hours. If the fetch fails, the bundled static model list is used as a fallback.

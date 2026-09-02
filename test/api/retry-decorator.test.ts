@@ -1,4 +1,4 @@
-import { RetryDecorator, RetryConfig } from '../../src/api/retry-decorator';
+import { RetryDecorator, ApiRetryConfig } from '../../src/api/retry-decorator';
 import { ModelApi, BaseModelRequest, ModelResponse, StreamingModelResponse } from '../../src/api/interfaces/model-api';
 import { Logger } from '../../src/utils/logger';
 
@@ -25,7 +25,7 @@ function createMockApi(responses: Array<ModelResponse | Error>): ModelApi {
 	};
 }
 
-function createRetryConfig(overrides?: Partial<RetryConfig>): RetryConfig {
+function createRetryConfig(overrides?: Partial<ApiRetryConfig>): ApiRetryConfig {
 	return {
 		maxRetries: 2,
 		initialBackoffDelay: 10, // Very short for tests
@@ -35,6 +35,31 @@ function createRetryConfig(overrides?: Partial<RetryConfig>): RetryConfig {
 
 const successResponse: ModelResponse = { markdown: 'Hello', rendered: '' };
 const dummyRequest: BaseModelRequest = { kind: 'base', prompt: 'test' };
+
+/** A retryable 429 carrying a Google `RetryInfo` detail with the given duration string. */
+function retryInfoError(retryDelay: string): Error {
+	return Object.assign(new Error('Rate limited'), {
+		status: 429,
+		details: [{ '@type': 'type.googleapis.com/google.rpc.RetryInfo', retryDelay }],
+	});
+}
+
+/**
+ * Probe whether a promise has settled, so a test can assert *when* a retry fired rather than
+ * spying on the sleep helper. The returned function reports the latest known state.
+ */
+function trackResolution(promise: Promise<unknown>): () => boolean {
+	let settled = false;
+	void promise.then(
+		() => {
+			settled = true;
+		},
+		() => {
+			settled = true;
+		}
+	);
+	return () => settled;
+}
 
 describe('RetryDecorator', () => {
 	beforeEach(() => {
@@ -200,26 +225,73 @@ describe('RetryDecorator', () => {
 		});
 
 		test('streaming API-provided delay capped at MAX_API_DELAY_MS (60000)', async () => {
-			const error = Object.assign(new Error('Rate limited'), {
-				status: 429,
-				details: [
-					{
-						'@type': 'type.googleapis.com/google.rpc.RetryInfo',
-						retryDelay: '120s',
-					},
-				],
-			});
+			const error = retryInfoError('120s');
 			const api = createMockApi([error, successResponse]);
-			const sleepSpy = vi.spyOn(RetryDecorator.prototype as any, 'sleep');
 			const decorator = new RetryDecorator(api, createRetryConfig());
 
 			const stream = decorator.generateStreamingResponse(dummyRequest, vi.fn());
-			await vi.advanceTimersByTimeAsync(70000);
-			await stream.complete;
+			const resolved = trackResolution(stream.complete);
 
 			// 120s = 120000ms should be capped to MAX_API_DELAY_MS = 60000ms
-			expect(sleepSpy).toHaveBeenCalledWith(60000);
-			sleepSpy.mockRestore();
+			await vi.advanceTimersByTimeAsync(59000);
+			expect(resolved()).toBe(false);
+			await vi.advanceTimersByTimeAsync(2000);
+			await stream.complete;
+			expect(resolved()).toBe(true);
+		});
+	});
+
+	// The streaming and non-streaming arms share one retry policy. These pin the parts of that
+	// policy the streaming arm used to lack when it hand-rolled its own loop (#1337), so the two
+	// cannot drift apart again without a test failing.
+	describe('streaming delay policy', () => {
+		test('streaming backoff carries jitter', async () => {
+			const error = Object.assign(new Error('Internal server error'), { status: 500 });
+			const api = createMockApi([error, successResponse]);
+			// 0.5 of the 10% jitter band on a 1000ms base => 1050ms, not the bare 1000ms.
+			const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+			const decorator = new RetryDecorator(api, createRetryConfig({ initialBackoffDelay: 1000 }));
+
+			const stream = decorator.generateStreamingResponse(dummyRequest, vi.fn());
+			const resolved = trackResolution(stream.complete);
+
+			await vi.advanceTimersByTimeAsync(1000);
+			expect(resolved()).toBe(false);
+			await vi.advanceTimersByTimeAsync(100);
+			await stream.complete;
+			expect(resolved()).toBe(true);
+			randomSpy.mockRestore();
+		});
+
+		test('streaming exponential backoff is capped at MAX_API_DELAY_MS (60000)', async () => {
+			const error = Object.assign(new Error('Internal server error'), { status: 500 });
+			const api = createMockApi([error, successResponse]);
+			// No API-provided delay, so this exercises the exponential arm, which used to be
+			// unbounded on the streaming path: 100000ms must be capped to 60000ms (+ <=10% jitter).
+			const decorator = new RetryDecorator(api, createRetryConfig({ initialBackoffDelay: 100000 }));
+
+			const stream = decorator.generateStreamingResponse(dummyRequest, vi.fn());
+			const resolved = trackResolution(stream.complete);
+
+			await vi.advanceTimersByTimeAsync(59000);
+			expect(resolved()).toBe(false);
+			await vi.advanceTimersByTimeAsync(8000);
+			await stream.complete;
+			expect(resolved()).toBe(true);
+		});
+
+		test('streaming honors an API-provided delay of 0s instead of falling back to backoff', async () => {
+			const error = retryInfoError('0s');
+			const api = createMockApi([error, successResponse]);
+			// A 0ms server instruction used to be discarded as falsy, silently backing off 5s.
+			const decorator = new RetryDecorator(api, createRetryConfig({ initialBackoffDelay: 5000 }));
+
+			const stream = decorator.generateStreamingResponse(dummyRequest, vi.fn());
+			await vi.advanceTimersByTimeAsync(5);
+			const result = await stream.complete;
+
+			expect(result).toEqual(successResponse);
+			expect(api.generateStreamingResponse).toHaveBeenCalledTimes(2);
 		});
 	});
 

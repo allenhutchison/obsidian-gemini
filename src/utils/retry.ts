@@ -40,6 +40,14 @@ export interface RetryOptions {
 	logger?: Logger;
 	/** Optional function to determine if an error is retryable (default: retry all errors) */
 	isRetryable?: (error: unknown) => boolean;
+	/**
+	 * Optional cancellation hook. Checked before every attempt and again as soon as an attempt
+	 * fails, so a cancelled operation aborts without logging a spurious retry warning.
+	 * When unset, the retry loop behaves exactly as it does without cancellation support.
+	 */
+	shouldAbort?: () => boolean;
+	/** Error to throw when `shouldAbort` returns true (default: `${operationName} was cancelled`) */
+	abortError?: () => Error;
 }
 
 /**
@@ -89,13 +97,24 @@ export async function executeWithRetry<T>(
 	config: RetryConfig = DEFAULT_RETRY_CONFIG,
 	options: RetryOptions
 ): Promise<T> {
-	const { operationName, logger, isRetryable = isRetryableApiError } = options;
+	const { operationName, logger, isRetryable = isRetryableApiError, shouldAbort, abortError } = options;
+	const makeAbortError = () => abortError?.() ?? new Error(`${operationName} was cancelled`);
 	let lastError: Error | undefined;
 
 	for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
+		if (shouldAbort?.()) {
+			throw makeAbortError();
+		}
+
 		try {
 			return await operation();
 		} catch (error) {
+			// An abort takes precedence over the failure it races with: report the cancellation
+			// rather than logging a retry warning for a stream the caller already gave up on.
+			if (shouldAbort?.()) {
+				throw makeAbortError();
+			}
+
 			lastError = error as Error;
 
 			// Check if error is retryable
