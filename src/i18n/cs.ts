@@ -658,6 +658,9 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'Žádná aktivní relace',
 	'agent.tokens.usage': 'Tokeny: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'Tokeny: ~{used} / {limit} ({percent}%) · {cached}% v mezipaměti',
+	'agent.tokens.usageThoughts': 'Tokeny: ~{used} / {limit} ({percent}%) · {thoughts} uvažování',
+	'agent.tokens.usageCachedThoughts':
+		'Tokeny: ~{used} / {limit} ({percent}%) · {cached}% v mezipaměti · {thoughts} uvažování',
 	'agent.empty.example.findTagged': 'Najít všechny poznámky označené #important',
 	'agent.empty.example.weeklySummary': 'Vytvořit týdenní shrnutí mých poznámek ze schůzek',
 	'agent.empty.example.research': 'Prozkoumat metody produktivity a vytvořit poznámky',
@@ -1044,4 +1047,49 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Odmítnout',
 	'agent.planMode.rejectedNotice': 'Plán byl odmítnut.',
 	'agent.planMode.proceedMessage': 'Pokračovat se schváleným plánem.',
+	'error.unknown': 'Došlo k neznámé chybě',
+	'error.openaiInvalidKey': 'Neplatný API klíč OpenAI. Zkontrolujte prosím API klíč v Nastavení → Gemini Scribe.',
+	'error.modelNotOnEndpoint':
+		'Model není na tomto koncovém bodu k dispozici. Zkontrolujte prosím nastavení modelu nebo nakonfigurovanou základní URL.',
+	'error.serverUnreachable':
+		'Nepodařilo se připojit k serveru modelu. Pokud jste nakonfigurovali vlastní základní URL (LM Studio, MLX atd.), ujistěte se, že server běží a základní URL v nastavení je správná.',
+	'error.invalidApiKey':
+		'Neplatný API klíč. Zkontrolujte prosím své přihlašovací údaje poskytovatele modelu v nastavení.',
+	'error.authFailed':
+		'Ověření selhalo. Ověřte prosím své přihlašovací údaje poskytovatele modelu a zda má váš účet k tomuto modelu přístup.',
+	'error.quotaExhausted':
+		'Kvóta pro bezplatnou verzi tohoto modelu byla vyčerpána. Zkuste přejít na jiný model (např. Gemini Flash) nebo povolte fakturaci v Google AI Studio.',
+	'error.rateLimit': 'Byl překročen rychlostní limit API. Počkejte prosím chvíli a zkuste to znovu.',
+	'error.ollamaModelNotPulled': 'Model Ollama není stažen. Spusťte: ollama pull {model}',
+	'error.modelNotAvailable': 'Vybraný model není k dispozici. Zkontrolujte prosím nastavení modelu.',
+	'error.ollamaUnreachable':
+		'Nepodařilo se připojit k démonu Ollama. Ujistěte se, že běží `ollama serve` a základní URL v nastavení je správná.',
+	'error.network': 'Síťová chyba: Nelze se spojit s API modelu. Zkontrolujte prosím své připojení.',
+	'error.timeout': 'Časový limit požadavku vypršel. Odezva API trvala příliš dlouho. Zkuste to prosím znovu.',
+	'error.serviceUnavailable': 'API modelu je dočasně nedostupné. Zkuste to prosím později znovu.',
+	'error.safetyBlocked': 'Obsah byl zablokován bezpečnostními filtry. Přeformulujte prosím svůj požadavek.',
+	'error.tokenLimit': 'Požadavek překračuje limit tokenů. Zkraťte prosím délku své zprávy nebo historii konverzace.',
+	'error.apiPrefix': 'Chyba API: {message}',
+	'error.communicationFailed': 'Při komunikaci s API modelu došlo k chybě',
+	'error.unknownCommunication': 'Při komunikaci s API modelu došlo k neznámé chybě',
+	'error.http.badRequest':
+		'Chybný požadavek: Požadavek na API byl neplatný. Zkontrolujte prosím svou zprávu a zkuste to znovu.',
+	'error.http.unauthorized':
+		'Ověření selhalo: Neplatný API klíč. Zkontrolujte prosím své přihlašovací údaje poskytovatele modelu v nastavení.',
+	'error.http.forbidden': 'Přístup odepřen: Poskytovatel modelu odepřel přístup k tomuto modelu nebo funkci.',
+	'error.http.notFound': 'Model nenalezen: Vybraný model není k dispozici. Zkontrolujte prosím nastavení modelu.',
+	'error.http.rateLimit':
+		'Rychlostní limit překročen: Příliš mnoho požadavků. Počkejte prosím chvíli a zkuste to znovu.',
+	'error.http.serverError': 'Chyba serveru: V API modelu došlo k interní chybě. Zkuste to prosím později znovu.',
+	'error.http.serviceUnavailable':
+		'Služba nedostupná: API modelu je dočasně mimo provoz. Zkuste to prosím později znovu.',
+	'error.http.gatewayTimeout':
+		'Časový limit brány vypršel: Požadavek na API trval příliš dlouho. Zkuste to prosím znovu.',
+	'error.http.serverErrorWithCode':
+		'Chyba serveru ({statusCode}): API modelu má potíže. Zkuste to prosím později znovu.',
+	'error.http.clientErrorWithCode': 'Chyba klienta ({statusCode}): {message}',
+	'error.http.clientErrorWithCodeNoDetail':
+		'Chyba klienta ({statusCode}): Zkontrolujte prosím svůj požadavek a zkuste to znovu.',
+	'error.http.genericWithCode': 'Chyba HTTP {statusCode}: {message}',
+	'error.http.genericWithCodeNoDetail': 'Chyba HTTP {statusCode}: Došlo k neočekávané chybě.',
 };

@@ -664,6 +664,9 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'Geen actieve sessie',
 	'agent.tokens.usage': 'Tokens: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'Tokens: ~{used} / {limit} ({percent}%) · {cached}% gecached',
+	'agent.tokens.usageThoughts': 'Tokens: ~{used} / {limit} ({percent}%) · {thoughts} redenering',
+	'agent.tokens.usageCachedThoughts':
+		'Tokens: ~{used} / {limit} ({percent}%) · {cached}% gecached · {thoughts} redenering',
 	'agent.empty.example.findTagged': 'Vind alle notities met de tag #important',
 	'agent.empty.example.weeklySummary': 'Maak een wekelijks overzicht van mijn vergadernotities',
 	'agent.empty.example.research': 'Doe onderzoek naar productiviteitsmethoden en maak notities',
@@ -1055,4 +1058,47 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Afwijzen',
 	'agent.planMode.rejectedNotice': 'Plan afgewezen.',
 	'agent.planMode.proceedMessage': 'Ga verder met het goedgekeurde plan.',
+	'error.unknown': 'Er is een onbekende fout opgetreden',
+	'error.openaiInvalidKey': 'Ongeldige OpenAI API-sleutel. Controleer de API-sleutel in Instellingen → Gemini Scribe.',
+	'error.modelNotOnEndpoint':
+		'Model niet beschikbaar op dit eindpunt. Controleer je modelinstellingen of de geconfigureerde basis-URL.',
+	'error.serverUnreachable':
+		'Kon geen verbinding maken met de modelserver. Als je een aangepaste basis-URL hebt geconfigureerd (LM Studio, MLX, etc.), zorg er dan voor dat de server actief is en de basis-URL in de instellingen correct is.',
+	'error.invalidApiKey': 'Ongeldige API-sleutel. Controleer de inloggegevens van je modelprovider in de instellingen.',
+	'error.authFailed':
+		'Authenticatie mislukt. Controleer de inloggegevens van je modelprovider en of je account toegang heeft tot dit model.',
+	'error.quotaExhausted':
+		'Gratis quota voor dit model is uitgeput. Probeer over te schakelen naar een ander model (bijv. Gemini Flash) of schakel facturering in in Google AI Studio.',
+	'error.rateLimit': 'API-limiet overschreden. Wacht een moment en probeer het opnieuw.',
+	'error.ollamaModelNotPulled': 'Ollama-model niet gedownload. Voer uit: ollama pull {model}',
+	'error.modelNotAvailable': 'Het geselecteerde model is niet beschikbaar. Controleer je modelinstellingen.',
+	'error.ollamaUnreachable':
+		'Kon geen verbinding maken met de Ollama-daemon. Zorg ervoor dat `ollama serve` actief is en de basis-URL in de instellingen correct is.',
+	'error.network': 'Netwerkfout: Kan de model-API niet bereiken. Controleer je verbinding.',
+	'error.timeout': 'Time-out van verzoek. De API deed er te lang over om te reageren. Probeer het opnieuw.',
+	'error.serviceUnavailable': 'De model-API is tijdelijk niet beschikbaar. Probeer het later opnieuw.',
+	'error.safetyBlocked': 'Inhoud is geblokkeerd door veiligheidsfilters. Formuleer je verzoek anders.',
+	'error.tokenLimit': 'Verzoek overschrijdt de tokenlimiet. Verklein de lengte van je bericht of gesprekgeschiedenis.',
+	'error.apiPrefix': 'API-fout: {message}',
+	'error.communicationFailed': 'Er is een fout opgetreden tijdens de communicatie met de model-API',
+	'error.unknownCommunication': 'Er is een onbekende fout opgetreden tijdens de communicatie met de model-API',
+	'error.http.badRequest':
+		'Ongeldig verzoek: Het API-verzoek was ongeldig. Controleer je bericht en probeer het opnieuw.',
+	'error.http.unauthorized':
+		'Authenticatie mislukt: Ongeldige API-sleutel. Controleer de inloggegevens van je modelprovider in de instellingen.',
+	'error.http.forbidden':
+		'Toegang geweigerd: De modelprovider heeft de toegang tot dit model of deze functie geweigerd.',
+	'error.http.notFound':
+		'Model niet gevonden: Het geselecteerde model is niet beschikbaar. Controleer je modelinstellingen.',
+	'error.http.rateLimit': 'Limiet overschreden: Te veel verzoeken. Wacht een moment en probeer het opnieuw.',
+	'error.http.serverError': 'Serverfout: Er is een interne fout opgetreden in de model-API. Probeer het later opnieuw.',
+	'error.http.serviceUnavailable':
+		'Dienst niet beschikbaar: De model-API is tijdelijk offline. Probeer het later opnieuw.',
+	'error.http.gatewayTimeout': 'Gateway-time-out: Het API-verzoek duurde te lang. Probeer het opnieuw.',
+	'error.http.serverErrorWithCode':
+		'Serverfout ({statusCode}): De model-API ondervindt problemen. Probeer het later opnieuw.',
+	'error.http.clientErrorWithCode': 'Clientfout ({statusCode}): {message}',
+	'error.http.clientErrorWithCodeNoDetail': 'Clientfout ({statusCode}): Controleer je verzoek en probeer het opnieuw.',
+	'error.http.genericWithCode': 'HTTP-fout {statusCode}: {message}',
+	'error.http.genericWithCodeNoDetail': 'HTTP-fout {statusCode}: Er is een onverwachte fout opgetreden.',
 };

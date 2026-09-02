@@ -658,6 +658,9 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'Ingen aktiv session',
 	'agent.tokens.usage': 'Tokens: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'Tokens: ~{used} / {limit} ({percent}%) · {cached}% cached',
+	'agent.tokens.usageThoughts': 'Tokens: ~{used} / {limit} ({percent}%) · {thoughts} ræsonnering',
+	'agent.tokens.usageCachedThoughts':
+		'Tokens: ~{used} / {limit} ({percent}%) · {cached}% cachet · {thoughts} ræsonnering',
 	'agent.empty.example.findTagged': 'Find alle noter tagget med #important',
 	'agent.empty.example.weeklySummary': 'Opret et ugentligt resumé af mine mødenoter',
 	'agent.empty.example.research': 'Undersøg produktivitetsmetoder og opret noter',
@@ -1047,4 +1050,49 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Afvis',
 	'agent.planMode.rejectedNotice': 'Plan afvist.',
 	'agent.planMode.proceedMessage': 'Fortsæt med den godkendte plan.',
+	'error.unknown': 'Der opstod en ukendt fejl',
+	'error.openaiInvalidKey': 'Ugyldig OpenAI API-nøgle. Kontroller venligst API-nøglen i Indstillinger → Gemini Scribe.',
+	'error.modelNotOnEndpoint':
+		'Modellen er ikke tilgængelig på dette slutpunkt. Kontroller venligst dine modelindstillinger eller den konfigurerede base-URL.',
+	'error.serverUnreachable':
+		"Kunne ikke oprette forbindelse til modelserveren. Hvis du har konfigureret en brugerdefineret base-URL (LM Studio, MLX osv.), skal du sørge for, at serveren kører, og at base-URL'en i indstillingerne er korrekt.",
+	'error.invalidApiKey':
+		'Ugyldig API-nøgle. Kontroller venligst dine legitimationsoplysninger for modeludbyderen i indstillingerne.',
+	'error.authFailed':
+		'Godkendelse mislykkedes. Bekræft venligst dine legitimationsoplysninger for modeludbyderen, og at din konto har adgang til denne model.',
+	'error.quotaExhausted':
+		'Gratis-kvoten er opbrugt for denne model. Prøv at skifte til en anden model (f.eks. Gemini Flash) eller aktiver fakturering i Google AI Studio.',
+	'error.rateLimit': 'API-hastighedsgrænsen er overskredet. Vent et øjeblik, og prøv igen.',
+	'error.ollamaModelNotPulled': 'Ollama-model er ikke hentet. Kør: ollama pull {model}',
+	'error.modelNotAvailable': 'Den valgte model er ikke tilgængelig. Kontroller venligst dine modelindstillinger.',
+	'error.ollamaUnreachable':
+		"Kunne ikke oprette forbindelse til Ollama-tjenesten. Sørg for, at `ollama serve` kører, og at base-URL'en i indstillingerne er korrekt.",
+	'error.network': 'Netværksfejl: Kan ikke nå modellens API. Kontroller venligst din forbindelse.',
+	'error.timeout': "Anmodningen fik timeout. API'en var for længe om at svare. Prøv venligst igen.",
+	'error.serviceUnavailable': 'Modellens API er midlertidigt utilgængelig. Prøv venligst igen senere.',
+	'error.safetyBlocked': 'Indholdet blev blokeret af sikkerhedsfiltre. Omformuler venligst din anmodning.',
+	'error.tokenLimit':
+		'Anmodningen overskrider token-grænsen. Reducer venligst længden af din besked eller samtalehistorik.',
+	'error.apiPrefix': 'API-fejl: {message}',
+	'error.communicationFailed': 'Der opstod en fejl under kommunikation med modellens API',
+	'error.unknownCommunication': 'Der opstod en ukendt fejl under kommunikation med modellens API',
+	'error.http.badRequest':
+		'Ugyldig anmodning: API-anmodningen var ugyldig. Kontroller venligst din besked, og prøv igen.',
+	'error.http.unauthorized':
+		'Godkendelse mislykkedes: Ugyldig API-nøgle. Kontroller venligst dine legitimationsoplysninger for modeludbyderen i indstillingerne.',
+	'error.http.forbidden': 'Adgang nægtet: Modeludbyderen afviste adgang til denne model eller funktion.',
+	'error.http.notFound':
+		'Model ikke fundet: Den valgte model er ikke tilgængelig. Kontroller venligst dine modelindstillinger.',
+	'error.http.rateLimit': 'Hastighedsgrænse overskredet: For mange anmodninger. Vent et øjeblik, og prøv igen.',
+	'error.http.serverError': 'Serverfejl: Modellens API stødte på en intern fejl. Prøv venligst igen senere.',
+	'error.http.serviceUnavailable':
+		'Tjeneste utilgængelig: Modellens API er midlertidigt nede. Prøv venligst igen senere.',
+	'error.http.gatewayTimeout': 'Gateway-timeout: API-anmodningen tog for lang tid. Prøv venligst igen.',
+	'error.http.serverErrorWithCode':
+		'Serverfejl ({statusCode}): Modellens API oplever problemer. Prøv venligst igen senere.',
+	'error.http.clientErrorWithCode': 'Klientfejl ({statusCode}): {message}',
+	'error.http.clientErrorWithCodeNoDetail':
+		'Klientfejl ({statusCode}): Kontroller venligst din anmodning, og prøv igen.',
+	'error.http.genericWithCode': 'HTTP-fejl {statusCode}: {message}',
+	'error.http.genericWithCodeNoDetail': 'HTTP-fejl {statusCode}: Der opstod en uventet fejl.',
 };

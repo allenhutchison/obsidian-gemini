@@ -673,6 +673,9 @@ export const es: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'No hay sesión activa',
 	'agent.tokens.usage': 'Tokens: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'Tokens: ~{used} / {limit} ({percent}%) · {cached}% en caché',
+	'agent.tokens.usageThoughts': 'Tokens: ~{used} / {limit} ({percent}%) · {thoughts} de razonamiento',
+	'agent.tokens.usageCachedThoughts':
+		'Tokens: ~{used} / {limit} ({percent}%) · {cached}% en caché · {thoughts} de razonamiento',
 	'agent.empty.example.findTagged': 'Buscar todas las notas etiquetadas con #important',
 	'agent.empty.example.weeklySummary': 'Crear un resumen semanal de mis notas de reuniones',
 	'agent.empty.example.research': 'Investigar métodos de productividad y crear notas',
@@ -1065,4 +1068,55 @@ export const es: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Rechazar',
 	'agent.planMode.rejectedNotice': 'Plan rechazado.',
 	'agent.planMode.proceedMessage': 'Proceder con el plan aprobado.',
+	'error.unknown': 'Ocurrió un error desconocido',
+	'error.openaiInvalidKey':
+		'Clave API de OpenAI no válida. Por favor, comprueba la clave API en Configuración → Gemini Scribe.',
+	'error.modelNotOnEndpoint':
+		'Modelo no disponible en este endpoint. Por favor, comprueba la configuración de tu modelo o la URL base configurada.',
+	'error.serverUnreachable':
+		'No se pudo conectar con el servidor del modelo. Si configuraste una URL base personalizada (LM Studio, MLX, etc.), asegúrate de que el servidor esté funcionando y de que la URL base en la configuración sea correcta.',
+	'error.invalidApiKey':
+		'Clave API no válida. Por favor, comprueba las credenciales del proveedor del modelo en la configuración.',
+	'error.authFailed':
+		'Error de autenticación. Por favor, verifica las credenciales del proveedor del modelo y que tu cuenta tenga acceso a este modelo.',
+	'error.quotaExhausted':
+		'Cuota de la versión gratuita agotada para este modelo. Intenta cambiar a un modelo diferente (por ejemplo, Gemini Flash) o activa la facturación en Google AI Studio.',
+	'error.rateLimit': 'Límite de velocidad de la API excedido. Por favor, espera un momento e inténtalo de nuevo.',
+	'error.ollamaModelNotPulled': 'Modelo de Ollama no descargado. Ejecuta: ollama pull {model}',
+	'error.modelNotAvailable':
+		'El modelo seleccionado no está disponible. Por favor, comprueba la configuración de tu modelo.',
+	'error.ollamaUnreachable':
+		'No se pudo conectar al demonio de Ollama. Asegúrate de que `ollama serve` se esté ejecutando y de que la URL base en la configuración sea correcta.',
+	'error.network': 'Error de red: No se pudo conectar con la API del modelo. Por favor, comprueba tu conexión.',
+	'error.timeout': 'La solicitud ha expirado. La API tardó demasiado en responder. Por favor, inténtalo de nuevo.',
+	'error.serviceUnavailable':
+		'La API del modelo no está disponible temporalmente. Por favor, inténtalo de nuevo más tarde.',
+	'error.safetyBlocked': 'El contenido fue bloqueado por los filtros de seguridad. Por favor, reformula tu solicitud.',
+	'error.tokenLimit':
+		'La solicitud excede el límite de tokens. Por favor, reduce la longitud de tu mensaje o del historial de conversación.',
+	'error.apiPrefix': 'Error de la API: {message}',
+	'error.communicationFailed': 'Ocurrió un error al comunicarse con la API del modelo',
+	'error.unknownCommunication': 'Ocurrió un error desconocido al comunicarse con la API del modelo',
+	'error.http.badRequest':
+		'Solicitud incorrecta: La solicitud a la API no es válida. Por favor, comprueba tu mensaje e inténtalo de nuevo.',
+	'error.http.unauthorized':
+		'Error de autenticación: Clave API no válida. Por favor, comprueba las credenciales del proveedor del modelo en la configuración.',
+	'error.http.forbidden': 'Acceso denegado: El proveedor del modelo rechazó el acceso a este modelo o función.',
+	'error.http.notFound':
+		'Modelo no encontrado: El modelo seleccionado no está disponible. Por favor, comprueba la configuración de tu modelo.',
+	'error.http.rateLimit':
+		'Límite de velocidad excedido: Demasiadas solicitudes. Por favor, espera un momento e inténtalo de nuevo.',
+	'error.http.serverError':
+		'Error del servidor: La API del modelo experimentó un error interno. Por favor, inténtalo de nuevo más tarde.',
+	'error.http.serviceUnavailable':
+		'Servicio no disponible: La API del modelo está temporalmente inactiva. Por favor, inténtalo de nuevo más tarde.',
+	'error.http.gatewayTimeout':
+		'Tiempo de espera de la pasarela agotado: La solicitud a la API tardó demasiado. Por favor, inténtalo de nuevo.',
+	'error.http.serverErrorWithCode':
+		'Error del servidor ({statusCode}): La API del modelo está experimentando problemas. Por favor, inténtalo de nuevo más tarde.',
+	'error.http.clientErrorWithCode': 'Error del cliente ({statusCode}): {message}',
+	'error.http.clientErrorWithCodeNoDetail':
+		'Error del cliente ({statusCode}): Por favor, comprueba tu solicitud e inténtalo de nuevo.',
+	'error.http.genericWithCode': 'Error HTTP {statusCode}: {message}',
+	'error.http.genericWithCodeNoDetail': 'Error HTTP {statusCode}: Ocurrió un error inesperado.',
 };

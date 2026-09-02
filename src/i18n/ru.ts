@@ -670,6 +670,9 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'Нет активной сессии',
 	'agent.tokens.usage': 'Токены: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'Токены: ~{used} / {limit} ({percent}%) · {cached}% кэшировано',
+	'agent.tokens.usageThoughts': 'Токены: ~{used} / {limit} ({percent}%) · {thoughts} рассуждения',
+	'agent.tokens.usageCachedThoughts':
+		'Токены: ~{used} / {limit} ({percent}%) · {cached}% кэшировано · {thoughts} рассуждения',
 	'agent.empty.example.findTagged': 'Найти все заметки с тегом #important',
 	'agent.empty.example.weeklySummary': 'Создать еженедельную сводку моих заметок о встречах',
 	'agent.empty.example.research': 'Исследовать методы продуктивности и создать заметки',
@@ -1062,4 +1065,48 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Отклонить',
 	'agent.planMode.rejectedNotice': 'План отклонен.',
 	'agent.planMode.proceedMessage': 'Продолжить выполнение одобренного плана.',
+	'error.unknown': 'Произошла неизвестная ошибка',
+	'error.openaiInvalidKey':
+		'Неверный API-ключ OpenAI. Пожалуйста, проверьте API-ключ в меню Настройки → Gemini Scribe.',
+	'error.modelNotOnEndpoint':
+		'Модель недоступна на этом эндпоинте. Пожалуйста, проверьте настройки модели или настроенный базовый URL.',
+	'error.serverUnreachable':
+		'Не удалось подключиться к серверу модели. Если вы настроили собственный базовый URL (LM Studio, MLX и т. д.), убедитесь, что сервер запущен, а базовый URL в настройках указан верно.',
+	'error.invalidApiKey': 'Неверный API-ключ. Пожалуйста, проверьте учетные данные провайдера модели в настройках.',
+	'error.authFailed':
+		'Ошибка аутентификации. Пожалуйста, проверьте учетные данные провайдера модели и убедитесь, что у вашего аккаунта есть доступ к этой модели.',
+	'error.quotaExhausted':
+		'Исчерпан лимит бесплатного тарифа для этой модели. Попробуйте переключиться на другую модель (например, Gemini Flash) или включите тарификацию в Google AI Studio.',
+	'error.rateLimit': 'Превышен лимит запросов API. Пожалуйста, подождите немного и попробуйте снова.',
+	'error.ollamaModelNotPulled': 'Модель Ollama не загружена. Запустите: ollama pull {model}',
+	'error.modelNotAvailable': 'Выбранная модель недоступна. Пожалуйста, проверьте настройки модели.',
+	'error.ollamaUnreachable':
+		'Не удалось подключиться к демону Ollama. Убедитесь, что запущен `ollama serve`, а базовый URL в настройках указан верно.',
+	'error.network': 'Сетевая ошибка: не удалось связаться с API модели. Пожалуйста, проверьте подключение.',
+	'error.timeout': 'Время ожидания запроса истекло. API отвечал слишком долго. Пожалуйста, попробуйте снова.',
+	'error.serviceUnavailable': 'API модели временно недоступен. Пожалуйста, попробуйте позже.',
+	'error.safetyBlocked': 'Контент заблокирован фильтрами безопасности. Пожалуйста, перефразируйте ваш запрос.',
+	'error.tokenLimit': 'Запрос превышает лимит токенов. Пожалуйста, сократите длину сообщения или историю диалога.',
+	'error.apiPrefix': 'Ошибка API: {message}',
+	'error.communicationFailed': 'Произошла ошибка при обмене данными с API модели',
+	'error.unknownCommunication': 'Произошла неизвестная ошибка при обмене данными с API модели',
+	'error.http.badRequest':
+		'Неверный запрос: запрос к API некорректен. Пожалуйста, проверьте ваше сообщение и попробуйте снова.',
+	'error.http.unauthorized':
+		'Ошибка аутентификации: неверный API-ключ. Пожалуйста, проверьте учетные данные провайдера модели в настройках.',
+	'error.http.forbidden': 'Доступ запрещен: провайдер модели отклонил доступ к этой модели или функции.',
+	'error.http.notFound': 'Модель не найдена: выбранная модель недоступна. Пожалуйста, проверьте настройки модели.',
+	'error.http.rateLimit':
+		'Превышен лимит запросов: слишком много запросов. Пожалуйста, подождите немного и попробуйте снова.',
+	'error.http.serverError': 'Ошибка сервера: произошла внутренняя ошибка API модели. Пожалуйста, попробуйте позже.',
+	'error.http.serviceUnavailable': 'Сервис недоступен: API модели временно не работает. Пожалуйста, попробуйте позже.',
+	'error.http.gatewayTimeout':
+		'Тайм-аут шлюза: запрос к API занял слишком много времени. Пожалуйста, попробуйте снова.',
+	'error.http.serverErrorWithCode':
+		'Ошибка сервера ({statusCode}): в работе API модели возникли проблемы. Пожалуйста, попробуйте позже.',
+	'error.http.clientErrorWithCode': 'Ошибка клиента ({statusCode}): {message}',
+	'error.http.clientErrorWithCodeNoDetail':
+		'Ошибка клиента ({statusCode}): пожалуйста, проверьте ваш запрос и попробуйте снова.',
+	'error.http.genericWithCode': 'Ошибка HTTP {statusCode}: {message}',
+	'error.http.genericWithCodeNoDetail': 'Ошибка HTTP {statusCode}: произошла непредвиденная ошибка.',
 };

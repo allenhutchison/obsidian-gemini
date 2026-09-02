@@ -672,6 +672,9 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'Nessuna sessione attiva',
 	'agent.tokens.usage': 'Token: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'Token: ~{used} / {limit} ({percent}%) · {cached}% in cache',
+	'agent.tokens.usageThoughts': 'Token: ~{used} / {limit} ({percent}%) · {thoughts} ragionamento',
+	'agent.tokens.usageCachedThoughts':
+		'Token: ~{used} / {limit} ({percent}%) · {cached}% in cache · {thoughts} ragionamento',
 	'agent.empty.example.findTagged': 'Trova tutte le note con tag #important',
 	'agent.empty.example.weeklySummary': 'Crea un riepilogo settimanale delle mie note di riunione',
 	'agent.empty.example.research': 'Fai ricerche sui metodi di produttività e crea note',
@@ -1064,4 +1067,47 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Rifiuta',
 	'agent.planMode.rejectedNotice': 'Piano rifiutato.',
 	'agent.planMode.proceedMessage': 'Procedi con il piano approvato.',
+	'error.unknown': 'Si è verificato un errore sconosciuto',
+	'error.openaiInvalidKey': 'Chiave API OpenAI non valida. Verifica la chiave API in Impostazioni → Gemini Scribe.',
+	'error.modelNotOnEndpoint':
+		"Modello non disponibile su questo endpoint. Verifica le impostazioni del modello o l'URL di base configurato.",
+	'error.serverUnreachable':
+		"Impossibile connettersi al server del modello. Se hai configurato un URL di base personalizzato (LM Studio, MLX, ecc.), assicurati che il server sia attivo e che l'URL di base nelle impostazioni sia corretto.",
+	'error.invalidApiKey': 'Chiave API non valida. Verifica le credenziali del provider del modello nelle impostazioni.',
+	'error.authFailed':
+		'Autenticazione non riuscita. Verifica le credenziali del provider del modello e che il tuo account abbia accesso a questo modello.',
+	'error.quotaExhausted':
+		'Quota del piano gratuito esaurita per questo modello. Prova a passare a un modello diverso (ad es. Gemini Flash) o abilita la fatturazione in Google AI Studio.',
+	'error.rateLimit': 'Limite di richieste API superato. Attendi un momento e riprova.',
+	'error.ollamaModelNotPulled': 'Modello Ollama non scaricato. Esegui: ollama pull {model}',
+	'error.modelNotAvailable': 'Il modello selezionato non è disponibile. Verifica le impostazioni del modello.',
+	'error.ollamaUnreachable':
+		"Impossibile connettersi al daemon Ollama. Assicurati che `ollama serve` sia in esecuzione e che l'URL di base nelle impostazioni sia corretto.",
+	'error.network': "Errore di rete: impossibile raggiungere l'API del modello. Verifica la tua connessione.",
+	'error.timeout': "Richiesta scaduta. L'API ha impiegato troppo tempo per rispondere. Riprova.",
+	'error.serviceUnavailable': "L'API del modello è temporaneamente non disponibile. Riprova più tardi.",
+	'error.safetyBlocked': 'Il contenuto è stato bloccato dai filtri di sicurezza. Riformula la richiesta.',
+	'error.tokenLimit':
+		'La richiesta supera il limite di token. Riduci la lunghezza del messaggio o della cronologia della conversazione.',
+	'error.apiPrefix': 'Errore API: {message}',
+	'error.communicationFailed': "Si è verificato un errore durante la comunicazione con l'API del modello",
+	'error.unknownCommunication': "Si è verificato un errore sconosciuto durante la comunicazione con l'API del modello",
+	'error.http.badRequest': 'Richiesta non valida: la richiesta API non è valida. Verifica il messaggio e riprova.',
+	'error.http.unauthorized':
+		'Autenticazione non riuscita: chiave API non valida. Verifica le credenziali del provider del modello nelle impostazioni.',
+	'error.http.forbidden':
+		"Accesso negato: il provider del modello ha negato l'accesso a questo modello o funzionalità.",
+	'error.http.notFound':
+		'Modello non trovato: il modello selezionato non è disponibile. Verifica le impostazioni del modello.',
+	'error.http.rateLimit': 'Limite di richieste superato: troppe richieste. Attendi un momento e riprova.',
+	'error.http.serverError': "Errore del server: l'API del modello ha riscontrato un errore interno. Riprova più tardi.",
+	'error.http.serviceUnavailable':
+		"Servizio non disponibile: l'API del modello è temporaneamente inattiva. Riprova più tardi.",
+	'error.http.gatewayTimeout': 'Gateway timeout: la richiesta API ha impiegato troppo tempo. Riprova.',
+	'error.http.serverErrorWithCode':
+		"Errore del server ({statusCode}): l'API del modello sta riscontrando problemi. Riprova più tardi.",
+	'error.http.clientErrorWithCode': 'Errore del client ({statusCode}): {message}',
+	'error.http.clientErrorWithCodeNoDetail': 'Errore del client ({statusCode}): verifica la richiesta e riprova.',
+	'error.http.genericWithCode': 'Errore HTTP {statusCode}: {message}',
+	'error.http.genericWithCodeNoDetail': 'Errore HTTP {statusCode}: si è verificato un errore imprevisto.',
 };

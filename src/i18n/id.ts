@@ -656,6 +656,9 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'Tidak ada sesi aktif',
 	'agent.tokens.usage': 'Token: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'Token: ~{used} / {limit} ({percent}%) · {cached}% di-cache',
+	'agent.tokens.usageThoughts': 'Token: ~{used} / {limit} ({percent}%) · {thoughts} penalaran',
+	'agent.tokens.usageCachedThoughts':
+		'Token: ~{used} / {limit} ({percent}%) · {cached}% tersimpan di cache · {thoughts} penalaran',
 	'agent.empty.example.findTagged': 'Temukan semua catatan yang ditandai dengan #important',
 	'agent.empty.example.weeklySummary': 'Buat ringkasan mingguan dari catatan rapat saya',
 	'agent.empty.example.research': 'Riset metode produktivitas dan buat catatan',
@@ -1044,4 +1047,47 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Tolak',
 	'agent.planMode.rejectedNotice': 'Rencana ditolak.',
 	'agent.planMode.proceedMessage': 'Lanjutkan dengan rencana yang disetujui.',
+	'error.unknown': 'Terjadi kesalahan yang tidak diketahui',
+	'error.openaiInvalidKey': 'Kunci API OpenAI tidak valid. Silakan periksa kunci API di Pengaturan → Gemini Scribe.',
+	'error.modelNotOnEndpoint':
+		'Model tidak tersedia di endpoint ini. Silakan periksa pengaturan model Anda atau URL dasar yang dikonfigurasi.',
+	'error.serverUnreachable':
+		'Tidak dapat terhubung ke server model. Jika Anda mengonfigurasi URL dasar kustom (LM Studio, MLX, dll.), pastikan server sedang berjalan dan URL dasar di pengaturan sudah benar.',
+	'error.invalidApiKey': 'Kunci API tidak valid. Silakan periksa kredensial penyedia model Anda di pengaturan.',
+	'error.authFailed':
+		'Autentikasi gagal. Silakan verifikasi kredensial penyedia model Anda dan pastikan akun Anda memiliki akses ke model ini.',
+	'error.quotaExhausted':
+		'Kuota tingkat gratis telah habis untuk model ini. Coba beralih ke model lain (misalnya, Gemini Flash) atau aktifkan penagihan di Google AI Studio.',
+	'error.rateLimit': 'Batas laju API terlampaui. Silakan tunggu sebentar dan coba lagi.',
+	'error.ollamaModelNotPulled': 'Model Ollama belum diunduh. Jalankan: ollama pull {model}',
+	'error.modelNotAvailable': 'Model yang dipilih tidak tersedia. Silakan periksa pengaturan model Anda.',
+	'error.ollamaUnreachable':
+		'Tidak dapat terhubung ke daemon Ollama. Pastikan `ollama serve` sedang berjalan dan URL dasar di pengaturan sudah benar.',
+	'error.network': 'Kesalahan jaringan: Tidak dapat menjangkau API model. Silakan periksa koneksi Anda.',
+	'error.timeout': 'Permintaan habis waktu. API membutuhkan waktu terlalu lama untuk merespons. Silakan coba lagi.',
+	'error.serviceUnavailable': 'API model sementara tidak tersedia. Silakan coba lagi nanti.',
+	'error.safetyBlocked': 'Konten diblokir oleh filter keamanan. Silakan ubah kalimat permintaan Anda.',
+	'error.tokenLimit': 'Permintaan melebihi batas token. Silakan kurangi panjang pesan atau riwayat percakapan Anda.',
+	'error.apiPrefix': 'Kesalahan API: {message}',
+	'error.communicationFailed': 'Terjadi kesalahan saat berkomunikasi dengan API model',
+	'error.unknownCommunication': 'Terjadi kesalahan yang tidak diketahui saat berkomunikasi dengan API model',
+	'error.http.badRequest':
+		'Permintaan tidak valid: Permintaan API tidak valid. Silakan periksa pesan Anda dan coba lagi.',
+	'error.http.unauthorized':
+		'Autentikasi gagal: Kunci API tidak valid. Silakan periksa kredensial penyedia model Anda di pengaturan.',
+	'error.http.forbidden': 'Akses ditolak: Penyedia model menolak akses ke model atau fitur ini.',
+	'error.http.notFound':
+		'Model tidak ditemukan: Model yang dipilih tidak tersedia. Silakan periksa pengaturan model Anda.',
+	'error.http.rateLimit': 'Batas laju terlampaui: Terlalu banyak permintaan. Silakan tunggu sebentar dan coba lagi.',
+	'error.http.serverError': 'Kesalahan server: API model mengalami kesalahan internal. Silakan coba lagi nanti.',
+	'error.http.serviceUnavailable': 'Layanan tidak tersedia: API model sementara mati. Silakan coba lagi nanti.',
+	'error.http.gatewayTimeout':
+		'Waktu tunggu gateway habis: Permintaan API membutuhkan waktu terlalu lama. Silakan coba lagi.',
+	'error.http.serverErrorWithCode':
+		'Kesalahan server ({statusCode}): API model sedang mengalami masalah. Silakan coba lagi nanti.',
+	'error.http.clientErrorWithCode': 'Kesalahan klien ({statusCode}): {message}',
+	'error.http.clientErrorWithCodeNoDetail':
+		'Kesalahan klien ({statusCode}): Silakan periksa permintaan Anda dan coba lagi.',
+	'error.http.genericWithCode': 'Kesalahan HTTP {statusCode}: {message}',
+	'error.http.genericWithCodeNoDetail': 'Kesalahan HTTP {statusCode}: Terjadi kesalahan yang tidak terduga.',
 };

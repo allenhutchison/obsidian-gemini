@@ -676,6 +676,9 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'Aucune session active',
 	'agent.tokens.usage': 'Tokens : ~{used} / {limit} ({percent} %)',
 	'agent.tokens.usageCached': 'Tokens : ~{used} / {limit} ({percent} %) · {cached} % mis en cache',
+	'agent.tokens.usageThoughts': 'Tokens : ~{used} / {limit} ({percent} %) · {thoughts} de raisonnement',
+	'agent.tokens.usageCachedThoughts':
+		'Tokens : ~{used} / {limit} ({percent} %) · {cached} % mis en cache · {thoughts} de raisonnement',
 	'agent.empty.example.findTagged': 'Trouver toutes les notes avec le tag #important',
 	'agent.empty.example.weeklySummary': 'Créer un résumé hebdomadaire de mes notes de réunion',
 	'agent.empty.example.research': 'Faire des recherches sur les méthodes de productivité et créer des notes',
@@ -1075,4 +1078,53 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Rejeter',
 	'agent.planMode.rejectedNotice': 'Plan rejeté.',
 	'agent.planMode.proceedMessage': 'Poursuivre avec le plan approuvé.',
+	'error.unknown': 'Une erreur inconnue est survenue',
+	'error.openaiInvalidKey': 'Clé API OpenAI non valide. Veuillez vérifier la clé API dans Paramètres → Gemini Scribe.',
+	'error.modelNotOnEndpoint':
+		"Modèle non disponible sur ce point de terminaison. Veuillez vérifier les paramètres de votre modèle ou l'URL de base configurée.",
+	'error.serverUnreachable':
+		"Impossible de se connecter au serveur du modèle. Si vous avez configuré une URL de base personnalisée (LM Studio, MLX, etc.), assurez-vous que le serveur est démarré et que l'URL de base dans les paramètres est correcte.",
+	'error.invalidApiKey':
+		'Clé API non valide. Veuillez vérifier les identifiants de votre fournisseur de modèle dans les paramètres.',
+	'error.authFailed':
+		"Échec de l'authentification. Veuillez vérifier les identifiants de votre fournisseur de modèle et vous assurer que votre compte a accès à ce modèle.",
+	'error.quotaExhausted':
+		"Quota de l'offre gratuite épuisé pour ce modèle. Essayez de passer à un autre modèle (par ex. Gemini Flash) ou activez la facturation dans Google AI Studio.",
+	'error.rateLimit': 'Limite de requêtes API dépassée. Veuillez patienter un instant et réessayer.',
+	'error.ollamaModelNotPulled': 'Modèle Ollama non récupéré. Exécutez : ollama pull {model}',
+	'error.modelNotAvailable':
+		"Le modèle sélectionné n'est pas disponible. Veuillez vérifier les paramètres de votre modèle.",
+	'error.ollamaUnreachable':
+		"Impossible de se connecter au démon Ollama. Assurez-vous que `ollama serve` est en cours d'exécution et que l'URL de base dans les paramètres est correcte.",
+	'error.network': "Erreur réseau : impossible de joindre l'API du modèle. Veuillez vérifier votre connexion.",
+	'error.timeout': "La requête a expiré. L'API a mis trop de temps à répondre. Veuillez réessayer.",
+	'error.serviceUnavailable': "L'API du modèle est temporairement indisponible. Veuillez réessayer plus tard.",
+	'error.safetyBlocked': 'Le contenu a été bloqué par les filtres de sécurité. Veuillez reformuler votre demande.',
+	'error.tokenLimit':
+		"La requête dépasse la limite de tokens. Veuillez réduire la longueur de votre message ou de l'historique de conversation.",
+	'error.apiPrefix': 'Erreur API : {message}',
+	'error.communicationFailed': "Une erreur est survenue lors de la communication avec l'API du modèle",
+	'error.unknownCommunication': "Une erreur inconnue est survenue lors de la communication avec l'API du modèle",
+	'error.http.badRequest':
+		"Requête incorrecte : la requête API n'est pas valide. Veuillez vérifier votre message et réessayer.",
+	'error.http.unauthorized':
+		"Échec de l'authentification : clé API non valide. Veuillez vérifier les identifiants de votre fournisseur de modèle dans les paramètres.",
+	'error.http.forbidden':
+		"Accès interdit : le fournisseur du modèle a refusé l'accès à ce modèle ou à cette fonctionnalité.",
+	'error.http.notFound':
+		"Modèle introuvable : le modèle sélectionné n'est pas disponible. Veuillez vérifier les paramètres de votre modèle.",
+	'error.http.rateLimit': 'Limite de requêtes dépassée : trop de requêtes. Veuillez patienter un instant et réessayer.',
+	'error.http.serverError':
+		"Erreur serveur : l'API du modèle a rencontré une erreur interne. Veuillez réessayer plus tard.",
+	'error.http.serviceUnavailable':
+		"Service indisponible : l'API du modèle est temporairement hors service. Veuillez réessayer plus tard.",
+	'error.http.gatewayTimeout':
+		"Délai d'attente de la passerelle dépassé : la requête API a pris trop de temps. Veuillez réessayer.",
+	'error.http.serverErrorWithCode':
+		"Erreur serveur ({statusCode}) : l'API du modèle rencontre des difficultés. Veuillez réessayer plus tard.",
+	'error.http.clientErrorWithCode': 'Erreur client ({statusCode}) : {message}',
+	'error.http.clientErrorWithCodeNoDetail':
+		'Erreur client ({statusCode}) : veuillez vérifier votre requête et réessayer.',
+	'error.http.genericWithCode': 'Erreur HTTP {statusCode} : {message}',
+	'error.http.genericWithCodeNoDetail': 'Erreur HTTP {statusCode} : une erreur inattendue est survenue.',
 };

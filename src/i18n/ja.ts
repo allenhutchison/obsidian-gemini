@@ -660,6 +660,9 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'アクティブなセッションがありません',
 	'agent.tokens.usage': 'トークン: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'トークン: ~{used} / {limit} ({percent}%) · {cached}% キャッシュ済み',
+	'agent.tokens.usageThoughts': 'トークン: ~{used} / {limit} ({percent}%) · 推論 {thoughts}',
+	'agent.tokens.usageCachedThoughts':
+		'トークン: ~{used} / {limit} ({percent}%) · キャッシュ {cached}% · 推論 {thoughts}',
 	'agent.empty.example.findTagged': '#important タグの付いたすべてのノートを検索する',
 	'agent.empty.example.weeklySummary': '会議メモの週次サマリーを作成する',
 	'agent.empty.example.research': '生産性向上メソッドを調査してノートを作成する',
@@ -1052,4 +1055,45 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': '却下',
 	'agent.planMode.rejectedNotice': '計画が却下されました。',
 	'agent.planMode.proceedMessage': '承認された計画を進めてください。',
+	'error.unknown': '不明なエラーが発生しました',
+	'error.openaiInvalidKey': '無効な OpenAI API キーです。設定 → Gemini Scribe で API キーを確認してください。',
+	'error.modelNotOnEndpoint':
+		'このエンドポイントではモデルを利用できません。モデルの設定または設定されたベース URL を確認してください。',
+	'error.serverUnreachable':
+		'モデルサーバーに接続できませんでした。カスタムベース URL（LM Studio、MLX など）を設定している場合は、サーバーが起動していること、および設定のベース URL が正しいことを確認してください。',
+	'error.invalidApiKey': '無効な API キーです。設定でモデルプロバイダーの認証情報を確認してください。',
+	'error.authFailed':
+		'認証に失敗しました。モデルプロバイダーの認証情報と、お使いのアカウントがこのモデルへのアクセス権を持っているか確認してください。',
+	'error.quotaExhausted':
+		'このモデルの無料枠のクォータ（利用制限）に達しました。別のモデル（例: Gemini Flash）に切り替えるか、Google AI Studio で課金を有効にしてください。',
+	'error.rateLimit': 'API のレート制限を超過しました。しばらく待ってから再試行してください。',
+	'error.ollamaModelNotPulled': 'Ollama モデルがプルされていません。実行してください: ollama pull {model}',
+	'error.modelNotAvailable': '選択されたモデルは利用できません。モデルの設定を確認してください。',
+	'error.ollamaUnreachable':
+		'Ollama デーモンに接続できませんでした。`ollama serve` が実行されていること、および設定のベース URL が正しいことを確認してください。',
+	'error.network': 'ネットワークエラー: モデル API に接続できません。接続を確認してください。',
+	'error.timeout': 'リクエストがタイムアウトしました。API の応答に時間がかかりすぎています。もう一度お試しください。',
+	'error.serviceUnavailable': 'モデル API は一時的に利用できません。後でもう一度お試しください。',
+	'error.safetyBlocked': 'コンテンツがセーフティフィルターによってブロックされました。表現を変えて再試行してください。',
+	'error.tokenLimit': 'リクエストがトークン制限を超えています。メッセージまたは会話履歴の長さを短くしてください。',
+	'error.apiPrefix': 'API エラー: {message}',
+	'error.communicationFailed': 'モデル API との通信中にエラーが発生しました',
+	'error.unknownCommunication': 'モデル API との通信中に不明なエラーが発生しました',
+	'error.http.badRequest': '不正なリクエスト: API リクエストが無効です。メッセージを確認して再試行してください。',
+	'error.http.unauthorized': '認証失敗: 無効な API キーです。設定でモデルプロバイダーの認証情報を確認してください。',
+	'error.http.forbidden': 'アクセス禁止: モデルプロバイダーがこのモデルまたは機能へのアクセスを拒否しました。',
+	'error.http.notFound': 'モデルが見つかりません: 選択されたモデルは利用できません。モデルの設定を確認してください。',
+	'error.http.rateLimit': 'レート制限超過: リクエストが多すぎます。しばらく待ってから再試行してください。',
+	'error.http.serverError': 'サーバーエラー: モデル API で内部エラーが発生しました。後でもう一度お試しください。',
+	'error.http.serviceUnavailable':
+		'サービス利用不可: モデル API は一時的に停止しています。後でもう一度お試しください。',
+	'error.http.gatewayTimeout':
+		'ゲートウェイタイムアウト: API リクエストに時間がかかりすぎています。もう一度お試しください。',
+	'error.http.serverErrorWithCode':
+		'サーバーエラー ({statusCode}): モデル API で問題が発生しています。後でもう一度お試しください。',
+	'error.http.clientErrorWithCode': 'クライアントエラー ({statusCode}): {message}',
+	'error.http.clientErrorWithCodeNoDetail':
+		'クライアントエラー ({statusCode}): リクエストを確認して再試行してください。',
+	'error.http.genericWithCode': 'HTTP エラー {statusCode}: {message}',
+	'error.http.genericWithCodeNoDetail': 'HTTP エラー {statusCode}: 予期しないエラーが発生しました。',
 };

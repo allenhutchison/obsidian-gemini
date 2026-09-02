@@ -665,6 +665,9 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'Немає активного сеансу',
 	'agent.tokens.usage': 'Токени: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'Токени: ~{used} / {limit} ({percent}%) · {cached}% кешовано',
+	'agent.tokens.usageThoughts': 'Токени: ~{used} / {limit} ({percent}%) · {thoughts} міркування',
+	'agent.tokens.usageCachedThoughts':
+		'Токени: ~{used} / {limit} ({percent}%) · {cached}% кешовано · {thoughts} міркування',
 	'agent.empty.example.findTagged': 'Знайти всі нотатки з тегом #important',
 	'agent.empty.example.weeklySummary': 'Створити щотижневий підсумок моїх нотаток із зустрічей',
 	'agent.empty.example.research': 'Дослідити методи продуктивності та створити нотатки',
@@ -1055,4 +1058,48 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Відхилити',
 	'agent.planMode.rejectedNotice': 'План відхилено.',
 	'agent.planMode.proceedMessage': 'Продовжити виконання затвердженого плану.',
+	'error.unknown': 'Виникла невідома помилка',
+	'error.openaiInvalidKey': 'Недійсний API-ключ OpenAI. Будь ласка, перевірте API-ключ у Налаштування → Gemini Scribe.',
+	'error.modelNotOnEndpoint':
+		'Модель недоступна на цьому кінцевому пункті. Будь ласка, перевірте налаштування моделі або налаштований базовий URL.',
+	'error.serverUnreachable':
+		'Не вдалося підключитися до сервера моделі. Якщо ви налаштували власний базовий URL (LM Studio, MLX тощо), переконайтеся, що сервер запущено, а базовий URL у налаштуваннях вказано правильно.',
+	'error.invalidApiKey':
+		'Недійсний API-ключ. Будь ласка, перевірте облікові дані постачальника моделі в налаштуваннях.',
+	'error.authFailed':
+		'Помилка автентифікації. Будь ласка, перевірте облікові дані постачальника моделі та переконайтеся, що ваш обліковий запис має доступ до цієї моделі.',
+	'error.quotaExhausted':
+		'Вичерпано ліміт безкоштовного тарифного плану для цієї моделі. Спробуйте перейти на іншу модель (наприклад, Gemini Flash) або увімкніть оплату в Google AI Studio.',
+	'error.rateLimit': 'Перевищено ліміт запитів API. Будь ласка, зачекайте хвилинку та спробуйте знову.',
+	'error.ollamaModelNotPulled': 'Модель Ollama не завантажена. Запустіть: ollama pull {model}',
+	'error.modelNotAvailable': 'Вибрана модель недоступна. Будь ласка, перевірте налаштування моделі.',
+	'error.ollamaUnreachable':
+		'Не вдалося підключитися до демона Ollama. Переконайтеся, що `ollama serve` запущено, а базовий URL у налаштуваннях вказано правильно.',
+	'error.network': "Помилка мережі: Не вдалося зв'язатися з API моделі. Будь ласка, перевірте підключення.",
+	'error.timeout': 'Час очікування запиту минув. API відповідає занадто довго. Будь ласка, спробуйте знову.',
+	'error.serviceUnavailable': 'API моделі тимчасово недоступне. Будь ласка, спробуйте пізніше.',
+	'error.safetyBlocked': 'Вміст заблоковано фільтрами безпеки. Будь ласка, переформулюйте свій запит.',
+	'error.tokenLimit':
+		'Запит перевищує ліміт токенів. Будь ласка, зменште довжину вашого повідомлення або історії бесіди.',
+	'error.apiPrefix': 'Помилка API: {message}',
+	'error.communicationFailed': "Виникла помилка під час зв'язку з API моделі",
+	'error.unknownCommunication': "Виникла невідома помилка під час зв'язку з API моделі",
+	'error.http.badRequest':
+		'Неправильний запит: Запит до API недійсний. Будь ласка, перевірте ваше повідомлення та спробуйте знову.',
+	'error.http.unauthorized':
+		'Помилка автентифікації: Недійсний API-ключ. Будь ласка, перевірте облікові дані постачальника моделі в налаштуваннях.',
+	'error.http.forbidden': 'Доступ заборонено: Постачальник моделі відхилив доступ до цієї моделі або функції.',
+	'error.http.notFound': 'Модель не знайдено: Вибрана модель недоступна. Будь ласка, перевірте налаштування моделі.',
+	'error.http.rateLimit':
+		'Перевищено ліміт запитів: Занадто багато запитів. Будь ласка, зачекайте хвилинку та спробуйте знову.',
+	'error.http.serverError': 'Помилка сервера: В API моделі виникла внутрішня помилка. Будь ласка, спробуйте пізніше.',
+	'error.http.serviceUnavailable': 'Служба недоступна: API моделі тимчасово не працює. Будь ласка, спробуйте пізніше.',
+	'error.http.gatewayTimeout': 'Тайм-аут шлюзу: Запит до API тривав занадто довго. Будь ласка, спробуйте знову.',
+	'error.http.serverErrorWithCode':
+		'Помилка сервера ({statusCode}): В API моделі виникли проблеми. Будь ласка, спробуйте пізніше.',
+	'error.http.clientErrorWithCode': 'Помилка клієнта ({statusCode}): {message}',
+	'error.http.clientErrorWithCodeNoDetail':
+		'Помилка клієнта ({statusCode}): Будь ласка, перевірте свій запит і спробуйте знову.',
+	'error.http.genericWithCode': 'Помилка HTTP {statusCode}: {message}',
+	'error.http.genericWithCodeNoDetail': 'Помилка HTTP {statusCode}: Виникла неочікувана помилка.',
 };

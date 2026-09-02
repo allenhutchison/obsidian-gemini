@@ -659,6 +659,9 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'agent.view.noActiveSession': 'Không có phiên hoạt động nào',
 	'agent.tokens.usage': 'Token: ~{used} / {limit} ({percent}%)',
 	'agent.tokens.usageCached': 'Token: ~{used} / {limit} ({percent}%) · đã lưu đệm {cached}%',
+	'agent.tokens.usageThoughts': 'Token: ~{used} / {limit} ({percent}%) · {thoughts} suy luận',
+	'agent.tokens.usageCachedThoughts':
+		'Token: ~{used} / {limit} ({percent}%) · {cached}% được cache · {thoughts} suy luận',
 	'agent.empty.example.findTagged': 'Tìm tất cả ghi chú được gắn thẻ #important',
 	'agent.empty.example.weeklySummary': 'Tạo bản tóm tắt tuần cho các ghi chú cuộc họp của tôi',
 	'agent.empty.example.research': 'Nghiên cứu các phương pháp tăng năng suất và tạo ghi chú',
@@ -1047,4 +1050,48 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Từ chối',
 	'agent.planMode.rejectedNotice': 'Đã từ chối kế hoạch.',
 	'agent.planMode.proceedMessage': 'Tiếp tục với kế hoạch đã được phê duyệt.',
+	'error.unknown': 'Đã xảy ra lỗi không xác định',
+	'error.openaiInvalidKey': 'API key OpenAI không hợp lệ. Vui lòng kiểm tra API key trong Cài đặt → Gemini Scribe.',
+	'error.modelNotOnEndpoint':
+		'Mô hình không khả dụng trên endpoint này. Vui lòng kiểm tra cài đặt mô hình hoặc URL cơ sở đã cấu hình.',
+	'error.serverUnreachable':
+		'Không thể kết nối với máy chủ mô hình. Nếu bạn đã cấu hình URL cơ sở tùy chỉnh (LM Studio, MLX, v.v.), hãy đảm bảo máy chủ đang chạy và URL cơ sở trong cài đặt là chính xác.',
+	'error.invalidApiKey':
+		'API key không hợp lệ. Vui lòng kiểm tra thông tin xác thực của nhà cung cấp mô hình trong cài đặt.',
+	'error.authFailed':
+		'Xác thực thất bại. Vui lòng xác minh thông tin xác thực của nhà cung cấp mô hình và đảm bảo tài khoản của bạn có quyền truy cập vào mô hình này.',
+	'error.quotaExhausted':
+		'Đã hết hạn mức gói miễn phí cho mô hình này. Hãy thử chuyển sang một mô hình khác (ví dụ: Gemini Flash) hoặc bật thanh toán trong Google AI Studio.',
+	'error.rateLimit': 'Đã vượt quá giới hạn tốc độ API. Vui lòng chờ một lát và thử lại.',
+	'error.ollamaModelNotPulled': 'Mô hình Ollama chưa được tải về. Chạy lệnh: ollama pull {model}',
+	'error.modelNotAvailable': 'Mô hình được chọn không khả dụng. Vui lòng kiểm tra cài đặt mô hình của bạn.',
+	'error.ollamaUnreachable':
+		'Không thể kết nối với Ollama daemon. Hãy đảm bảo `ollama serve` đang chạy và URL cơ sở trong cài đặt là chính xác.',
+	'error.network': 'Lỗi mạng: Không thể kết nối tới API mô hình. Vui lòng kiểm tra kết nối của bạn.',
+	'error.timeout': 'Yêu cầu quá thời gian. API mất quá nhiều thời gian để phản hồi. Vui lòng thử lại.',
+	'error.serviceUnavailable': 'API mô hình tạm thời không khả dụng. Vui lòng thử lại sau.',
+	'error.safetyBlocked': 'Nội dung đã bị chặn bởi bộ lọc an toàn. Vui lòng diễn đạt lại yêu cầu của bạn.',
+	'error.tokenLimit': 'Yêu cầu vượt quá giới hạn token. Vui lòng giảm độ dài của tin nhắn hoặc lịch sử trò chuyện.',
+	'error.apiPrefix': 'Lỗi API: {message}',
+	'error.communicationFailed': 'Đã xảy ra lỗi khi giao tiếp với API mô hình',
+	'error.unknownCommunication': 'Đã xảy ra lỗi không xác định khi giao tiếp với API mô hình',
+	'error.http.badRequest':
+		'Yêu cầu không hợp lệ: Yêu cầu API không hợp lệ. Vui lòng kiểm tra tin nhắn của bạn và thử lại.',
+	'error.http.unauthorized':
+		'Xác thực thất bại: API key không hợp lệ. Vui lòng kiểm tra thông tin xác thực của nhà cung cấp mô hình trong cài đặt.',
+	'error.http.forbidden':
+		'Truy cập bị từ chối: Nhà cung cấp mô hình đã từ chối quyền truy cập vào mô hình hoặc tính năng này.',
+	'error.http.notFound':
+		'Không tìm thấy mô hình: Mô hình được chọn không khả dụng. Vui lòng kiểm tra cài đặt mô hình của bạn.',
+	'error.http.rateLimit': 'Vượt quá giới hạn tốc độ: Quá nhiều yêu cầu. Vui lòng chờ một lát và thử lại.',
+	'error.http.serverError': 'Lỗi máy chủ: API mô hình đã gặp lỗi nội bộ. Vui lòng thử lại sau.',
+	'error.http.serviceUnavailable':
+		'Dịch vụ không khả dụng: API mô hình tạm thời ngừng hoạt động. Vui lòng thử lại sau.',
+	'error.http.gatewayTimeout': 'Hết thời gian cổng kết nối: Yêu cầu API mất quá nhiều thời gian. Vui lòng thử lại.',
+	'error.http.serverErrorWithCode': 'Lỗi máy chủ ({statusCode}): API mô hình đang gặp sự cố. Vui lòng thử lại sau.',
+	'error.http.clientErrorWithCode': 'Lỗi máy khách ({statusCode}): {message}',
+	'error.http.clientErrorWithCodeNoDetail':
+		'Lỗi máy khách ({statusCode}): Vui lòng kiểm tra yêu cầu của bạn và thử lại.',
+	'error.http.genericWithCode': 'Lỗi HTTP {statusCode}: {message}',
+	'error.http.genericWithCodeNoDetail': 'Lỗi HTTP {statusCode}: Đã xảy ra lỗi không mong muốn.',
 };
