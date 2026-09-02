@@ -44,63 +44,6 @@ function describeConnectionTarget(config: MCPServerConfig, useHttp: boolean): st
 type MCPTransport = StdioClientTransportType | StreamableHTTPClientTransport;
 
 /**
- * Patch the global setTimeout to return objects with .unref() in Electron's renderer.
- *
- * The MCP SDK internally calls setTimeout(...).unref(), which works in Node.js
- * (where setTimeout returns a Timeout object) but fails in Electron's renderer
- * (where setTimeout returns a number, like in browsers).
- *
- * This polyfill wraps the return value so .unref() is a safe no-op.
- */
-function patchSetTimeoutForElectron(): void {
-	const origSetTimeout = window.setTimeout.bind(window);
-	if (typeof origSetTimeout === 'function') {
-		// Test if unref already works (true Node.js environment)
-		const testTimer = origSetTimeout(() => {}, 0);
-		if (typeof (testTimer as unknown as { unref?: unknown }).unref === 'function') {
-			// Already has .unref() — no patch needed
-			window.clearTimeout(testTimer);
-			return;
-		}
-		window.clearTimeout(testTimer);
-
-		// Patch: wrap return value to add .unref() and .ref() as no-ops. The wrapper
-		// deliberately does not match the native `number` return type, so the
-		// assignment is bridged through `unknown` — a genuine monkey-patch boundary.
-		window.setTimeout = function patchedSetTimeout(
-			callback: (...args: unknown[]) => void,
-			ms?: number,
-			...args: unknown[]
-		) {
-			const id = origSetTimeout(callback, ms, ...args);
-			return {
-				[Symbol.toPrimitive]() {
-					return id;
-				},
-				unref() {
-					return this;
-				},
-				ref() {
-					return this;
-				},
-				// Preserve the raw id so clearTimeout still works
-				__timerId: id,
-			};
-		} as unknown as typeof window.setTimeout;
-
-		// Also patch clearTimeout to handle our wrapper objects
-		const origClearTimeout = window.clearTimeout.bind(window);
-		window.clearTimeout = function patchedClearTimeout(id?: unknown): void {
-			if (id && typeof id === 'object' && '__timerId' in id) {
-				origClearTimeout((id as { __timerId?: number }).__timerId);
-			} else {
-				origClearTimeout(id as number | undefined);
-			}
-		};
-	}
-}
-
-/**
  * Runtime connection info for an MCP server
  */
 interface ServerConnection {
@@ -498,9 +441,6 @@ export class MCPManager {
 		config: MCPServerConfig
 	): Promise<{ client: Client; transport: MCPTransport }> {
 		const useHttp = isHttpTransport(config);
-
-		// Patch setTimeout for Electron compatibility before any MCP SDK calls
-		patchSetTimeoutForElectron();
 
 		let transport: MCPTransport;
 		let authProvider: ObsidianOAuthClientProvider | undefined;
