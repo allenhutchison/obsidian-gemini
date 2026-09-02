@@ -46,7 +46,6 @@
 		"@eslint/json": "^2.0.1",
 		"@google/genai": "^2.19.0",
 		"@modelcontextprotocol/sdk": "^1.30.0",
-		"@types/js-yaml": "^4.0.9",
 		"@types/node": "^26.3.0",
 		"@typescript-eslint/parser": "^8.68.0",
 		"@vitest/coverage-v8": "^4.1.11",
