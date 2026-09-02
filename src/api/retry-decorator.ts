@@ -13,9 +13,16 @@ import {
 	StreamingModelResponse,
 } from './interfaces/model-api';
 import { Logger } from '../utils/logger';
-import { isRetryableApiError, parseRetryDelay, executeWithRetry } from '../utils/retry';
+import { isRetryableApiError, executeWithRetry, RetryOptions } from '../utils/retry';
 
-export interface RetryConfig {
+/**
+ * Settings-shaped retry configuration for the decorator.
+ *
+ * Deliberately distinct from `RetryConfig` in `src/utils/retry.ts`: this pair mirrors the
+ * `settings.maxRetries` / `settings.initialBackoffDelay` surface, while the retry engine's
+ * config also carries the delay cap and jitter switch. The decorator translates between them.
+ */
+export interface ApiRetryConfig {
 	maxRetries: number;
 	initialBackoffDelay: number;
 }
@@ -25,29 +32,29 @@ export interface RetryConfig {
  */
 export class RetryDecorator implements ModelApi {
 	private wrappedApi: ModelApi;
-	private config: RetryConfig;
+	private config: ApiRetryConfig;
 	private logger?: Logger;
 
-	constructor(wrappedApi: ModelApi, config: RetryConfig, logger?: Logger) {
+	constructor(wrappedApi: ModelApi, config: ApiRetryConfig, logger?: Logger) {
 		this.wrappedApi = wrappedApi;
 		this.config = config;
 		this.logger = logger;
 	}
 
-	/**
-	 * Sleep for a specified number of milliseconds
-	 */
-	private sleep(ms: number): Promise<void> {
-		return new Promise((resolve) => window.setTimeout(resolve, ms));
-	}
-
-	/** Maximum delay cap when using API-provided retry delays (60 seconds) */
+	/** Maximum delay cap for retry backoff, whether API-provided or exponential (60 seconds) */
 	private static readonly MAX_API_DELAY_MS = 60000;
 
 	/**
 	 * Execute a function with retry logic and exponential backoff.
+	 *
+	 * Both the streaming and non-streaming paths funnel through here, so they share one delay
+	 * policy — jitter, the delay cap, and the API-provided-delay decision.
 	 */
-	private async executeWithRetry<T>(operation: () => Promise<T>, operationName: string): Promise<T> {
+	private async executeWithRetry<T>(
+		operation: () => Promise<T>,
+		operationName: string,
+		cancellation?: Pick<RetryOptions, 'shouldAbort' | 'abortError'>
+	): Promise<T> {
 		return executeWithRetry(
 			operation,
 			{
@@ -59,6 +66,7 @@ export class RetryDecorator implements ModelApi {
 				operationName,
 				logger: this.logger,
 				isRetryable: isRetryableApiError,
+				...cancellation,
 			}
 		);
 	}
@@ -75,6 +83,10 @@ export class RetryDecorator implements ModelApi {
 	 *
 	 * Note: Streaming retries are more complex. If a stream fails mid-stream,
 	 * we retry from the beginning. This means chunks may be duplicated.
+	 *
+	 * The retry loop itself is the shared one — cancellation is threaded through as a
+	 * `shouldAbort` hook so that this path cannot drift from the non-streaming delay policy.
+	 * `cancel()` keeps its shape: it flags the abort and reaches the in-flight stream.
 	 */
 	generateStreamingResponse(
 		request: BaseModelRequest | ExtendedModelRequest,
@@ -84,55 +96,23 @@ export class RetryDecorator implements ModelApi {
 			throw new Error('Wrapped API does not support streaming');
 		}
 
-		let currentAttempt = 0;
 		let cancelled = false;
 		let currentStream: StreamingModelResponse | null = null;
 
-		const attemptStream = async (): Promise<ModelResponse> => {
-			if (cancelled) {
-				throw new Error('Stream was cancelled');
-			}
-
-			try {
-				currentAttempt++;
+		const complete = this.executeWithRetry<ModelResponse>(
+			async () => {
 				currentStream = this.wrappedApi.generateStreamingResponse!(request, onChunk);
 				return await currentStream.complete;
-			} catch (error) {
-				if (cancelled) {
-					throw new Error('Stream was cancelled');
-				}
-
-				// Skip retry for non-retryable errors
-				if (!isRetryableApiError(error)) {
-					this.logger?.error(`Streaming failed with non-retryable error:`, error);
-					throw error;
-				}
-
-				// Check if we should retry
-				if (currentAttempt <= this.config.maxRetries) {
-					// Use API-provided retry delay if available, otherwise exponential backoff
-					const apiDelay = parseRetryDelay(error);
-					const backoffDelay = apiDelay
-						? Math.min(apiDelay, RetryDecorator.MAX_API_DELAY_MS)
-						: this.config.initialBackoffDelay * Math.pow(2, currentAttempt - 1);
-
-					this.logger?.warn(
-						`Streaming failed (attempt ${currentAttempt}/${this.config.maxRetries + 1}). ` +
-							`Retrying in ${backoffDelay}ms${apiDelay ? ' (API-provided delay)' : ''}...`,
-						error
-					);
-
-					await this.sleep(backoffDelay);
-					return attemptStream();
-				} else {
-					this.logger?.error(`Streaming failed after ${this.config.maxRetries + 1} attempts:`, error);
-					throw error;
-				}
+			},
+			'Streaming',
+			{
+				shouldAbort: () => cancelled,
+				abortError: () => new Error('Stream was cancelled'),
 			}
-		};
+		);
 
 		return {
-			complete: attemptStream(),
+			complete,
 			cancel: () => {
 				cancelled = true;
 				if (currentStream) {
