@@ -54,6 +54,25 @@ describe('sortToolCallsByPriority', () => {
 			'delete_file',
 		]);
 	});
+
+	test('sort is stable: same-name calls keep model-emitted order within a band (#1398)', () => {
+		// Load-bearing for OpenAI's FIFO tool_call_id pairing: convertHistoryEntry
+		// pairs each id-less functionResponse with the oldest pending id for its
+		// NAME, which lines up with the calls only because same-name calls keep
+		// their relative order through the sort. An unstable comparator would
+		// mis-pair results silently — this test fails if that ever changes.
+		const resolveAllWrites = (name: string): ToolClassification | undefined =>
+			name === 'write_file' || name === 'append_content' ? ToolClassification.WRITE : undefined;
+		const calls = [
+			{ name: 'append_content', id: 'call_a1' },
+			{ name: 'write_file', id: 'call_w1' },
+			{ name: 'append_content', id: 'call_a2' },
+		];
+
+		const sorted = sortToolCallsByPriority(calls, resolveAllWrites);
+
+		expect(sorted.map((c) => c.id)).toEqual(['call_a1', 'call_w1', 'call_a2']);
+	});
 	test('all known READ-classified tools sort before any write/destructive (regression for missing custom reads)', () => {
 		const reads = [
 			'read_file',

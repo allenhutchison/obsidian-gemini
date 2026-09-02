@@ -731,6 +731,9 @@ export class AgentLoop {
 					toolName: toolCall.name,
 					toolArguments: toolCall.arguments,
 					result,
+					// Carry the model-assigned correlation id so the replayed
+					// functionResponse pairs with its functionCall (#1398).
+					...(toolCall.id && { id: toolCall.id }),
 				});
 			} catch (error) {
 				plugin.logger.error(`[AgentLoop] Tool execution error for ${toolCall.name}:`, error);
@@ -742,6 +745,9 @@ export class AgentLoop {
 						success: false,
 						error: getRawErrorMessageOr(error, 'Unknown error'),
 					},
+					// Same correlation on the error path — the functionResponse
+					// still needs to pair with its functionCall (#1398).
+					...(toolCall.id && { id: toolCall.id }),
 				});
 			}
 		}
