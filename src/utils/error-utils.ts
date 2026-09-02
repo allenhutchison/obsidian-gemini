@@ -4,7 +4,14 @@
  * Raw extraction (no translation): `getRawErrorMessage` — `Error` → `.message`, everything else → `String(error)`.
  * Raw extraction with an explicit fallback: `getRawErrorMessageOr` — `Error` → `.message`, everything else → the supplied fallback.
  * User-facing translation (maps provider quirks to friendly guidance): `getErrorMessage`.
+ *
+ * The guidance `getErrorMessage`/`getHttpErrorMessage` return is UI prose — it is interpolated into
+ * localized `Notice` templates and, at five call sites, *is* the whole notice — so every sentence
+ * they return goes through `t()` under the `error.*` namespace. The raw helpers above stay
+ * untranslated by design: their output is provider text bound for logs and persisted sidecars.
  */
+
+import { t } from '../i18n';
 
 /**
  * Coerce an unknown value to a string-keyed record for safe property probing.
@@ -190,7 +197,7 @@ export function getRawErrorMessageOr(error: unknown, fallback: string): string {
 export function getErrorMessage(error: unknown): string {
 	// Handle null/undefined
 	if (!error) {
-		return 'An unknown error occurred';
+		return t('error.unknown');
 	}
 
 	// Convert to Error object if it's a string
@@ -214,10 +221,10 @@ export function getErrorMessage(error: unknown): string {
 		if (isOpenAIApiError(asRecord(error))) {
 			const statusCode = extractStatusCode(error);
 			if (statusCode === 401) {
-				return 'Invalid OpenAI API key. Please check the API key in Settings → Gemini Scribe.';
+				return t('error.openaiInvalidKey');
 			}
 			if (statusCode === 404) {
-				return 'Model not available on this endpoint. Please check your model settings or the configured base URL.';
+				return t('error.modelNotOnEndpoint');
 			}
 		}
 
@@ -230,7 +237,7 @@ export function getErrorMessage(error: unknown): string {
 		// carry one) rather than an SDK class import, for the same reason as
 		// `isOpenAIApiError` above.
 		if (message === 'Connection error.' && extractStatusCode(error) === null) {
-			return 'Could not connect to the model server. If you configured a custom base URL (LM Studio, MLX, etc.), make sure the server is running and the base URL in settings is correct.';
+			return t('error.serverUnreachable');
 		}
 
 		// API key errors
@@ -239,7 +246,7 @@ export function getErrorMessage(error: unknown): string {
 			messageLower.includes('api_key') ||
 			messageLower.includes('invalid_api_key')
 		) {
-			return 'Invalid API key. Please check your model provider credentials in settings.';
+			return t('error.invalidApiKey');
 		}
 
 		// Authentication/permission errors
@@ -248,7 +255,7 @@ export function getErrorMessage(error: unknown): string {
 			messageLower.includes('forbidden') ||
 			messageLower.includes('unauthorized')
 		) {
-			return 'Authentication failed. Please verify your model provider credentials and that your account has access to this model.';
+			return t('error.authFailed');
 		}
 
 		// Rate limiting — distinguish transient from permanent quota exhaustion
@@ -258,9 +265,9 @@ export function getErrorMessage(error: unknown): string {
 			messageLower.includes('resource_exhausted')
 		) {
 			if (isQuotaExhausted(error)) {
-				return 'Free-tier quota exhausted for this model. Try switching to a different model (e.g., Gemini Flash) or enable billing in Google AI Studio.';
+				return t('error.quotaExhausted');
 			}
-			return 'API rate limit exceeded. Please wait a moment and try again.';
+			return t('error.rateLimit');
 		}
 
 		// Model not found
@@ -274,9 +281,9 @@ export function getErrorMessage(error: unknown): string {
 				// (e.g. `model 'llama3.2' not found, try pulling it first`).
 				const match = error.message.match(/model\s+["']?([\w./:-]+)["']?/i);
 				const modelName = match ? match[1] : 'this model';
-				return `Ollama model not pulled. Run: ollama pull ${modelName}`;
+				return t('error.ollamaModelNotPulled', { model: modelName });
 			}
-			return 'The selected model is not available. Please check your model settings.';
+			return t('error.modelNotAvailable');
 		}
 
 		// Network errors. Match the specific fetch-failure phrasings — "Failed to
@@ -299,14 +306,14 @@ export function getErrorMessage(error: unknown): string {
 			const looksLikeOllamaEndpoint =
 				/(?:^|[\s(/])(?:https?:\/\/)?(?:localhost|127\.0\.0\.1|\[::1\]|[\w.-]+):11434\b/.test(messageLower);
 			if (messageLower.includes('ollama') || looksLikeOllamaEndpoint) {
-				return 'Could not connect to the Ollama daemon. Make sure `ollama serve` is running and the base URL in settings is correct.';
+				return t('error.ollamaUnreachable');
 			}
-			return 'Network error: Unable to reach the model API. Please check your connection.';
+			return t('error.network');
 		}
 
 		// Timeout errors
 		if (messageLower.includes('timeout') || messageLower.includes('timed out')) {
-			return 'Request timed out. The API took too long to respond. Please try again.';
+			return t('error.timeout');
 		}
 
 		// Service unavailable
@@ -316,12 +323,12 @@ export function getErrorMessage(error: unknown): string {
 		// that isn't happening. Genuine 503s are still covered by the HTTP
 		// status-code path in getHttpErrorMessage.
 		if (messageLower.includes('unavailable')) {
-			return 'The model API is temporarily unavailable. Please try again later.';
+			return t('error.serviceUnavailable');
 		}
 
 		// Content filtering/safety
 		if (messageLower.includes('safety') || messageLower.includes('blocked')) {
-			return 'Content was blocked by safety filters. Please rephrase your request.';
+			return t('error.safetyBlocked');
 		}
 
 		// HTTP status code mapping runs after the message-based checks above so
@@ -338,16 +345,16 @@ export function getErrorMessage(error: unknown): string {
 			messageLower.includes('too long') ||
 			messageLower.includes('max tokens')
 		) {
-			return 'Request exceeds token limit. Please reduce the length of your message or conversation history.';
+			return t('error.tokenLimit');
 		}
 
 		// If we have a message, return it
 		if (message) {
-			return `API error: ${message}`;
+			return t('error.apiPrefix', { message });
 		}
 
 		// Fallback for Error objects without useful message
-		return 'An error occurred while communicating with the model API';
+		return t('error.communicationFailed');
 	}
 
 	// Handle objects with error information
@@ -364,7 +371,7 @@ export function getErrorMessage(error: unknown): string {
 		if (err.message) {
 			// If the message is a string, process it as an error message with prefix
 			if (typeof err.message === 'string') {
-				return `API error: ${err.message}`;
+				return t('error.apiPrefix', { message: err.message });
 			}
 			// Otherwise recurse (could be nested error object)
 			return getErrorMessage(err.message);
@@ -375,7 +382,7 @@ export function getErrorMessage(error: unknown): string {
 		if (nestedError.message) {
 			// Process nested error message
 			if (typeof nestedError.message === 'string') {
-				return `API error: ${nestedError.message}`;
+				return t('error.apiPrefix', { message: nestedError.message });
 			}
 			return getErrorMessage(nestedError.message);
 		}
@@ -384,7 +391,7 @@ export function getErrorMessage(error: unknown): string {
 		try {
 			const errorStr = JSON.stringify(err);
 			if (errorStr !== '{}') {
-				return `API error: ${errorStr}`;
+				return t('error.apiPrefix', { message: errorStr });
 			}
 		} catch {
 			// JSON.stringify failed, continue to fallback
@@ -392,7 +399,7 @@ export function getErrorMessage(error: unknown): string {
 	}
 
 	// Final fallback
-	return 'An unknown error occurred while communicating with the model API';
+	return t('error.unknownCommunication');
 }
 
 /**
@@ -457,32 +464,36 @@ function getHttpErrorMessage(statusCode: number, error: unknown): string {
 
 	switch (statusCode) {
 		case 400:
-			return 'Bad request: The API request was invalid. Please check your message and try again.';
+			return t('error.http.badRequest');
 		case 401:
-			return 'Authentication failed: Invalid API key. Please check your model provider credentials in settings.';
+			return t('error.http.unauthorized');
 		case 403:
-			return 'Access forbidden: The model provider denied access to this model or feature.';
+			return t('error.http.forbidden');
 		case 404:
-			return 'Model not found: The selected model is not available. Please check your model settings.';
+			return t('error.http.notFound');
 		case 429:
 			if (isQuotaExhausted(error)) {
-				return 'Free-tier quota exhausted for this model. Try switching to a different model (e.g., Gemini Flash) or enable billing in Google AI Studio.';
+				return t('error.quotaExhausted');
 			}
-			return 'Rate limit exceeded: Too many requests. Please wait a moment and try again.';
+			return t('error.http.rateLimit');
 		case 500:
-			return 'Server error: The model API encountered an internal error. Please try again later.';
+			return t('error.http.serverError');
 		case 503:
-			return 'Service unavailable: The model API is temporarily down. Please try again later.';
+			return t('error.http.serviceUnavailable');
 		case 504:
-			return 'Gateway timeout: The API request took too long. Please try again.';
+			return t('error.http.gatewayTimeout');
 		default:
 			if (statusCode >= 500) {
-				return `Server error (${statusCode}): The model API is experiencing issues. Please try again later.`;
+				return t('error.http.serverErrorWithCode', { statusCode });
 			}
 			if (statusCode >= 400) {
-				return `Client error (${statusCode}): ${errorMessage || 'Please check your request and try again.'}`;
+				return errorMessage
+					? t('error.http.clientErrorWithCode', { statusCode, message: errorMessage })
+					: t('error.http.clientErrorWithCodeNoDetail', { statusCode });
 			}
-			return `HTTP error ${statusCode}: ${errorMessage || 'An unexpected error occurred.'}`;
+			return errorMessage
+				? t('error.http.genericWithCode', { statusCode, message: errorMessage })
+				: t('error.http.genericWithCodeNoDetail', { statusCode });
 	}
 }
 

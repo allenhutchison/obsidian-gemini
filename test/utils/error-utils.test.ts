@@ -1,3 +1,5 @@
+import { getLanguage } from 'obsidian';
+import { locales } from '../../src/i18n';
 import {
 	getErrorMessage,
 	getRawErrorMessage,
@@ -665,6 +667,70 @@ describe('error-utils', () => {
 		test('returns short messages unchanged', () => {
 			expect(truncateStoredError('Disk full')).toBe('Disk full');
 			expect(truncateStoredError('')).toBe('');
+		});
+	});
+
+	// Every assertion above resolves through `t()` already — `__mocks__/obsidian.js` stubs
+	// `getLanguage()` to 'en', so the English source string comes back and the exact-string
+	// expectations keep their original meaning. These cases cover what that setup cannot show:
+	// that the returns are genuinely keyed lookups rather than English literals, and that the
+	// placeholders survive the move into `en.ts`.
+	describe('localization', () => {
+		const RU_KEYS = ['error.timeout', 'error.ollamaModelNotPulled', 'error.http.serverErrorWithCode'] as const;
+
+		afterEach(() => {
+			vi.mocked(getLanguage).mockReturnValue('en');
+			for (const key of RU_KEYS) delete locales.ru[key];
+		});
+
+		test('resolves through the active locale rather than returning English literals', () => {
+			locales.ru['error.timeout'] = 'Время ожидания запроса истекло.';
+			vi.mocked(getLanguage).mockReturnValue('ru');
+
+			expect(getErrorMessage(new Error('Request timed out'))).toBe('Время ожидания запроса истекло.');
+		});
+
+		test('falls back to English for a key the active locale has not translated yet', () => {
+			// The `Update UI translations` workflow regenerates language files only after `en.ts`
+			// lands on master, so a newly added key is missing from every locale in the meantime.
+			vi.mocked(getLanguage).mockReturnValue('ru');
+
+			expect(getErrorMessage(new Error('Request timed out'))).toBe(
+				'Request timed out. The API took too long to respond. Please try again.'
+			);
+		});
+
+		test('interpolates the Ollama model name into the translated pull hint', () => {
+			locales.ru['error.ollamaModelNotPulled'] = 'Модель Ollama не загружена. Выполните: ollama pull {model}';
+			vi.mocked(getLanguage).mockReturnValue('ru');
+
+			const error = new Error("model 'llama3.2' not found, try pulling it first");
+			expect(getErrorMessage(error)).toBe('Модель Ollama не загружена. Выполните: ollama pull llama3.2');
+		});
+
+		test('interpolates the status code into the translated 5xx fallback', () => {
+			locales.ru['error.http.serverErrorWithCode'] = 'Ошибка сервера ({statusCode}). Повторите попытку позже.';
+			vi.mocked(getLanguage).mockReturnValue('ru');
+
+			expect(getErrorMessage({ status: 502 })).toBe('Ошибка сервера (502). Повторите попытку позже.');
+		});
+
+		test('interpolates the status code and provider detail into the 4xx fallback', () => {
+			expect(getErrorMessage({ status: 422, message: 'Unprocessable payload' })).toBe(
+				'Client error (422): Unprocessable payload'
+			);
+		});
+
+		test('uses the detail-free 4xx fallback when the provider supplied no message', () => {
+			expect(getErrorMessage({ status: 422 })).toBe('Client error (422): Please check your request and try again.');
+		});
+
+		test('interpolates the status code and provider detail into the non-4xx/5xx fallback', () => {
+			expect(getErrorMessage({ status: 302, message: 'Found elsewhere' })).toBe('HTTP error 302: Found elsewhere');
+		});
+
+		test('uses the detail-free fallback for a non-4xx/5xx status with no message', () => {
+			expect(getErrorMessage({ status: 302 })).toBe('HTTP error 302: An unexpected error occurred.');
 		});
 	});
 });
