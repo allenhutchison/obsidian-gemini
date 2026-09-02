@@ -58,6 +58,34 @@ function sleep(ms: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** How often an in-flight backoff sleep re-checks the abort hook (ms). */
+const ABORT_POLL_INTERVAL_MS = 100;
+
+/**
+ * Sleep for `ms`, but cut the wait short when `shouldAbort` turns true — a
+ * cancellation that arrives during a backoff wait rejects immediately instead
+ * of stalling until the sleep elapses (#1448). Checked via polling at
+ * ABORT_POLL_INTERVAL so the hook-based contract (a flag, not an AbortSignal)
+ * keeps working; with no `shouldAbort`, this is exactly `sleep(ms)`.
+ *
+ * Returns whether the sleep completed uninterrupted (`false` = aborted).
+ */
+async function sleepInterruptibly(ms: number, shouldAbort?: () => boolean): Promise<boolean> {
+	if (!shouldAbort || ms <= ABORT_POLL_INTERVAL_MS) {
+		await sleep(ms);
+		return true;
+	}
+
+	let elapsed = 0;
+	while (elapsed < ms) {
+		if (shouldAbort()) return false;
+		const slice = Math.min(ABORT_POLL_INTERVAL_MS, ms - elapsed);
+		await sleep(slice);
+		elapsed += slice;
+	}
+	return true;
+}
+
 /**
  * Calculate backoff delay with optional jitter
  */
@@ -140,7 +168,13 @@ export async function executeWithRetry<T>(
 				error
 			);
 
-			await sleep(backoffDelay);
+			// Cut the backoff short when cancelled: without this, a cancellation
+			// arriving during the sleep is only observed when the sleep elapses —
+			// up to the 60s delay cap — leaving the caller's promise pending and
+			// the cancellation notice delayed (#1448).
+			if (!(await sleepInterruptibly(backoffDelay, shouldAbort))) {
+				throw makeAbortError();
+			}
 		}
 	}
 
