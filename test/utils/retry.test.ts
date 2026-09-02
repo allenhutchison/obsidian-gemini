@@ -494,11 +494,11 @@ describe('retry utilities', () => {
 					}
 				);
 				const assertion = expect(promise).rejects.toThrow('cancellable was cancelled');
-				// First attempt fails; the 500ms backoff is scheduled.
+				// First attempt fails; the 5000ms backoff is scheduled.
 				await vi.advanceTimersByTimeAsync(0);
 				cancelled = true;
 				// One poll interval observes the cancellation — the sleep must NOT
-				// need to run its full 500ms before the abort throws.
+				// need to run its full 5000ms before the abort throws.
 				await vi.advanceTimersByTimeAsync(100);
 				await assertion;
 				expect(op).toHaveBeenCalledTimes(1);
