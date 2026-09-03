@@ -148,6 +148,7 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 		if (this.initialized && !options?.refresh) return;
 		// Refresh keeps `initialized` true, so invalidate the previous lifecycle explicitly.
 		const generation = ++this.lifecycleGeneration;
+		const isCurrent = () => this.lifecycleGeneration === generation;
 		// Cancel any 500 ms defers still waiting from a previous initialization so
 		// stale callbacks cannot fire against the freshly-loaded state.
 		this.cancelPendingDefers();
@@ -159,10 +160,12 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 
 		await ensureFolderExists(this.plugin.app.vault, this.scheduledTasksFolder, 'scheduled tasks', this.plugin.logger);
 		await ensureFolderExists(this.plugin.app.vault, this.runsFolder, 'scheduled task runs', this.plugin.logger);
-		await this.loadState();
-		await this.discoverDefinitions();
+		await this.loadState(isCurrent);
+		if (isCurrent()) {
+			await this.discoverDefinitions(isCurrent);
+		}
 
-		if (this.lifecycleGeneration !== generation) {
+		if (!isCurrent()) {
 			this.plugin.logger.log('[ScheduledTaskManager] Aborting superseded initialization');
 			return;
 		}

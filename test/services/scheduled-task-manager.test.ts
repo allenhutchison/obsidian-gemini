@@ -868,6 +868,15 @@ describe('ScheduledTaskManager', () => {
 
 		it('does not register listeners when destroy() interrupts initialize()', async () => {
 			const plugin = createMockPlugin();
+			plugin.app.vault.getMarkdownFiles.mockReturnValue([
+				Object.assign(new MockTFile(), {
+					path: 'gemini-scribe/Scheduled-Tasks/stale-task.md',
+					basename: 'stale-task',
+					extension: 'md',
+				}),
+			]);
+			plugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { schedule: 'daily' } });
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Stale prompt.');
 			plugin.app.vault.adapter.exists.mockResolvedValue(true);
 			let resolveStateRead!: (value: string) => void;
 			plugin.app.vault.adapter.read.mockReturnValue(
@@ -882,11 +891,17 @@ describe('ScheduledTaskManager', () => {
 				expect(plugin.app.vault.adapter.read).toHaveBeenCalledOnce();
 			});
 			manager.destroy();
-			resolveStateRead('{}');
+			resolveStateRead(
+				JSON.stringify({
+					'stale-task': { nextRunAt: '2026-09-04T08:00:00.000Z' },
+				})
+			);
 			await initializePromise;
 
 			expect(plugin.app.vault.on).not.toHaveBeenCalled();
 			expect(plugin.app.metadataCache.on).not.toHaveBeenCalled();
+			expect(manager.getTasks()).toEqual([]);
+			expect(manager.getState()).toEqual({});
 
 			plugin.app.vault.adapter.read.mockResolvedValue('{}');
 			await manager.initialize();

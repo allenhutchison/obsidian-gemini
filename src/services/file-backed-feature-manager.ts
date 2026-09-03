@@ -120,8 +120,12 @@ export abstract class FileBackedFeatureManager<TDef extends FileBackedDefinition
 	 * feature folder (excluding the `Runs/` subtree), seed state for newly-seen
 	 * definitions, drop orphan state entries, and persist. Replaces the
 	 * copy-pasted `discoverHooks` / `discoverTasks` loops.
+	 *
+	 * When provided, `isCurrent` is checked before applying results from each
+	 * asynchronous parse so a superseded lifecycle cannot repopulate the maps.
 	 */
-	protected async discoverDefinitions(): Promise<void> {
+	protected async discoverDefinitions(isCurrent?: () => boolean): Promise<void> {
+		if (isCurrent && !isCurrent()) return;
 		this.definitions.clear();
 
 		const prefix = this.featureFolderPath + '/';
@@ -134,10 +138,12 @@ export abstract class FileBackedFeatureManager<TDef extends FileBackedDefinition
 		for (const file of files) {
 			try {
 				const def = await this.parseDefinitionFile(file);
+				if (isCurrent && !isCurrent()) return;
 				if (!def) continue;
 				this.definitions.set(def.slug, def);
 				this.seedDiscoveredState(def);
 			} catch (err) {
+				if (isCurrent && !isCurrent()) return;
 				this.plugin.logger.warn(
 					`${this.featureConfig.logPrefix} Failed to parse ${this.featureConfig.featureNoun} file ${file.path}:`,
 					err
@@ -176,8 +182,11 @@ export abstract class FileBackedFeatureManager<TDef extends FileBackedDefinition
 
 	// ── State persistence ────────────────────────────────────────────────────
 
-	protected async loadState(): Promise<void> {
-		this.state = await this.stateStore.load();
+	protected async loadState(isCurrent?: () => boolean): Promise<void> {
+		const state = await this.stateStore.load();
+		if (!isCurrent || isCurrent()) {
+			this.state = state;
+		}
 	}
 
 	protected async saveState(): Promise<void> {
