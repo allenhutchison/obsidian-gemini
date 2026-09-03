@@ -429,8 +429,6 @@ export class SessionManager {
 			contextFiles,
 			toolPolicy: parseSessionToolPolicy(frontmatter, DEFAULT_CONTEXTS.NOTE_CHAT.toolPolicy),
 			requireConfirmation,
-			maxContextChars: typeof frontmatter.max_context_chars === 'number' ? frontmatter.max_context_chars : undefined,
-			maxCharsPerFile: typeof frontmatter.max_chars_per_file === 'number' ? frontmatter.max_chars_per_file : undefined,
 		};
 	}
 

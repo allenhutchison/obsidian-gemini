@@ -42,12 +42,6 @@ export interface AgentContext {
 
 	/** Actions that require user confirmation */
 	requireConfirmation: DestructiveAction[];
-
-	/** Maximum total characters to include from context files */
-	maxContextChars?: number;
-
-	/** Maximum characters per individual file */
-	maxCharsPerFile?: number;
 }
 
 /**
@@ -160,8 +154,6 @@ export const DEFAULT_CONTEXTS = {
 		// are filtered out of the registry.
 		toolPolicy: { preset: PolicyPreset.READ_ONLY },
 		requireConfirmation: [],
-		maxContextChars: 50000,
-		maxCharsPerFile: 10000,
 	} as Omit<AgentContext, 'contextFiles'>,
 
 	AGENT_SESSION: {
@@ -176,8 +168,6 @@ export const DEFAULT_CONTEXTS = {
 			DestructiveAction.DELETE_FILES,
 			DestructiveAction.EXTERNAL_API_CALLS,
 		],
-		maxContextChars: 100000,
-		maxCharsPerFile: 15000,
 	} as AgentContext,
 } as const;
 
