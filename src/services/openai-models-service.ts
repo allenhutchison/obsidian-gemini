@@ -157,7 +157,6 @@ export class OpenAIModelsService {
 			value: id,
 			label: id,
 			provider: 'openai',
-			supportsTools: true,
 			supportsVision: meta.supportsVision,
 			contextWindow: meta.contextWindow,
 			...(meta.defaultForRoles && { defaultForRoles: [...meta.defaultForRoles] }),

@@ -31,7 +31,6 @@ describe('OpenAIModelsService', () => {
 		expect(models[0]).toMatchObject({
 			value: 'gpt-5.6-sol',
 			provider: 'openai',
-			supportsTools: true,
 			supportsVision: true,
 			contextWindow: 922_000,
 			defaultForRoles: ['chat'],
@@ -50,7 +49,6 @@ describe('OpenAIModelsService', () => {
 			expect.objectContaining({
 				value: 'some-custom-local-model',
 				provider: 'openai',
-				supportsTools: true,
 				supportsVision: false,
 				contextWindow: 128_000,
 			}),

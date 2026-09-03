@@ -339,7 +339,6 @@ export class OllamaModelsService {
 			value: name,
 			label: this.formatLabel(m),
 			provider: 'ollama',
-			supportsTools: true,
 			supportsVision: isVision,
 			...(contextWindow && { contextWindow }),
 			...(m.remote_host && { remoteHost: m.remote_host }),
