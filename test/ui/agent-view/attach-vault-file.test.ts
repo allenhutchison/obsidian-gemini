@@ -144,7 +144,8 @@ describe('attachVaultBinaryFile', () => {
 	it('accepts a bulky source SVG whose rasterized PNG fits the budget (no source gate) (#1434 review)', async () => {
 		// A >20 MB source SVG can rasterize to a small PNG (the rasterizer caps
 		// the canvas at 2048px); the source-byte gate must not reject it — only
-		// the converted payload counts.
+		// the converted payload counts. Building/copying the >20 MB source buffer
+		// is CPU-bound and can exceed the default 5s timeout under load; give it room.
 		const bulky = bufferOf(new Array(GEMINI_INLINE_DATA_LIMIT + 1024).fill(0x20));
 		rasterizeSvg.mockResolvedValue('AB=='); // decodes to 1 byte
 		const result = await attachVaultBinaryFile(
@@ -158,7 +159,7 @@ describe('attachVaultBinaryFile', () => {
 			expect(result.bytes).toBe(1);
 			expect(rasterizeSvg).toHaveBeenCalledWith(expect.anything(), false, GEMINI_INLINE_DATA_LIMIT);
 		}
-	});
+	}, 20000);
 
 	it('returns raster-failed when rasterization rejects', async () => {
 		rasterizeSvg.mockRejectedValue(new Error('bad svg'));
