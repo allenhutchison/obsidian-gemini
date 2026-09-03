@@ -17,8 +17,6 @@ export interface GeminiModel {
 	maxTemperature?: number;
 	/** Provider that serves this model. Omitted entries are treated as 'gemini' for backward compat. */
 	provider?: ModelProvider;
-	/** Whether the model is known to support function/tool calling. Defaults to true for Gemini, varies for Ollama. */
-	supportsTools?: boolean;
 	/** Whether the model supports image input (vision). */
 	supportsVision?: boolean;
 	/** Context window in tokens (used for compaction thresholds). */

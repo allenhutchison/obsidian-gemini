@@ -45,7 +45,6 @@ describe('OllamaModelsService', () => {
 			value: 'llama3.2:3b',
 			label: 'llama3.2:3b (3.2B)',
 			provider: 'ollama',
-			supportsTools: true,
 			defaultForRoles: ['completions'], // 3b matches the small-model heuristic
 		});
 		// Vision detection
