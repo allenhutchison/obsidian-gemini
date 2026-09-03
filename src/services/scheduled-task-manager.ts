@@ -64,6 +64,8 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 	private tasks = new Map<string, ScheduledTask>();
 	private tickIntervalId: number | null = null;
 	private initialized = false;
+	/** Invalidates asynchronous handlers across initialize/destroy boundaries. */
+	private lifecycleGeneration = 0;
 	private metadataCacheHandler: ((...data: unknown[]) => unknown) | null = null;
 	private vaultCreateHandler: ((...data: unknown[]) => unknown) | null = null;
 	/** Slugs of tasks currently being submitted — prevents double-fire from tick + runNow race. */
@@ -138,13 +140,14 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 	 * with refresh: true so that historyFolder changes are picked up without
 	 * requiring a full plugin restart.
 	 *
-	 * Passing no arguments (or refresh: false) after the first successful
 	 * initialization is a no-op — this prevents the double-init that occurs
 	 * when setup() runs with layoutReady === true and onLayoutReady() fires
 	 * immediately afterwards.
 	 */
 	async initialize(options?: { refresh?: boolean }): Promise<void> {
 		if (this.initialized && !options?.refresh) return;
+		// Refresh keeps `initialized` true, so invalidate the previous lifecycle explicitly.
+		const generation = ++this.lifecycleGeneration;
 		// Cancel any 500 ms defers still waiting from a previous initialization so
 		// stale callbacks cannot fire against the freshly-loaded state.
 		this.cancelPendingDefers();
@@ -158,6 +161,11 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 		await ensureFolderExists(this.plugin.app.vault, this.runsFolder, 'scheduled task runs', this.plugin.logger);
 		await this.loadState();
 		await this.discoverDefinitions();
+
+		if (this.lifecycleGeneration !== generation) {
+			this.plugin.logger.log('[ScheduledTaskManager] Aborting superseded initialization');
+			return;
+		}
 
 		// Re-parse a task definition file whenever the metadata cache updates it
 		// (fires after Obsidian re-indexes the frontmatter, so values are current).
@@ -173,6 +181,8 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 				if (this.recentlyCreated.has(slug)) return;
 				this.parseTaskFile(file)
 					.then(async (task) => {
+						// The parse may outlive the lifecycle that started it.
+						if (generation !== this.lifecycleGeneration) return;
 						if (task) {
 							const isNew = !this.tasks.has(task.slug);
 							this.tasks.set(task.slug, task);
@@ -218,11 +228,12 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 				const timerId = window.setTimeout(() => {
 					this.pendingDefers.delete(timerId);
 					this.recentlyCreated.delete(file.basename);
-					// Guard: if the manager was destroyed or re-initialized while the
-					// defer was pending, skip the parse — state has been reset.
-					if (!this.initialized) return;
+					// A pending timer may outlive the lifecycle that scheduled it.
+					if (!this.initialized || this.lifecycleGeneration !== generation) return;
 					this.parseTaskFile(file)
 						.then(async (task) => {
+							// The parse may outlive the lifecycle that scheduled it.
+							if (this.lifecycleGeneration !== generation) return;
 							if (!task) return;
 							// Skip if createTask() already registered this task immediately.
 							if (this.tasks.has(task.slug)) return;
@@ -457,14 +468,14 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 	}
 
 	destroy(): void {
+		// Invalidate in-flight parses before clearing state.
+		this.lifecycleGeneration++;
 		if (this.tickIntervalId !== null) {
 			window.clearInterval(this.tickIntervalId);
 			this.tickIntervalId = null;
 		}
 		this.detachVaultListeners();
-		// Cancel any 500 ms defers still in flight — their callbacks check
-		// this.initialized before touching state, but clearing here is the
-		// belt-and-suspenders guarantee that no timer fires after teardown.
+		// Also stop any defer that has not fired yet.
 		this.cancelPendingDefers();
 		this.tasks.clear();
 		this.state = {};

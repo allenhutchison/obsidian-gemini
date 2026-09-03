@@ -747,6 +747,153 @@ describe('ScheduledTaskManager', () => {
 			// parseTaskFile (vault.read) must never have been called from the stale defer
 			expect(plugin.app.vault.read).not.toHaveBeenCalled();
 		});
+
+		it('does not admit a create event whose parse resolves after destroy()', async () => {
+			const plugin = createMockPlugin();
+			plugin.app.vault.getMarkdownFiles.mockReturnValue([]);
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			const vaultOnCalls = (plugin.app.vault.on as Mock).mock.calls;
+			const createHandler = vaultOnCalls.find(([e]: any[]) => e === 'create')?.[1] as (...a: unknown[]) => unknown;
+			const newFile = Object.assign(new MockTFile(), {
+				path: 'gemini-scribe/Scheduled-Tasks/late-task.md',
+				basename: 'late-task',
+				extension: 'md',
+			});
+			let resolveRead!: (value: string) => void;
+			plugin.app.vault.read = vi.fn().mockReturnValue(
+				new Promise<string>((resolve) => {
+					resolveRead = resolve;
+				})
+			);
+			plugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { schedule: 'daily' } });
+
+			vi.useFakeTimers();
+			try {
+				createHandler(newFile);
+				await vi.advanceTimersByTimeAsync(500);
+				expect(plugin.app.vault.read).toHaveBeenCalledOnce();
+				plugin.app.vault.adapter.write.mockClear();
+
+				manager.destroy();
+				resolveRead('Late prompt.');
+				await Promise.resolve();
+				await Promise.resolve();
+
+				expect(manager.getTasks()).toEqual([]);
+				expect(manager.getState()).toEqual({});
+				expect(plugin.app.vault.adapter.write).not.toHaveBeenCalled();
+			} finally {
+				vi.useRealTimers();
+				manager.destroy();
+			}
+		});
+
+		it('does not admit a create event whose parse crosses a refresh initialize()', async () => {
+			const plugin = createMockPlugin();
+			plugin.app.vault.getMarkdownFiles.mockReturnValue([]);
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			const vaultOnCalls = (plugin.app.vault.on as Mock).mock.calls;
+			const createHandler = vaultOnCalls.find(([e]: any[]) => e === 'create')?.[1] as (...a: unknown[]) => unknown;
+			const newFile = Object.assign(new MockTFile(), {
+				path: 'gemini-scribe/Scheduled-Tasks/stale-task.md',
+				basename: 'stale-task',
+				extension: 'md',
+			});
+			let resolveRead!: (value: string) => void;
+			plugin.app.vault.read = vi.fn().mockReturnValue(
+				new Promise<string>((resolve) => {
+					resolveRead = resolve;
+				})
+			);
+			plugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { schedule: 'daily' } });
+
+			vi.useFakeTimers();
+			try {
+				createHandler(newFile);
+				await vi.advanceTimersByTimeAsync(500);
+				expect(plugin.app.vault.read).toHaveBeenCalledOnce();
+
+				await manager.initialize({ refresh: true });
+				plugin.app.vault.adapter.write.mockClear();
+				resolveRead('Stale prompt.');
+				await Promise.resolve();
+				await Promise.resolve();
+
+				expect(manager.getTasks()).toEqual([]);
+				expect(manager.getState()).toEqual({});
+				expect(plugin.app.vault.adapter.write).not.toHaveBeenCalled();
+			} finally {
+				vi.useRealTimers();
+				manager.destroy();
+			}
+		});
+
+		it('does not apply a metadata re-parse that resolves after destroy()', async () => {
+			const plugin = createMockPlugin();
+			plugin.app.vault.getMarkdownFiles.mockReturnValue([]);
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			const cacheOnCalls = (plugin.app.metadataCache.on as Mock).mock.calls;
+			const changedHandler = cacheOnCalls.find(([e]: any[]) => e === 'changed')?.[1] as (...a: unknown[]) => unknown;
+			const changedFile = Object.assign(new MockTFile(), {
+				path: 'gemini-scribe/Scheduled-Tasks/changed-task.md',
+				basename: 'changed-task',
+				extension: 'md',
+			});
+			let resolveRead!: (value: string) => void;
+			plugin.app.vault.read = vi.fn().mockReturnValue(
+				new Promise<string>((resolve) => {
+					resolveRead = resolve;
+				})
+			);
+			plugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { schedule: 'daily' } });
+
+			changedHandler(changedFile);
+			expect(plugin.app.vault.read).toHaveBeenCalledOnce();
+			plugin.app.vault.adapter.write.mockClear();
+			manager.destroy();
+			resolveRead('Changed prompt.');
+			await Promise.resolve();
+			await Promise.resolve();
+
+			expect(manager.getTasks()).toEqual([]);
+			expect(manager.getState()).toEqual({});
+			expect(plugin.app.vault.adapter.write).not.toHaveBeenCalled();
+		});
+
+		it('does not register listeners when destroy() interrupts initialize()', async () => {
+			const plugin = createMockPlugin();
+			plugin.app.vault.adapter.exists.mockResolvedValue(true);
+			let resolveStateRead!: (value: string) => void;
+			plugin.app.vault.adapter.read.mockReturnValue(
+				new Promise<string>((resolve) => {
+					resolveStateRead = resolve;
+				})
+			);
+			const manager = new ScheduledTaskManager(plugin);
+
+			const initializePromise = manager.initialize();
+			await vi.waitFor(() => {
+				expect(plugin.app.vault.adapter.read).toHaveBeenCalledOnce();
+			});
+			manager.destroy();
+			resolveStateRead('{}');
+			await initializePromise;
+
+			expect(plugin.app.vault.on).not.toHaveBeenCalled();
+			expect(plugin.app.metadataCache.on).not.toHaveBeenCalled();
+
+			plugin.app.vault.adapter.read.mockResolvedValue('{}');
+			await manager.initialize();
+			expect(plugin.app.vault.on).toHaveBeenCalledOnce();
+			expect(plugin.app.metadataCache.on).toHaveBeenCalledOnce();
+			manager.destroy();
+		});
 	});
 
 	// ── Tick behaviour ──────────────────────────────────────────────────────
