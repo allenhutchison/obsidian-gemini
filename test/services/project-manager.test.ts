@@ -107,7 +107,12 @@ describe('ProjectManager', () => {
 			await manager.initialize();
 
 			expect(manager.discoverProjects()).toHaveLength(0);
-			expect(mockPlugin.logger.warn).toHaveBeenCalled();
+			// The scan path must use the same `ProjectManager:` prefix as the other
+			// parse-failure sites — it used to warn without it (#1369).
+			expect(mockPlugin.logger.warn).toHaveBeenCalledWith(
+				'ProjectManager: Failed to parse project at bad/Bad.md:',
+				expect.any(Error)
+			);
 		});
 	});
 

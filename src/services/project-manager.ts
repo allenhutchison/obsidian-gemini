@@ -36,14 +36,7 @@ export class ProjectManager {
 		const files = this.plugin.app.vault.getMarkdownFiles();
 		for (const file of files) {
 			if (this.isProjectFile(file)) {
-				try {
-					const project = await this.parseProjectFile(file);
-					if (project) {
-						this.projectCache.set(file.path, project);
-					}
-				} catch (error) {
-					this.plugin.logger.warn(`Failed to parse project at ${file.path}:`, error);
-				}
+				await this.cacheParsedProject(file);
 			}
 		}
 
@@ -72,16 +65,7 @@ export class ProjectManager {
 		const file = this.plugin.app.vault.getAbstractFileByPath(filePath);
 		if (!(file instanceof TFile)) return null;
 
-		try {
-			const project = await this.parseProjectFile(file);
-			if (project) {
-				this.projectCache.set(filePath, project);
-			}
-			return project;
-		} catch (error) {
-			this.plugin.logger.warn(`ProjectManager: Failed to parse project at ${filePath}:`, error);
-			return null;
-		}
+		return this.cacheParsedProject(file, filePath);
 	}
 
 	/**
@@ -318,6 +302,30 @@ Add your project instructions here. This text will be injected into the agent's 
 
 	// --- Private helpers ---
 
+	/**
+	 * Parse a project file and cache it on success, warning (not throwing) on failure.
+	 *
+	 * The three call sites differ only in the cache key: `getProject` keys on the
+	 * caller-supplied path and uses the return value, while the vault-scan and
+	 * file-change paths key on `file.path` and ignore it.
+	 *
+	 * @param file The project file to parse.
+	 * @param cacheKey Cache key to store the parsed project under; defaults to `file.path`.
+	 * @returns The parsed project, or `null` if the file isn't a project or parsing failed.
+	 */
+	private async cacheParsedProject(file: TFile, cacheKey: string = file.path): Promise<Project | null> {
+		try {
+			const project = await this.parseProjectFile(file);
+			if (project) {
+				this.projectCache.set(cacheKey, project);
+			}
+			return project;
+		} catch (error) {
+			this.plugin.logger.warn(`ProjectManager: Failed to parse project at ${cacheKey}:`, error);
+			return null;
+		}
+	}
+
 	private scheduleRefresh(file: TFile): void {
 		this.cancelPendingRefresh(file.path);
 		const timer = window.setTimeout(() => {
@@ -412,14 +420,7 @@ Add your project instructions here. This text will be injected into the agent's 
 
 	private async onFileCreateOrModify(file: TFile): Promise<void> {
 		if (this.isProjectFile(file)) {
-			try {
-				const project = await this.parseProjectFile(file);
-				if (project) {
-					this.projectCache.set(file.path, project);
-				}
-			} catch (error) {
-				this.plugin.logger.warn(`ProjectManager: Failed to parse project at ${file.path}:`, error);
-			}
+			await this.cacheParsedProject(file);
 		} else {
 			// Tag may have been removed — evict if cached
 			this.projectCache.delete(file.path);
