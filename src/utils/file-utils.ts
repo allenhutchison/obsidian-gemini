@@ -29,6 +29,101 @@ export function isPathInFolder(path: string, folder: string): boolean {
 }
 
 /**
+ * The distinct ways a generated-output path can be rejected.
+ *
+ * Callers supply their own wording for each one, so the *policy* lives here
+ * while the error text stays specific to what is being written (a research
+ * report, a generated image, …).
+ */
+export type GeneratedOutputPathViolation = 'missing-filename' | 'vault-escape' | 'config-folder' | 'state-folder';
+
+/**
+ * Options for {@link validateGeneratedOutputPath}.
+ */
+export interface GeneratedOutputPathOptions {
+	/** The vault's configuration directory (`vault.configDir`). Never writable. */
+	configDir: string;
+	/** The plugin state folder (`settings.historyFolder`); skipped when unset. */
+	historyFolder?: string;
+	/** The one subfolder of `historyFolder` that generated output may be written to. */
+	allowedSubfolder: string;
+	/**
+	 * Optional filename rewrite, applied *after* the config-folder check and
+	 * *before* the state-folder check. The ordering is load-bearing: a rewrite
+	 * changes the path that actually gets written, so the state-folder check has
+	 * to see the rewritten path (a bare `Background-Tasks` rewritten to
+	 * `Background-Tasks.png` is outside the allowed subfolder and must be
+	 * rejected). The rewritten path is what this function returns.
+	 */
+	rewriteFileName?: (normalizedPath: string) => string;
+	/**
+	 * Error message factories keyed by violation, each receiving the caller's
+	 * raw (un-normalized) path. Required in full so that adding a violation
+	 * fails to compile until every caller has wording for it — the reject set
+	 * cannot silently drift between callers again (#1401).
+	 */
+	messages: Record<GeneratedOutputPathViolation, (rawPath: string) => string>;
+}
+
+/**
+ * Validate and normalize a vault path that the plugin is about to write
+ * generated output to (a deep-research report, a generated image, …).
+ *
+ * This is the single source of truth for the "may I write this generated
+ * artifact here?" policy, which is deliberately *not* the same as the agent
+ * vault tools' blanket exclusion (`shouldExcludePathForPlugin`): generated
+ * output is allowed into one carve-out subfolder of the plugin state folder,
+ * because that subfolder is its canonical home.
+ *
+ * The reject set, in order: empty/directory-only paths, vault-escaping paths,
+ * the Obsidian configuration directory, and the plugin state folder except
+ * `allowedSubfolder`. These paths come from agent-supplied tool parameters, so
+ * every caller wants the same guards — previously each validator carried its
+ * own fork and they had already drifted apart.
+ *
+ * @param rawPath - The caller-supplied, un-normalized path
+ * @param options - Policy inputs and per-violation error wording
+ * @returns The normalized path (after `rewriteFileName`, when supplied)
+ * @throws Error built by the matching `options.messages` factory
+ */
+export function validateGeneratedOutputPath(rawPath: string, options: GeneratedOutputPathOptions): string {
+	const { configDir, historyFolder, allowedSubfolder, rewriteFileName, messages } = options;
+	const normalized = normalizePath(rawPath);
+
+	// Reject directory-only paths (empty, or a bare/trailing slash).
+	if (!normalized || normalized.endsWith('/')) {
+		throw new Error(messages['missing-filename'](rawPath));
+	}
+
+	// Reject vault-escaping paths — normalizePath does not resolve `..`.
+	if (normalized.startsWith('..') || normalized.split('/').includes('..')) {
+		throw new Error(messages['vault-escape'](rawPath));
+	}
+
+	// The Obsidian configuration directory (default `.obsidian`, but the user
+	// may have renamed it) must never be written to. Root-anchored.
+	if (isPathInFolder(normalized, configDir)) {
+		throw new Error(messages['config-folder'](rawPath));
+	}
+
+	const finalPath = rewriteFileName ? rewriteFileName(normalized) : normalized;
+
+	// The plugin state folder is off limits except for the one subfolder that is
+	// the canonical output location for background and scheduled-task output.
+	if (historyFolder) {
+		const normalizedHistoryFolder = normalizePath(historyFolder);
+		const allowedFolder = normalizePath(`${normalizedHistoryFolder}/${allowedSubfolder}`);
+		const insideStateFolder = isPathInFolder(finalPath, normalizedHistoryFolder);
+		const insideAllowedSubfolder = finalPath.startsWith(allowedFolder + '/');
+		if (insideStateFolder && !insideAllowedSubfolder) {
+			throw new Error(messages['state-folder'](rawPath));
+		}
+	}
+
+	return finalPath;
+}
+
+/**
  * Check if a file or folder path should be excluded from selection or operations.
  * This excludes:
  * - Files/folders within the specified exclude folder (e.g., plugin state folder)

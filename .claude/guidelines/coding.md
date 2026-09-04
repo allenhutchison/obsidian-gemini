@@ -79,6 +79,21 @@ module both import — never import the manager back. See `invariants.md` for th
 `ToolExecutionContext.plugin` is already typed `ObsidianGemini` — use `context.plugin` directly,
 no cast.
 
+### There is no public API barrel
+
+The plugin ships as a release ZIP through the Obsidian community-plugin registry — it is never
+`npm publish`ed — so it exposes no extension API and there is nothing for a `src/index.ts` barrel
+to serve. That barrel was deleted in #1356 along with `package.json`'s `types` and `exports` keys
+(`main: "main.js"` stays — the Obsidian loader needs it). Don't reintroduce any of the three:
+knip treats a package's `types`/`exports` entry as a program entry point, so a barrel re-exporting
+internal symbols marks every one of them reachable and silently exempts them from the
+CI-blocking `npm run knip` check (#1294). The barrel also held the one standing exception to the
+rule above — `export { default as ObsidianGeminiPlugin } from './main'` — which went with it, so
+the never-import-`main.ts` rule now has no exceptions at all. If an extension API ever becomes a
+goal, it needs a real consumer that keeps it honest (a type-only test that imports every exported
+symbol), plus a decision about what the published artifact actually is — not an entry-point
+declaration pointing at an untracked build output.
+
 ## Wiring interfaces carry only what is read
 
 When you add a field to a context, callback, or capability interface (`SendContext`,

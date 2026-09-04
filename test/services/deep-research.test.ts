@@ -518,6 +518,26 @@ describe('DeepResearchService', () => {
 		it('allows arbitrary paths outside the state folder', () => {
 			expect(validate('Notes/foo.md')).toBe('Notes/foo.md');
 		});
+
+		// #1401: these three guards used to exist only on the image-generation
+		// side of the same policy. Both validators now share one helper, and
+		// these cases mirror test/services/image-generation.test.ts so the pair
+		// cannot silently diverge again.
+		it('rejects vault-escaping paths', () => {
+			expect(() => validate('../outside.md')).toThrow(/outside the vault/);
+			expect(() => validate('Notes/../../outside.md')).toThrow(/outside the vault/);
+		});
+
+		it('rejects empty paths', () => {
+			// normalizePath maps blank input to the vault root '/', which carries
+			// no filename to write to.
+			expect(() => validate('   ')).toThrow(/include a filename/);
+			expect(() => validate('')).toThrow(/include a filename/);
+		});
+
+		it('rejects the bare config folder as well as paths under it', () => {
+			expect(() => validate('.obsidian')).toThrow(/protected system folder/);
+		});
 	});
 
 	describe('proxyFetch injection into the interactions client', () => {

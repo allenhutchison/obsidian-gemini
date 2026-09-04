@@ -90,7 +90,7 @@ describe('RagCache', () => {
 				storeName: 'test-store',
 				lastSync: 1234567890,
 				files: {
-					'test.md': { resourceName: 'res1', contentHash: 'hash1', lastIndexed: 1234567890 },
+					'test.md': { contentHash: 'hash1', lastIndexed: 1234567890 },
 				},
 			};
 
@@ -101,6 +101,35 @@ describe('RagCache', () => {
 
 			expect(cache.cache).toEqual(cacheData);
 			expect(cache.indexedCount).toBe(1);
+		});
+
+		it('should load a legacy cache whose entries still carry the removed resourceName key', async () => {
+			// Caches written before `IndexedFileEntry.resourceName` was removed still
+			// carry that key on disk. loadCache validates only `version`, so such a
+			// file must load as-is — no reset, no re-index — with the fields that are
+			// still read intact. Written as raw JSON because the extra key is exactly
+			// what the current type no longer permits.
+			const legacyCacheJson = JSON.stringify({
+				version: '1.0',
+				storeName: 'test-store',
+				lastSync: 1234567890,
+				files: {
+					'test.md': { resourceName: 'test-store', contentHash: 'hash1', lastIndexed: 1234567890 },
+				},
+			});
+
+			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(createMockTFile('cache.json'));
+			mockPlugin.app.vault.read.mockResolvedValue(legacyCacheJson);
+
+			await cache.loadCache();
+
+			expect(mockPlugin.logger.warn).not.toHaveBeenCalled();
+			expect(cache.indexedCount).toBe(1);
+			expect(cache.cache?.storeName).toBe('test-store');
+			expect(cache.cache?.lastSync).toBe(1234567890);
+			expect(cache.cache?.files['test.md']).toEqual(
+				expect.objectContaining({ contentHash: 'hash1', lastIndexed: 1234567890 })
+			);
 		});
 
 		it('should fall back to adapter.read when file exists on disk but not in metadata', async () => {
@@ -155,7 +184,7 @@ describe('RagCache', () => {
 				storeName: 'test-store',
 				lastSync: 1234567890,
 				files: {
-					'test.md': { resourceName: 'res1', contentHash: 'hash1', lastIndexed: 1234567890 },
+					'test.md': { contentHash: 'hash1', lastIndexed: 1234567890 },
 				},
 			};
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(createMockTFile('cache.json'));
@@ -232,8 +261,8 @@ describe('RagCache', () => {
 				storeName: 'test',
 				lastSync: 0,
 				files: {
-					'a.md': { resourceName: 'r1', contentHash: 'h1', lastIndexed: 0 },
-					'b.md': { resourceName: 'r2', contentHash: 'h2', lastIndexed: 0 },
+					'a.md': { contentHash: 'h1', lastIndexed: 0 },
+					'b.md': { contentHash: 'h2', lastIndexed: 0 },
 				},
 			};
 

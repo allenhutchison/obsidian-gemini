@@ -157,14 +157,6 @@ export interface ToolExecution {
 }
 
 /**
- * Tool choice configuration for AI requests
- */
-export interface ToolChoice {
-	type: 'auto' | 'none' | 'any' | 'tool';
-	toolName?: string; // When type is 'tool'
-}
-
-/**
  * Context for displaying a diff view when write_file is called
  */
 export interface DiffContext {

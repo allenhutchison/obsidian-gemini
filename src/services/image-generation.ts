@@ -3,7 +3,7 @@ import { Notice, App, MarkdownView, Modal, Setting, TextAreaComponent, TFile, no
 import { BaseModelRequest, GeminiClient, ModelClientFactory } from '../api';
 import { GeminiPrompts } from '../prompts';
 import { getErrorMessage, getRawErrorMessageOr } from '../utils/error-utils';
-import { ensureParentFolderExists, isPathInFolder } from '../utils/file-utils';
+import { ensureParentFolderExists, validateGeneratedOutputPath } from '../utils/file-utils';
 import { t } from '../i18n';
 
 export class ImageGeneration {
@@ -258,49 +258,31 @@ export class ImageGeneration {
 	 * Always returns a path ending with ".png" since the code always writes PNG bytes.
 	 */
 	private validateOutputPath(outputPath: string): string {
-		const normalized = normalizePath(outputPath);
-
-		// Reject directory-only paths (empty or trailing slash)
-		if (!normalized || normalized.endsWith('/')) {
-			throw new Error(`Output path must include a filename: "${outputPath}"`);
-		}
-
-		// Reject vault-escaping paths (normalizePath does not resolve ..)
-		if (normalized.startsWith('..') || normalized.split('/').includes('..')) {
-			throw new Error(`Output path escapes the vault: "${outputPath}"`);
-		}
-
-		// Reject paths inside the Obsidian configuration directory (default
-		// `.obsidian`, but the user may have renamed it). Root-anchored, matching
-		// deep-research's write-path validator.
-		if (isPathInFolder(normalized, this.plugin.app.vault.configDir)) {
-			throw new Error(`Output path cannot be inside the Obsidian configuration folder: "${outputPath}"`);
-		}
-
-		// Always ensure the file ends with .png — the code always writes PNG bytes.
-		// Rewrite extension before the state-folder check so the validated path
-		// matches what will actually be written (e.g. "Background-Tasks" bare →
-		// "Background-Tasks.png", which is outside the allowed subfolder).
-		const dotIndex = normalized.lastIndexOf('.');
-		const slashIndex = normalized.lastIndexOf('/');
-		const hasExtension = dotIndex > slashIndex + 1;
-		const normalizedFilePath = hasExtension ? normalized.slice(0, dotIndex) + '.png' : normalized + '.png';
-
-		// Reject paths inside the plugin state folder, except for the canonical
-		// Background-Tasks/ subfolder which is the designated output location.
-		const historyFolder = this.plugin.settings.historyFolder;
-		if (historyFolder) {
-			const normalizedHistoryFolder = normalizePath(historyFolder);
-			const backgroundTasksFolder = normalizePath(`${normalizedHistoryFolder}/Background-Tasks`);
-			const insideStateFolder = isPathInFolder(normalizedFilePath, normalizedHistoryFolder);
-			// eslint-disable-next-line no-restricted-syntax -- strict descendant is deliberate: the carve-out is for files *under* Background-Tasks/, so the bare folder path must not be accepted as an output path
-			const insideBackgroundTasks = normalizedFilePath.startsWith(backgroundTasksFolder + '/');
-			if (insideStateFolder && !insideBackgroundTasks) {
-				throw new Error(`Output path cannot be inside the plugin state folder: "${outputPath}"`);
-			}
-		}
-
-		return normalizedFilePath;
+		// The reject set is shared with deep-research's write path via
+		// `validateGeneratedOutputPath` (#1401); the `.png` rewrite below is the
+		// only part that is genuinely this validator's own.
+		return validateGeneratedOutputPath(outputPath, {
+			configDir: this.plugin.app.vault.configDir,
+			historyFolder: this.plugin.settings.historyFolder,
+			allowedSubfolder: 'Background-Tasks',
+			// Always ensure the file ends with .png — the code always writes PNG
+			// bytes. The helper applies this before the state-folder check so the
+			// validated path matches what will actually be written (e.g. a bare
+			// "Background-Tasks" → "Background-Tasks.png", which is outside the
+			// allowed subfolder and must still be rejected).
+			rewriteFileName: (normalized) => {
+				const dotIndex = normalized.lastIndexOf('.');
+				const slashIndex = normalized.lastIndexOf('/');
+				const hasExtension = dotIndex > slashIndex + 1;
+				return hasExtension ? normalized.slice(0, dotIndex) + '.png' : normalized + '.png';
+			},
+			messages: {
+				'missing-filename': (path) => `Output path must include a filename: "${path}"`,
+				'vault-escape': (path) => `Output path escapes the vault: "${path}"`,
+				'config-folder': (path) => `Output path cannot be inside the Obsidian configuration folder: "${path}"`,
+				'state-folder': (path) => `Output path cannot be inside the plugin state folder: "${path}"`,
+			},
+		});
 	}
 
 	/**

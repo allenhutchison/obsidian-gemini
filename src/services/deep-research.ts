@@ -1,6 +1,6 @@
-import { TFile, normalizePath } from 'obsidian';
+import { TFile } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
-import { isPathInFolder } from '../utils/file-utils';
+import { validateGeneratedOutputPath } from '../utils/file-utils';
 import type { Interactions } from '@google/genai';
 // The `/research` subpath is built-in-free (no fs/path/crypto), unlike the
 // barrel — import from it so this module stays mobile-safe at load (#1154).
@@ -341,39 +341,29 @@ export class DeepResearchService {
 	/**
 	 * Validate and normalize the output file path.
 	 * Throws an error if the path is inside a protected system folder.
+	 *
+	 * The policy itself lives in `validateGeneratedOutputPath` and is shared with
+	 * the image-generation write path (#1401) — this method only supplies the
+	 * report-specific error wording.
 	 */
 	private validateAndNormalizeFilePath(rawFilePath: string): string {
-		// Normalize the path using Obsidian's normalizePath (handles slashes, removes redundant separators)
-		const normalizedPath = normalizePath(rawFilePath);
-
-		// The Obsidian configuration directory (default `.obsidian`, but the user
-		// may have renamed it) must never be written to. Root-anchored, matching
-		// the image-generation write-path validator.
 		const configDir = this.plugin.app.vault.configDir;
-		if (isPathInFolder(normalizedPath, configDir)) {
-			throw new Error(
-				`Cannot write report to protected system folder: "${configDir}". Please choose a different output location.`
-			);
-		}
-
-		// Check if path is inside the plugin's history folder (or is the folder itself).
-		// Background-Tasks/ is the one allowed subfolder — it is the canonical output
-		// location for background and scheduled-task outputs.
 		const historyFolder = this.plugin.settings.historyFolder;
-		if (historyFolder) {
-			const normalizedHistoryFolder = normalizePath(historyFolder);
-			const backgroundTasksFolder = normalizePath(`${normalizedHistoryFolder}/Background-Tasks`);
-			const insideStateFolder = isPathInFolder(normalizedPath, normalizedHistoryFolder);
-			// eslint-disable-next-line no-restricted-syntax -- strict descendant is deliberate: the carve-out is for files *under* Background-Tasks/, so the bare folder path must not be accepted as an output path
-			const insideBackgroundTasks = normalizedPath.startsWith(backgroundTasksFolder + '/');
-			if (insideStateFolder && !insideBackgroundTasks) {
-				throw new Error(
-					`Cannot write report to plugin state folder: "${historyFolder}". Please choose a different output location.`
-				);
-			}
-		}
 
-		return normalizedPath;
+		return validateGeneratedOutputPath(rawFilePath, {
+			configDir,
+			historyFolder,
+			allowedSubfolder: 'Background-Tasks',
+			messages: {
+				'missing-filename': (path) => `Cannot write report to a folder path: "${path}". Please include a filename.`,
+				'vault-escape': (path) =>
+					`Cannot write report outside the vault: "${path}". Please choose a path inside the vault.`,
+				'config-folder': () =>
+					`Cannot write report to protected system folder: "${configDir}". Please choose a different output location.`,
+				'state-folder': () =>
+					`Cannot write report to plugin state folder: "${historyFolder}". Please choose a different output location.`,
+			},
+		});
 	}
 
 	/**

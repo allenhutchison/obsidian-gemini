@@ -234,7 +234,6 @@ export class RagSyncQueue {
 								await fileUploader.uploadContent(content, storeName);
 								if (this.ragCache.cache) {
 									this.ragCache.cache.files[file.path] = {
-										resourceName: storeName,
 										contentHash: content.hash,
 										lastIndexed: Date.now(),
 									};

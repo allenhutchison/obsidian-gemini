@@ -8,7 +8,9 @@ import {
 	getFileName,
 	getParentPath,
 	isPathInFolder,
+	validateGeneratedOutputPath,
 } from '../../src/utils/file-utils';
+import type { GeneratedOutputPathOptions } from '../../src/utils/file-utils';
 import { TFile, TFolder, Vault, Notice, normalizePath } from 'obsidian';
 
 describe('file-utils', () => {
@@ -385,6 +387,81 @@ describe('file-utils', () => {
 			await expect(
 				ensureParentFolderExists(mockVault as unknown as Vault, 'a/b/out.md', 'image output folder')
 			).rejects.toThrow('Failed to create folder "a/b" (image output folder): Disk full');
+		});
+	});
+
+	// #1401: the write-path policy shared by deep-research and image-generation.
+	// Each reject arm is asserted here once, so the two callers only have to
+	// cover their own wording and their own extras (e.g. the .png rewrite).
+	describe('validateGeneratedOutputPath', () => {
+		const messages = {
+			'missing-filename': (p: string) => `missing-filename:${p}`,
+			'vault-escape': (p: string) => `vault-escape:${p}`,
+			'config-folder': (p: string) => `config-folder:${p}`,
+			'state-folder': (p: string) => `state-folder:${p}`,
+		};
+		const options: GeneratedOutputPathOptions = {
+			configDir: '.obsidian',
+			historyFolder: 'gemini-scribe',
+			allowedSubfolder: 'Background-Tasks',
+			messages,
+		};
+		const validate = (path: string, overrides: Partial<GeneratedOutputPathOptions> = {}): string =>
+			validateGeneratedOutputPath(path, { ...options, ...overrides });
+
+		it('returns the normalized path for an ordinary vault path', () => {
+			expect(validate('Notes//foo.md')).toBe('Notes/foo.md');
+		});
+
+		it('allows the allowed subfolder under the state folder', () => {
+			expect(validate('gemini-scribe/Background-Tasks/out.md')).toBe('gemini-scribe/Background-Tasks/out.md');
+		});
+
+		it('rejects empty and blank paths', () => {
+			expect(() => validate('')).toThrow('missing-filename:');
+			expect(() => validate('   ')).toThrow('missing-filename:');
+		});
+
+		it('rejects vault-escaping paths', () => {
+			expect(() => validate('../outside.md')).toThrow('vault-escape:../outside.md');
+			expect(() => validate('Notes/../../outside.md')).toThrow('vault-escape:');
+		});
+
+		it('rejects the config folder itself and paths beneath it', () => {
+			expect(() => validate('.obsidian')).toThrow('config-folder:.obsidian');
+			expect(() => validate('.obsidian/snippets/x.md')).toThrow('config-folder:');
+		});
+
+		it('rejects the bare state folder and its other subfolders', () => {
+			expect(() => validate('gemini-scribe')).toThrow('state-folder:gemini-scribe');
+			expect(() => validate('gemini-scribe/Skills/x.md')).toThrow('state-folder:');
+		});
+
+		it('does not treat a sibling-prefixed folder as the allowed subfolder', () => {
+			expect(() => validate('gemini-scribe/Background-Tasks-Other/x.md')).toThrow('state-folder:');
+		});
+
+		it('does not over-match a folder that merely shares the state folder prefix', () => {
+			expect(validate('gemini-scribe-backup/x.md')).toBe('gemini-scribe-backup/x.md');
+		});
+
+		it('skips the state-folder check when no history folder is configured', () => {
+			expect(validate('gemini-scribe/Skills/x.md', { historyFolder: undefined })).toBe('gemini-scribe/Skills/x.md');
+		});
+
+		it('applies rewriteFileName after the config check and before the state-folder check', () => {
+			const rewriteFileName = (p: string) => `${p}.png`;
+
+			// The rewritten path is what gets returned...
+			expect(validate('Notes/img', { rewriteFileName })).toBe('Notes/img.png');
+
+			// ...and what the state-folder check sees: a bare allowed-subfolder
+			// path becomes a file directly under the state folder, so it is
+			// rejected rather than slipping through as the subfolder itself.
+			expect(() => validate('gemini-scribe/Background-Tasks', { rewriteFileName })).toThrow('state-folder:');
+
+			// The config-folder check still runs against the pre-rewrite path.
+			expect(() => validate('.obsidian/x', { rewriteFileName })).toThrow('config-folder:');
 		});
 	});
 });

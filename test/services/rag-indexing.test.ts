@@ -516,7 +516,7 @@ describe('RagIndexingService', () => {
 				storeName: 'test-store',
 				lastSync: 1234567890,
 				files: {
-					'file1.md': { resourceName: 'res1', contentHash: 'hash1', lastIndexed: 1234567890 },
+					'file1.md': { contentHash: 'hash1', lastIndexed: 1234567890 },
 				},
 			};
 
@@ -721,7 +721,7 @@ describe('RagIndexingService', () => {
 					storeName: 'test-store',
 					lastSync: 1234567890,
 					files: {
-						'test.md': { resourceName: 'res1', contentHash: 'hash1', lastIndexed: 1234567890 },
+						'test.md': { contentHash: 'hash1', lastIndexed: 1234567890 },
 					},
 				};
 
@@ -980,7 +980,7 @@ describe('RagIndexingService', () => {
 				lastSync: Date.now(),
 				indexingInProgress: false,
 				files: {
-					'note.md': { resourceName: 'res1', contentHash: 'h1', lastIndexed: Date.now() },
+					'note.md': { contentHash: 'h1', lastIndexed: Date.now() },
 				},
 			};
 			getRagCache(service).indexedCount = 1;
@@ -1002,7 +1002,7 @@ describe('RagIndexingService', () => {
 				storeName: 'test-store',
 				lastSync: Date.now(),
 				indexingInProgress: true,
-				files: { 'note.md': { resourceName: 'res1', contentHash: 'h1', lastIndexed: Date.now() } },
+				files: { 'note.md': { contentHash: 'h1', lastIndexed: Date.now() } },
 			};
 			getRagCache(service).indexedCount = 1;
 
@@ -1188,7 +1188,7 @@ describe('RagIndexingService', () => {
 				storeName: 'test-store',
 				lastSync: 1000,
 				files: {
-					'a.md': { resourceName: 'r1', contentHash: 'h1', lastIndexed: 1000 },
+					'a.md': { contentHash: 'h1', lastIndexed: 1000 },
 				},
 			};
 
@@ -1230,9 +1230,9 @@ describe('RagIndexingService', () => {
 				storeName: 'test-store',
 				lastSync: 1000,
 				files: {
-					'old.md': { resourceName: 'r1', contentHash: 'h1', lastIndexed: 100 },
-					'new.md': { resourceName: 'r2', contentHash: 'h2', lastIndexed: 300 },
-					'mid.md': { resourceName: 'r3', contentHash: 'h3', lastIndexed: 200 },
+					'old.md': { contentHash: 'h1', lastIndexed: 100 },
+					'new.md': { contentHash: 'h2', lastIndexed: 300 },
+					'mid.md': { contentHash: 'h3', lastIndexed: 200 },
 				},
 			};
 			cache.indexedCount = 3;

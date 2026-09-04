@@ -3,13 +3,6 @@
 	"version": "4.11.0",
 	"description": "Gemini Scribe, allows you to interact with the model and use your notes as context.",
 	"main": "main.js",
-	"types": "src/index.ts",
-	"exports": {
-		".": {
-			"types": "./src/index.ts",
-			"default": "./main.js"
-		}
-	},
 	"scripts": {
 		"generate-refs": "node scripts/generate-help-references.mjs",
 		"dev": "npm run generate-refs && node esbuild.config.mjs",
