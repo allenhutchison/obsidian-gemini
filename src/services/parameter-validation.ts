@@ -14,11 +14,6 @@ export interface ParameterRanges {
 	};
 }
 
-export interface ModelParameterInfo {
-	modelName: string;
-	maxTemperature?: number;
-}
-
 export class ParameterValidationService {
 	/**
 	 * Default fallback ranges when no model information is available
