@@ -467,7 +467,6 @@ export class RagVaultScanner {
 						if (this.ragCache.cache && event.currentFile && vaultAdapter) {
 							const contentHash = await vaultAdapter.computeHash(event.currentFile);
 							this.ragCache.cache.files[event.currentFile] = {
-								resourceName: storeName, // Store name as reference (individual doc names not available)
 								contentHash,
 								lastIndexed: Date.now(),
 							};
@@ -501,7 +500,6 @@ export class RagVaultScanner {
 						) {
 							const contentHash = await vaultAdapter.computeHash(event.currentFile);
 							this.ragCache.cache.files[event.currentFile] = {
-								resourceName: storeName,
 								contentHash,
 								lastIndexed: Date.now(),
 							};

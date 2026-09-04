@@ -493,7 +493,6 @@ describe('RagSyncQueue', () => {
 		describe('delete change', () => {
 			it('should call deleteFile and reset changesSinceLastSave on success', async () => {
 				mockCache.cache.files['notes/test.md'] = {
-					resourceName: 'test-store',
 					contentHash: 'hash123',
 					lastIndexed: Date.now(),
 				};
@@ -714,12 +713,10 @@ describe('RagSyncQueue', () => {
 
 		it('should remove file from cache, update indexedCount, save, and return true', async () => {
 			mockCache.cache.files['notes/test.md'] = {
-				resourceName: 'test-store',
 				contentHash: 'hash123',
 				lastIndexed: Date.now(),
 			};
 			mockCache.cache.files['notes/other.md'] = {
-				resourceName: 'test-store',
 				contentHash: 'hash456',
 				lastIndexed: Date.now(),
 			};
@@ -734,7 +731,6 @@ describe('RagSyncQueue', () => {
 
 		it('should log error and return false when saveCache throws', async () => {
 			mockCache.cache.files['notes/test.md'] = {
-				resourceName: 'test-store',
 				contentHash: 'hash123',
 				lastIndexed: Date.now(),
 			};

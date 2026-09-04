@@ -3,7 +3,6 @@
  */
 // knip:keep — Intentional public API structurally consumed by RagIndexCache.files
 export interface IndexedFileEntry {
-	resourceName: string; // Gemini file resource name
 	contentHash: string; // SHA-256 hash for reliable change detection
 	lastIndexed: number; // Timestamp
 }

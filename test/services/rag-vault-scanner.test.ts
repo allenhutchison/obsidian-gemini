@@ -670,7 +670,6 @@ describe('RagVaultScanner', () => {
 			// Cache should contain the file entry with computed hash
 			expect(ragCache.cache.files['note.md']).toEqual(
 				expect.objectContaining({
-					resourceName: 'test-store',
 					contentHash: 'abc123',
 				})
 			);
@@ -720,7 +719,6 @@ describe('RagVaultScanner', () => {
 			expect(scanner.getRunningSkipped()).toBe(1);
 			expect(ragCache.cache.files['cached.md']).toEqual(
 				expect.objectContaining({
-					resourceName: 'test-store',
 					contentHash: 'skip-hash',
 				})
 			);
@@ -735,7 +733,6 @@ describe('RagVaultScanner', () => {
 				cacheData: {
 					files: {
 						'already-cached.md': {
-							resourceName: 'test-store',
 							contentHash: 'original-hash',
 							lastIndexed: 1000,
 						},
