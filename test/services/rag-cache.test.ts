@@ -126,6 +126,7 @@ describe('RagCache', () => {
 			expect(mockPlugin.logger.warn).not.toHaveBeenCalled();
 			expect(cache.indexedCount).toBe(1);
 			expect(cache.cache?.storeName).toBe('test-store');
+			expect(cache.cache?.lastSync).toBe(1234567890);
 			expect(cache.cache?.files['test.md']).toEqual(
 				expect.objectContaining({ contentHash: 'hash1', lastIndexed: 1234567890 })
 			);
