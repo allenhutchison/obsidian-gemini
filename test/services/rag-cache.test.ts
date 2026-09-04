@@ -90,7 +90,7 @@ describe('RagCache', () => {
 				storeName: 'test-store',
 				lastSync: 1234567890,
 				files: {
-					'test.md': { resourceName: 'res1', contentHash: 'hash1', lastIndexed: 1234567890 },
+					'test.md': { contentHash: 'hash1', lastIndexed: 1234567890 },
 				},
 			};
 
@@ -155,7 +155,7 @@ describe('RagCache', () => {
 				storeName: 'test-store',
 				lastSync: 1234567890,
 				files: {
-					'test.md': { resourceName: 'res1', contentHash: 'hash1', lastIndexed: 1234567890 },
+					'test.md': { contentHash: 'hash1', lastIndexed: 1234567890 },
 				},
 			};
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(createMockTFile('cache.json'));
@@ -232,8 +232,8 @@ describe('RagCache', () => {
 				storeName: 'test',
 				lastSync: 0,
 				files: {
-					'a.md': { resourceName: 'r1', contentHash: 'h1', lastIndexed: 0 },
-					'b.md': { resourceName: 'r2', contentHash: 'h2', lastIndexed: 0 },
+					'a.md': { contentHash: 'h1', lastIndexed: 0 },
+					'b.md': { contentHash: 'h2', lastIndexed: 0 },
 				},
 			};
 
