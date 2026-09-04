@@ -53,6 +53,21 @@ skill for depth):
 - `app.workspace.openLinkText()` for clickable links in views
 - Always use normalized paths and the metadata cache.
 
+## Path containment goes through `src/utils/file-utils.ts`
+
+Never hand-roll `path.startsWith(folder + '/')` or `path === folder || path.startsWith(folder + '/')`
+— call `isPathInFolder(path, folder)`. For "is this a system path the plugin must not touch", call
+`shouldExcludePath()` / `shouldExcludePathForPlugin()` rather than re-deriving the `configDir` +
+state-folder pair. These predicates are a live fix surface (#1372, #1374); an inline copy silently
+misses every correction to them. If a site genuinely needs _strict descendant_ semantics (the folder
+itself excluded), say so in a comment explaining why — that is a real distinction, not a shorthand.
+
+A `no-restricted-syntax` ESLint entry backs this up mechanically: any `.startsWith()` whose argument
+is a concatenation is flagged in `src/` (`src/utils/file-utils.ts`, which owns the predicates, is
+exempt). A deliberate strict-descendant site takes a line-scoped
+`// eslint-disable-next-line no-restricted-syntax -- <why strict descendant>` — the description is
+the comment the rule already asks for, so the disable and the rule agree.
+
 ## Plugin type surface — never import `main.ts`
 
 Reference the plugin only through the leaf interface:
