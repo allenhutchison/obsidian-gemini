@@ -97,7 +97,12 @@ const PATH_CONTAINMENT_RULE = {
 	'no-restricted-syntax': [
 		'error',
 		{
-			selector: "CallExpression[callee.property.name='startsWith'][arguments.0.type='BinaryExpression']",
+			// `[operator='+']` narrows this to string concatenation. `BinaryExpression`
+			// alone also covers `-`, `===`, `instanceof`, `in`, … — none of which can
+			// realistically produce a `startsWith` argument, but the rule should say
+			// exactly what it means rather than rely on that.
+			selector:
+				"CallExpression[callee.property.name='startsWith'][arguments.0.type='BinaryExpression'][arguments.0.operator='+']",
 			message:
 				"Don't hand-roll path containment: use isPathInFolder(path, folder) from src/utils/file-utils.ts (or shouldExcludePath/shouldExcludePathForPlugin for system paths). If this site genuinely needs strict-descendant semantics, add an eslint-disable-next-line with a reason explaining why.",
 		},
