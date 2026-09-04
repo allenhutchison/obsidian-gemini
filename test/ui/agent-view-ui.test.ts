@@ -562,6 +562,78 @@ describe('AgentViewUI', () => {
 		});
 	});
 
+	// The drop handler's dataTransfer walk, extracted from `createInputArea`
+	// (#1396). The cases below reach it directly rather than through a dispatched
+	// drop event, so the resolution precedence and dedup are pinned as a unit —
+	// the drop tests above can only observe them indirectly, via what gets routed.
+	describe('collectVaultDropTargets', () => {
+		const collect = (dataTransfer: any): (TFile | TFolder)[] =>
+			(agentViewUI as any).collectVaultDropTargets({ dataTransfer });
+
+		const vaultFile = (path: string): TFile => {
+			const file = { path, extension: path.split('.').pop() } as unknown as TFile;
+			Object.setPrototypeOf(file, TFile.prototype);
+			return file;
+		};
+
+		const fileList = (entries: { path: string }[]) => {
+			const list: any = [...entries];
+			Object.defineProperty(list, 'length', { value: entries.length });
+			list[Symbol.iterator] = function* () {
+				yield* entries;
+			};
+			return list;
+		};
+
+		it('prefers filesystem File objects over text links in the same drop', () => {
+			const fromFile = vaultFile('folder/note.md');
+			(app.vault.getAbstractFileByPath as Mock).mockReturnValue(fromFile);
+			const getData = vi.fn().mockReturnValue('[[Some Other Note]]');
+
+			const result = collect({
+				files: fileList([{ path: '/Users/test/vault/folder/note.md' }]),
+				types: ['Files', 'text/plain'],
+				getData,
+			});
+
+			expect(result).toEqual([fromFile]);
+			// The text/plain payload is never *resolved* once a filesystem file was
+			// found, which is what keeps Obsidian's double-payload drops (File object
+			// plus wikilink for the same drag) from counting the same note twice.
+			expect(app.vault.getAbstractFileByPath).toHaveBeenCalledWith('folder/note.md');
+			expect(app.vault.getAbstractFileByPath).not.toHaveBeenCalledWith('Some Other Note');
+		});
+
+		it('deduplicates repeated links by path', () => {
+			const note = vaultFile('note.md');
+			(app.vault.getAbstractFileByPath as Mock).mockReturnValue(note);
+
+			const result = collect({
+				files: [],
+				types: ['text/plain'],
+				getData: vi.fn().mockReturnValue('[[note.md]]\n[[note.md]]\n[[note.md]]'),
+			});
+
+			expect(result).toEqual([note]);
+		});
+
+		it('rejects File objects whose path lies outside the vault', () => {
+			(app.vault.getAbstractFileByPath as Mock).mockReturnValue(null);
+			(app.metadataCache.getFirstLinkpathDest as Mock).mockReturnValue(null);
+
+			const result = collect({
+				files: fileList([{ path: '/Users/other/elsewhere/file.md' }]),
+				types: ['Files'],
+				getData: vi.fn().mockReturnValue(''),
+			});
+
+			expect(result).toEqual([]);
+			// Out-of-vault paths are rejected on the base-path prefix check alone —
+			// they never reach vault resolution.
+			expect(app.vault.getAbstractFileByPath).not.toHaveBeenCalled();
+		});
+	});
+
 	// The external-drop and clipboard-paste handlers share this per-file
 	// image/SVG loop (extracted from the two near-verbatim copies). Exercise it
 	// directly so the shared unit is covered independently of the DOM events.
