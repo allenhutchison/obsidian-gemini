@@ -293,6 +293,7 @@ export class ImageGeneration {
 			const normalizedHistoryFolder = normalizePath(historyFolder);
 			const backgroundTasksFolder = normalizePath(`${normalizedHistoryFolder}/Background-Tasks`);
 			const insideStateFolder = isPathInFolder(normalizedFilePath, normalizedHistoryFolder);
+			// eslint-disable-next-line no-restricted-syntax -- strict descendant is deliberate: the carve-out is for files *under* Background-Tasks/, so the bare folder path must not be accepted as an output path
 			const insideBackgroundTasks = normalizedFilePath.startsWith(backgroundTasksFolder + '/');
 			if (insideStateFolder && !insideBackgroundTasks) {
 				throw new Error(`Output path cannot be inside the plugin state folder: "${outputPath}"`);

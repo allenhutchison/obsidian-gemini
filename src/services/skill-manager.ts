@@ -228,6 +228,7 @@ export class SkillManager {
 
 		// Verify resolved path stays within the skill directory
 		const skillDir = normalizePath(`${this.getSkillsFolderPath()}/${skillName}`);
+		// eslint-disable-next-line no-restricted-syntax -- strict descendant is deliberate: a resolved path equal to the skill directory itself is the directory, not a resource in it, and this is a traversal guard that must not widen
 		if (!resourcePath.startsWith(skillDir + '/')) {
 			return null;
 		}
