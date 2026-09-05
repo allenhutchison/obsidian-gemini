@@ -177,8 +177,6 @@ export interface AgentLoopResult {
 	history: Content[];
 	/** True if cancellation interrupted the loop. */
 	cancelled: boolean;
-	/** True if the empty-response retry was triggered. */
-	retried: boolean;
 	/**
 	 * True if even the retry returned empty and `markdown` is the fallback
 	 * message listing executed tools. Caller should display but not persist.
@@ -586,7 +584,6 @@ export class AgentLoop {
 					markdown: retryResponse.markdown,
 					thoughts: retryResponse.thoughts?.trim() ? retryResponse.thoughts : undefined,
 					history: updatedHistory,
-					retried: true,
 					iterations,
 				});
 			}
@@ -596,7 +593,6 @@ export class AgentLoop {
 			return this.makeResult({
 				markdown: buildEmptyResponseMessage(toolResults, plugin),
 				history: updatedHistory,
-				retried: true,
 				fellBack: true,
 				iterations,
 			});
@@ -643,7 +639,7 @@ export class AgentLoop {
 	}
 
 	/**
-	 * Assemble an {@link AgentLoopResult}, defaulting the five status flags to
+	 * Assemble an {@link AgentLoopResult}, defaulting the four status flags to
 	 * `false` so each terminal path only spells out the flags that are true for
 	 * it. Every return site — including {@link cancelledResult} and
 	 * {@link loopAbortedResult} — routes through here so the default flag block
@@ -654,7 +650,6 @@ export class AgentLoop {
 	): AgentLoopResult {
 		return {
 			cancelled: false,
-			retried: false,
 			fellBack: false,
 			exhausted: false,
 			loopAborted: false,

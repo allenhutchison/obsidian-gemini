@@ -57,7 +57,6 @@ function successfulLoopResult(markdown = 'Tool result text.'): AgentLoopResult {
 		markdown,
 		history: [],
 		cancelled: false,
-		retried: false,
 		fellBack: false,
 		exhausted: false,
 		loopAborted: false,
