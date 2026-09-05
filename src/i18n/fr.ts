@@ -185,10 +185,6 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'settings.agentConfig.sectionTitle': "Configuration de l'agent",
 	'settings.agentConfig.sectionDesc':
 		"Ajuster la façon dont l'agent communique avec le modèle : invites personnalisées, paramètres de tentative/génération, résumé de conversation et protections contre les boucles.",
-	'settings.agentConfig.customPromptsHeading': 'Prompts personnalisés',
-	'settings.agentConfig.systemPromptOverrideName': "Autoriser la surcharge de l'invite système",
-	'settings.agentConfig.systemPromptOverrideDesc':
-		"AVERTISSEMENT : Permet aux invites personnalisées de remplacer complètement l'invite système. Cela peut perturber le fonctionnement attendu.",
 	'settings.agentConfig.apiConfigurationHeading': "Configuration de l'API",
 	'settings.agentConfig.logToFileName': 'Enregistrer dans un fichier',
 	'settings.agentConfig.logToFileDesc':

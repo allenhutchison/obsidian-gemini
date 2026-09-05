@@ -178,10 +178,6 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'settings.agentConfig.sectionTitle': 'Agentkonfiguration',
 	'settings.agentConfig.sectionDesc':
 		'Juster, hvordan agenten taler med modellen: brugerdefinerede prompts, parametre for genforsøg/generering, samtale-resuméer og loop-beskyttelse.',
-	'settings.agentConfig.customPromptsHeading': 'Brugerdefinerede prompts',
-	'settings.agentConfig.systemPromptOverrideName': 'Tillad tilsidesættelse af system-prompt',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'ADVARSEL: Giver mulighed for, at brugerdefinerede prompts fuldstændigt erstatter system-prompten. Dette kan ødelægge forventet funktionalitet.',
 	'settings.agentConfig.apiConfigurationHeading': 'API-konfiguration',
 	'settings.agentConfig.logToFileName': 'Log til fil',
 	'settings.agentConfig.logToFileDesc':

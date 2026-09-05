@@ -165,8 +165,8 @@ For advanced users who want complete control:
 1. Set `override_system_prompt: true` in your prompt file
 2. Your prompt will completely replace the default system instructions
 
-The frontmatter field alone controls this — the "Allow system prompt override" toggle in
-plugin settings does not currently gate it.
+The frontmatter field alone controls this; no plugin setting is required. Omit it or set it to
+`false` to add your instructions to the built-in system prompt instead of replacing it.
 
 **Warning:** Use with caution as this removes built-in safety features and Obsidian-specific knowledge.
 

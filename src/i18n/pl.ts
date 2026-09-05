@@ -180,10 +180,6 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'settings.agentConfig.sectionTitle': 'Konfiguracja agenta',
 	'settings.agentConfig.sectionDesc':
 		'Dostosuj sposób, w jaki agent komunikuje się z modelem: własne prompty, parametry ponawiania/generowania, podsumowywanie rozmowy i zabezpieczenia przed pętlami.',
-	'settings.agentConfig.customPromptsHeading': 'Niestandardowe monity',
-	'settings.agentConfig.systemPromptOverrideName': 'Zezwalaj na nadpisanie promptu systemowego',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'OSTRZEŻENIE: Zezwala własnym promptom na całkowite zastąpienie promptu systemowego. Może to zakłócić oczekiwane działanie.',
 	'settings.agentConfig.apiConfigurationHeading': 'Konfiguracja API',
 	'settings.agentConfig.logToFileName': 'Zapisuj logi do pliku',
 	'settings.agentConfig.logToFileDesc':

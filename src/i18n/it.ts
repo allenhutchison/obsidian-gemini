@@ -184,10 +184,6 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'settings.agentConfig.sectionTitle': 'Configurazione agente',
 	'settings.agentConfig.sectionDesc':
 		"Regola il modo in cui l'agente comunica con il modello: prompt personalizzati, parametri di generazione/riprovo, riepilogo della conversazione e protezioni dai loop.",
-	'settings.agentConfig.customPromptsHeading': 'Prompt personalizzati',
-	'settings.agentConfig.systemPromptOverrideName': 'Consenti la sovrascrittura del prompt di sistema',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'ATTENZIONE: Consente ai prompt personalizzati di sostituire completamente il prompt di sistema. Ciò potrebbe compromettere le funzionalità previste.',
 	'settings.agentConfig.apiConfigurationHeading': 'Configurazione API',
 	'settings.agentConfig.logToFileName': 'Registra su file',
 	'settings.agentConfig.logToFileDesc':

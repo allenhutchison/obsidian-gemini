@@ -180,10 +180,6 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'settings.agentConfig.sectionTitle': 'Agent-configuratie',
 	'settings.agentConfig.sectionDesc':
 		'Pas aan hoe de agent met het model communiceert: aangepaste prompts, parameters voor opnieuw proberen/genereren, samenvatting van gesprekken en lusbeveiligingen.',
-	'settings.agentConfig.customPromptsHeading': 'Aangepaste prompts',
-	'settings.agentConfig.systemPromptOverrideName': 'Overschrijven van systeemprompt toestaan',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'WAARSCHUWING: Hiermee kunnen aangepaste prompts de systeemprompt volledig vervangen. Dit kan de verwachte functionaliteit verstoren.',
 	'settings.agentConfig.apiConfigurationHeading': 'API-configuratie',
 	'settings.agentConfig.logToFileName': 'Loggen naar bestand',
 	'settings.agentConfig.logToFileDesc':

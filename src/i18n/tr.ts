@@ -181,10 +181,6 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.agentConfig.sectionTitle': 'Ajan yapılandırması',
 	'settings.agentConfig.sectionDesc':
 		'Temsilcinin modelle nasıl konuşacağını ayarlayın: özel istemler, yeniden deneme/üretim parametreleri, konuşma özetleme ve döngü korumaları.',
-	'settings.agentConfig.customPromptsHeading': 'Özel istemler',
-	'settings.agentConfig.systemPromptOverrideName': 'Sistem isteminin geçersiz kılınmasına izin ver',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'UYARI: Özel istemlerin sistem istemini tamamen değiştirmesine izin verir. Bu durum beklenen işlevselliği bozabilir.',
 	'settings.agentConfig.apiConfigurationHeading': 'API yapılandırması',
 	'settings.agentConfig.logToFileName': 'Dosyaya kaydet',
 	'settings.agentConfig.logToFileDesc':

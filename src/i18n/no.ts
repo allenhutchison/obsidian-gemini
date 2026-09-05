@@ -179,10 +179,6 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'settings.agentConfig.sectionTitle': 'Agentkonfigurasjon',
 	'settings.agentConfig.sectionDesc':
 		'Juster hvordan agenten snakker med modellen: tilpassede ledetekster, parametere for gjentakelse/generering, sammendrag av samtaler og løkkebeskyttelse.',
-	'settings.agentConfig.customPromptsHeading': 'Egendefinerte ledetekster',
-	'settings.agentConfig.systemPromptOverrideName': 'Tillat overstyring av systemledetekst',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'ADVARSEL: Tillater at tilpassede ledetekster fullstendig erstatter systemledeteksten. Dette kan ødelegge forventet funksjonalitet.',
 	'settings.agentConfig.apiConfigurationHeading': 'API-konfigurasjon',
 	'settings.agentConfig.logToFileName': 'Logg til fil',
 	'settings.agentConfig.logToFileDesc':

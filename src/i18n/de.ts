@@ -186,10 +186,6 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'settings.agentConfig.sectionTitle': 'Agenten-Konfiguration',
 	'settings.agentConfig.sectionDesc':
 		'Passen Sie an, wie der Agent mit dem Modell kommuniziert: benutzerdefinierte Prompts, Wiederholungs-/Generierungsparameter, Konversationszusammenfassung und Schleifenschutz.',
-	'settings.agentConfig.customPromptsHeading': 'Benutzerdefinierte Prompts',
-	'settings.agentConfig.systemPromptOverrideName': 'Überschreiben des System-Prompts erlauben',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'WARNUNG: Ermöglicht es benutzerdefinierten Prompts, den System-Prompt vollständig zu ersetzen. Dies kann die erwartete Funktionalität beeinträchtigen.',
 	'settings.agentConfig.apiConfigurationHeading': 'API-Konfiguration',
 	'settings.agentConfig.logToFileName': 'In Datei protokollieren',
 	'settings.agentConfig.logToFileDesc':

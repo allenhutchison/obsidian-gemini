@@ -179,10 +179,6 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.agentConfig.sectionTitle': 'Konfigurace agenta',
 	'settings.agentConfig.sectionDesc':
 		'Vylaďte, jak agent komunikuje s modelem: vlastní prompty, parametry opakování/generování, shrnutí konverzace a ochrana proti smyčkám.',
-	'settings.agentConfig.customPromptsHeading': 'Vlastní prompty',
-	'settings.agentConfig.systemPromptOverrideName': 'Povolit přepsání systémového promptu',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'VAROVÁNÍ: Umožňuje vlastním promptům zcela nahradit systémový prompt. To může narušit očekávanou funkčnost.',
 	'settings.agentConfig.apiConfigurationHeading': 'Konfigurace API',
 	'settings.agentConfig.logToFileName': 'Zapisovat do souboru protokolu',
 	'settings.agentConfig.logToFileDesc':

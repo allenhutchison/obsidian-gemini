@@ -174,10 +174,6 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'settings.agentConfig.sectionTitle': '에이전트 설정',
 	'settings.agentConfig.sectionDesc':
 		'에이전트가 모델과 통신하는 방식을 조정합니다: 사용자 지정 프롬프트, 재시도/생성 매개변수, 대화 요약 및 루프 방지.',
-	'settings.agentConfig.customPromptsHeading': '사용자 지정 프롬프트',
-	'settings.agentConfig.systemPromptOverrideName': '시스템 프롬프트 재정의 허용',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'경고: 사용자 지정 프롬프트가 시스템 프롬프트를 완전히 대체하도록 허용합니다. 이로 인해 예상되는 기능이 작동하지 않을 수 있습니다.',
 	'settings.agentConfig.apiConfigurationHeading': 'API 설정',
 	'settings.agentConfig.logToFileName': '파일에 로그 기록',
 	'settings.agentConfig.logToFileDesc':

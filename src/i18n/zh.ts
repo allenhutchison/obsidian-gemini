@@ -164,9 +164,6 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'settings.agentConfig.sectionTitle': 'Agent 配置',
 	'settings.agentConfig.sectionDesc':
 		'调整 Agent 与模型的对话方式：自定义提示词、重试/生成参数、会话摘要以及循环保护。',
-	'settings.agentConfig.customPromptsHeading': '自定义提示词',
-	'settings.agentConfig.systemPromptOverrideName': '允许覆盖系统提示词',
-	'settings.agentConfig.systemPromptOverrideDesc': '警告：允许自定义提示词完全替换系统提示词。这可能会破坏预期功能。',
 	'settings.agentConfig.apiConfigurationHeading': 'API 配置',
 	'settings.agentConfig.logToFileName': '记录日志到文件',
 	'settings.agentConfig.logToFileDesc':

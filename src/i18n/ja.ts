@@ -182,10 +182,6 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.agentConfig.sectionTitle': 'エージェント設定',
 	'settings.agentConfig.sectionDesc':
 		'エージェントがモデルと通信する方法を微調整します：カスタムプロンプト、再試行/生成パラメータ、会話の要約、ループガードなど。',
-	'settings.agentConfig.customPromptsHeading': 'カスタムプロンプト',
-	'settings.agentConfig.systemPromptOverrideName': 'システムプロンプトの上書きを許可',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'警告: カスタムプロンプトがシステムプロンプトを完全に置き換えることを許可します。これにより、期待される機能が動作しなくなる可能性があります。',
 	'settings.agentConfig.apiConfigurationHeading': 'API設定',
 	'settings.agentConfig.logToFileName': 'ファイルにログを出力',
 	'settings.agentConfig.logToFileDesc':

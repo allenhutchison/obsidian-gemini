@@ -181,10 +181,6 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.agentConfig.sectionTitle': 'Cấu hình agent',
 	'settings.agentConfig.sectionDesc':
 		'Tinh chỉnh cách agent giao tiếp với mô hình: prompt tùy chỉnh, các tham số thử lại/tạo, tóm tắt cuộc trò chuyện và bảo vệ vòng lặp.',
-	'settings.agentConfig.customPromptsHeading': 'Prompt tùy chỉnh',
-	'settings.agentConfig.systemPromptOverrideName': 'Cho phép ghi đè prompt hệ thống',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'CẢNH BÁO: Cho phép các prompt tùy chỉnh thay thế hoàn toàn prompt hệ thống. Điều này có thể làm hỏng chức năng mong đợi.',
 	'settings.agentConfig.apiConfigurationHeading': 'Cấu hình API',
 	'settings.agentConfig.logToFileName': 'Ghi nhật ký vào file',
 	'settings.agentConfig.logToFileDesc':

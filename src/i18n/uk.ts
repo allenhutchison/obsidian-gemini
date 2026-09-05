@@ -180,10 +180,6 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'settings.agentConfig.sectionTitle': 'Конфігурація агента',
 	'settings.agentConfig.sectionDesc':
 		'Налаштуйте взаємодію агента з моделлю: власні підказки, параметри повторних спроб/генерації, підсумовування розмови та захист від зациклення.',
-	'settings.agentConfig.customPromptsHeading': 'Власні промпти',
-	'settings.agentConfig.systemPromptOverrideName': 'Дозволити перевизначення системної підказки',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'УВАГА: Дозволяє власним підказкам повністю замінити системну підказку. Це може порушити очікувану роботу.',
 	'settings.agentConfig.apiConfigurationHeading': 'Конфігурація API',
 	'settings.agentConfig.logToFileName': 'Записувати лог у файл',
 	'settings.agentConfig.logToFileDesc':
