@@ -84,6 +84,31 @@ const PERVASIVE_OBSIDIANMD_RULES_TODO = {
 	// enforced again (left at the preset default).
 };
 
+// #1402: vault path containment kept getting hand-rolled as
+// `p.startsWith(folder + '/')` instead of calling `isPathInFolder()` — eleven-plus
+// sites across five audit sweeps. That matters because `isPathInFolder` is a live
+// fix surface (#1372 changed its semantics, #1374 is an open bug in it) and no
+// inline copy inherits a correction to it. The selector matches any `.startsWith()`
+// whose argument is a concatenation, which measured against `src/` hits exactly the
+// path-containment sites and nothing else (8/8, no false positives).
+// A deliberate strict-descendant site takes a line-scoped disable carrying the
+// "why strict descendant" reason the rule in `.claude/guidelines/coding.md` asks for.
+const PATH_CONTAINMENT_RULE = {
+	'no-restricted-syntax': [
+		'error',
+		{
+			// `[operator='+']` narrows this to string concatenation. `BinaryExpression`
+			// alone also covers `-`, `===`, `instanceof`, `in`, … — none of which can
+			// realistically produce a `startsWith` argument, but the rule should say
+			// exactly what it means rather than rely on that.
+			selector:
+				"CallExpression[callee.property.name='startsWith'][arguments.0.type='BinaryExpression'][arguments.0.operator='+']",
+			message:
+				"Don't hand-roll path containment: use isPathInFolder(path, folder) from src/utils/file-utils.ts (or shouldExcludePath/shouldExcludePathForPlugin for system paths). If this site genuinely needs strict-descendant semantics, add an eslint-disable-next-line with a reason explaining why.",
+		},
+	],
+};
+
 const NODE_GLOBALS = {
 	process: 'readonly',
 	Buffer: 'readonly',
@@ -156,7 +181,13 @@ export default defineConfig([
 			parserOptions: { project: './tsconfig.json' },
 			globals: NODE_GLOBALS,
 		},
-		rules: { ...SOFTENED_TS_RULES, ...PERVASIVE_OBSIDIANMD_RULES_TODO },
+		rules: { ...SOFTENED_TS_RULES, ...PERVASIVE_OBSIDIANMD_RULES_TODO, ...PATH_CONTAINMENT_RULE },
+	},
+	{
+		// `file-utils.ts` owns `isPathInFolder` and the write-path policy built on
+		// it, so it is the one file whose job is to spell the containment check out.
+		files: ['src/utils/file-utils.ts'],
+		rules: { 'no-restricted-syntax': 'off' },
 	},
 	{
 		files: ['test/**/*.ts'],

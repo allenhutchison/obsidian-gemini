@@ -2,7 +2,7 @@ import { TFile, TFolder, normalizePath } from 'obsidian';
 import type { TAbstractFile } from 'obsidian';
 import type { ObsidianGemini } from '../../types/plugin';
 import type { ToolResult } from '../types';
-import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
+import { isPathInFolder, shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
 
 /**
  * System-folder guard shared by the write/destructive vault tools. Returns a
@@ -20,12 +20,14 @@ export function guardExcludedPath(normalizedPath: string, plugin: ObsidianGemini
  * scope when it is not inside a protected system folder (the plugin state folder
  * or `.obsidian`) and — when a project is active — it lives under `projectRoot`.
  *
- * The `projectRoot + '/'` boundary is load-bearing: without the trailing slash a
- * `projectRoot` of `Foo` would spuriously match `Foobar/note.md`.
+ * The root-anchored boundary is load-bearing: a plain prefix test with a
+ * `projectRoot` of `Foo` would spuriously match `Foobar/note.md`. `isPathInFolder`
+ * is what supplies it (#1402); `file` is always a `TFile`, so its extra
+ * `path === folder` arm is unreachable here.
  */
 export function isFileInAgentScope(file: TFile, plugin: ObsidianGemini, projectRoot: string | undefined): boolean {
 	if (shouldExcludePath(file.path, plugin)) return false;
-	if (projectRoot && !file.path.startsWith(projectRoot + '/')) return false;
+	if (projectRoot && !isPathInFolder(file.path, projectRoot)) return false;
 	return true;
 }
 

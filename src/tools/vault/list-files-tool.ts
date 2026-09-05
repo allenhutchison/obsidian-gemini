@@ -2,7 +2,7 @@ import { Tool, ToolResult, ToolExecutionContext } from '../types';
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
 import { TFolder, normalizePath } from 'obsidian';
-import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
+import { isPathInFolder, shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
 import { getRawErrorMessageOr } from '../../utils/error-utils';
 import { toFileEntry } from './utils';
 
@@ -79,8 +79,11 @@ export class ListFilesTool implements Tool {
 
 			const fileList = files
 				.filter((f) => {
-					// Apply folder filter for recursive listing (boundary-aware)
-					if (params.recursive && folderPath && !f.path.startsWith(folderPath + '/')) {
+					// Apply folder filter for recursive listing (root-anchored, so a
+					// `folderPath` of `Foo` does not match `Foobar/note.md`). `f` is
+					// always a file, so `isPathInFolder`'s `path === folder` arm is
+					// unreachable here.
+					if (params.recursive && folderPath && !isPathInFolder(f.path, folderPath)) {
 						return false;
 					}
 					// Exclude system folders

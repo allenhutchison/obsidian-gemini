@@ -1,6 +1,7 @@
 import { Modal, App, TFile, Notice, setIcon } from 'obsidian';
 import { ChatSession } from '../../types/agent';
 import type { ObsidianGemini } from '../../types/plugin';
+import { isPathInFolder } from '../../utils/file-utils';
 import { t } from '../../i18n';
 
 /** Filter value representing all sessions regardless of project. */
@@ -112,8 +113,10 @@ export class SessionListModal extends Modal {
 			// Get all files in the Agent-Sessions folder
 			const sessionFolder = `${this.plugin.settings.historyFolder}/Agent-Sessions`;
 
-			// Get all markdown files in the session folder
-			const files = this.app.vault.getMarkdownFiles().filter((f) => f.path.startsWith(sessionFolder + '/'));
+			// Get all markdown files in the session folder. Root-anchored via the
+			// shared helper (#1402); the entries are files, so its `path === folder`
+			// arm is unreachable here.
+			const files = this.app.vault.getMarkdownFiles().filter((f) => isPathInFolder(f.path, sessionFolder));
 
 			// Load each session
 			for (const file of files) {

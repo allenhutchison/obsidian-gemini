@@ -223,7 +223,7 @@ export class ObsidianVaultAdapter implements FileSystemAdapter {
 		}
 
 		// Exclude history folder
-		if (this.historyFolder && filePath.startsWith(this.historyFolder + '/')) {
+		if (this.historyFolder && isPathInFolder(filePath, this.historyFolder)) {
 			return false;
 		}
 
