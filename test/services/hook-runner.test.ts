@@ -76,7 +76,6 @@ function successfulLoopResult(markdown = 'Done.'): AgentLoopResult {
 		markdown,
 		history: [],
 		cancelled: false,
-		retried: false,
 		fellBack: false,
 		exhausted: false,
 		loopAborted: false,

@@ -373,7 +373,7 @@ describe('AgentLoop', () => {
 	});
 
 	describe('empty-response handling', () => {
-		test('retry succeeds — returns retry text and marks retried=true, fellBack=false', async () => {
+		test('retry succeeds — returns retry text and fellBack=false', async () => {
 			const plugin = buildPlugin();
 			const session = buildSession();
 			const api = makeScriptedModelApi([textResponse(''), textResponse('summary text')]);
@@ -387,7 +387,6 @@ describe('AgentLoop', () => {
 			});
 
 			expect(result.markdown).toBe('summary text');
-			expect(result.retried).toBe(true);
 			expect(result.fellBack).toBe(false);
 			expect(api.calls).toBe(2); // follow-up + retry
 		});
@@ -406,7 +405,6 @@ describe('AgentLoop', () => {
 			});
 
 			expect(result.fellBack).toBe(true);
-			expect(result.retried).toBe(true);
 			// Fallback message references the executed tool's display name
 			expect(result.markdown).toContain('read_file');
 			expect(result.markdown).toContain('completed the requested actions');
@@ -1477,7 +1475,6 @@ describe('AgentLoop', () => {
 				},
 			});
 
-			expect(result.retried).toBe(true);
 			expect(api.generateModelResponse).toHaveBeenCalledTimes(2);
 			const retryRequest = (api.generateModelResponse as Mock).mock.calls[1][0];
 			expect(retryRequest.perTurnContext).toBeUndefined();
