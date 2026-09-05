@@ -97,7 +97,7 @@ interface Harness {
 	trashFile: ReturnType<typeof vi.fn>;
 	onSelect: ReturnType<typeof vi.fn>;
 	onDelete: ReturnType<typeof vi.fn>;
-	clearLoopDetectorSession: ReturnType<typeof vi.fn>;
+	releaseSession: ReturnType<typeof vi.fn>;
 	contentEl: HTMLElement;
 }
 
@@ -121,11 +121,11 @@ async function openModal(sessions: ChatSession[]): Promise<Harness> {
 		fileManager: { trashFile },
 	} as unknown as App;
 
-	const clearLoopDetectorSession = vi.fn();
+	const releaseSession = vi.fn();
 	const plugin = {
 		settings: { historyFolder: 'gemini-scribe' },
-		toolExecutionEngine: { clearLoopDetectorSession },
 		sessionManager: {
+			releaseSession,
 			loadSession: vi.fn((path: string) => Promise.resolve(sessions.find((s) => s.historyPath === path) ?? null)),
 			createAgentSession: vi.fn(),
 		},
@@ -138,7 +138,7 @@ async function openModal(sessions: ChatSession[]): Promise<Harness> {
 	const modal = new SessionListModal(app, plugin, { onSelect, onDelete }, null);
 	await modal.onOpen();
 
-	return { modal, trashFile, onSelect, onDelete, clearLoopDetectorSession, contentEl: (modal as any).contentEl };
+	return { modal, trashFile, onSelect, onDelete, releaseSession, contentEl: (modal as any).contentEl };
 }
 
 /** The rendered rows, in display order. */
@@ -197,16 +197,16 @@ describe('SessionListModal inline delete confirmation', () => {
 		}
 	});
 
-	it('releases the tool-loop detector records when the session is deleted (#1387)', async () => {
-		const { contentEl, clearLoopDetectorSession } = await openModal([makeSession('a', 'Alpha')]);
+	it('releases the cached session and tool-loop records when the session is deleted (#1460)', async () => {
+		const { contentEl, releaseSession } = await openModal([makeSession('a', 'Alpha')]);
 		const row = rows(contentEl)[0];
 		click(deleteButton(row));
 		click(confirmButton(row)!);
-		await vi.waitFor(() => expect(clearLoopDetectorSession).toHaveBeenCalledWith('a'));
+		await vi.waitFor(() => expect(releaseSession).toHaveBeenCalledWith('a'));
 	});
 
-	it('does not release loop-detector state when trashing fails (#1387 review regression)', async () => {
-		const { contentEl, trashFile, clearLoopDetectorSession } = await openModal([makeSession('a', 'Alpha')]);
+	it('does not release session state when trashing fails (#1387 review regression)', async () => {
+		const { contentEl, trashFile, releaseSession } = await openModal([makeSession('a', 'Alpha')]);
 		trashFile.mockRejectedValueOnce(new Error('trash failed'));
 		const row = rows(contentEl)[0];
 		click(deleteButton(row));
@@ -214,16 +214,16 @@ describe('SessionListModal inline delete confirmation', () => {
 		await vi.waitFor(() => expect(trashFile).toHaveBeenCalled());
 		// Give the rejected promise a tick to surface in deleteSession's catch.
 		await new Promise((resolve) => window.setTimeout(resolve, 0));
-		expect(clearLoopDetectorSession).not.toHaveBeenCalled();
+		expect(releaseSession).not.toHaveBeenCalled();
 	});
 
-	it('does not release loop-detector state when cancelled (#1387)', async () => {
-		const { contentEl, clearLoopDetectorSession } = await openModal([makeSession('a', 'Alpha')]);
+	it('does not release session state when cancelled (#1387)', async () => {
+		const { contentEl, releaseSession } = await openModal([makeSession('a', 'Alpha')]);
 		const row = rows(contentEl)[0];
 		click(deleteButton(row));
 		click(cancelButton(row)!);
 		await new Promise((resolve) => window.setTimeout(resolve, 0));
-		expect(clearLoopDetectorSession).not.toHaveBeenCalled();
+		expect(releaseSession).not.toHaveBeenCalled();
 	});
 
 	it('deletes only after the confirm button is clicked', async () => {

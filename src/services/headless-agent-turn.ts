@@ -79,89 +79,94 @@ export async function runHeadlessAgentTurn(
 		requireConfirmation: [] as DestructiveAction[],
 	});
 
-	// Propagate the per-run model override so follow-up requests also use the
-	// right model via session.modelConfig.
-	if (spec.model) {
-		session.modelConfig = { model: spec.model };
-	}
+	try {
+		// Propagate the per-run model override so follow-up requests also use the
+		// right model via session.modelConfig.
+		if (spec.model) {
+			session.modelConfig = { model: spec.model };
+		}
 
-	const toolContext: ToolExecutionContext = {
-		plugin,
-		session,
-		featureToolPolicy: spec.toolPolicy,
-	};
-	const modelApi = ModelClientFactory.createChatModel(plugin);
-	// Headless runs auto-approve confirmations, so only expose tools the user
-	// explicitly opted into (APPROVE under the layered policy). ASK_USER tools
-	// are excluded — exposing them would silently bypass the user's "ask first"
-	// intent because there's no UI to ask on. To allow an ASK_USER tool in a
-	// headless run, the run's toolPolicy must explicitly upgrade it (preset or
-	// per-tool override).
-	const availableTools = plugin.toolRegistry.getAutoApprovedTools(toolContext);
-
-	// Prepend a turn preamble so the model has accurate "now" awareness.
-	const startedAt = formatLocalTimestamp(session.created);
-	const userMessage = buildTurnPreamble(formatLocalTimestamp(new Date())) + spec.prompt;
-	const model = spec.model ?? getActiveChatModel(plugin.settings);
-
-	const initialRequest: ExtendedModelRequest = {
-		kind: 'extended',
-		userMessage,
-		conversationHistory: [],
-		model,
-		temperature: plugin.settings.temperature,
-		topP: plugin.settings.topP,
-		prompt: '',
-		availableTools,
-		renderContent: false,
-		sessionStartedAt: startedAt,
-		// The model API uses projectSkills as its include-list when filtering the
-		// registered skill set. Empty list ⇒ no filter, so the run sees every
-		// available skill (matches the documented "leave blank to inherit"
-		// semantics).
-		projectSkills: spec.projectSkills?.length ? spec.projectSkills : undefined,
-	};
-
-	if (isCancelled()) return undefined;
-	const initialResponse = await modelApi.generateModelResponse(initialRequest);
-	if (isCancelled()) return undefined;
-
-	if (!initialResponse.toolCalls?.length) {
-		return initialResponse.markdown ?? '';
-	}
-
-	// Per-run override falls back to the shared headless default when unset.
-	const maxIterations = spec.maxIterations ?? DEFAULT_HEADLESS_MAX_ITERATIONS;
-	// Hand off to AgentLoop — handles thoughtSignature propagation, history
-	// construction, follow-up requests, empty-response retry, and agentEventBus
-	// events without any UI coupling.
-	const loop = new AgentLoop();
-	const result = await loop.run({
-		initialResponse,
-		initialUserMessage: userMessage,
-		initialHistory: [],
-		options: {
+		const toolContext: ToolExecutionContext = {
 			plugin,
 			session,
-			isCancelled,
-			confirmationProvider: new HeadlessConfirmationProvider(),
-			maxIterations,
 			featureToolPolicy: spec.toolPolicy,
-			headless: true,
-		},
-	});
+		};
+		const modelApi = ModelClientFactory.createChatModel(plugin);
+		// Headless runs auto-approve confirmations, so only expose tools the user
+		// explicitly opted into (APPROVE under the layered policy). ASK_USER tools
+		// are excluded — exposing them would silently bypass the user's "ask first"
+		// intent because there's no UI to ask on. To allow an ASK_USER tool in a
+		// headless run, the run's toolPolicy must explicitly upgrade it (preset or
+		// per-tool override).
+		const availableTools = plugin.toolRegistry.getAutoApprovedTools(toolContext);
 
-	if (result.cancelled) return undefined;
+		// Prepend a turn preamble so the model has accurate "now" awareness.
+		const startedAt = formatLocalTimestamp(session.created);
+		const userMessage = buildTurnPreamble(formatLocalTimestamp(new Date())) + spec.prompt;
+		const model = spec.model ?? getActiveChatModel(plugin.settings);
 
-	if (result.exhausted) {
-		// Exhaustion fires only after the soft budget's one-shot extension was
-		// also spent, so the actual iteration count exceeds the configured cap —
-		// report both.
-		throw new Error(
-			`${spec.logPrefix} ${spec.subjectNoun} "${spec.subjectName}" exhausted its tool-iteration budget ` +
-				`(cap ${maxIterations}, ran ${result.iterations}) without producing a response`
-		);
+		const initialRequest: ExtendedModelRequest = {
+			kind: 'extended',
+			userMessage,
+			conversationHistory: [],
+			model,
+			temperature: plugin.settings.temperature,
+			topP: plugin.settings.topP,
+			prompt: '',
+			availableTools,
+			renderContent: false,
+			sessionStartedAt: startedAt,
+			// The model API uses projectSkills as its include-list when filtering the
+			// registered skill set. Empty list ⇒ no filter, so the run sees every
+			// available skill (matches the documented "leave blank to inherit"
+			// semantics).
+			projectSkills: spec.projectSkills?.length ? spec.projectSkills : undefined,
+		};
+
+		if (isCancelled()) return undefined;
+		const initialResponse = await modelApi.generateModelResponse(initialRequest);
+		if (isCancelled()) return undefined;
+
+		if (!initialResponse.toolCalls?.length) {
+			return initialResponse.markdown ?? '';
+		}
+
+		// Per-run override falls back to the shared headless default when unset.
+		const maxIterations = spec.maxIterations ?? DEFAULT_HEADLESS_MAX_ITERATIONS;
+		// Hand off to AgentLoop — handles thoughtSignature propagation, history
+		// construction, follow-up requests, empty-response retry, and agentEventBus
+		// events without any UI coupling.
+		const loop = new AgentLoop();
+		const result = await loop.run({
+			initialResponse,
+			initialUserMessage: userMessage,
+			initialHistory: [],
+			options: {
+				plugin,
+				session,
+				isCancelled,
+				confirmationProvider: new HeadlessConfirmationProvider(),
+				maxIterations,
+				featureToolPolicy: spec.toolPolicy,
+				headless: true,
+			},
+		});
+
+		if (result.cancelled) return undefined;
+
+		if (result.exhausted) {
+			// Exhaustion fires only after the soft budget's one-shot extension was
+			// also spent, so the actual iteration count exceeds the configured cap —
+			// report both.
+			throw new Error(
+				`${spec.logPrefix} ${spec.subjectNoun} "${spec.subjectName}" exhausted its tool-iteration budget ` +
+					`(cap ${maxIterations}, ran ${result.iterations}) without producing a response`
+			);
+		}
+
+		return result.markdown;
+	} finally {
+		// The temporary session never escapes this turn, even on cancellation or failure.
+		plugin.sessionManager.releaseSession(session.id);
 	}
-
-	return result.markdown;
 }

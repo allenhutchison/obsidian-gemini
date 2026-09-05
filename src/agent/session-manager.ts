@@ -123,6 +123,16 @@ export class SessionManager {
 	}
 
 	/**
+	 * Release a finished headless session or an explicitly deleted session.
+	 * This only drops in-memory state; it never deletes history files or evicts
+	 * interactive sessions when switching views.
+	 */
+	releaseSession(sessionId: string): void {
+		this.activeSessions.delete(sessionId);
+		this.plugin.toolExecutionEngine?.clearLoopDetectorSession(sessionId);
+	}
+
+	/**
 	 * Get existing session for a note (note-centric mode)
 	 */
 	async getNoteChatSession(sourceFile: TFile): Promise<ChatSession> {
