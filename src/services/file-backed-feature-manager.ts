@@ -1,6 +1,7 @@
 import { normalizePath, type TFile } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { JsonSidecarStateStore, purgeOrphanState } from './feature-definition';
+import { isPathInFolder } from '../utils/file-utils';
 
 /**
  * Minimal shape every file-backed feature definition shares: a `slug` (its
@@ -128,12 +129,12 @@ export abstract class FileBackedFeatureManager<TDef extends FileBackedDefinition
 		if (isCurrent && !isCurrent()) return;
 		this.definitions.clear();
 
-		const prefix = this.featureFolderPath + '/';
-		const runsPrefix = this.runsFolder + '/';
+		const featureFolder = this.featureFolderPath;
+		const runsFolder = this.runsFolder;
 
 		const files = this.plugin.app.vault
 			.getMarkdownFiles()
-			.filter((f) => f.path.startsWith(prefix) && !f.path.startsWith(runsPrefix));
+			.filter((f) => isPathInFolder(f.path, featureFolder) && !isPathInFolder(f.path, runsFolder));
 
 		for (const file of files) {
 			try {
