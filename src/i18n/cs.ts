@@ -120,7 +120,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 		'Složka, kde jsou ukládána data pluginu. Relace agentů se ukládají do Agent-Sessions/, vlastní prompty do Prompts/, háčky do Hooks/, stav plánovaných úloh do Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Zobrazit pokročilá nastavení',
 	'settings.general.showAdvancedDesc':
-		'Zobrazit pokročilé sekce (Vlastní prompty, Konfigurace API, Oprávnění nástrojů, Detekce smyček nástrojů, MCP servery, Ladění) pro pokročilé uživatele.',
+		'Zobrazit pokročilé sekce (Konfigurace API, Oprávnění nástrojů, Detekce smyček nástrojů, MCP servery, Ladění) pro pokročilé uživatele.',
 	'settings.general.modelListUpdatedSingular': 'Seznam modelů aktualizován: {count} model.',
 	'settings.general.modelListUpdated': 'Seznam modelů aktualizován: {count} modelů.',
 	'settings.general.refreshSkippedOffline': 'Přeskočeno: offline',

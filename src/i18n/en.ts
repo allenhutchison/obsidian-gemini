@@ -434,7 +434,7 @@ export const en = {
 	},
 	'settings.general.showAdvancedDesc': {
 		message:
-			'Reveal advanced sections (Custom prompts, API configuration, Tool permissions, Tool loop detection, MCP servers, Debug) for power users.',
+			'Reveal advanced sections (API configuration, Tool permissions, Tool loop detection, MCP servers, Debug) for power users.',
 		context:
 			'Settings field description for the show-advanced toggle. The parenthesized names are section titles elsewhere in settings; translate them consistently with those section titles.',
 	},

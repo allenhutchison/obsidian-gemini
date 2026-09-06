@@ -120,7 +120,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 		'Map waarin plugin-gegevens worden opgeslagen. Agentsessies bevinden zich onder Agent-Sessions/, aangepaste prompts onder Prompts/, hooks onder Hooks/, geplande taakstatussen onder Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Geavanceerde instellingen tonen',
 	'settings.general.showAdvancedDesc':
-		'Toon geavanceerde secties (Aangepaste prompts, API-configuratie, Tool-machtigingen, Tool-lusdetectie, MCP-servers, Foutopsporing) voor geavanceerde gebruikers.',
+		'Toon geavanceerde secties (API-configuratie, Tool-machtigingen, Tool-lusdetectie, MCP-servers, Foutopsporing) voor geavanceerde gebruikers.',
 	'settings.general.modelListUpdatedSingular': 'Modellijst bijgewerkt: {count} model.',
 	'settings.general.modelListUpdated': 'Modellijst bijgewerkt: {count} modellen.',
 	'settings.general.refreshSkippedOffline': 'Overgeslagen: offline',

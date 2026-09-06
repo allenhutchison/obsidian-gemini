@@ -110,8 +110,7 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'settings.general.stateFolderDesc':
 		'存储插件数据的文件夹。智能体会话保存在 Agent-Sessions/ 下，自定义提示词保存在 Prompts/ 下，钩子保存在 Hooks/ 下，计划任务状态保存在 Scheduled-Tasks/ 下。',
 	'settings.general.showAdvancedName': '显示高级设置',
-	'settings.general.showAdvancedDesc':
-		'为高级用户显示高级板块（自定义提示词、API 配置、工具权限、工具循环检测、MCP 服务器、调试）。',
+	'settings.general.showAdvancedDesc': '为高级用户显示高级板块（API 配置、工具权限、工具循环检测、MCP 服务器、调试）。',
 	'settings.general.modelListUpdatedSingular': '模型 list 已更新：{count} 个模型。',
 	'settings.general.modelListUpdated': '模型列表已更新：{count} 个模型。',
 	'settings.general.refreshSkippedOffline': '已跳过：离线',

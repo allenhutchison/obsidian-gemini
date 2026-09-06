@@ -122,7 +122,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 		'プラグインのデータが保存されるフォルダー。エージェントセッションは Agent-Sessions/、カスタムプロンプトは Prompts/、フックは Hooks/、スケジュールされたタスクの状態は Scheduled-Tasks/ の下に保存されます。',
 	'settings.general.showAdvancedName': '高度な設定を表示',
 	'settings.general.showAdvancedDesc':
-		'パワーユーザー向けに高度なセクション（カスタムプロンプト、API設定、ツール権限、ツールループ検出、MCPサーバー、デバッグ）を表示します。',
+		'パワーユーザー向けに高度なセクション（API設定、ツール権限、ツールループ検出、MCPサーバー、デバッグ）を表示します。',
 	'settings.general.modelListUpdatedSingular': 'モデルリストが更新されました: {count} 個のモデル。',
 	'settings.general.modelListUpdated': 'モデルリストが更新されました: {count} 個のモデル。',
 	'settings.general.refreshSkippedOffline': 'スキップされました: オフライン',

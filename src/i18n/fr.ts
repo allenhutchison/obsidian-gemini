@@ -125,7 +125,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 		"Dossier où sont stockées les données du plugin. Les sessions d'agent se trouvent sous Agent-Sessions/, les invites personnalisées sous Prompts/, les hooks sous Hooks/, et l'état des tâches planifiées sous Scheduled-Tasks/.",
 	'settings.general.showAdvancedName': 'Afficher les paramètres avancés',
 	'settings.general.showAdvancedDesc':
-		"Afficher les sections avancées (Prompts personnalisés, Configuration de l'API, Autorisations des outils, Détection de boucle d'outils, Serveurs MCP, Débogage) pour les utilisateurs expérimentés.",
+		"Afficher les sections avancées (Configuration de l'API, Autorisations des outils, Détection de boucle d'outils, Serveurs MCP, Débogage) pour les utilisateurs expérimentés.",
 	'settings.general.modelListUpdatedSingular': 'Liste des modèles mise à jour : {count} modèle.',
 	'settings.general.modelListUpdated': 'Liste des modèles mise à jour : {count} modèles.',
 	'settings.general.refreshSkippedOffline': 'Ignoré : hors ligne',

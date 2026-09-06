@@ -122,7 +122,7 @@ export const it: Partial<Record<TranslationKey, string>> = {
 		"Cartella in cui sono memorizzati i dati del plugin. Le sessioni dell'agente si trovano in Agent-Sessions/, i prompt personalizzati in Prompts/, gli hook in Hooks/, lo stato delle attività pianificate in Scheduled-Tasks/.",
 	'settings.general.showAdvancedName': 'Mostra impostazioni avanzate',
 	'settings.general.showAdvancedDesc':
-		'Mostra le sezioni avanzate (Prompt personalizzati, Configurazione API, Permessi degli strumenti, Rilevamento loop degli strumenti, Server MCP, Debug) per utenti esperti.',
+		'Mostra le sezioni avanzate (Configurazione API, Permessi degli strumenti, Rilevamento loop degli strumenti, Server MCP, Debug) per utenti esperti.',
 	'settings.general.modelListUpdatedSingular': 'Elenco dei modelli aggiornato: {count} modello.',
 	'settings.general.modelListUpdated': 'Elenco dei modelli aggiornato: {count} modelli.',
 	'settings.general.refreshSkippedOffline': 'Ignorato: offline',

@@ -120,7 +120,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 		'Folder, w którym przechowywane są dane wtyczki. Sesje agentów znajdują się w Agent-Sessions/, własne monity w Prompts/, haki w Hooks/, a stan zaplanowanych zadań w Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Pokaż ustawienia zaawansowane',
 	'settings.general.showAdvancedDesc':
-		'Pokaż sekcje zaawansowane (Niestandardowe monity, Konfiguracja API, Uprawnienia narzędzi, Wykrywanie pętli narzędzi, Serwery MCP, Debugowanie) dla zaawansowanych użytkowników.',
+		'Pokaż sekcje zaawansowane (Konfiguracja API, Uprawnienia narzędzi, Wykrywanie pętli narzędzi, Serwery MCP, Debugowanie) dla zaawansowanych użytkowników.',
 	'settings.general.modelListUpdatedSingular': 'Zaktualizowano listę modeli: {count} model.',
 	'settings.general.modelListUpdated': 'Zaktualizowano listę modeli: {count} modeli.',
 	'settings.general.refreshSkippedOffline': 'Pominięto: brak połączenia',

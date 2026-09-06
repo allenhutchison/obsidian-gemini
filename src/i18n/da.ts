@@ -119,7 +119,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 		'Mappe, hvor plugindata gemmes. Agentsessioner ligger under Agent-Sessions/, brugerdefinerede prompts under Prompts/, hooks under Hooks/, planlagte opgavestatusser under Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Vis avancerede indstillinger',
 	'settings.general.showAdvancedDesc':
-		'Vis avancerede sektioner (Brugerdefinerede prompts, API-konfiguration, Værktøjstilladelser, Detektering af værktøjsløkker, MCP-servere, Fejlfinding) for avancerede brugere.',
+		'Vis avancerede sektioner (API-konfiguration, Værktøjstilladelser, Detektering af værktøjsløkker, MCP-servere, Fejlfinding) for avancerede brugere.',
 	'settings.general.modelListUpdatedSingular': 'Modelliste opdateret: {count} model.',
 	'settings.general.modelListUpdated': 'Modelliste opdateret: {count} modeller.',
 	'settings.general.refreshSkippedOffline': 'Sprunget over: offline',

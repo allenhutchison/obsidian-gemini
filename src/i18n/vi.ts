@@ -121,7 +121,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 		'Thư mục lưu trữ dữ liệu của plugin. Các phiên Agent nằm trong Agent-Sessions/, các prompt tùy chỉnh trong Prompts/, các hook trong Hooks/, trạng thái tác vụ đã lên lịch trong Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Hiển thị cài đặt nâng cao',
 	'settings.general.showAdvancedDesc':
-		'Hiển thị các phần nâng cao (Prompt tùy chỉnh, Cấu hình API, Quyền hạn công cụ, Phát hiện vòng lặp công cụ, Máy chủ MCP, Gỡ lỗi) dành cho người dùng nâng cao.',
+		'Hiển thị các phần nâng cao (Cấu hình API, Quyền hạn công cụ, Phát hiện vòng lặp công cụ, Máy chủ MCP, Gỡ lỗi) dành cho người dùng nâng cao.',
 	'settings.general.modelListUpdatedSingular': 'Đã cập nhật danh sách mô hình: {count} mô hình.',
 	'settings.general.modelListUpdated': 'Đã cập nhật danh sách mô hình: {count} mô hình.',
 	'settings.general.refreshSkippedOffline': 'Đã bỏ qua: ngoại tuyến',

@@ -124,7 +124,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 		'Ordner, in dem Plugin-Daten gespeichert werden. Agenten-Sitzungen befinden sich unter Agent-Sessions/, benutzerdefinierte Prompts unter Prompts/, Hooks unter Hooks/, geplante Aufgabenstatus unter Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Erweiterte Einstellungen anzeigen',
 	'settings.general.showAdvancedDesc':
-		'Erweiterte Abschnitte (Benutzerdefinierte Prompts, API-Konfiguration, Tool-Berechtigungen, Tool-Schleifenerkennung, MCP-Server, Debug) für Power-User anzeigen.',
+		'Erweiterte Abschnitte (API-Konfiguration, Tool-Berechtigungen, Tool-Schleifenerkennung, MCP-Server, Debug) für Power-User anzeigen.',
 	'settings.general.modelListUpdatedSingular': 'Modellliste aktualisiert: {count} Modell.',
 	'settings.general.modelListUpdated': 'Modellliste aktualisiert: {count} Modelle.',
 	'settings.general.refreshSkippedOffline': 'Übersprungen: offline',

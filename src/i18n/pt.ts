@@ -121,7 +121,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 		'Pasta onde os dados do plugin são guardados. As sessões do agente residem em Agent-Sessions/, os prompts personalizados em Prompts/, os hooks em Hooks/ e o estado das tarefas agendadas em Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Mostrar definições avançadas',
 	'settings.general.showAdvancedDesc':
-		'Revelar secções avançadas (Instruções personalizadas, Configuração da API, Permissões de ferramentas, Deteção de loop de ferramentas, Servidores MCP, Depuração) para utilizadores avançados.',
+		'Revelar secções avançadas (Configuração da API, Permissões de ferramentas, Deteção de loop de ferramentas, Servidores MCP, Depuração) para utilizadores avançados.',
 	'settings.general.modelListUpdatedSingular': 'Lista de modelos atualizada: {count} modelo.',
 	'settings.general.modelListUpdated': 'Lista de modelos atualizada: {count} modelos.',
 	'settings.general.refreshSkippedOffline': 'Ignorado: offline',

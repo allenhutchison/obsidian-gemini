@@ -119,7 +119,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 		'Folder tempat data plugin disimpan. Sesi agen berada di bawah Agent-Sessions/, prompt kustom di bawah Prompts/, hook di bawah Hooks/, status tugas terjadwal di bawah Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Tampilkan pengaturan lanjutan',
 	'settings.general.showAdvancedDesc':
-		'Tampilkan bagian lanjutan (Prompt kustom, Konfigurasi API, Izin alat, Deteksi perulangan alat, Server MCP, Debug) untuk pengguna tingkat lanjut.',
+		'Tampilkan bagian lanjutan (Konfigurasi API, Izin alat, Deteksi perulangan alat, Server MCP, Debug) untuk pengguna tingkat lanjut.',
 	'settings.general.modelListUpdatedSingular': 'Daftar model diperbarui: {count} model.',
 	'settings.general.modelListUpdated': 'Daftar model diperbarui: {count} model.',
 	'settings.general.refreshSkippedOffline': 'Dilewati: offline',

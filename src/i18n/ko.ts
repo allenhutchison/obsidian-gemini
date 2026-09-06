@@ -117,7 +117,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 		'플러그인 데이터가 저장되는 폴더입니다. 에이전트 세션은 Agent-Sessions/ 아래에, 사용자 지정 프롬프트는 Prompts/ 아래에, 훅은 Hooks/ 아래에, 예약된 작업 상태는 Scheduled-Tasks/ 아래에 저장됩니다.',
 	'settings.general.showAdvancedName': '고급 설정 표시',
 	'settings.general.showAdvancedDesc':
-		'고급 사용자용 고급 섹션(사용자 지정 프롬프트, API 설정, 도구 권한, 도구 루프 감지, MCP 서버, 디버그)을 표시합니다.',
+		'고급 사용자용 고급 섹션(API 설정, 도구 권한, 도구 루프 감지, MCP 서버, 디버그)을 표시합니다.',
 	'settings.general.modelListUpdatedSingular': '모델 목록이 업데이트되었습니다: {count}개 모델.',
 	'settings.general.modelListUpdated': '모델 목록이 업데이트되었습니다: {count}개 모델.',
 	'settings.general.refreshSkippedOffline': '건너뜀: 오프라인 상태',

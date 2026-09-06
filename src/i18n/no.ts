@@ -120,7 +120,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 		'Mappe der plugindata lagres. Agent-økter ligger under Agent-Sessions/, egendefinerte prompter under Prompts/, hooks under Hooks/, og status for planlagte oppgaver under Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Vis avanserte innstillinger',
 	'settings.general.showAdvancedDesc':
-		'Vis avanserte seksjoner (Egendefinerte ledetekster, API-konfigurasjon, Verktøytillatelser, Deteksjon av verktøyløkker, MCP-servere, Feilsøking) for avanserte brukere.',
+		'Vis avanserte seksjoner (API-konfigurasjon, Verktøytillatelser, Deteksjon av verktøyløkker, MCP-servere, Feilsøking) for avanserte brukere.',
 	'settings.general.modelListUpdatedSingular': 'Modelliste oppdatert: {count} modell.',
 	'settings.general.modelListUpdated': 'Modelliste oppdatert: {count} modeller.',
 	'settings.general.refreshSkippedOffline': 'Hoppet over: frakoblet',

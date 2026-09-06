@@ -120,7 +120,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 		'Папка, в которой хранятся данные плагина. Сессии агентов находятся в Agent-Sessions/, пользовательские подсказки — в Prompts/, хуки — в Hooks/, состояние запланированных задач — в Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Показать дополнительные настройки',
 	'settings.general.showAdvancedDesc':
-		'Показать дополнительные разделы (Пользовательские промты, Настройка API, Разрешения инструментов, Обнаружение циклов инструментов, MCP-серверы, Отладка) для опытных пользователей.',
+		'Показать дополнительные разделы (Настройка API, Разрешения инструментов, Обнаружение циклов инструментов, MCP-серверы, Отладка) для опытных пользователей.',
 	'settings.general.modelListUpdatedSingular': 'Список моделей обновлен: {count} модель.',
 	'settings.general.modelListUpdated': 'Список моделей обновлен: {count} моделей.',
 	'settings.general.refreshSkippedOffline': 'Пропущено: нет сети',

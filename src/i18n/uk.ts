@@ -120,7 +120,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 		'Папка, в якій зберігаються дані плагіна. Сесії агентів зберігаються в Agent-Sessions/, власні підказки — в Prompts/, хуки — в Hooks/, стан запланованих завдань — в Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Показувати розширені налаштування',
 	'settings.general.showAdvancedDesc':
-		'Показувати розширені розділи (Власні промпти, Конфігурація API, Дозволи інструментів, Виявлення циклів інструментів, Сервери MCP, Налагодження) для досвідчених користувачів.',
+		'Показувати розширені розділи (Конфігурація API, Дозволи інструментів, Виявлення циклів інструментів, Сервери MCP, Налагодження) для досвідчених користувачів.',
 	'settings.general.modelListUpdatedSingular': 'Список моделей оновлено: {count} модель.',
 	'settings.general.modelListUpdated': 'Список моделей оновлено: {count} моделей.',
 	'settings.general.refreshSkippedOffline': 'Пропущено: офлайн',
