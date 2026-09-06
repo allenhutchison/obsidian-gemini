@@ -180,7 +180,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 		'Dừng thực thi agent khi một cuộc gọi công cụ thất bại. Nếu bị tắt, agent sẽ tiếp tục thực thi các công cụ tiếp theo.',
 	'settings.agentConfig.sectionTitle': 'Cấu hình agent',
 	'settings.agentConfig.sectionDesc':
-		'Tinh chỉnh cách agent giao tiếp với mô hình: prompt tùy chỉnh, các tham số thử lại/tạo, tóm tắt cuộc trò chuyện và bảo vệ vòng lặp.',
+		'Tinh chỉnh cách agent giao tiếp với mô hình: các tham số thử lại/tạo, tóm tắt cuộc trò chuyện và bảo vệ vòng lặp.',
 	'settings.agentConfig.apiConfigurationHeading': 'Cấu hình API',
 	'settings.agentConfig.logToFileName': 'Ghi nhật ký vào file',
 	'settings.agentConfig.logToFileDesc':

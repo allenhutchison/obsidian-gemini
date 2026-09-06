@@ -179,7 +179,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 		'Зупиняти виконання агента, якщо виклик інструменту завершився помилкою. Якщо вимкнено, агент продовжить виконання наступних інструментів.',
 	'settings.agentConfig.sectionTitle': 'Конфігурація агента',
 	'settings.agentConfig.sectionDesc':
-		'Налаштуйте взаємодію агента з моделлю: власні підказки, параметри повторних спроб/генерації, підсумовування розмови та захист від зациклення.',
+		'Налаштуйте взаємодію агента з моделлю: параметри повторних спроб/генерації, підсумовування розмови та захист від зациклення.',
 	'settings.agentConfig.apiConfigurationHeading': 'Конфігурація API',
 	'settings.agentConfig.logToFileName': 'Записувати лог у файл',
 	'settings.agentConfig.logToFileDesc':

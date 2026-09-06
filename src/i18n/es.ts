@@ -183,7 +183,7 @@ export const es: Partial<Record<TranslationKey, string>> = {
 		'Detiene la ejecución del agente cuando falla la llamada a una herramienta. Si está desactivado, el agente continuará ejecutando las herramientas siguientes.',
 	'settings.agentConfig.sectionTitle': 'Configuración del agente',
 	'settings.agentConfig.sectionDesc':
-		'Ajusta cómo se comunica el agente con el modelo: prompts personalizados, parámetros de reintento/generación, resumen de conversaciones y protecciones contra bucles.',
+		'Ajusta cómo se comunica el agente con el modelo: parámetros de reintento/generación, resumen de conversaciones y protecciones contra bucles.',
 	'settings.agentConfig.apiConfigurationHeading': 'Configuración de la API',
 	'settings.agentConfig.logToFileName': 'Registrar en archivo',
 	'settings.agentConfig.logToFileDesc':

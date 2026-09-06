@@ -184,7 +184,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 		"Arrêter l'exécution de l'agent lorsqu'un appel d'outil échoue. Si désactivé, l'agent continuera d'exécuter les outils suivants.",
 	'settings.agentConfig.sectionTitle': "Configuration de l'agent",
 	'settings.agentConfig.sectionDesc':
-		"Ajuster la façon dont l'agent communique avec le modèle : invites personnalisées, paramètres de tentative/génération, résumé de conversation et protections contre les boucles.",
+		"Ajuster la façon dont l'agent communique avec le modèle : paramètres de tentative/génération, résumé de conversation et protections contre les boucles.",
 	'settings.agentConfig.apiConfigurationHeading': "Configuration de l'API",
 	'settings.agentConfig.logToFileName': 'Enregistrer dans un fichier',
 	'settings.agentConfig.logToFileDesc':

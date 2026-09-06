@@ -178,7 +178,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 		'Zastavit provádění agenta, pokud volání nástroje selže. Pokud je zakázáno, agent bude pokračovat v provádění dalších nástrojů.',
 	'settings.agentConfig.sectionTitle': 'Konfigurace agenta',
 	'settings.agentConfig.sectionDesc':
-		'Vylaďte, jak agent komunikuje s modelem: vlastní prompty, parametry opakování/generování, shrnutí konverzace a ochrana proti smyčkám.',
+		'Vylaďte, jak agent komunikuje s modelem: parametry opakování/generování, shrnutí konverzace a ochrana proti smyčkám.',
 	'settings.agentConfig.apiConfigurationHeading': 'Konfigurace API',
 	'settings.agentConfig.logToFileName': 'Zapisovat do souboru protokolu',
 	'settings.agentConfig.logToFileDesc':

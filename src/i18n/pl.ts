@@ -179,7 +179,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 		'Zatrzymuje działanie agenta, gdy wywołanie narzędzia zakończy się niepowodzeniem. Jeśli opcja jest wyłączona, agent będzie kontynuował wykonywanie kolejnych narzędzi.',
 	'settings.agentConfig.sectionTitle': 'Konfiguracja agenta',
 	'settings.agentConfig.sectionDesc':
-		'Dostosuj sposób, w jaki agent komunikuje się z modelem: własne prompty, parametry ponawiania/generowania, podsumowywanie rozmowy i zabezpieczenia przed pętlami.',
+		'Dostosuj sposób, w jaki agent komunikuje się z modelem: parametry ponawiania/generowania, podsumowywanie rozmowy i zabezpieczenia przed pętlami.',
 	'settings.agentConfig.apiConfigurationHeading': 'Konfiguracja API',
 	'settings.agentConfig.logToFileName': 'Zapisuj logi do pliku',
 	'settings.agentConfig.logToFileDesc':

@@ -181,7 +181,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 		'Parar a execução do agente quando a chamada de uma ferramenta falha. Se desativado, o agente continuará a executar as ferramentas subsequentes.',
 	'settings.agentConfig.sectionTitle': 'Configuração do agente',
 	'settings.agentConfig.sectionDesc':
-		'Ajuste a forma como o agente comunica com o modelo: prompts personalizados, parâmetros de repetição/geração, resumo de conversas e proteções contra loops.',
+		'Ajuste a forma como o agente comunica com o modelo: parâmetros de repetição/geração, resumo de conversas e proteções contra loops.',
 	'settings.agentConfig.apiConfigurationHeading': 'Configuração da API',
 	'settings.agentConfig.logToFileName': 'Registar num ficheiro',
 	'settings.agentConfig.logToFileDesc':

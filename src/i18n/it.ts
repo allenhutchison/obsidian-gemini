@@ -183,7 +183,7 @@ export const it: Partial<Record<TranslationKey, string>> = {
 		"Interrompe l'esecuzione dell'agente quando la chiamata a uno strumento fallisce. Se disabilitato, l'agente continuerà a eseguire gli strumenti successivi.",
 	'settings.agentConfig.sectionTitle': 'Configurazione agente',
 	'settings.agentConfig.sectionDesc':
-		"Regola il modo in cui l'agente comunica con il modello: prompt personalizzati, parametri di generazione/riprovo, riepilogo della conversazione e protezioni dai loop.",
+		"Regola il modo in cui l'agente comunica con il modello: parametri di generazione/riprovo, riepilogo della conversazione e protezioni dai loop.",
 	'settings.agentConfig.apiConfigurationHeading': 'Configurazione API',
 	'settings.agentConfig.logToFileName': 'Registra su file',
 	'settings.agentConfig.logToFileDesc':

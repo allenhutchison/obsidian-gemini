@@ -177,7 +177,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 		'Hentikan eksekusi agen ketika panggilan alat gagal. Jika dinonaktifkan, agen akan terus mengeksekusi alat berikutnya.',
 	'settings.agentConfig.sectionTitle': 'Konfigurasi agen',
 	'settings.agentConfig.sectionDesc':
-		'Atur cara agen berbicara dengan model: prompt kustom, parameter percobaan ulang/generasi, peringkasan percakapan, dan pelindung perulangan.',
+		'Atur cara agen berbicara dengan model: parameter percobaan ulang/generasi, peringkasan percakapan, dan pelindung perulangan.',
 	'settings.agentConfig.apiConfigurationHeading': 'Konfigurasi API',
 	'settings.agentConfig.logToFileName': 'Catat ke berkas',
 	'settings.agentConfig.logToFileDesc':

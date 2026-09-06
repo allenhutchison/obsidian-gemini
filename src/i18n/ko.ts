@@ -173,7 +173,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 		'도구 호출이 실패하면 에이전트 실행을 중지합니다. 비활성화하면 에이전트가 후속 도구를 계속 실행합니다.',
 	'settings.agentConfig.sectionTitle': '에이전트 설정',
 	'settings.agentConfig.sectionDesc':
-		'에이전트가 모델과 통신하는 방식을 조정합니다: 사용자 지정 프롬프트, 재시도/생성 매개변수, 대화 요약 및 루프 방지.',
+		'에이전트가 모델과 통신하는 방식을 조정합니다: 재시도/생성 매개변수, 대화 요약 및 루프 방지.',
 	'settings.agentConfig.apiConfigurationHeading': 'API 설정',
 	'settings.agentConfig.logToFileName': '파일에 로그 기록',
 	'settings.agentConfig.logToFileDesc':

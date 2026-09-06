@@ -181,7 +181,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 		'ツール呼び出しが失敗したときにエージェントの実行を停止します。無効にすると、エージェントは後続のツールの実行を継続します。',
 	'settings.agentConfig.sectionTitle': 'エージェント設定',
 	'settings.agentConfig.sectionDesc':
-		'エージェントがモデルと通信する方法を微調整します：カスタムプロンプト、再試行/生成パラメータ、会話の要約、ループガードなど。',
+		'エージェントがモデルと通信する方法を微調整します：再試行/生成パラメータ、会話の要約、ループガードなど。',
 	'settings.agentConfig.apiConfigurationHeading': 'API設定',
 	'settings.agentConfig.logToFileName': 'ファイルにログを出力',
 	'settings.agentConfig.logToFileDesc':

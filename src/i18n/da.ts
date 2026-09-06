@@ -177,7 +177,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 		'Stop agentafvikling, når et værktøjskald mislykkes. Hvis deaktiveret, vil agenten fortsætte med at afvikle efterfølgende værktøjer.',
 	'settings.agentConfig.sectionTitle': 'Agentkonfiguration',
 	'settings.agentConfig.sectionDesc':
-		'Juster, hvordan agenten taler med modellen: brugerdefinerede prompts, parametre for genforsøg/generering, samtale-resuméer og loop-beskyttelse.',
+		'Juster, hvordan agenten taler med modellen: parametre for genforsøg/generering, samtale-resuméer og loop-beskyttelse.',
 	'settings.agentConfig.apiConfigurationHeading': 'API-konfiguration',
 	'settings.agentConfig.logToFileName': 'Log til fil',
 	'settings.agentConfig.logToFileDesc':

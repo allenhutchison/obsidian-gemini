@@ -161,8 +161,7 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'settings.debug.stopOnToolErrorName': '工具出错时停止',
 	'settings.debug.stopOnToolErrorDesc': '当工具调用失败时停止 Agent 执行。如果禁用，Agent 将继续执行后续工具。',
 	'settings.agentConfig.sectionTitle': 'Agent 配置',
-	'settings.agentConfig.sectionDesc':
-		'调整 Agent 与模型的对话方式：自定义提示词、重试/生成参数、会话摘要以及循环保护。',
+	'settings.agentConfig.sectionDesc': '调整 Agent 与模型的对话方式：重试/生成参数、会话摘要以及循环保护。',
 	'settings.agentConfig.apiConfigurationHeading': 'API 配置',
 	'settings.agentConfig.logToFileName': '记录日志到文件',
 	'settings.agentConfig.logToFileDesc':

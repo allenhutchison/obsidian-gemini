@@ -180,7 +180,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 		'Останавливать работу агента при сбое вызова инструмента. Если отключено, агент продолжит выполнение последующих инструментов.',
 	'settings.agentConfig.sectionTitle': 'Конфигурация агента',
 	'settings.agentConfig.sectionDesc':
-		'Настройка взаимодействия агента с моделью: пользовательские системные инструкции, параметры повторных попыток/генерации, суммаризация диалога и защита от циклов.',
+		'Настройка взаимодействия агента с моделью: параметры повторных попыток/генерации, суммаризация диалога и защита от циклов.',
 	'settings.agentConfig.apiConfigurationHeading': 'Настройка API',
 	'settings.agentConfig.logToFileName': 'Записывать логи в файл',
 	'settings.agentConfig.logToFileDesc':

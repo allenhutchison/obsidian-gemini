@@ -179,7 +179,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 		'Stop de uitvoering van de agent wanneer een tool-aanroep mislukt. Indien uitgeschakeld, blijft de agent volgende tools uitvoeren.',
 	'settings.agentConfig.sectionTitle': 'Agent-configuratie',
 	'settings.agentConfig.sectionDesc':
-		'Pas aan hoe de agent met het model communiceert: aangepaste prompts, parameters voor opnieuw proberen/genereren, samenvatting van gesprekken en lusbeveiligingen.',
+		'Pas aan hoe de agent met het model communiceert: parameters voor opnieuw proberen/genereren, samenvatting van gesprekken en lusbeveiligingen.',
 	'settings.agentConfig.apiConfigurationHeading': 'API-configuratie',
 	'settings.agentConfig.logToFileName': 'Loggen naar bestand',
 	'settings.agentConfig.logToFileDesc':

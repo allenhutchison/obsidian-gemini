@@ -185,7 +185,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 		'Stoppt die Ausführung des Agenten, wenn ein Tool-Aufruf fehlschlägt. Wenn deaktiviert, führt der Agent nachfolgende Tools weiterhin aus.',
 	'settings.agentConfig.sectionTitle': 'Agenten-Konfiguration',
 	'settings.agentConfig.sectionDesc':
-		'Passen Sie an, wie der Agent mit dem Modell kommuniziert: benutzerdefinierte Prompts, Wiederholungs-/Generierungsparameter, Konversationszusammenfassung und Schleifenschutz.',
+		'Passen Sie an, wie der Agent mit dem Modell kommuniziert: Wiederholungs-/Generierungsparameter, Konversationszusammenfassung und Schleifenschutz.',
 	'settings.agentConfig.apiConfigurationHeading': 'API-Konfiguration',
 	'settings.agentConfig.logToFileName': 'In Datei protokollieren',
 	'settings.agentConfig.logToFileDesc':

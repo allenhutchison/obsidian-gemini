@@ -178,7 +178,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 		'Stopp agentkjøring når et verktøykall feiler. Hvis deaktivert, vil agenten fortsette å kjøre påfølgende verktøy.',
 	'settings.agentConfig.sectionTitle': 'Agentkonfigurasjon',
 	'settings.agentConfig.sectionDesc':
-		'Juster hvordan agenten snakker med modellen: tilpassede ledetekster, parametere for gjentakelse/generering, sammendrag av samtaler og løkkebeskyttelse.',
+		'Juster hvordan agenten snakker med modellen: parametere for gjentakelse/generering, sammendrag av samtaler og løkkebeskyttelse.',
 	'settings.agentConfig.apiConfigurationHeading': 'API-konfigurasjon',
 	'settings.agentConfig.logToFileName': 'Logg til fil',
 	'settings.agentConfig.logToFileDesc':

@@ -180,7 +180,7 @@ export const ptBR: Partial<Record<TranslationKey, string>> = {
 		'Para a execução do agente quando uma chamada de ferramenta falha. Se desativado, o agente continuará executando as ferramentas subsequentes.',
 	'settings.agentConfig.sectionTitle': 'Configuração do agente',
 	'settings.agentConfig.sectionDesc':
-		'Ajuste como o agente se comunica com o modelo: prompts personalizados, parâmetros de tentativa/geração, resumo de conversa e proteções contra loops.',
+		'Ajuste como o agente se comunica com o modelo: parâmetros de tentativa/geração, resumo de conversa e proteções contra loops.',
 	'settings.agentConfig.apiConfigurationHeading': 'Configuração da API',
 	'settings.agentConfig.logToFileName': 'Registrar em arquivo',
 	'settings.agentConfig.logToFileDesc':

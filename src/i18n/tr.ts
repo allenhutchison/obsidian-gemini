@@ -180,7 +180,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 		'Bir araç çağrısı başarısız olduğunda temsilci yürütmesini durdurur. Devre dışı bırakılırsa, temsilci sonraki araçları yürütmeye devam eder.',
 	'settings.agentConfig.sectionTitle': 'Ajan yapılandırması',
 	'settings.agentConfig.sectionDesc':
-		'Temsilcinin modelle nasıl konuşacağını ayarlayın: özel istemler, yeniden deneme/üretim parametreleri, konuşma özetleme ve döngü korumaları.',
+		'Temsilcinin modelle nasıl konuşacağını ayarlayın: yeniden deneme/üretim parametreleri, konuşma özetleme ve döngü korumaları.',
 	'settings.agentConfig.apiConfigurationHeading': 'API yapılandırması',
 	'settings.agentConfig.logToFileName': 'Dosyaya kaydet',
 	'settings.agentConfig.logToFileDesc':
