@@ -67,6 +67,21 @@ describe('SessionManager', () => {
 		});
 	});
 
+	it('keeps sessions distinct even when timestamps and Math.random repeat', async () => {
+		const now = vi.spyOn(Date, 'now').mockReturnValue(1788619654778);
+		const random = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+		try {
+			const first = await sessionManager.createAgentSession('First');
+			const second = await sessionManager.createAgentSession('Second');
+			expect(first.id).not.toBe(second.id);
+			sessionManager.releaseSession(first.id);
+			expect(sessionManager.getSession(second.id)).toBe(second);
+		} finally {
+			now.mockRestore();
+			random.mockRestore();
+		}
+	});
+
 	describe('createAgentSession', () => {
 		it('should sanitize file names with forbidden characters', async () => {
 			const session = await sessionManager.createAgentSession('Agent: Test Mode');
