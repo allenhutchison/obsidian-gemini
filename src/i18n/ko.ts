@@ -1030,4 +1030,42 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': '거절',
 	'agent.planMode.rejectedNotice': '계획이 거절되었습니다.',
 	'agent.planMode.proceedMessage': '승인된 계획을 진행합니다.',
+	'error.unknown': '알 수 없는 오류가 발생했습니다',
+	'error.openaiInvalidKey': '올바르지 않은 OpenAI API 키입니다. 설정 → Gemini Scribe에서 API 키를 확인해 주세요.',
+	'error.modelNotOnEndpoint':
+		'이 엔드포인트에서 모델을 사용할 수 없습니다. 모델 설정 또는 구성된 기본 URL을 확인해 주세요.',
+	'error.serverUnreachable':
+		'모델 서버에 연결할 수 없습니다. 사용자 지정 기본 URL(LM Studio, MLX 등)을 구성한 경우, 서버가 실행 중이고 설정의 기본 URL이 올바른지 확인해 주세요.',
+	'error.invalidApiKey': '올바르지 않은 API 키입니다. 설정에서 모델 제공자 자격 증명을 확인해 주세요.',
+	'error.authFailed': '인증에 실패했습니다. 모델 제공자 자격 증명과 계정이 이 모델에 액세스할 수 있는지 확인해 주세요.',
+	'error.quotaExhausted':
+		'이 모델의 무료 계정 할당량이 모두 소진되었습니다. 다른 모델(예: Gemini Flash)로 전환하거나 Google AI Studio에서 결제를 활성화해 보세요.',
+	'error.rateLimit': 'API 요청 빈도 제한을 초과했습니다. 잠시 후 다시 시도해 주세요.',
+	'error.ollamaModelNotPulled': 'Ollama 모델이 다운로드되지 않았습니다. 실행: ollama pull {model}',
+	'error.modelNotAvailable': '선택한 모델을 사용할 수 없습니다. 모델 설정을 확인해 주세요.',
+	'error.ollamaUnreachable':
+		'Ollama 데몬에 연결할 수 없습니다. `ollama serve`가 실행 중이고 설정의 기본 URL이 올바른지 확인해 주세요.',
+	'error.network': '네트워크 오류: 모델 API에 연결할 수 없습니다. 연결 상태를 확인해 주세요.',
+	'error.timeout': '요청 시간이 초과되었습니다. API 응답에 너무 오랜 시간이 걸렸습니다. 다시 시도해 주세요.',
+	'error.serviceUnavailable': '모델 API를 일시적으로 사용할 수 없습니다. 나중에 다시 시도해 주세요.',
+	'error.safetyBlocked': '안전 필터에 의해 콘텐츠가 차단되었습니다. 요청을 다른 표현으로 수정해 주세요.',
+	'error.tokenLimit': '요청이 토큰 제한을 초과했습니다. 메시지 길이나 대화 기록을 줄여주세요.',
+	'error.apiPrefix': 'API 오류: {message}',
+	'error.communicationFailed': '모델 API와 통신하는 동안 오류가 발생했습니다',
+	'error.unknownCommunication': '모델 API와 통신하는 동안 알 수 없는 오류가 발생했습니다',
+	'error.http.badRequest': '잘못된 요청: API 요청이 올바르지 않습니다. 메시지를 확인하고 다시 시도해 주세요.',
+	'error.http.unauthorized': '인증 실패: 올바르지 않은 API 키입니다. 설정에서 모델 제공자 자격 증명을 확인해 주세요.',
+	'error.http.forbidden': '액세스 거부됨: 모델 제공자가 이 모델 또는 기능에 대한 액세스를 거부했습니다.',
+	'error.http.notFound': '모델을 찾을 수 없음: 선택한 모델을 사용할 수 없습니다. 모델 설정을 확인해 주세요.',
+	'error.http.rateLimit': '요청 빈도 제한 초과: 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.',
+	'error.http.serverError': '서버 오류: 모델 API에 내부 오류가 발생했습니다. 나중에 다시 시도해 주세요.',
+	'error.http.serviceUnavailable':
+		'서비스를 사용할 수 없음: 모델 API가 일시적으로 중단되었습니다. 나중에 다시 시도해 주세요.',
+	'error.http.gatewayTimeout': '게이트웨이 시간 초과: API 요청에 너무 오랜 시간이 걸렸습니다. 다시 시도해 주세요.',
+	'error.http.serverErrorWithCode':
+		'서버 오류 ({statusCode}): 모델 API에 문제가 발생했습니다. 나중에 다시 시도해 주세요.',
+	'error.http.clientErrorWithCode': '클라이언트 오류 ({statusCode}): {message}',
+	'error.http.clientErrorWithCodeNoDetail': '클라이언트 오류 ({statusCode}): 요청을 확인하고 다시 시도해 주세요.',
+	'error.http.genericWithCode': 'HTTP 오류 {statusCode}: {message}',
+	'error.http.genericWithCodeNoDetail': 'HTTP 오류 {statusCode}: 예기치 않은 오류가 발생했습니다.',
 };

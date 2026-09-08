@@ -1056,4 +1056,48 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Reddet',
 	'agent.planMode.rejectedNotice': 'Plan reddedildi.',
 	'agent.planMode.proceedMessage': 'Onaylanan planla devam et.',
+	'error.unknown': 'Bilinmeyen bir hata oluştu',
+	'error.openaiInvalidKey':
+		'Geçersiz OpenAI API anahtarı. Lütfen Ayarlar → Gemini Scribe altındaki API anahtarını kontrol edin.',
+	'error.modelNotOnEndpoint':
+		"Model bu uç noktada mevcut değil. Lütfen model ayarlarınızı veya yapılandırılmış temel URL'yi kontrol edin.",
+	'error.serverUnreachable':
+		"Model sunucusuna bağlanılamadı. Özel bir temel URL (LM Studio, MLX vb.) yapılandırdıysanız, sunucunun çalıştığından ve ayarlardaki temel URL'nin doğru olduğundan emin olun.",
+	'error.invalidApiKey': 'Geçersiz API anahtarı. Lütfen ayarlardan model sağlayıcı kimlik bilgilerinizi kontrol edin.',
+	'error.authFailed':
+		'Kimlik doğrulama başarısız oldu. Lütfen model sağlayıcı kimlik bilgilerinizi ve hesabınızın bu modele erişimi olduğunu doğrulayın.',
+	'error.quotaExhausted':
+		"Bu model için ücretsiz kota tükendi. Farklı bir modele geçmeyi deneyin (örneğin Gemini Flash) veya Google AI Studio'da faturalandırmayı etkinleştirin.",
+	'error.rateLimit': 'API istek sınırı aşıldı. Lütfen biraz bekleyin ve tekrar deneyin.',
+	'error.ollamaModelNotPulled': 'Ollama modeli çekilmedi. Çalıştırın: ollama pull {model}',
+	'error.modelNotAvailable': 'Seçilen model mevcut değil. Lütfen model ayarlarınızı kontrol edin.',
+	'error.ollamaUnreachable':
+		"Ollama arka plan programına (daemon) bağlanılamadı. `ollama serve` komutunun çalıştığından ve ayarlardaki temel URL'nin doğru olduğundan emin olun.",
+	'error.network': "Ağ hatası: Model API'sine ulaşılamıyor. Lütfen bağlantınızı kontrol edin.",
+	'error.timeout': "İstek zaman aşımına uğradı. API'nin yanıt vermesi çok uzun sürdü. Lütfen tekrar deneyin.",
+	'error.serviceUnavailable': "Model API'si geçici olarak kullanılamıyor. Lütfen daha sonra tekrar deneyin.",
+	'error.safetyBlocked':
+		'İçerik güvenlik filtreleri tarafından engellendi. Lütfen isteğinizi farklı bir şekilde ifade edin.',
+	'error.tokenLimit':
+		'İstek jeton (token) sınırını aşıyor. Lütfen mesajınızın veya sohbet geçmişinizin uzunluğunu azaltın.',
+	'error.apiPrefix': 'API hatası: {message}',
+	'error.communicationFailed': "Model API'si ile iletişim kurulurken bir hata oluştu",
+	'error.unknownCommunication': "Model API'si ile iletişim kurulurken bilinmeyen bir hata oluştu",
+	'error.http.badRequest': 'Geçersiz istek: API isteği geçersizdi. Lütfen mesajınızı kontrol edin ve tekrar deneyin.',
+	'error.http.unauthorized':
+		'Kimlik doğrulama başarısız oldu: Geçersiz API anahtarı. Lütfen ayarlardan model sağlayıcı kimlik bilgilerinizi kontrol edin.',
+	'error.http.forbidden': 'Erişim yasaklandı: Model sağlayıcı bu modele veya özelliğe erişimi reddetti.',
+	'error.http.notFound': 'Model bulunamadı: Seçilen model mevcut değil. Lütfen model ayarlarınızı kontrol edin.',
+	'error.http.rateLimit': 'İstek sınırı aşıldı: Çok fazla istek. Lütfen biraz bekleyin ve tekrar deneyin.',
+	'error.http.serverError': "Sunucu hatası: Model API'sinde dahili bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+	'error.http.serviceUnavailable':
+		"Hizmet kullanılamıyor: Model API'si geçici olarak kapalı. Lütfen daha sonra tekrar deneyin.",
+	'error.http.gatewayTimeout': 'Ağ geçidi zaman aşımı: API isteği çok uzun sürdü. Lütfen tekrar deneyin.',
+	'error.http.serverErrorWithCode':
+		"Sunucu hatası ({statusCode}): Model API'sinde sorunlar yaşanıyor. Lütfen daha sonra tekrar deneyin.",
+	'error.http.clientErrorWithCode': 'İstemci hatası ({statusCode}): {message}',
+	'error.http.clientErrorWithCodeNoDetail':
+		'İstemci hatası ({statusCode}): Lütfen isteğinizi kontrol edin ve tekrar deneyin.',
+	'error.http.genericWithCode': 'HTTP hatası {statusCode}: {message}',
+	'error.http.genericWithCodeNoDetail': 'HTTP hatası {statusCode}: Beklenmedik bir hata oluştu.',
 };
