@@ -91,7 +91,6 @@ export interface ObsidianGeminiSettings {
 	 * installs are seeded `true` and skip the migration entirely.
 	 */
 	useInteractionsApiMigrated?: boolean;
-	allowSystemPromptOverride: boolean;
 	temperature: number;
 	topP: number;
 	stopOnToolError: boolean;

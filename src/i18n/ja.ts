@@ -122,7 +122,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 		'プラグインのデータが保存されるフォルダー。エージェントセッションは Agent-Sessions/、カスタムプロンプトは Prompts/、フックは Hooks/、スケジュールされたタスクの状態は Scheduled-Tasks/ の下に保存されます。',
 	'settings.general.showAdvancedName': '高度な設定を表示',
 	'settings.general.showAdvancedDesc':
-		'パワーユーザー向けに高度なセクション（カスタムプロンプト、API設定、ツール権限、ツールループ検出、MCPサーバー、デバッグ）を表示します。',
+		'パワーユーザー向けに高度なセクション（API設定、ツール権限、ツールループ検出、MCPサーバー、デバッグ）を表示します。',
 	'settings.general.modelListUpdatedSingular': 'モデルリストが更新されました: {count} 個のモデル。',
 	'settings.general.modelListUpdated': 'モデルリストが更新されました: {count} 個のモデル。',
 	'settings.general.refreshSkippedOffline': 'スキップされました: オフライン',
@@ -181,11 +181,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 		'ツール呼び出しが失敗したときにエージェントの実行を停止します。無効にすると、エージェントは後続のツールの実行を継続します。',
 	'settings.agentConfig.sectionTitle': 'エージェント設定',
 	'settings.agentConfig.sectionDesc':
-		'エージェントがモデルと通信する方法を微調整します：カスタムプロンプト、再試行/生成パラメータ、会話の要約、ループガードなど。',
-	'settings.agentConfig.customPromptsHeading': 'カスタムプロンプト',
-	'settings.agentConfig.systemPromptOverrideName': 'システムプロンプトの上書きを許可',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'警告: カスタムプロンプトがシステムプロンプトを完全に置き換えることを許可します。これにより、期待される機能が動作しなくなる可能性があります。',
+		'エージェントがモデルと通信する方法を微調整します：再試行/生成パラメータ、会話の要約、ループガードなど。',
 	'settings.agentConfig.apiConfigurationHeading': 'API設定',
 	'settings.agentConfig.logToFileName': 'ファイルにログを出力',
 	'settings.agentConfig.logToFileDesc':

@@ -120,7 +120,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 		'Папка, в которой хранятся данные плагина. Сессии агентов находятся в Agent-Sessions/, пользовательские подсказки — в Prompts/, хуки — в Hooks/, состояние запланированных задач — в Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Показать дополнительные настройки',
 	'settings.general.showAdvancedDesc':
-		'Показать дополнительные разделы (Пользовательские промты, Настройка API, Разрешения инструментов, Обнаружение циклов инструментов, MCP-серверы, Отладка) для опытных пользователей.',
+		'Показать дополнительные разделы (Настройка API, Разрешения инструментов, Обнаружение циклов инструментов, MCP-серверы, Отладка) для опытных пользователей.',
 	'settings.general.modelListUpdatedSingular': 'Список моделей обновлен: {count} модель.',
 	'settings.general.modelListUpdated': 'Список моделей обновлен: {count} моделей.',
 	'settings.general.refreshSkippedOffline': 'Пропущено: нет сети',
@@ -180,11 +180,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 		'Останавливать работу агента при сбое вызова инструмента. Если отключено, агент продолжит выполнение последующих инструментов.',
 	'settings.agentConfig.sectionTitle': 'Конфигурация агента',
 	'settings.agentConfig.sectionDesc':
-		'Настройка взаимодействия агента с моделью: пользовательские системные инструкции, параметры повторных попыток/генерации, суммаризация диалога и защита от циклов.',
-	'settings.agentConfig.customPromptsHeading': 'Пользовательские промты',
-	'settings.agentConfig.systemPromptOverrideName': 'Разрешить переопределение системного промпта',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'ВНИМАНИЕ: Позволяет пользовательским промптам полностью заменять системный промпт. Это может нарушить ожидаемую функциональность.',
+		'Настройка взаимодействия агента с моделью: параметры повторных попыток/генерации, суммаризация диалога и защита от циклов.',
 	'settings.agentConfig.apiConfigurationHeading': 'Настройка API',
 	'settings.agentConfig.logToFileName': 'Записывать логи в файл',
 	'settings.agentConfig.logToFileDesc':

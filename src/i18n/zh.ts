@@ -110,8 +110,7 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'settings.general.stateFolderDesc':
 		'存储插件数据的文件夹。智能体会话保存在 Agent-Sessions/ 下，自定义提示词保存在 Prompts/ 下，钩子保存在 Hooks/ 下，计划任务状态保存在 Scheduled-Tasks/ 下。',
 	'settings.general.showAdvancedName': '显示高级设置',
-	'settings.general.showAdvancedDesc':
-		'为高级用户显示高级板块（自定义提示词、API 配置、工具权限、工具循环检测、MCP 服务器、调试）。',
+	'settings.general.showAdvancedDesc': '为高级用户显示高级板块（API 配置、工具权限、工具循环检测、MCP 服务器、调试）。',
 	'settings.general.modelListUpdatedSingular': '模型 list 已更新：{count} 个模型。',
 	'settings.general.modelListUpdated': '模型列表已更新：{count} 个模型。',
 	'settings.general.refreshSkippedOffline': '已跳过：离线',
@@ -162,11 +161,7 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'settings.debug.stopOnToolErrorName': '工具出错时停止',
 	'settings.debug.stopOnToolErrorDesc': '当工具调用失败时停止 Agent 执行。如果禁用，Agent 将继续执行后续工具。',
 	'settings.agentConfig.sectionTitle': 'Agent 配置',
-	'settings.agentConfig.sectionDesc':
-		'调整 Agent 与模型的对话方式：自定义提示词、重试/生成参数、会话摘要以及循环保护。',
-	'settings.agentConfig.customPromptsHeading': '自定义提示词',
-	'settings.agentConfig.systemPromptOverrideName': '允许覆盖系统提示词',
-	'settings.agentConfig.systemPromptOverrideDesc': '警告：允许自定义提示词完全替换系统提示词。这可能会破坏预期功能。',
+	'settings.agentConfig.sectionDesc': '调整 Agent 与模型的对话方式：重试/生成参数、会话摘要以及循环保护。',
 	'settings.agentConfig.apiConfigurationHeading': 'API 配置',
 	'settings.agentConfig.logToFileName': '记录日志到文件',
 	'settings.agentConfig.logToFileDesc':

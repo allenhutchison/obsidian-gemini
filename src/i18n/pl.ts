@@ -120,7 +120,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 		'Folder, w którym przechowywane są dane wtyczki. Sesje agentów znajdują się w Agent-Sessions/, własne monity w Prompts/, haki w Hooks/, a stan zaplanowanych zadań w Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Pokaż ustawienia zaawansowane',
 	'settings.general.showAdvancedDesc':
-		'Pokaż sekcje zaawansowane (Niestandardowe monity, Konfiguracja API, Uprawnienia narzędzi, Wykrywanie pętli narzędzi, Serwery MCP, Debugowanie) dla zaawansowanych użytkowników.',
+		'Pokaż sekcje zaawansowane (Konfiguracja API, Uprawnienia narzędzi, Wykrywanie pętli narzędzi, Serwery MCP, Debugowanie) dla zaawansowanych użytkowników.',
 	'settings.general.modelListUpdatedSingular': 'Zaktualizowano listę modeli: {count} model.',
 	'settings.general.modelListUpdated': 'Zaktualizowano listę modeli: {count} modeli.',
 	'settings.general.refreshSkippedOffline': 'Pominięto: brak połączenia',
@@ -179,11 +179,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 		'Zatrzymuje działanie agenta, gdy wywołanie narzędzia zakończy się niepowodzeniem. Jeśli opcja jest wyłączona, agent będzie kontynuował wykonywanie kolejnych narzędzi.',
 	'settings.agentConfig.sectionTitle': 'Konfiguracja agenta',
 	'settings.agentConfig.sectionDesc':
-		'Dostosuj sposób, w jaki agent komunikuje się z modelem: własne prompty, parametry ponawiania/generowania, podsumowywanie rozmowy i zabezpieczenia przed pętlami.',
-	'settings.agentConfig.customPromptsHeading': 'Niestandardowe monity',
-	'settings.agentConfig.systemPromptOverrideName': 'Zezwalaj na nadpisanie promptu systemowego',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'OSTRZEŻENIE: Zezwala własnym promptom na całkowite zastąpienie promptu systemowego. Może to zakłócić oczekiwane działanie.',
+		'Dostosuj sposób, w jaki agent komunikuje się z modelem: parametry ponawiania/generowania, podsumowywanie rozmowy i zabezpieczenia przed pętlami.',
 	'settings.agentConfig.apiConfigurationHeading': 'Konfiguracja API',
 	'settings.agentConfig.logToFileName': 'Zapisuj logi do pliku',
 	'settings.agentConfig.logToFileDesc':

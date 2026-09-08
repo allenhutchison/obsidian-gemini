@@ -21,6 +21,28 @@ describe('GeminiPrompts', () => {
 		(getLanguage as ReturnType<typeof vi.fn>).mockReturnValue('fr'); // Set language to French
 	});
 
+	it.each([true, false])('uses the per-prompt override flag (%s) without a global setting', (overrideSystemPrompt) => {
+		const content = 'Custom instruction for this session.';
+		const result = geminiPrompts.getSystemPromptWithCustom(undefined, {
+			name: 'Custom',
+			description: 'Test prompt',
+			version: 1,
+			tags: [],
+			content,
+			overrideSystemPrompt,
+		});
+		if (overrideSystemPrompt) {
+			expect(result).toBe(content);
+			expect(mockPlugin.logger.warn).toHaveBeenCalledWith(
+				'System prompt override enabled. Base functionality may be affected.'
+			);
+		} else {
+			expect(result).toContain(content);
+			expect(result).not.toBe(content);
+			expect(mockPlugin.logger.warn).not.toHaveBeenCalled();
+		}
+	});
+
 	it('should inject language into system prompt', () => {
 		const prompt = geminiPrompts.systemPrompt({
 			userName: 'Test User',

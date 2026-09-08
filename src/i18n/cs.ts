@@ -120,7 +120,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 		'Složka, kde jsou ukládána data pluginu. Relace agentů se ukládají do Agent-Sessions/, vlastní prompty do Prompts/, háčky do Hooks/, stav plánovaných úloh do Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Zobrazit pokročilá nastavení',
 	'settings.general.showAdvancedDesc':
-		'Zobrazit pokročilé sekce (Vlastní prompty, Konfigurace API, Oprávnění nástrojů, Detekce smyček nástrojů, MCP servery, Ladění) pro pokročilé uživatele.',
+		'Zobrazit pokročilé sekce (Konfigurace API, Oprávnění nástrojů, Detekce smyček nástrojů, MCP servery, Ladění) pro pokročilé uživatele.',
 	'settings.general.modelListUpdatedSingular': 'Seznam modelů aktualizován: {count} model.',
 	'settings.general.modelListUpdated': 'Seznam modelů aktualizován: {count} modelů.',
 	'settings.general.refreshSkippedOffline': 'Přeskočeno: offline',
@@ -178,11 +178,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 		'Zastavit provádění agenta, pokud volání nástroje selže. Pokud je zakázáno, agent bude pokračovat v provádění dalších nástrojů.',
 	'settings.agentConfig.sectionTitle': 'Konfigurace agenta',
 	'settings.agentConfig.sectionDesc':
-		'Vylaďte, jak agent komunikuje s modelem: vlastní prompty, parametry opakování/generování, shrnutí konverzace a ochrana proti smyčkám.',
-	'settings.agentConfig.customPromptsHeading': 'Vlastní prompty',
-	'settings.agentConfig.systemPromptOverrideName': 'Povolit přepsání systémového promptu',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'VAROVÁNÍ: Umožňuje vlastním promptům zcela nahradit systémový prompt. To může narušit očekávanou funkčnost.',
+		'Vylaďte, jak agent komunikuje s modelem: parametry opakování/generování, shrnutí konverzace a ochrana proti smyčkám.',
 	'settings.agentConfig.apiConfigurationHeading': 'Konfigurace API',
 	'settings.agentConfig.logToFileName': 'Zapisovat do souboru protokolu',
 	'settings.agentConfig.logToFileDesc':

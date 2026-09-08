@@ -11,7 +11,7 @@ let topPDebounceTimer: number | null = null;
 let topPRunId = 0;
 
 /**
- * "Agent Config" advanced section — combines Custom Prompts, API Configuration,
+ * "Agent Config" advanced section — combines API Configuration,
  * Context Management, and Tool Loop Detection into a single collapsible with
  * labeled sub-groups, since they all tune how the agent talks to the model.
  */
@@ -32,19 +32,6 @@ export async function renderAgentConfigSettings(
 	);
 
 	const debouncedSave = createDebouncedSave(plugin);
-
-	// --- Custom Prompts ---
-	new Setting(sectionEl).setName(t('settings.agentConfig.customPromptsHeading')).setHeading();
-
-	new Setting(sectionEl)
-		.setName(t('settings.agentConfig.systemPromptOverrideName'))
-		.setDesc(t('settings.agentConfig.systemPromptOverrideDesc'))
-		.addToggle((toggle) =>
-			toggle.setValue(plugin.settings.allowSystemPromptOverride ?? false).onChange(async (value) => {
-				plugin.settings.allowSystemPromptOverride = value;
-				await plugin.saveSettings();
-			})
-		);
 
 	// --- API Configuration ---
 	new Setting(sectionEl).setName(t('settings.agentConfig.apiConfigurationHeading')).setHeading();

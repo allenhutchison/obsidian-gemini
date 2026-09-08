@@ -120,7 +120,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 		'Папка, в якій зберігаються дані плагіна. Сесії агентів зберігаються в Agent-Sessions/, власні підказки — в Prompts/, хуки — в Hooks/, стан запланованих завдань — в Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Показувати розширені налаштування',
 	'settings.general.showAdvancedDesc':
-		'Показувати розширені розділи (Власні промпти, Конфігурація API, Дозволи інструментів, Виявлення циклів інструментів, Сервери MCP, Налагодження) для досвідчених користувачів.',
+		'Показувати розширені розділи (Конфігурація API, Дозволи інструментів, Виявлення циклів інструментів, Сервери MCP, Налагодження) для досвідчених користувачів.',
 	'settings.general.modelListUpdatedSingular': 'Список моделей оновлено: {count} модель.',
 	'settings.general.modelListUpdated': 'Список моделей оновлено: {count} моделей.',
 	'settings.general.refreshSkippedOffline': 'Пропущено: офлайн',
@@ -179,11 +179,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 		'Зупиняти виконання агента, якщо виклик інструменту завершився помилкою. Якщо вимкнено, агент продовжить виконання наступних інструментів.',
 	'settings.agentConfig.sectionTitle': 'Конфігурація агента',
 	'settings.agentConfig.sectionDesc':
-		'Налаштуйте взаємодію агента з моделлю: власні підказки, параметри повторних спроб/генерації, підсумовування розмови та захист від зациклення.',
-	'settings.agentConfig.customPromptsHeading': 'Власні промпти',
-	'settings.agentConfig.systemPromptOverrideName': 'Дозволити перевизначення системної підказки',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'УВАГА: Дозволяє власним підказкам повністю замінити системну підказку. Це може порушити очікувану роботу.',
+		'Налаштуйте взаємодію агента з моделлю: параметри повторних спроб/генерації, підсумовування розмови та захист від зациклення.',
 	'settings.agentConfig.apiConfigurationHeading': 'Конфігурація API',
 	'settings.agentConfig.logToFileName': 'Записувати лог у файл',
 	'settings.agentConfig.logToFileDesc':

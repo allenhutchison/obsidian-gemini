@@ -17,6 +17,7 @@ import type { Mock } from 'vitest';
 var mockSliderRegistry: Record<string, any>;
 // eslint-disable-next-line no-var -- vi.mock hoisted factory must capture it (TDZ safe)
 var mockNotice: Mock;
+const mockSettingNames = vi.hoisted(() => [] as string[]);
 
 vi.mock('../../src/main');
 
@@ -29,6 +30,7 @@ vi.mock('obsidian', () => {
 		constructor(public containerEl: any) {}
 		setName(name: string) {
 			this._name = name;
+			mockSettingNames.push(name);
 			return this;
 		}
 		setDesc(_desc: string) {
@@ -127,7 +129,6 @@ function buildPlugin(): FakePlugin {
 			temperature: 0.7,
 			topP: 1.0,
 			fileLogging: false,
-			allowSystemPromptOverride: false,
 			maxRetries: 3,
 			initialBackoffDelay: 1000,
 			modelDiscovery: { enabled: false, autoUpdateInterval: 24, fallbackToStatic: true },
@@ -191,6 +192,14 @@ describe('settings-agent-config slider debounce (issue #601)', () => {
 
 	afterEach(() => {
 		vi.useRealTimers();
+	});
+
+	it('omits the ineffective override toggle and its empty heading', async () => {
+		mockSettingNames.length = 0;
+		await setup();
+		expect(mockSettingNames).toContain('API configuration');
+		expect(mockSettingNames).not.toContain('Allow system prompt override');
+		expect(mockSettingNames).not.toContain('Custom prompts');
 	});
 
 	describe('temperature slider', () => {

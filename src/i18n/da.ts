@@ -119,7 +119,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 		'Mappe, hvor plugindata gemmes. Agentsessioner ligger under Agent-Sessions/, brugerdefinerede prompts under Prompts/, hooks under Hooks/, planlagte opgavestatusser under Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Vis avancerede indstillinger',
 	'settings.general.showAdvancedDesc':
-		'Vis avancerede sektioner (Brugerdefinerede prompts, API-konfiguration, Værktøjstilladelser, Detektering af værktøjsløkker, MCP-servere, Fejlfinding) for avancerede brugere.',
+		'Vis avancerede sektioner (API-konfiguration, Værktøjstilladelser, Detektering af værktøjsløkker, MCP-servere, Fejlfinding) for avancerede brugere.',
 	'settings.general.modelListUpdatedSingular': 'Modelliste opdateret: {count} model.',
 	'settings.general.modelListUpdated': 'Modelliste opdateret: {count} modeller.',
 	'settings.general.refreshSkippedOffline': 'Sprunget over: offline',
@@ -177,11 +177,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 		'Stop agentafvikling, når et værktøjskald mislykkes. Hvis deaktiveret, vil agenten fortsætte med at afvikle efterfølgende værktøjer.',
 	'settings.agentConfig.sectionTitle': 'Agentkonfiguration',
 	'settings.agentConfig.sectionDesc':
-		'Juster, hvordan agenten taler med modellen: brugerdefinerede prompts, parametre for genforsøg/generering, samtale-resuméer og loop-beskyttelse.',
-	'settings.agentConfig.customPromptsHeading': 'Brugerdefinerede prompts',
-	'settings.agentConfig.systemPromptOverrideName': 'Tillad tilsidesættelse af system-prompt',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'ADVARSEL: Giver mulighed for, at brugerdefinerede prompts fuldstændigt erstatter system-prompten. Dette kan ødelægge forventet funktionalitet.',
+		'Juster, hvordan agenten taler med modellen: parametre for genforsøg/generering, samtale-resuméer og loop-beskyttelse.',
 	'settings.agentConfig.apiConfigurationHeading': 'API-konfiguration',
 	'settings.agentConfig.logToFileName': 'Log til fil',
 	'settings.agentConfig.logToFileDesc':

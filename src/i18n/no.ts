@@ -120,7 +120,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 		'Mappe der plugindata lagres. Agent-økter ligger under Agent-Sessions/, egendefinerte prompter under Prompts/, hooks under Hooks/, og status for planlagte oppgaver under Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Vis avanserte innstillinger',
 	'settings.general.showAdvancedDesc':
-		'Vis avanserte seksjoner (Egendefinerte ledetekster, API-konfigurasjon, Verktøytillatelser, Deteksjon av verktøyløkker, MCP-servere, Feilsøking) for avanserte brukere.',
+		'Vis avanserte seksjoner (API-konfigurasjon, Verktøytillatelser, Deteksjon av verktøyløkker, MCP-servere, Feilsøking) for avanserte brukere.',
 	'settings.general.modelListUpdatedSingular': 'Modelliste oppdatert: {count} modell.',
 	'settings.general.modelListUpdated': 'Modelliste oppdatert: {count} modeller.',
 	'settings.general.refreshSkippedOffline': 'Hoppet over: frakoblet',
@@ -178,11 +178,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 		'Stopp agentkjøring når et verktøykall feiler. Hvis deaktivert, vil agenten fortsette å kjøre påfølgende verktøy.',
 	'settings.agentConfig.sectionTitle': 'Agentkonfigurasjon',
 	'settings.agentConfig.sectionDesc':
-		'Juster hvordan agenten snakker med modellen: tilpassede ledetekster, parametere for gjentakelse/generering, sammendrag av samtaler og løkkebeskyttelse.',
-	'settings.agentConfig.customPromptsHeading': 'Egendefinerte ledetekster',
-	'settings.agentConfig.systemPromptOverrideName': 'Tillat overstyring av systemledetekst',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'ADVARSEL: Tillater at tilpassede ledetekster fullstendig erstatter systemledeteksten. Dette kan ødelegge forventet funksjonalitet.',
+		'Juster hvordan agenten snakker med modellen: parametere for gjentakelse/generering, sammendrag av samtaler og løkkebeskyttelse.',
 	'settings.agentConfig.apiConfigurationHeading': 'API-konfigurasjon',
 	'settings.agentConfig.logToFileName': 'Logg til fil',
 	'settings.agentConfig.logToFileDesc':

@@ -121,7 +121,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 		'Thư mục lưu trữ dữ liệu của plugin. Các phiên Agent nằm trong Agent-Sessions/, các prompt tùy chỉnh trong Prompts/, các hook trong Hooks/, trạng thái tác vụ đã lên lịch trong Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Hiển thị cài đặt nâng cao',
 	'settings.general.showAdvancedDesc':
-		'Hiển thị các phần nâng cao (Prompt tùy chỉnh, Cấu hình API, Quyền hạn công cụ, Phát hiện vòng lặp công cụ, Máy chủ MCP, Gỡ lỗi) dành cho người dùng nâng cao.',
+		'Hiển thị các phần nâng cao (Cấu hình API, Quyền hạn công cụ, Phát hiện vòng lặp công cụ, Máy chủ MCP, Gỡ lỗi) dành cho người dùng nâng cao.',
 	'settings.general.modelListUpdatedSingular': 'Đã cập nhật danh sách mô hình: {count} mô hình.',
 	'settings.general.modelListUpdated': 'Đã cập nhật danh sách mô hình: {count} mô hình.',
 	'settings.general.refreshSkippedOffline': 'Đã bỏ qua: ngoại tuyến',
@@ -180,11 +180,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 		'Dừng thực thi agent khi một cuộc gọi công cụ thất bại. Nếu bị tắt, agent sẽ tiếp tục thực thi các công cụ tiếp theo.',
 	'settings.agentConfig.sectionTitle': 'Cấu hình agent',
 	'settings.agentConfig.sectionDesc':
-		'Tinh chỉnh cách agent giao tiếp với mô hình: prompt tùy chỉnh, các tham số thử lại/tạo, tóm tắt cuộc trò chuyện và bảo vệ vòng lặp.',
-	'settings.agentConfig.customPromptsHeading': 'Prompt tùy chỉnh',
-	'settings.agentConfig.systemPromptOverrideName': 'Cho phép ghi đè prompt hệ thống',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'CẢNH BÁO: Cho phép các prompt tùy chỉnh thay thế hoàn toàn prompt hệ thống. Điều này có thể làm hỏng chức năng mong đợi.',
+		'Tinh chỉnh cách agent giao tiếp với mô hình: các tham số thử lại/tạo, tóm tắt cuộc trò chuyện và bảo vệ vòng lặp.',
 	'settings.agentConfig.apiConfigurationHeading': 'Cấu hình API',
 	'settings.agentConfig.logToFileName': 'Ghi nhật ký vào file',
 	'settings.agentConfig.logToFileDesc':

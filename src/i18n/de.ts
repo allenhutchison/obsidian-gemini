@@ -124,7 +124,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 		'Ordner, in dem Plugin-Daten gespeichert werden. Agenten-Sitzungen befinden sich unter Agent-Sessions/, benutzerdefinierte Prompts unter Prompts/, Hooks unter Hooks/, geplante Aufgabenstatus unter Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Erweiterte Einstellungen anzeigen',
 	'settings.general.showAdvancedDesc':
-		'Erweiterte Abschnitte (Benutzerdefinierte Prompts, API-Konfiguration, Tool-Berechtigungen, Tool-Schleifenerkennung, MCP-Server, Debug) für Power-User anzeigen.',
+		'Erweiterte Abschnitte (API-Konfiguration, Tool-Berechtigungen, Tool-Schleifenerkennung, MCP-Server, Debug) für Power-User anzeigen.',
 	'settings.general.modelListUpdatedSingular': 'Modellliste aktualisiert: {count} Modell.',
 	'settings.general.modelListUpdated': 'Modellliste aktualisiert: {count} Modelle.',
 	'settings.general.refreshSkippedOffline': 'Übersprungen: offline',
@@ -185,11 +185,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 		'Stoppt die Ausführung des Agenten, wenn ein Tool-Aufruf fehlschlägt. Wenn deaktiviert, führt der Agent nachfolgende Tools weiterhin aus.',
 	'settings.agentConfig.sectionTitle': 'Agenten-Konfiguration',
 	'settings.agentConfig.sectionDesc':
-		'Passen Sie an, wie der Agent mit dem Modell kommuniziert: benutzerdefinierte Prompts, Wiederholungs-/Generierungsparameter, Konversationszusammenfassung und Schleifenschutz.',
-	'settings.agentConfig.customPromptsHeading': 'Benutzerdefinierte Prompts',
-	'settings.agentConfig.systemPromptOverrideName': 'Überschreiben des System-Prompts erlauben',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'WARNUNG: Ermöglicht es benutzerdefinierten Prompts, den System-Prompt vollständig zu ersetzen. Dies kann die erwartete Funktionalität beeinträchtigen.',
+		'Passen Sie an, wie der Agent mit dem Modell kommuniziert: Wiederholungs-/Generierungsparameter, Konversationszusammenfassung und Schleifenschutz.',
 	'settings.agentConfig.apiConfigurationHeading': 'API-Konfiguration',
 	'settings.agentConfig.logToFileName': 'In Datei protokollieren',
 	'settings.agentConfig.logToFileDesc':

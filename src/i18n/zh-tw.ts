@@ -111,7 +111,7 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 		'儲存外掛資料的資料夾。Agent 工作階段儲存於 Agent-Sessions/ 下，自訂提示詞儲存於 Prompts/ 下，掛鉤 (hooks) 儲存於 Hooks/ 下，排程任務狀態儲存於 Scheduled-Tasks/ 下。',
 	'settings.general.showAdvancedName': '顯示進階設定',
 	'settings.general.showAdvancedDesc':
-		'為進階使用者顯示進階區段（自訂提示詞、API 設定、工具權限、工具迴圈偵測、MCP 伺服器、除錯）。',
+		'為進階使用者顯示進階區段（API 設定、工具權限、工具迴圈偵測、MCP 伺服器、除錯）。',
 	'settings.general.modelListUpdatedSingular': '模型清單已更新：{count} 個模型。',
 	'settings.general.modelListUpdated': '模型清單已更新：{count} 個模型。',
 	'settings.general.refreshSkippedOffline': '已跳過：離線',
@@ -161,10 +161,7 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'settings.debug.stopOnToolErrorName': '發生工具錯誤時停止',
 	'settings.debug.stopOnToolErrorDesc': '當工具呼叫失敗時停止 Agent 執行。若停用，Agent 將繼續執行後續工具。',
 	'settings.agentConfig.sectionTitle': 'Agent 設定',
-	'settings.agentConfig.sectionDesc': '調整 Agent 與模型的對話方式：自訂提示詞、重試/生成參數、對話摘要以及迴圈防護。',
-	'settings.agentConfig.customPromptsHeading': '自訂提示詞',
-	'settings.agentConfig.systemPromptOverrideName': '允許覆寫系統提示詞',
-	'settings.agentConfig.systemPromptOverrideDesc': '警告：允許自訂提示詞完全取代系統提示詞。這可能會破壞預期的功能。',
+	'settings.agentConfig.sectionDesc': '調整 Agent 與模型的對話方式：重試/生成參數、對話摘要以及迴圈防護。',
 	'settings.agentConfig.apiConfigurationHeading': 'API 設定',
 	'settings.agentConfig.logToFileName': '記錄至檔案',
 	'settings.agentConfig.logToFileDesc':

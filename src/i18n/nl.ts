@@ -120,7 +120,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 		'Map waarin plugin-gegevens worden opgeslagen. Agentsessies bevinden zich onder Agent-Sessions/, aangepaste prompts onder Prompts/, hooks onder Hooks/, geplande taakstatussen onder Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Geavanceerde instellingen tonen',
 	'settings.general.showAdvancedDesc':
-		'Toon geavanceerde secties (Aangepaste prompts, API-configuratie, Tool-machtigingen, Tool-lusdetectie, MCP-servers, Foutopsporing) voor geavanceerde gebruikers.',
+		'Toon geavanceerde secties (API-configuratie, Tool-machtigingen, Tool-lusdetectie, MCP-servers, Foutopsporing) voor geavanceerde gebruikers.',
 	'settings.general.modelListUpdatedSingular': 'Modellijst bijgewerkt: {count} model.',
 	'settings.general.modelListUpdated': 'Modellijst bijgewerkt: {count} modellen.',
 	'settings.general.refreshSkippedOffline': 'Overgeslagen: offline',
@@ -179,11 +179,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 		'Stop de uitvoering van de agent wanneer een tool-aanroep mislukt. Indien uitgeschakeld, blijft de agent volgende tools uitvoeren.',
 	'settings.agentConfig.sectionTitle': 'Agent-configuratie',
 	'settings.agentConfig.sectionDesc':
-		'Pas aan hoe de agent met het model communiceert: aangepaste prompts, parameters voor opnieuw proberen/genereren, samenvatting van gesprekken en lusbeveiligingen.',
-	'settings.agentConfig.customPromptsHeading': 'Aangepaste prompts',
-	'settings.agentConfig.systemPromptOverrideName': 'Overschrijven van systeemprompt toestaan',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'WAARSCHUWING: Hiermee kunnen aangepaste prompts de systeemprompt volledig vervangen. Dit kan de verwachte functionaliteit verstoren.',
+		'Pas aan hoe de agent met het model communiceert: parameters voor opnieuw proberen/genereren, samenvatting van gesprekken en lusbeveiligingen.',
 	'settings.agentConfig.apiConfigurationHeading': 'API-configuratie',
 	'settings.agentConfig.logToFileName': 'Loggen naar bestand',
 	'settings.agentConfig.logToFileDesc':

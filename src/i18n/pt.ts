@@ -121,7 +121,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 		'Pasta onde os dados do plugin são guardados. As sessões do agente residem em Agent-Sessions/, os prompts personalizados em Prompts/, os hooks em Hooks/ e o estado das tarefas agendadas em Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Mostrar definições avançadas',
 	'settings.general.showAdvancedDesc':
-		'Revelar secções avançadas (Instruções personalizadas, Configuração da API, Permissões de ferramentas, Deteção de loop de ferramentas, Servidores MCP, Depuração) para utilizadores avançados.',
+		'Revelar secções avançadas (Configuração da API, Permissões de ferramentas, Deteção de loop de ferramentas, Servidores MCP, Depuração) para utilizadores avançados.',
 	'settings.general.modelListUpdatedSingular': 'Lista de modelos atualizada: {count} modelo.',
 	'settings.general.modelListUpdated': 'Lista de modelos atualizada: {count} modelos.',
 	'settings.general.refreshSkippedOffline': 'Ignorado: offline',
@@ -181,11 +181,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 		'Parar a execução do agente quando a chamada de uma ferramenta falha. Se desativado, o agente continuará a executar as ferramentas subsequentes.',
 	'settings.agentConfig.sectionTitle': 'Configuração do agente',
 	'settings.agentConfig.sectionDesc':
-		'Ajuste a forma como o agente comunica com o modelo: prompts personalizados, parâmetros de repetição/geração, resumo de conversas e proteções contra loops.',
-	'settings.agentConfig.customPromptsHeading': 'Instruções personalizadas',
-	'settings.agentConfig.systemPromptOverrideName': 'Permitir a substituição do prompt do sistema',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'AVISO: Permite que prompts personalizados substituam completamente o prompt do sistema. Isto pode corromper a funcionalidade esperada.',
+		'Ajuste a forma como o agente comunica com o modelo: parâmetros de repetição/geração, resumo de conversas e proteções contra loops.',
 	'settings.agentConfig.apiConfigurationHeading': 'Configuração da API',
 	'settings.agentConfig.logToFileName': 'Registar num ficheiro',
 	'settings.agentConfig.logToFileDesc':

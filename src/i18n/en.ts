@@ -434,7 +434,7 @@ export const en = {
 	},
 	'settings.general.showAdvancedDesc': {
 		message:
-			'Reveal advanced sections (Custom prompts, API configuration, Tool permissions, Tool loop detection, MCP servers, Debug) for power users.',
+			'Reveal advanced sections (API configuration, Tool permissions, Tool loop detection, MCP servers, Debug) for power users.',
 		context:
 			'Settings field description for the show-advanced toggle. The parenthesized names are section titles elsewhere in settings; translate them consistently with those section titles.',
 	},
@@ -623,21 +623,8 @@ export const en = {
 	},
 	'settings.agentConfig.sectionDesc': {
 		message:
-			'Tune how the agent talks to the model: custom prompts, retry/generation parameters, conversation summarization, and loop guards.',
+			'Tune how the agent talks to the model: retry/generation parameters, conversation summarization, and loop guards.',
 		context: 'Description under the Agent Config settings section title.',
-	},
-	'settings.agentConfig.customPromptsHeading': {
-		message: 'Custom prompts',
-		context: 'Sub-heading inside Agent Config settings, above custom prompt options.',
-	},
-	'settings.agentConfig.systemPromptOverrideName': {
-		message: 'Allow system prompt override',
-		context: 'Settings toggle name allowing custom prompts to replace the built-in system prompt.',
-	},
-	'settings.agentConfig.systemPromptOverrideDesc': {
-		message:
-			'WARNING: Allows custom prompts to completely replace the system prompt. This may break expected functionality.',
-		context: 'Settings toggle description with a warning about replacing the AI system prompt.',
 	},
 	'settings.agentConfig.apiConfigurationHeading': {
 		message: 'API configuration',

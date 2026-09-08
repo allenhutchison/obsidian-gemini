@@ -124,7 +124,7 @@ export const es: Partial<Record<TranslationKey, string>> = {
 		'Carpeta donde se guardan los datos del plugin. Las sesiones del agente se encuentran en Agent-Sessions/, los prompts personalizados en Prompts/, los hooks en Hooks/ y el estado de las tareas programadas en Scheduled-Tasks/.',
 	'settings.general.showAdvancedName': 'Mostrar configuración avanzada',
 	'settings.general.showAdvancedDesc':
-		'Muestra las secciones avanzadas (Prompts personalizados, Configuración de la API, Permisos de herramientas, Detección de bucles de herramientas, Servidores MCP, Depuración) para usuarios avanzados.',
+		'Muestra las secciones avanzadas (Configuración de la API, Permisos de herramientas, Detección de bucles de herramientas, Servidores MCP, Depuración) para usuarios avanzados.',
 	'settings.general.modelListUpdatedSingular': 'Lista de modelos actualizada: {count} modelo.',
 	'settings.general.modelListUpdated': 'Lista de modelos actualizada: {count} modelos.',
 	'settings.general.refreshSkippedOffline': 'Omitido: sin conexión',
@@ -183,11 +183,7 @@ export const es: Partial<Record<TranslationKey, string>> = {
 		'Detiene la ejecución del agente cuando falla la llamada a una herramienta. Si está desactivado, el agente continuará ejecutando las herramientas siguientes.',
 	'settings.agentConfig.sectionTitle': 'Configuración del agente',
 	'settings.agentConfig.sectionDesc':
-		'Ajusta cómo se comunica el agente con el modelo: prompts personalizados, parámetros de reintento/generación, resumen de conversaciones y protecciones contra bucles.',
-	'settings.agentConfig.customPromptsHeading': 'Prompts personalizados',
-	'settings.agentConfig.systemPromptOverrideName': 'Permitir la sustitución del prompt del sistema',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'ADVERTENCIA: Permite que los prompts personalizados reemplacen por completo el prompt del sistema. Esto puede romper el funcionamiento esperado.',
+		'Ajusta cómo se comunica el agente con el modelo: parámetros de reintento/generación, resumen de conversaciones y protecciones contra bucles.',
 	'settings.agentConfig.apiConfigurationHeading': 'Configuración de la API',
 	'settings.agentConfig.logToFileName': 'Registrar en archivo',
 	'settings.agentConfig.logToFileDesc':

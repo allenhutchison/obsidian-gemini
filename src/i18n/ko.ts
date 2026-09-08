@@ -117,7 +117,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 		'플러그인 데이터가 저장되는 폴더입니다. 에이전트 세션은 Agent-Sessions/ 아래에, 사용자 지정 프롬프트는 Prompts/ 아래에, 훅은 Hooks/ 아래에, 예약된 작업 상태는 Scheduled-Tasks/ 아래에 저장됩니다.',
 	'settings.general.showAdvancedName': '고급 설정 표시',
 	'settings.general.showAdvancedDesc':
-		'고급 사용자용 고급 섹션(사용자 지정 프롬프트, API 설정, 도구 권한, 도구 루프 감지, MCP 서버, 디버그)을 표시합니다.',
+		'고급 사용자용 고급 섹션(API 설정, 도구 권한, 도구 루프 감지, MCP 서버, 디버그)을 표시합니다.',
 	'settings.general.modelListUpdatedSingular': '모델 목록이 업데이트되었습니다: {count}개 모델.',
 	'settings.general.modelListUpdated': '모델 목록이 업데이트되었습니다: {count}개 모델.',
 	'settings.general.refreshSkippedOffline': '건너뜀: 오프라인 상태',
@@ -173,11 +173,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 		'도구 호출이 실패하면 에이전트 실행을 중지합니다. 비활성화하면 에이전트가 후속 도구를 계속 실행합니다.',
 	'settings.agentConfig.sectionTitle': '에이전트 설정',
 	'settings.agentConfig.sectionDesc':
-		'에이전트가 모델과 통신하는 방식을 조정합니다: 사용자 지정 프롬프트, 재시도/생성 매개변수, 대화 요약 및 루프 방지.',
-	'settings.agentConfig.customPromptsHeading': '사용자 지정 프롬프트',
-	'settings.agentConfig.systemPromptOverrideName': '시스템 프롬프트 재정의 허용',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'경고: 사용자 지정 프롬프트가 시스템 프롬프트를 완전히 대체하도록 허용합니다. 이로 인해 예상되는 기능이 작동하지 않을 수 있습니다.',
+		'에이전트가 모델과 통신하는 방식을 조정합니다: 재시도/생성 매개변수, 대화 요약 및 루프 방지.',
 	'settings.agentConfig.apiConfigurationHeading': 'API 설정',
 	'settings.agentConfig.logToFileName': '파일에 로그 기록',
 	'settings.agentConfig.logToFileDesc':

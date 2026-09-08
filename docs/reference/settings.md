@@ -210,13 +210,11 @@ Because each provider uses its own settings fields, re-routing a feature between
 
 Custom prompts allow you to create reusable AI instruction templates that modify how the AI behaves for specific sessions.
 
-### Allow System Prompt Override (legacy, currently non-functional)
+### System Prompt Override
 
-- **Setting**: `allowSystemPromptOverride`
-- **Type**: Boolean
-- **Default**: `false`
-- **Description**: Intended to gate whether custom prompts can completely replace the default system prompt. **Currently has no effect**: any prompt with `override_system_prompt: true` in its frontmatter replaces the system prompt regardless of this setting. Toggling it on or off does not change that behavior.
-- **Warning**: Because the frontmatter flag alone controls the override, a custom prompt with `override_system_prompt: true` can break expected functionality if it doesn't include essential instructions — this setting will not prevent that.
+A custom prompt replaces the default system instructions only when its frontmatter sets `override_system_prompt: true`. There is no global override toggle. Without that flag, the prompt adds instructions to the built-in system prompt.
+
+**Warning:** A full override removes built-in instructions and Obsidian-specific knowledge. See the [Custom Prompts Guide](/guide/custom-prompts#system-prompt-override) before enabling it.
 
 ### Creating Custom Prompts
 

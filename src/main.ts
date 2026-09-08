@@ -91,7 +91,6 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	streamingEnabled: true,
 	useInteractionsApi: true,
 	useInteractionsApiMigrated: true,
-	allowSystemPromptOverride: false,
 	temperature: 0.7,
 	topP: 1,
 	stopOnToolError: true,

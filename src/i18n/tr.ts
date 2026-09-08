@@ -120,7 +120,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 		'Eklenti verilerinin saklandığı klasör. Temsilci oturumları Agent-Sessions/, özel istemler Prompts/, kancalar Hooks/, zamanlanmış görev durumları ise Scheduled-Tasks/ altında yer alır.',
 	'settings.general.showAdvancedName': 'Gelişmiş ayarları göster',
 	'settings.general.showAdvancedDesc':
-		'Gelişmiş kullanıcılar için gelişmiş bölümleri (Özel istemler, API yapılandırması, Araç izinleri, Araç döngüsü tespiti, MCP sunucuları, Hata ayıklama) göster.',
+		'Gelişmiş kullanıcılar için gelişmiş bölümleri (API yapılandırması, Araç izinleri, Araç döngüsü tespiti, MCP sunucuları, Hata ayıklama) göster.',
 	'settings.general.modelListUpdatedSingular': 'Model listesi güncellendi: {count} model.',
 	'settings.general.modelListUpdated': 'Model listesi güncellendi: {count} model.',
 	'settings.general.refreshSkippedOffline': 'Atlandı: çevrimdışı',
@@ -180,11 +180,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 		'Bir araç çağrısı başarısız olduğunda temsilci yürütmesini durdurur. Devre dışı bırakılırsa, temsilci sonraki araçları yürütmeye devam eder.',
 	'settings.agentConfig.sectionTitle': 'Ajan yapılandırması',
 	'settings.agentConfig.sectionDesc':
-		'Temsilcinin modelle nasıl konuşacağını ayarlayın: özel istemler, yeniden deneme/üretim parametreleri, konuşma özetleme ve döngü korumaları.',
-	'settings.agentConfig.customPromptsHeading': 'Özel istemler',
-	'settings.agentConfig.systemPromptOverrideName': 'Sistem isteminin geçersiz kılınmasına izin ver',
-	'settings.agentConfig.systemPromptOverrideDesc':
-		'UYARI: Özel istemlerin sistem istemini tamamen değiştirmesine izin verir. Bu durum beklenen işlevselliği bozabilir.',
+		'Temsilcinin modelle nasıl konuşacağını ayarlayın: yeniden deneme/üretim parametreleri, konuşma özetleme ve döngü korumaları.',
 	'settings.agentConfig.apiConfigurationHeading': 'API yapılandırması',
 	'settings.agentConfig.logToFileName': 'Dosyaya kaydet',
 	'settings.agentConfig.logToFileDesc':
