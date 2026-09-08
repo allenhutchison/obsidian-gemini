@@ -1041,4 +1041,49 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Avvis',
 	'agent.planMode.rejectedNotice': 'Plan avvist.',
 	'agent.planMode.proceedMessage': 'Fortsett med den godkjente planen.',
+	'error.unknown': 'En ukjent feil oppstod',
+	'error.openaiInvalidKey': 'Ugyldig OpenAI API-nøkkel. Vennligst sjekk API-nøkkelen i Innstillinger → Gemini Scribe.',
+	'error.modelNotOnEndpoint':
+		'Modellen er ikke tilgjengelig på dette endepunktet. Vennligst sjekk modellinnstillingene eller den konfigurerte base-URL-en.',
+	'error.serverUnreachable':
+		'Kunne ikke koble til modellserveren. Hvis du har konfigurert en egendefinert base-URL (LM Studio, MLX, osv.), må du forsikre deg om at serveren kjører og at base-URL-en i innstillingene er riktig.',
+	'error.invalidApiKey': 'Ugyldig API-nøkkel. Vennligst sjekk legitimasjonen for modell-leverandøren i innstillingene.',
+	'error.authFailed':
+		'Autentisering mislyktes. Vennligst bekreft legitimasjonen for modell-leverandøren og at kontoen din har tilgang til denne modellen.',
+	'error.quotaExhausted':
+		'Gratiskvoten er oppbrukt for denne modellen. Prøv å bytte til en annen modell (f.eks. Gemini Flash) eller aktiver fakturering i Google AI Studio.',
+	'error.rateLimit': 'API-hastighetsgrensen er overskredet. Vennligst vent et øyeblikk og prøv igjen.',
+	'error.ollamaModelNotPulled': 'Ollama-modell ikke lastet ned. Kjør: ollama pull {model}',
+	'error.modelNotAvailable': 'Den valgte modellen er ikke tilgjengelig. Vennligst sjekk modellinnstillingene.',
+	'error.ollamaUnreachable':
+		'Kunne ikke koble til Ollama-daemonen. Forsikre deg om at `ollama serve` kjører og at base-URL-en i innstillingene er riktig.',
+	'error.network': 'Nettverksfeil: Kunne ikke nå modell-API-et. Vennligst sjekk tilkoblingen din.',
+	'error.timeout': 'Forespørselen tidsavbrutt. API-et brukte for lang tid på å svare. Vennligst prøv igjen.',
+	'error.serviceUnavailable': 'Modell-API-et er midlertidig utilgjengelig. Vennligst prøv igjen senere.',
+	'error.safetyBlocked': 'Innholdet ble blokkert av sikkerhetsfiltre. Vennligst omformuler forespørselen din.',
+	'error.tokenLimit':
+		'Forespørselen overskrider tokengrensen. Vennligst reduser lengden på meldingen eller samtalehistorikken.',
+	'error.apiPrefix': 'API-feil: {message}',
+	'error.communicationFailed': 'Det oppstod en feil under kommunikasjon med modell-API-et',
+	'error.unknownCommunication': 'En ukjent feil oppstod under kommunikasjon med modell-API-et',
+	'error.http.badRequest':
+		'Ugyldig forespørsel: API-forespørselen var ugyldig. Vennligst sjekk meldingen din og prøv igjen.',
+	'error.http.unauthorized':
+		'Autentisering mislyktes: Ugyldig API-nøkkel. Vennligst sjekk legitimasjonen for modell-leverandøren i innstillingene.',
+	'error.http.forbidden': 'Ingen tilgang: Modell-leverandøren nektet tilgang til denne modellen eller funksjonen.',
+	'error.http.notFound':
+		'Modellen ble ikke funnet: Den valgte modellen er ikke tilgjengelig. Vennligst sjekk modellinnstillingene.',
+	'error.http.rateLimit':
+		'Hastighetsgrense overskredet: For mange forespørsler. Vennligst vent et øyeblikk og prøv igjen.',
+	'error.http.serverError': 'Serverfeil: Modell-API-et opplevde en intern feil. Vennligst prøv igjen senere.',
+	'error.http.serviceUnavailable':
+		'Tjenesten er utilgjengelig: Modell-API-et er midlertidig nede. Vennligst prøv igjen senere.',
+	'error.http.gatewayTimeout': 'Tidsavbrudd for gateway: API-forespørselen tok for lang tid. Vennligst prøv igjen.',
+	'error.http.serverErrorWithCode':
+		'Serverfeil ({statusCode}): Modell-API-et opplever problemer. Vennligst prøv igjen senere.',
+	'error.http.clientErrorWithCode': 'Klientfeil ({statusCode}): {message}',
+	'error.http.clientErrorWithCodeNoDetail':
+		'Klientfeil ({statusCode}): Vennligst sjekk forespørselen din og prøv igjen.',
+	'error.http.genericWithCode': 'HTTP-feil {statusCode}: {message}',
+	'error.http.genericWithCodeNoDetail': 'HTTP-feil {statusCode}: En uventet feil oppstod.',
 };

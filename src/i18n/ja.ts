@@ -1051,4 +1051,44 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': '却下',
 	'agent.planMode.rejectedNotice': '計画が却下されました。',
 	'agent.planMode.proceedMessage': '承認された計画を進めてください。',
+	'error.unknown': '不明なエラーが発生しました',
+	'error.openaiInvalidKey': '無効なOpenAI APIキーです。設定 → Gemini Scribe でAPIキーを確認してください。',
+	'error.modelNotOnEndpoint':
+		'このエンドポイントではモデルを利用できません。モデルの設定または設定されたベースURLを確認してください。',
+	'error.serverUnreachable':
+		'モデルサーバーに接続できませんでした。カスタムベースURL（LM Studio、MLXなど）を設定している場合は、サーバーが起動していること、および設定のベースURLが正しいことを確認してください。',
+	'error.invalidApiKey': '無効なAPIキーです。設定でモデルプロバイダーの認証情報を確認してください。',
+	'error.authFailed':
+		'認証に失敗しました。モデルプロバイダーの認証情報と、お使いのアカウントがこのモデルへのアクセス権を持っていることを確認してください。',
+	'error.quotaExhausted':
+		'このモデルの無料枠のクォータを超過しました。別のモデル（例：Gemini Flash）に切り替えるか、Google AI Studio で課金を有効にしてください。',
+	'error.rateLimit': 'APIのレート制限を超過しました。しばらく待ってから再試行してください。',
+	'error.ollamaModelNotPulled': 'Ollamaモデルがプルされていません。実行してください: ollama pull {model}',
+	'error.modelNotAvailable': '選択されたモデルは利用できません。モデルの設定を確認してください。',
+	'error.ollamaUnreachable':
+		'Ollamaデーモンに接続できませんでした。`ollama serve` が実行されていること、および設定のベースURLが正しいことを確認してください。',
+	'error.network': 'ネットワークエラー: モデルAPIに接続できません。接続を確認してください。',
+	'error.timeout': 'リクエストがタイムアウトしました。APIの応答に時間がかかりすぎます。もう一度お試しください。',
+	'error.serviceUnavailable': 'モデルAPIは一時的に利用できません。後でもう一度お試しください。',
+	'error.safetyBlocked': '安全フィルターによってコンテンツがブロックされました。リクエストの表現を変えてみてください。',
+	'error.tokenLimit': 'リクエストがトークン制限を超過しています。メッセージまたは会話履歴の長さを短くしてください。',
+	'error.apiPrefix': 'APIエラー: {message}',
+	'error.communicationFailed': 'モデルAPIとの通信中にエラーが発生しました',
+	'error.unknownCommunication': 'モデルAPIとの通信中に不明なエラーが発生しました',
+	'error.http.badRequest': '不正なリクエスト: APIリクエストが無効です。メッセージを確認して再試行してください。',
+	'error.http.unauthorized': '認証失敗: 無効なAPIキーです。設定でモデルプロバイダーの認証情報を確認してください。',
+	'error.http.forbidden': 'アクセス禁止: モデルプロバイダーがこのモデルまたは機能へのアクセスを拒否しました。',
+	'error.http.notFound': 'モデルが見つかりません: 選択されたモデルは利用できません。モデルの設定を確認してください。',
+	'error.http.rateLimit': 'レート制限超過: リクエストが多すぎます。しばらく待ってから再試行してください。',
+	'error.http.serverError': 'サーバーエラー: モデルAPIで内部エラーが発生しました。後でもう一度お試しください。',
+	'error.http.serviceUnavailable': 'サービス利用不可: モデルAPIは一時的に停止しています。後でもう一度お試しください。',
+	'error.http.gatewayTimeout':
+		'ゲートウェイタイムアウト: APIリクエストの処理に時間がかかりすぎました。もう一度お試しください。',
+	'error.http.serverErrorWithCode':
+		'サーバーエラー ({statusCode}): モデルAPIで問題が発生しています。後でもう一度お試しください。',
+	'error.http.clientErrorWithCode': 'クライアントエラー ({statusCode}): {message}',
+	'error.http.clientErrorWithCodeNoDetail':
+		'クライアントエラー ({statusCode}): リクエストを確認して再試行してください。',
+	'error.http.genericWithCode': 'HTTPエラー {statusCode}: {message}',
+	'error.http.genericWithCodeNoDetail': 'HTTPエラー {statusCode}: 予期しないエラーが発生しました。',
 };
