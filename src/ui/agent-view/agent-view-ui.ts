@@ -2,7 +2,7 @@ import { App, Menu, TFile, TFolder, Notice, setIcon, setTooltip } from 'obsidian
 import type { ObsidianGemini } from '../../types/plugin';
 import { ChatSession } from '../../types/agent';
 import { insertTextAtCursor, moveCursorToEnd, execContextCommand } from '../../utils/dom-context';
-import { shouldExcludePathForPlugin } from '../../utils/file-utils';
+import { isPathInFolder, shouldExcludePathForPlugin } from '../../utils/file-utils';
 import { renameSessionHistoryFile } from '../../agent/session-rename';
 import { collectFilesFromFolder } from '../../utils/folder-walk';
 import {
@@ -510,8 +510,10 @@ export class AgentViewUI {
 			if (adapter && 'basePath' in adapter) {
 				const basePath = (adapter as { basePath: string }).basePath;
 				// Normalize slashes for cross-platform consistency (Windows backslashes vs POSIX)
-				// Using explicit replace instead of normalizePath which is intended for vault-relative paths
-				const normalizedBase = basePath.replace(/\\/g, '/');
+				// Using explicit replace instead of normalizePath which is intended for vault-relative paths.
+				// Any trailing separator is stripped so the containment check below sees a bare folder
+				// path — isPathInFolder appends its own '/' and matches nothing when given one (#1374).
+				const normalizedBase = basePath.replace(/\\/g, '/').replace(/\/+$/, '');
 
 				for (const file of Array.from(e.dataTransfer.files)) {
 					// `.path` is an Electron extension on File that provides the full filesystem path
@@ -520,7 +522,10 @@ export class AgentViewUI {
 					if (rawPath && typeof rawPath === 'string') {
 						const normalizedRaw = rawPath.replace(/\\/g, '/');
 
-						if (normalizedRaw.startsWith(normalizedBase)) {
+						// Root-anchored: a bare startsWith also matched sibling folders that merely
+						// share the prefix (a drop from `<vault>-backup/Archive/a.md` resolved to the
+						// vault's own `Archive/a.md`).
+						if (isPathInFolder(normalizedRaw, normalizedBase)) {
 							let relPath = normalizedRaw.substring(normalizedBase.length);
 							if (relPath.startsWith('/')) relPath = relPath.substring(1);
 

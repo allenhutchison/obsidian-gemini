@@ -14,7 +14,13 @@ vi.mock('../../src/ui/agent-view/session-list-modal');
 vi.mock('../../src/ui/agent-view/file-mention-modal');
 vi.mock('../../src/ui/agent-view/session-settings-modal');
 vi.mock('../../src/utils/dom-context');
-vi.mock('../../src/utils/file-utils');
+// Only the plugin-aware exclusion predicate is stubbed; the pure path helpers
+// (isPathInFolder, …) keep their real implementations so containment behaviour
+// is exercised rather than mocked away.
+vi.mock('../../src/utils/file-utils', async (importOriginal) => ({
+	...(await importOriginal<typeof import('../../src/utils/file-utils')>()),
+	shouldExcludePathForPlugin: vi.fn(),
+}));
 
 // Mock external ESM dependencies
 vi.mock('@allenhutchison/gemini-utils/research', () => ({
@@ -229,6 +235,41 @@ describe('AgentViewUI', () => {
 			// .md is classified as TEXT → handleDroppedFiles
 			expect(callbacks.handleDroppedFiles).toHaveBeenCalledWith([mockFile]);
 			expect(app.vault.getAbstractFileByPath).toHaveBeenCalledWith('folder/note.md');
+		});
+
+		it('should ignore drops from a sibling folder that shares the vault path prefix', async () => {
+			const mockFile = {
+				path: 'Archive/note.md',
+				extension: 'md',
+			} as unknown as TFile;
+			Object.setPrototypeOf(mockFile, TFile.prototype);
+
+			// The vault happens to contain the same relative path, so an unanchored
+			// prefix check would resolve the external file to this vault file.
+			(app.vault.getAbstractFileByPath as Mock).mockReturnValue(mockFile);
+
+			// `/Users/test/vault-backup` shares the `/Users/test/vault` prefix but is a
+			// different folder entirely.
+			const droppedFile = {
+				path: '/Users/test/vault-backup/Archive/note.md',
+				name: 'note.md',
+			};
+
+			const dataTransfer = {
+				files: [droppedFile],
+				types: ['Files'],
+				// Nothing resolves, so the handler falls through to the text-link branch.
+				getData: vi.fn(() => ''),
+			};
+			Object.defineProperty(dataTransfer.files, 'length', { value: 1 });
+			(dataTransfer.files as any)[Symbol.iterator] = function* () {
+				yield droppedFile;
+			};
+
+			await triggerDrop(dataTransfer);
+
+			expect(app.vault.getAbstractFileByPath).not.toHaveBeenCalled();
+			expect(callbacks.handleDroppedFiles).not.toHaveBeenCalled();
 		});
 
 		it('should normalize Windows paths correctly', async () => {
