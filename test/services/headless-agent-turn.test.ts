@@ -2,6 +2,7 @@ import type { Mock } from 'vitest';
 import { runHeadlessAgentTurn } from '../../src/services/headless-agent-turn';
 import type { HeadlessAgentTurnSpec } from '../../src/services/headless-agent-turn';
 import type { AgentLoopResult } from '../../src/agent/agent-loop';
+import { SessionManager } from '../../src/agent/session-manager';
 import { PolicyPreset } from '../../src/types/tool-policy';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
@@ -9,6 +10,7 @@ import { PolicyPreset } from '../../src/types/tool-policy';
 vi.mock('obsidian', () => ({
 	normalizePath: (p: string) => p,
 	TFile: class {},
+	TFolder: class {},
 }));
 
 vi.mock('../../src/utils/format-utils', () => ({
@@ -76,11 +78,13 @@ function createMockPlugin(): any {
 	return {
 		logger: { log: vi.fn(), debug: vi.fn(), error: vi.fn(), warn: vi.fn() },
 		settings: {
+			historyFolder: 'gemini-scribe',
 			chatModelName: 'plugin-default-model',
 			temperature: 1,
 			topP: 0.95,
 		},
 		sessionManager: {
+			releaseSession: vi.fn(),
 			createAgentSession: vi.fn().mockResolvedValue({
 				id: 'session-1',
 				title: 'Headless: test',
@@ -94,6 +98,7 @@ function createMockPlugin(): any {
 			getAutoApprovedTools: vi.fn().mockReturnValue(AUTO_APPROVED_TOOLS),
 		},
 		toolExecutionEngine: {
+			clearLoopDetectorSession: vi.fn(),
 			executeTool: vi.fn().mockResolvedValue({ success: true, output: 'ok' }),
 		},
 		app: { vault: {} },
@@ -124,6 +129,56 @@ describe('runHeadlessAgentTurn', () => {
 		vi.clearAllMocks();
 		(ModelClientFactory.createChatModel as Mock).mockReturnValue(createMockModelApi());
 		mockAgentLoopRun.mockResolvedValue(successfulLoopResult());
+	});
+
+	describe('temporary session lifetime', () => {
+		it.each([
+			'answer',
+			'empty answer',
+			'cancel before request',
+			'cancel after request',
+			'tool answer',
+			'loop cancellation',
+			'exhaustion',
+			'request error',
+			'loop error',
+			'setup error',
+		])('releases only the temporary session after %s', async (outcome) => {
+			const plugin = createMockPlugin();
+			const manager = new SessionManager(plugin);
+			plugin.sessionManager = manager;
+			const existing = await manager.createAgentSession('Interactive session');
+			const createSession = vi.spyOn(manager, 'createAgentSession');
+			const modelApi = createMockModelApi(outcome === 'empty answer' ? '' : 'Answer');
+			(ModelClientFactory.createChatModel as Mock).mockReturnValue(modelApi);
+			if (['tool answer', 'loop cancellation', 'exhaustion', 'loop error'].includes(outcome)) {
+				modelApi.generateModelResponse.mockResolvedValue({ markdown: '', toolCalls: [{ name: 'read_file' }] });
+			}
+			if (outcome === 'loop cancellation')
+				mockAgentLoopRun.mockResolvedValue({ ...successfulLoopResult(), cancelled: true });
+			if (outcome === 'exhaustion') mockAgentLoopRun.mockResolvedValue({ ...successfulLoopResult(), exhausted: true });
+			if (outcome === 'request error') modelApi.generateModelResponse.mockRejectedValue(new Error('request failed'));
+			if (outcome === 'loop error') mockAgentLoopRun.mockRejectedValue(new Error('loop failed'));
+			if (outcome === 'setup error')
+				plugin.toolRegistry.getAutoApprovedTools.mockImplementation(() => {
+					throw new Error('setup failed');
+				});
+			let checks = 0;
+			const turn = runHeadlessAgentTurn(
+				plugin,
+				makeSpec(),
+				() => outcome === 'cancel before request' || (outcome === 'cancel after request' && checks++ > 0)
+			);
+			if (['exhaustion', 'request error', 'loop error', 'setup error'].includes(outcome)) {
+				await expect(turn).rejects.toThrow(outcome === 'exhaustion' ? 'exhausted' : 'failed');
+			} else {
+				await turn;
+			}
+			const temporary = await createSession.mock.results[0].value;
+			expect(manager.getSession(temporary.id)).toBeUndefined();
+			expect(manager.getSession(existing.id)).toBe(existing);
+			expect(plugin.toolExecutionEngine.clearLoopDetectorSession).toHaveBeenCalledExactlyOnceWith(temporary.id);
+		});
 	});
 
 	describe('missing agent services', () => {

@@ -1,6 +1,6 @@
 # Scheduled tasks
 
-Scheduled tasks let you automate recurring AI prompts — daily summaries, weekly reports, periodic vault maintenance — without any manual intervention. Each task runs as a headless agent session and writes its output to a file in your vault.
+Scheduled tasks let you automate recurring AI prompts — daily summaries, weekly reports, periodic vault maintenance — without any manual intervention. Each task runs as a headless agent session and writes its output to a file in your vault. The temporary session and its tool-loop tracking are released after each run, including cancellation or failure; recurring runs do not retain one session per execution.
 
 ## Overview
 

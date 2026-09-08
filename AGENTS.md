@@ -62,7 +62,7 @@ The plugin uses a factory pattern (`ModelClientFactory` in `src/api/factory.ts`)
    - **Reasoning persistence**: model "thinking" is stored on `GeminiConversationEntry.thoughts` and serialized as a collapsed `> [!reasoning]-` callout. Turns with a message (user prompt, final answer) carry a `## ` header + Message Info table; streamlined reasoning-only turns are just the bare `[!reasoning]` callout with no header. **Parser invariant** (`SessionHistory.parseHistoryContent`): entries are identified by their _callout_ (`[!user]`/`[!assistant]`/`[!reasoning]`), not a `## ` header, and the parser walks **every** callout in a `---`-delimited section (reasoning + tool callouts flow together with no dividers). This keeps the divider-free activity stream, headerless reasoning, and legacy per-entry files all round-tripping — preserve it, and cover format changes with old-format fixtures in `test/agent/session-history.test.ts`.
 5. **Custom Prompts** (`src/prompts/`): User-defined prompt templates stored in `[state-folder]/Prompts/`
 6. **Agent mode** (`src/agent/`, `src/tools/`): AI agent with tool calling capabilities
-   - Session management with persistent history
+   - Session management with persistent history; new session IDs use `session_<UUID>` from Web Crypto, while existing `session_id` values in saved history are preserved.
    - Tool registry and execution engine
    - Vault operations tools with permission system
    - Google Search integration (separate from function calling)

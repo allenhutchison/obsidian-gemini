@@ -73,6 +73,7 @@ function createMockPlugin(vaultFiles: Record<string, string> = {}): any {
 			topP: 0.95,
 		},
 		sessionManager: {
+			releaseSession: vi.fn(),
 			createAgentSession: vi.fn().mockResolvedValue({
 				id: 'session-1',
 				title: 'Scheduled: test-task',

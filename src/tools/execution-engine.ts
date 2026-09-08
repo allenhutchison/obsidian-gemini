@@ -206,11 +206,11 @@ export class ToolExecutionEngine {
 	}
 
 	/**
-	 * Release per-session state for a session that is being deleted.
+	 * Release per-session state for a finished or deleted session.
 	 *
 	 * Clears the tool loop detector's recorded calls for the session so its key
 	 * does not live on for the rest of the plugin process (#1387). Called from
-	 * the session-deletion path (`SessionListModal.deleteSession`).
+	 * `SessionManager.releaseSession` after headless turns and session deletion.
 	 */
 	clearLoopDetectorSession(sessionId: string): void {
 		this.loopDetector.clearSession(sessionId);

@@ -136,6 +136,7 @@ function createMockPlugin(opts: { existingPaths?: string[]; createBehaviour?: Va
 			topP: 0.95,
 		},
 		sessionManager: {
+			releaseSession: vi.fn(),
 			createAgentSession: vi.fn().mockResolvedValue({
 				id: 'session-1',
 				title: 'Hook: test-hook',

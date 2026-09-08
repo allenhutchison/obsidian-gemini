@@ -6,6 +6,8 @@ Lifecycle Hooks let you trigger an AI agent run in response to Obsidian vault ev
 Hooks are disabled by default. Set **Enable lifecycle hooks** in plugin settings before any hook will fire. The default is off because vault events fire continuously and an unintentionally-broad hook can drain API quota quickly.
 :::
 
+Agent-task hooks release their temporary session and tool-loop tracking when the turn ends, including cancellation or failure. Interactive chat sessions remain available in the session browser.
+
 ## Overview
 
 A hook is a markdown file stored in `[state-folder]/Hooks/`. The file's frontmatter controls the trigger, filter, and action; the body is the prompt template.
