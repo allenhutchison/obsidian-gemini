@@ -9,6 +9,7 @@ import { AgentLoop, DEFAULT_INTERACTIVE_MAX_ITERATIONS } from '../../agent/agent
 import { DEFAULT_TURN_BUDGET_REMIND_AT } from '../../agent/turn-budget';
 import type { ToolCall, StreamChunk } from '../../api/interfaces/model-api';
 import { AgentViewToolDisplay } from './agent-view-tool-display';
+import type { ProgressState } from './agent-view-progress';
 import type { PerTurnContext } from './agent-view-tool-followup';
 import { buildCompactionEntry } from './compaction-notice';
 import { t } from '../../i18n';
@@ -19,7 +20,7 @@ import { t } from '../../i18n';
 export interface AgentViewContext {
 	getCurrentSession(): ChatSession | null;
 	isCancellationRequested(): boolean;
-	updateProgress(statusText: string, state?: 'thinking' | 'tool' | 'waiting' | 'streaming'): void;
+	updateProgress(statusText: string, state?: ProgressState): void;
 	hideProgress(): void;
 	displayMessage(entry: GeminiConversationEntry): Promise<void>;
 	/** Render a reasoning line into an arbitrary container (e.g. the tool group body). */

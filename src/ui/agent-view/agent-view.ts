@@ -9,7 +9,7 @@ import type { Tool, ToolResult } from '../../tools/types';
 import { HandlerPriority } from '../../types/agent-events';
 
 // Import all component modules
-import { AgentViewProgress } from './agent-view-progress';
+import { AgentViewProgress, type ProgressState } from './agent-view-progress';
 import { shouldExcludePathForPlugin } from '../../utils/file-utils';
 import { AgentViewMessages } from './agent-view-messages';
 import { AgentViewContext } from './agent-view-context';
@@ -698,8 +698,7 @@ export class AgentView extends ItemView {
 		return {
 			getCurrentSession: () => this.currentSession,
 			isCancellationRequested: () => this.send?.isCancellationRequested() ?? false,
-			updateProgress: (statusText: string, state?: 'thinking' | 'tool' | 'waiting' | 'streaming') =>
-				this.progress.update(statusText, state),
+			updateProgress: (statusText: string, state?: ProgressState) => this.progress.update(statusText, state),
 			hideProgress: () => this.progress.hide(),
 			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
 			renderReasoning: (container: HTMLElement, thoughts: string, sourcePath: string) =>
