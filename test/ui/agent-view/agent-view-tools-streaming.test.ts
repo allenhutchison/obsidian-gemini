@@ -17,6 +17,16 @@ interface ToolsProbe {
 	followUpStreamingHooks(): Record<string, unknown>;
 }
 
+/**
+ * Build an `AgentViewTools` probe with `settings.streamingEnabled` set to the
+ * given value and the three context callbacks the streaming hooks touch stubbed.
+ * The instance is created off the prototype so no chat container, view, or DOM
+ * is needed — `followUpStreamingHooks` reads only the setting and `context`.
+ *
+ * @param streamingEnabled - Value for `plugin.settings.streamingEnabled`;
+ *   `undefined` models a settings object saved before the toggle existed.
+ * @returns The probe plus the stub callbacks, for asserting what the hooks call.
+ */
 function makeTools(streamingEnabled: boolean | undefined) {
 	const tools = Object.create(AgentViewTools.prototype) as ToolsProbe;
 	const registerFollowUpStream = vi.fn();
