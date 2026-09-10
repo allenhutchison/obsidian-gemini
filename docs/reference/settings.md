@@ -232,6 +232,8 @@ See the [Custom Prompts Guide](/guide/custom-prompts) for detailed instructions.
 - **Type**: Boolean
 - **Default**: `true`
 - **Description**: Enable streaming responses in the chat interface for a more interactive experience
+- **Scope**: Covers every model response in an agent turn — the first one and each follow-up the model
+  produces after running tools
 - **Note**: When disabled, full responses are displayed at once
 
 ### Log Tool Execution to Session History
