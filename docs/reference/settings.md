@@ -19,7 +19,7 @@ The reference below groups settings by topic for lookup, which doesn't always ma
 
 - [Basic Settings](#basic-settings) (UI: _General_ — provider, API key, models, plugin state folder)
 - [Model Configuration](#model-configuration) (UI: _General_ — chat/summary/completion/image model selection)
-- [Custom Prompts](#custom-prompts) (controlled entirely via prompt frontmatter — no dedicated settings-UI section)
+- [Custom Prompts](#custom-prompts) (controlled entirely via prompt frontmatter — no dedicated settings-UI section)\
 - [UI Settings](#ui-settings) (UI: _User experience_ — streaming, tool execution logging, diff view, identity, frontmatter key, session history)
 - [Automation Settings](#automation-settings) (UI: _Automation_ — scheduled task catch-up, lifecycle hooks toggle)
 - [Context management](#context-management) (UI: _Agent config_ — advanced)
@@ -232,6 +232,8 @@ See the [Custom Prompts Guide](/guide/custom-prompts) for detailed instructions.
 - **Type**: Boolean
 - **Default**: `true`
 - **Description**: Enable streaming responses in the chat interface for a more interactive experience
+- **Scope**: Covers every model response in an agent turn — the first one and each follow-up the model
+  produces after running tools
 - **Note**: When disabled, full responses are displayed at once
 
 ### Log Tool Execution to Session History
