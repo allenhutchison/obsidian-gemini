@@ -19,7 +19,7 @@ The reference below groups settings by topic for lookup, which doesn't always ma
 
 - [Basic Settings](#basic-settings) (UI: _General_ — provider, API key, models, plugin state folder)
 - [Model Configuration](#model-configuration) (UI: _General_ — chat/summary/completion/image model selection)
-- [Custom Prompts](#custom-prompts) (no settings-UI section — the override is controlled entirely via prompt frontmatter)
+- [Custom Prompts](#custom-prompts) (prompt behavior is configured via prompt frontmatter; prompt selection happens in the session settings modal — no dedicated settings-UI section)
 - [UI Settings](#ui-settings) (UI: _User experience_ — streaming, tool execution logging, diff view, identity, frontmatter key, session history)
 - [Automation Settings](#automation-settings) (UI: _Automation_ — scheduled task catch-up, lifecycle hooks toggle)
 - [Context management](#context-management) (UI: _Agent config_ — advanced)
