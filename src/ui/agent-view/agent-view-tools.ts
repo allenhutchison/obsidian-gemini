@@ -6,6 +6,7 @@ import { GeminiConversationEntry } from '../../types/conversation';
 import { IConfirmationProvider, IToolHostView, ToolResult } from '../../tools/types';
 import { CustomPrompt } from '../../prompts/types';
 import { AgentLoop, DEFAULT_INTERACTIVE_MAX_ITERATIONS } from '../../agent/agent-loop';
+import type { AgentLoopHooks } from '../../agent/agent-loop';
 import { DEFAULT_TURN_BUDGET_REMIND_AT } from '../../agent/turn-budget';
 import type { ToolCall, StreamChunk } from '../../api/interfaces/model-api';
 import { AgentViewToolDisplay } from './agent-view-tool-display';
@@ -179,27 +180,7 @@ export class AgentViewTools {
 						onFollowUpRequestStart: () => {
 							this.context.updateProgress(this.thinkingLabel(), 'thinking');
 						},
-						onFollowUpChunk: (chunk: StreamChunk) => {
-							if (!chunk.text) return;
-							if (!this.streamingFollowUpContainer) {
-								// Only create a container once there's actual (non-whitespace) text
-								// to show — intermediate tool-continuation turns that produce no
-								// text must not spawn an empty streaming bubble.
-								if (!chunk.text.trim()) return;
-								this.streamingFollowUpContainer = this.context.createFollowUpStream?.() ?? null;
-								this.context.updateProgress(t('agent.progress.generating'), 'streaming');
-							}
-							if (!this.streamingFollowUpContainer) return;
-							const contentDiv = this.streamingFollowUpContainer.querySelector('.gemini-agent-message-content');
-							if (contentDiv) {
-								contentDiv.appendChild(contentDiv.ownerDocument.createTextNode(chunk.text));
-							}
-						},
-						onFollowUpStreamReady: (stream) => {
-							// Route the live follow-up stream to the view's Stop target so
-							// pressing Stop cancels token generation immediately.
-							this.context.registerFollowUpStream?.(stream);
-						},
+						...this.followUpStreamingHooks(),
 						onModelReasoning: async (thoughts) => {
 							// Reasoning the model produced before deciding to call the
 							// next tool batch — render it as a row inside the current tool
@@ -292,6 +273,45 @@ export class AgentViewTools {
 			this.streamingFollowUpContainer = null;
 			this.context.hideProgress();
 		}
+	}
+
+	/**
+	 * The two AgentLoop hooks that opt a turn into a streamed follow-up response,
+	 * or an empty object when the user has turned streaming off.
+	 *
+	 * `AgentLoop` selects its streaming branch purely from the presence of
+	 * `onFollowUpChunk`, so withholding these hooks is what routes follow-ups
+	 * through the non-streaming call — which is how the "Enable streaming"
+	 * setting reaches the responses that come back after a tool batch. The
+	 * initial request is gated on the same setting in `agent-view-send.ts`; the
+	 * gate was missing here, so an agent turn that called tools still streamed
+	 * every one of its responses with the toggle off.
+	 */
+	private followUpStreamingHooks(): Pick<AgentLoopHooks, 'onFollowUpChunk' | 'onFollowUpStreamReady'> {
+		if (this.plugin.settings.streamingEnabled === false) return {};
+		return {
+			onFollowUpChunk: (chunk: StreamChunk) => {
+				if (!chunk.text) return;
+				if (!this.streamingFollowUpContainer) {
+					// Only create a container once there's actual (non-whitespace) text
+					// to show — intermediate tool-continuation turns that produce no
+					// text must not spawn an empty streaming bubble.
+					if (!chunk.text.trim()) return;
+					this.streamingFollowUpContainer = this.context.createFollowUpStream?.() ?? null;
+					this.context.updateProgress(t('agent.progress.generating'), 'streaming');
+				}
+				if (!this.streamingFollowUpContainer) return;
+				const contentDiv = this.streamingFollowUpContainer.querySelector('.gemini-agent-message-content');
+				if (contentDiv) {
+					contentDiv.appendChild(contentDiv.ownerDocument.createTextNode(chunk.text));
+				}
+			},
+			onFollowUpStreamReady: (stream) => {
+				// Route the live follow-up stream to the view's Stop target so
+				// pressing Stop cancels token generation immediately.
+				this.context.registerFollowUpStream?.(stream);
+			},
+		};
 	}
 
 	/**
