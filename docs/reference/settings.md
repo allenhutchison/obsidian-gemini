@@ -11,7 +11,7 @@ The order of sections is:
 3. **Automation** — scheduled tasks, scheduler catch-up, and lifecycle hooks combined.
 4. **Vault search index** — semantic search over your vault using Google File Search.
 
-Advanced sections — Tool permissions, MCP servers, Agent config, Debug — are tagged with an **ADVANCED** pill and only appear after toggling **Show advanced settings** at the bottom of General. **Agent config** bundles four related sub-areas (Custom Prompts, API configuration, Context management, Tool loop detection) under one collapsible since they all tune how the agent talks to the model.
+Advanced sections — Tool permissions, MCP servers, Agent config, Debug — are tagged with an **ADVANCED** pill and only appear after toggling **Show advanced settings** at the bottom of General. **Agent config** bundles three related sub-areas (API configuration, Context management, Tool loop detection) under one collapsible since they all tune how the agent talks to the model.
 
 ## Table of Contents
 
@@ -19,7 +19,7 @@ The reference below groups settings by topic for lookup, which doesn't always ma
 
 - [Basic Settings](#basic-settings) (UI: _General_ — provider, API key, models, plugin state folder)
 - [Model Configuration](#model-configuration) (UI: _General_ — chat/summary/completion/image model selection)
-- [Custom Prompts](#custom-prompts) (UI: _Agent config_ — advanced)
+- [Custom Prompts](#custom-prompts) (no settings-UI section — the override is controlled entirely via prompt frontmatter)
 - [UI Settings](#ui-settings) (UI: _User experience_ — streaming, tool execution logging, diff view, identity, frontmatter key, session history)
 - [Automation Settings](#automation-settings) (UI: _Automation_ — scheduled task catch-up, lifecycle hooks toggle)
 - [Context management](#context-management) (UI: _Agent config_ — advanced)
