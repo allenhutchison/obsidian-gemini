@@ -140,8 +140,11 @@ describe('migrateToFeatureRouting', () => {
 
 	it('deletes every removed key from the result', () => {
 		// Simulate Object.assign already having copied the legacy fields onto
-		// the merged settings object, the way loadSettings() does.
-		const settings = makeSettings({
+		// the merged settings object, the way loadSettings() does. These keys no
+		// longer exist on ObsidianGeminiSettings, so they're assigned outside the
+		// typed fixture builder.
+		const settings = makeSettings();
+		Object.assign(settings, {
 			provider: 'gemini',
 			providerOverrides: {},
 			chatModelName: 'gemini-3-pro',

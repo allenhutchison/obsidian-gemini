@@ -52,18 +52,6 @@ describe('ObsidianGeminiSettings', () => {
 		});
 	});
 
-	describe('removed settings (tombstones)', () => {
-		it('temperature/topP/provider are optional and unread by DEFAULT_SETTINGS', () => {
-			// Tombstoned fields stay in the type (optional) so not-yet-migrated
-			// readers keep compiling, but a settings object need not set them.
-			const settings: Partial<ObsidianGeminiSettings> = {};
-			expect(settings.temperature).toBeUndefined();
-			expect(settings.topP).toBeUndefined();
-			expect(settings.provider).toBeUndefined();
-			expect(settings.providerOverrides).toBeUndefined();
-		});
-	});
-
 	describe('version tracking', () => {
 		it('should have default lastSeenVersion of 0.0.0', () => {
 			const defaultSettings: Partial<ObsidianGeminiSettings> = {
