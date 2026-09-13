@@ -96,6 +96,17 @@ export class OpenAIModelsService {
 	 * Returns the cached model list if available, otherwise fetches fresh.
 	 * Cache is invalidated when the base URL or API key changes.
 	 */
+	/**
+	 * Outcome of the most recent /models fetch; `null` until the first fetch or
+	 * after `invalidate()`. Lets the settings UI tell "not checked yet" from a
+	 * failed refresh, since `getModels` never rejects.
+	 */
+	private lastProbeResult: 'reachable' | 'unreachable' | null = null;
+
+	get lastProbe(): 'reachable' | 'unreachable' | null {
+		return this.lastProbeResult;
+	}
+
 	async getModels(forceRefresh = false): Promise<GeminiModel[]> {
 		const baseUrl = this.plugin.settings.openaiBaseUrl || DEFAULT_OPENAI_BASE_URL;
 		const apiKey = this.plugin.openaiApiKey;
@@ -128,9 +139,11 @@ export class OpenAIModelsService {
 				.map((m) => this.toGeminiModel(m.id));
 			this.lastBaseUrl = baseUrl;
 			this.lastApiKey = apiKey;
+			this.lastProbeResult = 'reachable';
 			this.plugin.logger.log(`[OpenAIModelsService] Loaded ${this.cachedModels.length} models from ${baseUrl}`);
 			return this.cachedModels;
 		} catch (error) {
+			this.lastProbeResult = 'unreachable';
 			this.plugin.logger.warn('[OpenAIModelsService] Failed to fetch model list:', error);
 			// Don't poison the cache with an empty array — that would stick until the
 			// user manually clicks "Refresh" even after the server comes back. Only
@@ -146,6 +159,7 @@ export class OpenAIModelsService {
 	 * clicks "Refresh").
 	 */
 	invalidate(): void {
+		this.lastProbeResult = null;
 		this.cachedModels = null;
 		this.lastBaseUrl = null;
 		this.lastApiKey = null;

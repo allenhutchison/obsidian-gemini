@@ -3627,6 +3627,11 @@ export const en = {
 		message: 'Refresh',
 		context: "Button label that re-fetches a provider's model list.",
 	},
+	'settings.providers.refreshUnreachable': {
+		message: 'Could not reach {provider}. Check the endpoint and try again.',
+		context:
+			'Notice after the user clicks Refresh on a provider card and the model list could not be fetched. {provider} is the provider name (Ollama / OpenAI).',
+	},
 	'settings.providers.modelsAvailable': {
 		message: '{count} available',
 		context: 'Model-count summary for a cloud provider (Gemini, OpenAI). {count} is the number of models.',

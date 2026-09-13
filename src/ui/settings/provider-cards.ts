@@ -134,23 +134,46 @@ function bumpGeneration(id: CardProviderId): number {
 	return next;
 }
 
-function loadModelCount(ctx: SettingsContext, id: CardProviderId, forceRefresh: boolean): void {
+/**
+ * @param userInitiated true when the user clicked Refresh: the outcome is
+ * announced with a Notice, matching the Gemini card, so the click visibly
+ * did something. Background probes on render stay silent.
+ */
+function loadModelCount(ctx: SettingsContext, id: CardProviderId, userInitiated: boolean): void {
 	if (id === 'gemini' || id === 'anthropic') return; // Gemini's count comes from the sync remote-list cache; Anthropic has no client.
 	const modelManager = ctx.plugin.modelManager as typeof ctx.plugin.modelManager | undefined;
 	if (!modelManager) return; // plugin still loading; the next render retries
 	const generation = bumpGeneration(id);
 	const service = id === 'ollama' ? modelManager.getOllamaModelsService() : modelManager.getOpenAIModelsService();
+	const spec = PROVIDER_CARDS.find((card) => card.id === id);
+	const providerLabel = spec ? t(spec.labelKey) : id;
 	service
-		.getModels(forceRefresh)
+		.getModels(userInitiated)
 		.then((models) => {
 			if (modelCountGeneration.get(id) !== generation) return; // superseded by a later probe
+			// `getModels` never rejects — a failed fetch returns the stale cache or
+			// an empty list — so the probe result is the only reliable outcome signal.
+			if (userInitiated) {
+				if (service.lastProbe === 'unreachable') {
+					new Notice(t('settings.providers.refreshUnreachable', { provider: providerLabel }));
+				} else {
+					new Notice(
+						models.length === 1
+							? t('settings.general.modelListUpdatedSingular', { count: models.length })
+							: t('settings.general.modelListUpdated', { count: models.length })
+					);
+				}
+			}
 			modelCountCache.set(id, models.length);
 			// The model count is a plain `desc` string, not a `displayValue`/`status`
 			// function — `refreshDomState()` only re-evaluates those in place, so
 			// picking up the new count needs a full `update()` (design doc §5.7).
 			ctx.tab.update();
 		})
-		.catch(() => {
+		.catch((error: unknown) => {
+			if (userInitiated) {
+				new Notice(t('settings.general.refreshModelListFailed', { error: getErrorMessage(error) }));
+			}
 			// Leave the last known count in place; the card's connection status already reports the failure.
 		});
 }
