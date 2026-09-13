@@ -1,10 +1,11 @@
 /**
  * Factory for creating model API clients.
  *
- * Resolves the provider *per use case* (#704) — chat may run on Ollama while
- * summaries run on Gemini — then instantiates the matching client and wraps it
- * in a RetryDecorator. This is the single creation entry point for the agent
- * and all role-specific use cases.
+ * Resolves the provider *per feature* (settings redesign; successor to #704's
+ * per-use-case routing) — chat may run on Ollama while summaries run on
+ * Gemini — then instantiates the matching client and wraps it in a
+ * RetryDecorator. This is the single creation entry point for the agent and
+ * all role-specific use cases.
  */
 
 import { GeminiClient } from './providers/gemini/client';
@@ -16,23 +17,24 @@ import { DEFAULT_OPENAI_BASE_URL, type OpenAIClientConfig } from './providers/op
 import { ModelApi } from './interfaces/model-api';
 import { GeminiPrompts } from '../prompts';
 import { RetryDecorator } from './retry-decorator';
-import { getDefaultModelForRole, getOllamaModelForRole, getOpenAIModelForRole } from '../models';
+import { resolveFeatureModel } from '../models';
 import type { ObsidianGemini } from '../types/plugin';
 import { ModelUseCase } from './model-use-case';
-import { resolveProviderOrDefault } from './provider-routing';
-import type { ModelProvider, ProviderUseCase } from './providers/registry';
+import { featureProvider, featureRoute } from './feature-routing';
+import { FeatureUnavailableError } from './feature-errors';
+import type { FeatureId } from '../types/features';
 
 /**
- * Which routable use case each model-client use case is billed to.
+ * Which routable feature each model-client use case is billed to.
  *
  * Mapped explicitly rather than reusing the enum's string values: they overlap
  * by coincidence, not by design. `ModelUseCase.SEARCH` is a *thinking-level
  * tier* for query-understanding calls on the chat path — not the `webSearch`
- * capability, which gates the Google Search / URL-context tools. Routing it to
+ * feature, which gates the Google Search / URL-context tools. Routing it to
  * `webSearch` would send a local-only install's chat calls looking for a
  * provider that serves web search and find none.
  */
-const ROUTING_USE_CASE: Record<ModelUseCase, ProviderUseCase> = {
+const FEATURE_FOR_USE_CASE: Record<ModelUseCase, FeatureId> = {
 	[ModelUseCase.CHAT]: 'chat',
 	[ModelUseCase.SUMMARY]: 'summary',
 	[ModelUseCase.COMPLETIONS]: 'completions',
@@ -55,6 +57,10 @@ export class ModelClientFactory {
 	 * @param useCase - The use case for this model (determines which model to use)
 	 * @param overrides - Optional config overrides (for per-session settings)
 	 * @returns Configured ModelApi instance wrapped with retry logic
+	 * @throws {FeatureUnavailableError} when the feature this use case bills to
+	 *   is routed to `'none'` or to a provider that can't serve it. There is no
+	 *   silent fallback to another provider — the caller surfaces this as a
+	 *   Notice.
 	 */
 	static createFromPlugin(
 		plugin: ObsidianGemini,
@@ -62,26 +68,26 @@ export class ModelClientFactory {
 		overrides?: Partial<GeminiClientConfig> & Partial<OllamaClientConfig> & Partial<OpenAIClientConfig>
 	): ModelApi {
 		const settings = plugin.settings;
-		// Every ModelUseCase maps to a use case that all providers support, so the
-		// `null` branch of resolveProvider is unreachable here — capability-gated
-		// features (RAG, image generation) never reach the client factory.
-		const provider = resolveProviderOrDefault(settings, ROUTING_USE_CASE[useCase]);
+		const feature = FEATURE_FOR_USE_CASE[useCase];
+		const provider = featureProvider(settings, feature);
+		if (!provider) {
+			const route = featureRoute(settings, feature);
+			const reason = route.provider === 'none' ? 'unconfigured' : 'unsupported';
+			throw new FeatureUnavailableError(feature, reason);
+		}
 
-		const modelName = this.resolveModelName(plugin, useCase, provider);
+		const modelName = resolveFeatureModel(settings, feature);
 
 		const prompts = new GeminiPrompts(plugin);
 
-		const retryConfig = {
-			maxRetries: settings.maxRetries ?? 3,
-			initialBackoffDelay: settings.initialBackoffDelay ?? 1000,
-		};
+		// Fixed as of the settings redesign — was settings-driven (`maxRetries`,
+		// `initialBackoffDelay`); see `RetryDecorator`.
+		const retryConfig = { maxRetries: 3, initialBackoffDelay: 1000 };
 
 		if (provider === 'ollama') {
 			const config: OllamaClientConfig = {
 				baseUrl: settings.ollamaBaseUrl || 'http://localhost:11434',
 				model: modelName,
-				temperature: settings.temperature ?? 0.7,
-				topP: settings.topP ?? 1,
 				...overrides,
 			};
 			const client = new OllamaClient(config, prompts, plugin);
@@ -93,8 +99,6 @@ export class ModelClientFactory {
 				apiKey: plugin.openaiApiKey,
 				baseUrl: settings.openaiBaseUrl || DEFAULT_OPENAI_BASE_URL,
 				model: modelName,
-				temperature: settings.temperature ?? 0.7,
-				topP: settings.topP ?? 1,
 				...overrides,
 			};
 			const client = new OpenAIClient(config, prompts, plugin);
@@ -105,107 +109,26 @@ export class ModelClientFactory {
 			apiKey: plugin.apiKey,
 			model: modelName,
 			useCase,
-			temperature: settings.temperature ?? 1.0,
-			topP: settings.topP ?? 0.95,
-			useInteractionsApi: settings.useInteractionsApi ?? false,
 			...overrides,
 		};
 		const client = new GeminiClient(config, prompts, plugin);
 		return new RetryDecorator(client, retryConfig, plugin.logger);
 	}
 
-	/** The model role a use case reads its configured model from. */
-	private static roleForUseCase(useCase: ModelUseCase): 'chat' | 'summary' | 'completions' {
-		switch (useCase) {
-			case ModelUseCase.SUMMARY:
-				return 'summary';
-			case ModelUseCase.COMPLETIONS:
-				return 'completions';
-			// Rewrite and search deliberately reuse the chat model rather than
-			// carrying their own setting.
-			default:
-				return 'chat';
-		}
-	}
-
 	/**
-	 * The configured model for a use case. Takes the already-resolved provider
-	 * rather than re-deriving it, so the client and the model name can never be
-	 * chosen from two separate routing lookups.
-	 */
-	private static resolveModelName(plugin: ObsidianGemini, useCase: ModelUseCase, provider: ModelProvider): string {
-		const settings = plugin.settings;
-		const role = this.roleForUseCase(useCase);
-
-		if (provider === 'ollama') {
-			// Ollama keeps one model resident, so the per-use-case fields default
-			// to inheriting the chat model rather than forcing a swap (#1077).
-			return getOllamaModelForRole(settings, role);
-		}
-
-		if (provider === 'openai') {
-			return getOpenAIModelForRole(settings, role);
-		}
-
-		const configured =
-			role === 'summary'
-				? settings.summaryModelName
-				: role === 'completions'
-					? settings.completionsModelName
-					: settings.chatModelName;
-		return configured || getDefaultModelForRole(role, provider);
-	}
-
-	/**
-	 * Create a GeminiClient with custom configuration
-	 *
-	 * @param config - Complete client configuration
-	 * @param prompts - Optional prompts instance
-	 * @param plugin - Optional plugin instance
-	 * @returns Configured GeminiClient instance wrapped with retry logic
-	 */
-	static createCustom(config: GeminiClientConfig, prompts?: GeminiPrompts, plugin?: ObsidianGemini): ModelApi {
-		const client = new GeminiClient(config, prompts, plugin);
-
-		// Use retry config from plugin settings if available, otherwise use defaults
-		const retryConfig = plugin
-			? {
-					maxRetries: plugin.settings.maxRetries ?? 3,
-					initialBackoffDelay: plugin.settings.initialBackoffDelay ?? 1000,
-				}
-			: {
-					maxRetries: 3,
-					initialBackoffDelay: 1000,
-				};
-
-		return new RetryDecorator(client, retryConfig, plugin?.logger);
-	}
-
-	/**
-	 * Create a chat model with optional session-specific overrides
+	 * Create a chat model.
 	 *
 	 * @param plugin - Plugin instance
-	 * @param sessionConfig - Optional session-level config (model, temperature, topP)
+	 * @param _legacySessionConfig - Deprecated: Unused. Kept only so
+	 *   `agent-factory.ts` (`createChatModel(plugin, session.modelConfig)`)
+	 *   keeps compiling until the settings redesign's agent-view work package
+	 *   drops the argument at that call site; the model override it used to
+	 *   carry is applied at request time via `session.modelConfig`, and its
+	 *   temperature/topP fields no longer exist.
 	 * @returns Configured ModelApi client for chat
 	 */
-	static createChatModel(
-		plugin: ObsidianGemini,
-		sessionConfig?: { model?: string; temperature?: number; topP?: number }
-	): ModelApi {
-		const overrides: Partial<GeminiClientConfig> = {};
-
-		if (sessionConfig) {
-			// Session config takes precedence
-			if (sessionConfig.temperature !== undefined) {
-				overrides.temperature = sessionConfig.temperature;
-			}
-			if (sessionConfig.topP !== undefined) {
-				overrides.topP = sessionConfig.topP;
-			}
-			// Note: model override is handled at request time via session.modelConfig
-		}
-
-		return this.createFromPlugin(plugin, ModelUseCase.CHAT, overrides);
+	static createChatModel(plugin: ObsidianGemini, _legacySessionConfig?: unknown): ModelApi {
+		return this.createFromPlugin(plugin, ModelUseCase.CHAT);
 	}
 
 	/**
@@ -236,15 +159,5 @@ export class ModelClientFactory {
 	 */
 	static createRewriteModel(plugin: ObsidianGemini): ModelApi {
 		return this.createFromPlugin(plugin, ModelUseCase.REWRITE);
-	}
-
-	/**
-	 * Create a search model
-	 *
-	 * @param plugin - Plugin instance
-	 * @returns Configured ModelApi client for search operations
-	 */
-	static createSearchModel(plugin: ObsidianGemini): ModelApi {
-		return this.createFromPlugin(plugin, ModelUseCase.SEARCH);
 	}
 }

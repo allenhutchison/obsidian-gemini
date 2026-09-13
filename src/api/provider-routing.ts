@@ -1,144 +1,103 @@
 /**
- * Per-use-case provider routing (#704).
+ * Deprecated: Pre-settings-redesign per-use-case provider routing (#704).
+ * Superseded by `src/api/feature-routing.ts`'s dense `features` model.
  *
- * The plugin has one *primary* provider (`settings.provider`) plus a sparse map
- * of per-use-case overrides. A use case with no override is served by the
- * primary, so an install that predates this feature — primary set, overrides
- * empty — resolves exactly as it did before and needs no migration.
+ * Kept as a thin backward-compatibility shim, delegating to
+ * `feature-routing.ts`, so work packages that haven't yet migrated their call
+ * sites (or their tests' settings fixtures) off this module (see the
+ * settings-redesign design doc §3.4/§10.2) keep compiling *and passing* while
+ * the redesign lands in parallel work packages. Every new call site should
+ * import from `./feature-routing` instead. This file is deleted once nothing
+ * imports it any more (design doc §10.2 WP6).
  *
- * **Never falls back to another provider.** When the resolved provider can't
- * serve a use case, `resolveProvider` returns `null` and the feature stays off,
- * matching today's behaviour on Ollama. Silently substituting a cloud provider
- * for a capability the local one lacks would send vault data to a third party
- * that the user never opted into. Turning a cloud feature on under a local
- * primary is always an explicit, per-feature choice.
- *
- * Leaf module by design (registry + the `ModelProvider` type only) so every
- * consumer can import it without tripping `npm run lint:cycles`. The settings
- * slice is structural rather than `ObsidianGeminiSettings` for the same reason
- * `ModelSettingsSlice` is (see `models.ts`).
+ * **Dual-shape resolution.** A caller may pass either the new
+ * `FeatureRoutingSlice` shape (`defaultProvider` + `features`) or the old
+ * `provider` + `providerOverrides` shape a not-yet-migrated test fixture still
+ * builds. `isLegacyShape` tells them apart (a `features` object is diagnostic
+ * of the new shape; its absence alongside a `provider` string means the old
+ * one) and each function branches accordingly. Production settings are always
+ * the new shape once `migrateToFeatureRouting` has run, so this only matters
+ * for callers holding a hand-built settings object — i.e. tests.
  */
 
 import {
-	PROVIDER_IDS,
-	PROVIDER_USE_CASES,
-	providerSupports,
-	type ModelProvider,
-	type ProviderUseCase,
-} from './providers/registry';
+	activeProviders as newActiveProviders,
+	featureProvider,
+	isProviderActive as newIsProviderActive,
+	type FeatureRoutingSlice,
+} from './feature-routing';
+import { PROVIDER_IDS, providerSupports, type ModelProvider, type ProviderFeatureId } from './providers/registry';
 
-export type { ModelProvider, ProviderUseCase } from './providers/registry';
+export type { ModelProvider } from './providers/registry';
+/** Deprecated: Use `FeatureId` from `../types/features` (via `feature-routing.ts`) instead. */
+export type ProviderUseCase = ProviderFeatureId;
 
-/** Provider assumed when settings are missing, partial, or unroutable. */
-const DEFAULT_PROVIDER: ModelProvider = 'gemini';
+/** Every use case the old shim resolved, in the order the old settings UI presented them. */
+const LEGACY_USE_CASES: readonly ProviderUseCase[] = [
+	'chat',
+	'summary',
+	'completions',
+	'rewrite',
+	'webSearch',
+	'rag',
+	'imageGen',
+];
 
-/** The slice of settings that provider routing reads. */
-export interface ProviderRoutingSlice {
+interface LegacyProviderRoutingSlice {
 	provider?: ModelProvider;
 	providerOverrides?: Partial<Record<ProviderUseCase, ModelProvider>>;
 }
 
-/** The primary provider, defaulting to Gemini for legacy/partial settings. */
-export function primaryProvider(settings: ProviderRoutingSlice | null | undefined): ModelProvider {
-	return settings?.provider ?? DEFAULT_PROVIDER;
-}
+type DualShapeSlice = (FeatureRoutingSlice & LegacyProviderRoutingSlice) | null | undefined;
 
 /**
- * The provider serving a use case, or `null` when none of the configured
- * providers can — in which case the caller must keep the feature disabled
- * rather than substituting a different provider.
+ * True when `settings` has no `features` object — the diagnostic signal for
+ * the pre-redesign shape (a `provider` string, possibly absent entirely on a
+ * bare fixture, defaulting to gemini) rather than the new
+ * `FeatureRoutingSlice`. Lets this shim keep serving not-yet-migrated callers
+ * and test fixtures; a real (migrated) settings object always has `features`.
  */
-export function resolveProvider(
-	settings: ProviderRoutingSlice | null | undefined,
-	useCase: ProviderUseCase
-): ModelProvider | null {
-	const chosen = settings?.providerOverrides?.[useCase] ?? primaryProvider(settings);
+function isLegacyShape(settings: DualShapeSlice): boolean {
+	return settings?.features === undefined;
+}
+
+function legacyPrimaryProvider(settings: LegacyProviderRoutingSlice): ModelProvider {
+	return settings.provider ?? 'gemini';
+}
+
+function legacyResolveProvider(settings: LegacyProviderRoutingSlice, useCase: ProviderUseCase): ModelProvider | null {
+	const chosen = settings.providerOverrides?.[useCase] ?? legacyPrimaryProvider(settings);
 	return providerSupports(chosen, useCase) ? chosen : null;
 }
 
-/**
- * Like `resolveProvider`, but for callers that must produce a client no matter
- * what. Only safe for the use cases every provider supports (chat, summary,
- * completions, rewrite) — capability-gated features must use `resolveProvider`
- * and honour the `null`.
- */
-export function resolveProviderOrDefault(
-	settings: ProviderRoutingSlice | null | undefined,
-	useCase: ProviderUseCase
-): ModelProvider {
-	return resolveProvider(settings, useCase) ?? DEFAULT_PROVIDER;
+/** Deprecated: Use `featureProvider` from `./feature-routing` instead. */
+export function resolveProvider(settings: DualShapeSlice, useCase: ProviderUseCase): ModelProvider | null {
+	if (isLegacyShape(settings)) return legacyResolveProvider(settings ?? {}, useCase);
+	return featureProvider(settings, useCase);
 }
 
-/**
- * Every provider referenced by the current configuration, in display order.
- * Drives which provider-specific settings rows are rendered, which model lists
- * are fetched, and which credentials are required — a provider used by a single
- * override still needs its API key field and its models.
- */
-export function activeProviders(settings: ProviderRoutingSlice | null | undefined): ModelProvider[] {
-	const used = new Set<ModelProvider>([primaryProvider(settings)]);
-	for (const useCase of PROVIDER_USE_CASES) {
-		const resolved = resolveProvider(settings, useCase);
-		if (resolved) used.add(resolved);
-	}
-	return PROVIDER_IDS.filter((id) => used.has(id));
+/** Deprecated: Use `featureProvider(...) ?? settings.defaultProvider ?? 'gemini'` instead. */
+export function resolveProviderOrDefault(settings: DualShapeSlice, useCase: ProviderUseCase): ModelProvider {
+	if (isLegacyShape(settings)) return resolveProvider(settings, useCase) ?? legacyPrimaryProvider(settings ?? {});
+	return resolveProvider(settings, useCase) ?? settings?.defaultProvider ?? 'gemini';
 }
 
-/** Whether a provider is used anywhere in the current configuration. */
-export function isProviderActive(settings: ProviderRoutingSlice | null | undefined, provider: ModelProvider): boolean {
-	return activeProviders(settings).includes(provider);
-}
-
-/**
- * Use cases routed to a provider other than the primary. Used by the settings
- * UI to warn when a local-only primary has cloud features enabled.
- */
-export function overriddenUseCases(settings: ProviderRoutingSlice | null | undefined): ProviderUseCase[] {
-	const primary = primaryProvider(settings);
-	return PROVIDER_USE_CASES.filter((useCase) => {
-		const resolved = resolveProvider(settings, useCase);
-		return resolved !== null && resolved !== primary;
-	});
-}
-
-/**
- * Coerce persisted data into a valid override map: drops unknown use cases,
- * unknown provider ids, and providers that can't serve the use case they're
- * mapped to. Always returns a fresh object.
- *
- * Called on load because `Object.assign({}, DEFAULT_SETTINGS, data)` is shallow
- * — without a clone, an install with no persisted overrides would alias the
- * module-level default and leak every later edit into it.
- *
- * The capability check matters beyond tidiness: `resolveProvider` already
- * treats an unsupported pairing as `null`, so keeping it would persist a
- * setting that does nothing while the settings dropdown — which only offers
- * `providersSupporting(useCase)` — has no matching option to select, leaving
- * the row looking blank. Dropping it keeps stored state and UI in agreement.
- */
-export function sanitizeProviderOverrides(value: unknown): Partial<Record<ProviderUseCase, ModelProvider>> {
-	const result: Partial<Record<ProviderUseCase, ModelProvider>> = {};
-	if (!value || typeof value !== 'object' || Array.isArray(value)) return result;
-	const raw = value as Record<string, unknown>;
-	for (const useCase of PROVIDER_USE_CASES) {
-		const provider = raw[useCase];
-		if (
-			typeof provider === 'string' &&
-			(PROVIDER_IDS as readonly string[]).includes(provider) &&
-			providerSupports(provider as ModelProvider, useCase)
-		) {
-			result[useCase] = provider as ModelProvider;
+/** Deprecated: Use `activeProviders` from `./feature-routing` instead. */
+export function activeProviders(settings: DualShapeSlice): ModelProvider[] {
+	if (isLegacyShape(settings)) {
+		const legacy = settings ?? {};
+		const used = new Set<ModelProvider>([legacyPrimaryProvider(legacy)]);
+		for (const useCase of LEGACY_USE_CASES) {
+			const resolved = legacyResolveProvider(legacy, useCase);
+			if (resolved) used.add(resolved);
 		}
+		return PROVIDER_IDS.filter((id) => used.has(id));
 	}
-	return result;
+	return newActiveProviders(settings);
 }
 
-/**
- * Stable serialization of the routing configuration, for change detection in
- * `saveSettings` — a re-init is needed when *any* use case changes provider,
- * not just when the primary does.
- */
-export function routingKey(settings: ProviderRoutingSlice | null | undefined): string {
-	const parts = PROVIDER_USE_CASES.map((useCase) => `${useCase}=${resolveProvider(settings, useCase) ?? 'none'}`);
-	return `primary=${primaryProvider(settings)};${parts.join(';')}`;
+/** Deprecated: Use `isProviderActive` from `./feature-routing` instead. */
+export function isProviderActive(settings: DualShapeSlice, provider: ModelProvider): boolean {
+	if (isLegacyShape(settings)) return activeProviders(settings).includes(provider);
+	return newIsProviderActive(settings, provider);
 }

@@ -2,58 +2,62 @@
  * Provider capability registry — the capabilities matrix as data.
  *
  * Every provider-aware site used to ask "is the global provider Ollama?".
- * With per-use-case provider selection (#704) that question has no single
- * answer, so sites ask "does the provider serving use case X support feature
- * Y?" instead. This module is the single source of truth for the answer, and
- * mirrors the table in `docs/reference/provider-capabilities.md`.
+ * Since the settings redesign's feature-routing model that question has no
+ * single answer, so sites ask "does the provider serving feature X support
+ * feature Y?" instead. This module is the single source of truth for the
+ * answer, and mirrors the table in `docs/reference/provider-capabilities.md`.
  *
- * Deliberately a leaf module: it imports only the `ModelProvider` type (from
- * `models.ts`, itself import-free apart from bundled JSON) so anything can
- * depend on it without tripping `npm run lint:cycles`. It is the first
- * sub-task of the provider-abstraction epic (#703); when the full `Provider`
- * interface lands it should absorb this file rather than sit alongside it.
+ * Deliberately a leaf module: it imports nothing (not even `types/features.ts`)
+ * so anything can depend on it without tripping `npm run lint:cycles`. It
+ * declares its own `ProviderFeatureId` union rather than importing `FeatureId`
+ * from `types/features.ts`, because `types/features.ts` imports `ModelProvider`
+ * from *this* file — importing back would be a two-file cycle. The two unions
+ * are kept identical by hand; `test/api/provider-registry.test.ts` and
+ * `test/api/feature-routing.test.ts` both exercise the shared literal set.
  */
 
 /**
  * A model provider the plugin can talk to.
  *
  * Declared here rather than in `models.ts` so this module stays a true leaf:
- * `models.ts` re-exports it for backward compatibility and imports the router,
- * which would be a cycle if the type lived the other way round.
+ * `models.ts` re-exports it for backward compatibility, and `types/features.ts`
+ * imports it directly for the same reason.
  */
 export type ModelProvider = 'gemini' | 'ollama' | 'openai';
 
 /**
- * A use case that can be routed to a provider independently.
- *
- * The first five mirror `ModelUseCase` (they select a model client); `rag` and
- * `imageGen` are feature gates with no `ModelUseCase` counterpart — they call
- * provider APIs directly rather than going through the client factory.
+ * Capability keys a provider is asked about — kept in lockstep with `FeatureId`
+ * in `src/types/features.ts` (see the module doc comment for why this is a
+ * separate declaration rather than an import) plus `maps`, which is
+ * provider-bound rather than a routable feature (§2.7 of the design).
  */
-export type ProviderUseCase = 'chat' | 'summary' | 'completions' | 'rewrite' | 'webSearch' | 'rag' | 'imageGen';
+export type ProviderFeatureId =
+	'chat' | 'summary' | 'completions' | 'rewrite' | 'webSearch' | 'deepResearch' | 'rag' | 'imageGen';
 
-/** Every routable use case, in the order the settings UI presents them. */
-export const PROVIDER_USE_CASES: readonly ProviderUseCase[] = [
-	'chat',
-	'summary',
-	'completions',
-	'rewrite',
-	'webSearch',
-	'rag',
-	'imageGen',
-] as const;
+/**
+ * Deprecated: Pre-settings-redesign name for `ProviderFeatureId`. Kept as an
+ * alias so files not yet migrated to the feature-routing model keep compiling;
+ * removed once every reader of it has moved to `FeatureId` / `ProviderFeatureId`.
+ */
+export type ProviderUseCase = ProviderFeatureId;
 
 export interface ProviderCapabilities {
-	// --- Routable use cases. `false` means the provider cannot serve it at all. ---
+	// --- Routable features. `false` means the provider cannot serve it at all. ---
 	chat: boolean;
 	summary: boolean;
 	completions: boolean;
 	rewrite: boolean;
-	/** Google Search / Maps grounding, URL context (web fetch), and deep research. */
+	/** Google Search and URL context (web fetch) only — maps and deep research are separate capabilities below. */
 	webSearch: boolean;
+	/** Deep Research managed agent. */
+	deepResearch: boolean;
 	/** Vault semantic search backed by a cloud file-search store. */
 	rag: boolean;
 	imageGen: boolean;
+
+	// --- Provider-bound capabilities (not routable features) ---
+	/** Google Maps grounding. Provider-bound: gated on the provider being configured, not on any Features row. */
+	maps: boolean;
 
 	// --- Behavioural traits with live readers ---
 	/** Exposes a real token-counting endpoint (otherwise we estimate chars-per-token). */
@@ -61,12 +65,10 @@ export interface ProviderCapabilities {
 	/** Honours the `customBaseUrl` setting. */
 	customBaseUrl: boolean;
 	/**
-	 * Descriptive-only until #703 wires the settings ladder through this flag:
-	 * a real consumer exists (the per-use-case model pickers and their model
-	 * defaults) but currently branches on the provider name (#1298). False for
-	 * Ollama, which keeps a single model resident — diverging models thrash
-	 * RAM/VRAM on every switch (#1077), so its per-use-case model fields
-	 * default to inheriting the chat model.
+	 * `false` for Ollama, which keeps a single model resident — diverging
+	 * models thrash RAM/VRAM on every switch (#1077). Drives the Features
+	 * page's "same as chat" model option for non-chat features on such a
+	 * provider.
 	 */
 	perUseCaseModels: boolean;
 	/** Requests need an API key before the provider can be initialized. */
@@ -79,6 +81,8 @@ export interface ProviderDefinition {
 	id: ModelProvider;
 	/** i18n key for the provider's display name. */
 	labelKey: string;
+	/** Setup-guide doc link shown on the provider's card. */
+	docsUrl?: string;
 	capabilities: ProviderCapabilities;
 }
 
@@ -92,8 +96,10 @@ export const PROVIDERS: Record<ModelProvider, ProviderDefinition> = {
 			completions: true,
 			rewrite: true,
 			webSearch: true,
+			deepResearch: true,
 			rag: true,
 			imageGen: true,
+			maps: true,
 			nativeTokenCount: true,
 			customBaseUrl: true,
 			perUseCaseModels: true,
@@ -105,14 +111,17 @@ export const PROVIDERS: Record<ModelProvider, ProviderDefinition> = {
 	ollama: {
 		id: 'ollama',
 		labelKey: 'settings.general.providerOptionOllama',
+		docsUrl: 'https://allenhutchison.github.io/obsidian-gemini/guide/ollama-setup.html',
 		capabilities: {
 			chat: true,
 			summary: true,
 			completions: true,
 			rewrite: true,
 			webSearch: false,
+			deepResearch: false,
 			rag: false,
 			imageGen: false,
+			maps: false,
 			nativeTokenCount: false,
 			customBaseUrl: false,
 			perUseCaseModels: false,
@@ -130,14 +139,17 @@ export const PROVIDERS: Record<ModelProvider, ProviderDefinition> = {
 	openai: {
 		id: 'openai',
 		labelKey: 'settings.general.providerOptionOpenai',
+		docsUrl: 'https://allenhutchison.github.io/obsidian-gemini/guide/openai-setup.html',
 		capabilities: {
 			chat: true,
 			summary: true,
 			completions: true,
 			rewrite: true,
 			webSearch: false,
+			deepResearch: false,
 			rag: false,
 			imageGen: false,
+			maps: false,
 			nativeTokenCount: false,
 			customBaseUrl: true,
 			perUseCaseModels: true,
@@ -159,13 +171,13 @@ export function getCapabilities(provider: ModelProvider | null | undefined): Pro
 	return (provider && PROVIDERS[provider]?.capabilities) || PROVIDERS.gemini.capabilities;
 }
 
-/** Whether a provider can serve a use case at all. */
-export function providerSupports(provider: ModelProvider | null | undefined, useCase: ProviderUseCase): boolean {
+/** Whether a provider can serve a routable feature at all. */
+export function providerSupports(provider: ModelProvider | null | undefined, feature: ProviderFeatureId): boolean {
 	if (!provider || !PROVIDERS[provider]) return false;
-	return PROVIDERS[provider].capabilities[useCase];
+	return PROVIDERS[provider].capabilities[feature];
 }
 
-/** Every provider that can serve a use case, in display order. */
-export function providersSupporting(useCase: ProviderUseCase): ModelProvider[] {
-	return PROVIDER_IDS.filter((id) => providerSupports(id, useCase));
+/** Every provider that can serve a routable feature, in display order. */
+export function providersSupporting(feature: ProviderFeatureId): ModelProvider[] {
+	return PROVIDER_IDS.filter((id) => providerSupports(id, feature));
 }

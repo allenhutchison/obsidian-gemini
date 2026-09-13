@@ -1,0 +1,77 @@
+/**
+ * Provider/feature status for the settings UI (connection state, and the
+ * `off` / `unsupported` / `unconfigured` / `ok` truth table that drives the
+ * Features page's warning rows).
+ *
+ * Not a leaf module (it takes the plugin), so it is imported only by UI and
+ * by the few runtime guards that need credential awareness.
+ */
+
+import type { ObsidianGemini } from '../types/plugin';
+import { PROVIDERS, providerSupports, type ModelProvider } from './providers/registry';
+import { apiKeySecretNameFor } from './provider-credentials';
+import { featureRoute } from './feature-routing';
+import type { FeatureId } from '../types/features';
+import { t, type TranslationKey } from '../i18n';
+import { DEFAULT_OPENAI_BASE_URL } from './providers/openai/config';
+
+export type ProviderConnection = 'connected' | 'needs-key' | 'unreachable' | 'unknown';
+export type FeatureStatus = 'ok' | 'off' | 'unsupported' | 'unconfigured';
+
+/**
+ * Whether a provider is set up enough to serve a request right now.
+ *
+ * Ollama has no live "last probe" signal published outside
+ * `OllamaModelsService` today (its cache is private), so this conservatively
+ * reports `'unknown'` for it rather than guessing — see the settings-redesign
+ * design doc §6.3/§11, which flags the exact reachability-caching behaviour as
+ * a UI-polish detail for the settings-UI work package to settle once it wires
+ * a `lastProbe` signal through that service.
+ */
+export function providerConnection(plugin: ObsidianGemini, p: ModelProvider): ProviderConnection {
+	if (p === 'ollama') {
+		return 'unknown';
+	}
+	if (p === 'openai') {
+		const settings = plugin.settings;
+		if (settings.openaiBaseUrl && settings.openaiBaseUrl !== DEFAULT_OPENAI_BASE_URL) {
+			// A custom (e.g. local) endpoint may not need a key; a missing key
+			// there isn't evidence of a misconfigured provider.
+			return apiKeySecretNameFor(settings, p) ? 'connected' : 'unknown';
+		}
+		return apiKeySecretNameFor(settings, p) ? 'connected' : 'needs-key';
+	}
+	// gemini
+	return apiKeySecretNameFor(plugin.settings, p) ? 'connected' : 'needs-key';
+}
+
+/**
+ * `route.provider === 'none'` -> `off`; a stored provider that can't serve
+ * the feature -> `unsupported`; a provider that supports it but isn't
+ * connected -> `unconfigured`; otherwise `ok`. Only `unsupported` and
+ * `unconfigured` warrant a warning — `off` is a deliberate choice.
+ */
+export function featureStatus(plugin: ObsidianGemini, f: FeatureId): FeatureStatus {
+	const route = featureRoute(plugin.settings, f);
+	if (route.provider === 'none') return 'off';
+	if (!providerSupports(route.provider, f)) return 'unsupported';
+	if (providerConnection(plugin, route.provider) !== 'connected') return 'unconfigured';
+	return 'ok';
+}
+
+/**
+ * One-line human summary for a Features row / provider card.
+ * @public
+ */
+export function featureDisplayValue(plugin: ObsidianGemini, f: FeatureId): string {
+	const status = featureStatus(plugin, f);
+	const route = featureRoute(plugin.settings, f);
+	if (status === 'off') return t('settings.features.off');
+	if (status === 'unsupported') return t('settings.features.chooseProvider');
+	const providerLabel = t(PROVIDERS[route.provider as ModelProvider].labelKey as TranslationKey);
+	if (status === 'unconfigured') {
+		return `${providerLabel} · ${t('settings.features.notConnected')}`;
+	}
+	const modelLabel = route.model || t('settings.features.modelDefault');
+	return `${providerLabel} · ${modelLabel}`;
+}

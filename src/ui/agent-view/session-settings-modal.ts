@@ -89,7 +89,7 @@ export class SessionSettingsModal extends Modal {
 			.setDesc(t('agent.sessionSettings.temperatureDesc'))
 			.addSlider((slider: SliderComponent) => {
 				this.tempSlider = slider;
-				const defaultTemp = this.plugin.settings.temperature;
+				const defaultTemp = this.plugin.settings.temperature ?? 0.7;
 				const currentTemp = this.modelConfig.temperature ?? defaultTemp;
 
 				slider
@@ -124,14 +124,14 @@ export class SessionSettingsModal extends Modal {
 					.onClick(async () => {
 						if (this.tempSlider) {
 							// Set to default value - this will trigger onChange
-							this.tempSlider.setValue(this.plugin.settings.temperature);
+							this.tempSlider.setValue(this.plugin.settings.temperature ?? 0.7);
 						}
 					});
 			});
 
 		// Add temperature value display
 		const tempValueEl = contentEl.createDiv({ cls: 'temperature-value' });
-		tempValueEl.textContent = (this.modelConfig.temperature ?? this.plugin.settings.temperature).toFixed(1);
+		tempValueEl.textContent = (this.modelConfig.temperature ?? this.plugin.settings.temperature ?? 0.7).toFixed(1);
 
 		// Top-P slider
 		new Setting(contentEl)
@@ -139,7 +139,7 @@ export class SessionSettingsModal extends Modal {
 			.setDesc(t('agent.sessionSettings.topPDesc'))
 			.addSlider((slider: SliderComponent) => {
 				this.topPSlider = slider;
-				const defaultTopP = this.plugin.settings.topP;
+				const defaultTopP = this.plugin.settings.topP ?? 1;
 				const currentTopP = this.modelConfig.topP ?? defaultTopP;
 
 				slider
@@ -174,14 +174,14 @@ export class SessionSettingsModal extends Modal {
 					.onClick(async () => {
 						if (this.topPSlider) {
 							// Set to default value - this will trigger onChange
-							this.topPSlider.setValue(this.plugin.settings.topP);
+							this.topPSlider.setValue(this.plugin.settings.topP ?? 1);
 						}
 					});
 			});
 
 		// Add top-p value display
 		const topPValueEl = contentEl.createDiv({ cls: 'top-p-value' });
-		topPValueEl.textContent = (this.modelConfig.topP ?? this.plugin.settings.topP).toFixed(2);
+		topPValueEl.textContent = (this.modelConfig.topP ?? this.plugin.settings.topP ?? 1).toFixed(2);
 
 		// Prompt template selection
 		const promptSetting = new Setting(contentEl)

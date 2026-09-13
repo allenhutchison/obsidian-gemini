@@ -64,8 +64,8 @@ export class ToolExecutionEngine {
 		if (this.plugin.settings.loopDetectionEnabled) {
 			// Update loop detector config in case settings changed
 			this.loopDetector.updateConfig(
-				this.plugin.settings.loopDetectionThreshold,
-				this.plugin.settings.loopDetectionTimeWindowSeconds
+				this.plugin.settings.loopDetectionThreshold ?? 3,
+				this.plugin.settings.loopDetectionTimeWindowSeconds ?? 30
 			);
 
 			const loopInfo = this.loopDetector.getLoopInfo(context.session.id, toolCall);

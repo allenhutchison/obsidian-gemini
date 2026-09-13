@@ -63,7 +63,7 @@ export class ImageGeneration {
 		taskManager.submit('image-generation', label, async (isCancelled) => {
 			if (isCancelled()) return undefined;
 
-			const base64Data = await this.client.generateImage(prompt, this.plugin.settings.imageModelName);
+			const base64Data = await this.client.generateImage(prompt, this.plugin.settings.imageModelName ?? '');
 			if (isCancelled()) return undefined;
 
 			const imagePath = await this.saveImageToVault(base64Data, prompt);
@@ -87,7 +87,7 @@ export class ImageGeneration {
 	): Promise<void> {
 		try {
 			new Notice(t('notice.image.generating'));
-			const base64Data = await this.client.generateImage(prompt, this.plugin.settings.imageModelName);
+			const base64Data = await this.client.generateImage(prompt, this.plugin.settings.imageModelName ?? '');
 			const imagePath = await this.saveImageToVault(base64Data, prompt);
 			activeView.editor.replaceRange(`![[${imagePath}]]`, cursor);
 			new Notice(t('notice.image.inserted'));
@@ -156,7 +156,7 @@ export class ImageGeneration {
 	async generateImage(prompt: string, outputPath?: string): Promise<string> {
 		try {
 			// Generate the image
-			const base64Data = await this.client.generateImage(prompt, this.plugin.settings.imageModelName);
+			const base64Data = await this.client.generateImage(prompt, this.plugin.settings.imageModelName ?? '');
 
 			// Save the image to vault
 			return await this.saveImageToVault(base64Data, prompt, outputPath);
