@@ -21,15 +21,16 @@ export type FeatureStatus = 'ok' | 'off' | 'unsupported' | 'unconfigured';
 /**
  * Whether a provider is set up enough to serve a request right now.
  *
- * Ollama has no live "last probe" signal published outside
- * `OllamaModelsService` today (its cache is private), so this conservatively
- * reports `'unknown'` for it rather than guessing — see the settings-redesign
- * design doc §6.3/§11, which flags the exact reachability-caching behaviour as
- * a UI-polish detail for the settings-UI work package to settle once it wires
- * a `lastProbe` signal through that service.
+ * Ollama needs no key, so its state is the outcome of the models service's
+ * last /api/tags probe: `unknown` until one has run (the settings UI kicks a
+ * probe when the card renders), then `connected` or `unreachable`.
  */
 export function providerConnection(plugin: ObsidianGemini, p: ModelProvider): ProviderConnection {
 	if (p === 'ollama') {
+		const modelManager = plugin.modelManager as typeof plugin.modelManager | undefined;
+		const probe = modelManager?.getOllamaModelsService().lastProbe ?? null;
+		if (probe === 'reachable') return 'connected';
+		if (probe === 'unreachable') return 'unreachable';
 		return 'unknown';
 	}
 	if (p === 'openai') {

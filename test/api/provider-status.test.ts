@@ -61,8 +61,15 @@ describe('providerConnection', () => {
 		).toBe('unknown');
 	});
 
-	it('ollama: unknown (no probe signal published yet)', () => {
+	it('ollama: unknown before any probe, then follows the models service probe result', () => {
 		expect(providerConnection(makePlugin({ features: routes({}) }), 'ollama')).toBe('unknown');
+		const withProbe = (lastProbe: 'reachable' | 'unreachable' | null) =>
+			Object.assign(makePlugin({ features: routes({}) }), {
+				modelManager: { getOllamaModelsService: () => ({ lastProbe }) },
+			});
+		expect(providerConnection(withProbe(null), 'ollama')).toBe('unknown');
+		expect(providerConnection(withProbe('reachable'), 'ollama')).toBe('connected');
+		expect(providerConnection(withProbe('unreachable'), 'ollama')).toBe('unreachable');
 	});
 });
 
