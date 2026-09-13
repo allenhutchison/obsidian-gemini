@@ -5478,3 +5478,39 @@ body.theme-dark {
 	margin-bottom: 1em;
 	color: var(--text-warning);
 }
+
+/* --- WP3 settings pages --- */
+/* Tool permissions page: filter pills above the searchable tool list
+   (settings-redesign design doc §7). Rendered by page-tool-permissions.ts's
+   filterPillsRow(); one .gemini-tool-filter-pill per classification, plus
+   "All" and "MCP". */
+.gemini-tool-filter-pills {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--gs-space-1);
+	justify-content: flex-end;
+}
+
+.gemini-tool-filter-pill {
+	padding: var(--gs-space-1) var(--gs-space-3);
+	border-radius: var(--gs-radius-pill);
+	border: 1px solid var(--background-modifier-border);
+	background: transparent;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	cursor: pointer;
+	transition:
+		background-color var(--gs-dur-fast) var(--gs-ease),
+		color var(--gs-dur-fast) var(--gs-ease);
+}
+
+.gemini-tool-filter-pill:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.gemini-tool-filter-pill.is-active {
+	background: var(--interactive-accent);
+	border-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}

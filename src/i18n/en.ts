@@ -3216,6 +3216,399 @@ export const en = {
 		message: 'HTTP error {statusCode}: An unexpected error occurred.',
 		context: 'A non-4xx, non-5xx status with no detail text. {statusCode} is the numeric HTTP status.',
 	},
+
+	// --- WP3 keys ---
+	// Settings redesign, work package 3: the Vault search index, Scheduled
+	// tasks, Lifecycle hooks, MCP servers, Tool permissions, and Advanced
+	// settings sub-pages (src/ui/settings/page-{vault-index,scheduled-tasks,
+	// hooks,mcp,tool-permissions,advanced}.ts). Appended here rather than
+	// inlined near the WP0-seeded `settings.main.*` / `settings.features.*`
+	// keys per AGENTS.md's parallel-work-package convention (never hand-edit
+	// a non-English locale file; this block gets merged in place at
+	// integration).
+
+	// -- Advanced page --
+	'settings.advanced.compactionThresholdName': {
+		message: 'Context compaction threshold',
+		context: 'Slider label on the Advanced settings sub-page.',
+	},
+	'settings.advanced.compactionThresholdDesc': {
+		message: 'Older turns are summarized once the context window reaches this percentage full.',
+		context: 'Description under the context-compaction-threshold slider on the Advanced settings sub-page.',
+	},
+	'settings.advanced.stopOnToolErrorName': {
+		message: 'Stop the agent when a tool fails',
+		context: 'Toggle label on the Advanced settings sub-page.',
+	},
+	'settings.advanced.stopOnToolErrorDesc': {
+		message: 'When off, the agent keeps going after a tool call fails instead of ending the turn.',
+		context: 'Description under the "Stop the agent when a tool fails" toggle.',
+	},
+	'settings.advanced.summaryFrontmatterKeyName': {
+		message: 'Summary frontmatter key',
+		context:
+			'Text field label on the Advanced settings sub-page; controls which frontmatter key note summaries are written to.',
+	},
+	'settings.advanced.summaryFrontmatterKeyDesc': {
+		message: "The frontmatter property name used to store a note's generated summary.",
+		context: 'Description under the summary-frontmatter-key text field.',
+	},
+	'settings.advanced.logToolExecutionName': {
+		message: 'Record tool calls in session history',
+		context: 'Toggle label on the Advanced settings sub-page.',
+	},
+	'settings.advanced.logToolExecutionDesc': {
+		message: 'Requires session history to be enabled.',
+		context: 'Description under the "Record tool calls in session history" toggle, explaining why it may be disabled.',
+	},
+	'settings.advanced.diagnosticsHeading': {
+		message: 'Diagnostics',
+		context: 'Group heading on the Advanced settings sub-page.',
+	},
+	'settings.advanced.debugModeName': {
+		message: 'Debug mode',
+		context: 'Toggle label on the Advanced settings sub-page.',
+	},
+	'settings.advanced.debugModeDesc': {
+		message: 'Logs extra detail to the developer console to help diagnose issues.',
+		context: 'Description under the debug-mode toggle.',
+	},
+	'settings.advanced.showTokenUsageName': {
+		message: 'Show token usage',
+		context: 'Toggle label on the Advanced settings sub-page.',
+	},
+	'settings.advanced.showTokenUsageDesc': {
+		message: 'Displays the token count for each message in the agent view.',
+		context: 'Description under the show-token-usage toggle.',
+	},
+	'settings.advanced.logToFileName': {
+		message: 'Log API calls to a file',
+		context: 'Toggle label on the Advanced settings sub-page.',
+	},
+	'settings.advanced.logToFileDesc': {
+		message: 'Writes every model API request and response to a log file in the plugin folder.',
+		context: 'Description under the "Log API calls to a file" toggle.',
+	},
+
+	// -- Scheduled tasks / Lifecycle hooks pages (Automation group) --
+	'settings.automation.manageScheduledTasksName': {
+		message: 'Manage scheduled tasks',
+		context: 'Action row label on the Scheduled tasks settings sub-page; opens the scheduler management modal.',
+	},
+	'settings.automation.manageScheduledTasksDesc': {
+		message: 'View, edit, and run your scheduled agent tasks.',
+		context: 'Description under "Manage scheduled tasks".',
+	},
+	'settings.automation.newTaskName': {
+		message: 'New scheduled task',
+		context: 'Action row label on the Scheduled tasks settings sub-page; opens the scheduler modal in create mode.',
+	},
+	'settings.automation.newTaskDesc': {
+		message: 'Create a new scheduled task.',
+		context: 'Description under "New scheduled task".',
+	},
+	'settings.automation.autoRunCatchUpName': {
+		message: 'Auto-run missed tasks on startup',
+		context: 'Toggle label on the Scheduled tasks settings sub-page.',
+	},
+	'settings.automation.autoRunCatchUpDesc': {
+		message: "When Obsidian was closed at a task's scheduled time, run it automatically the next time the vault opens.",
+		context: 'Description under "Auto-run missed tasks on startup".',
+	},
+	'settings.automation.taskCount': {
+		message: '{count} tasks',
+		context:
+			'Displayed-value summary on the Scheduled tasks page-link row, for a count other than 1. {count} is the number of scheduled tasks.',
+	},
+	'settings.automation.taskCountSingular': {
+		message: '{count} task',
+		context: 'Displayed-value summary on the Scheduled tasks page-link row, for exactly 1 task.',
+	},
+	'settings.automation.enableHooksName': {
+		message: 'Enable lifecycle hooks',
+		context: "Toggle label on the Lifecycle hooks settings sub-page; the page's first row.",
+	},
+	'settings.automation.enableHooksDesc': {
+		message: 'Let the AI run automatically in response to vault events, like a file being created or modified.',
+		context: 'Description under "Enable lifecycle hooks".',
+	},
+	'settings.automation.manageHooksName': {
+		message: 'Manage hooks',
+		context: 'Action row label on the Lifecycle hooks settings sub-page; opens the hook management modal.',
+	},
+	'settings.automation.manageHooksDesc': {
+		message: 'View, edit, and run your lifecycle hooks.',
+		context: 'Description under "Manage hooks".',
+	},
+	'settings.automation.newHookName': {
+		message: 'New hook',
+		context: 'Action row label on the Lifecycle hooks settings sub-page; opens the hook modal in create mode.',
+	},
+	'settings.automation.newHookDesc': {
+		message: 'Create a new lifecycle hook.',
+		context: 'Description under "New hook".',
+	},
+	'settings.automation.hooksStatusOn': {
+		message: 'On',
+		context: 'Displayed-value summary on the Lifecycle hooks page-link row when hooks are enabled.',
+	},
+	'settings.automation.hooksStatusOff': {
+		message: 'Off',
+		context: 'Displayed-value summary on the Lifecycle hooks page-link row when hooks are disabled.',
+	},
+
+	// -- MCP servers page --
+	'settings.mcp.noServers': {
+		message: 'No MCP servers configured yet.',
+		context: 'Empty-state text for the MCP servers list on the MCP servers settings sub-page.',
+	},
+	'settings.mcp.addServerButton': {
+		message: 'Add MCP server',
+		context: 'Tooltip/mobile-row label for the add-item affordance on the MCP servers list.',
+	},
+	'settings.mcp.editButton': {
+		message: 'Edit',
+		context: 'Tooltip for the per-row edit button on the MCP servers settings sub-page.',
+	},
+	'settings.mcp.httpUrl': {
+		message: 'URL: {url}',
+		context:
+			"Part of an MCP server row's description for an HTTP-transport server. {url} is the server's endpoint URL.",
+	},
+	'settings.mcp.authorized': {
+		message: 'Authorized',
+		context: "Part of an MCP server row's description when an OAuth token is present for that server.",
+	},
+	'settings.mcp.duplicateServerName': {
+		message: 'A server named "{name}" already exists.',
+		context:
+			'Notice shown when adding or renaming an MCP server to a name already in use. {name} is the conflicting server name.',
+	},
+	'settings.mcp.reconnectFailed': {
+		message: 'Saved, but reconnecting to "{name}" failed: {error}',
+		context:
+			'Notice shown when an MCP server edit saves successfully but the reconnect attempt fails. {name} is the server name, {error} the failure detail.',
+	},
+	'settings.mcp.openEditorFailed': {
+		message: 'Failed to open the MCP server editor: {error}',
+		context: 'Notice shown when the MCP server edit modal fails to load. {error} is the failure detail.',
+	},
+	'settings.mcp.openAddDialogFailed': {
+		message: 'Failed to open the add-server dialog: {error}',
+		context: 'Notice shown when the MCP add-server modal fails to load. {error} is the failure detail.',
+	},
+	'settings.mcp.savedButConnectFailed': {
+		message: 'Saved, but connecting to the server failed: {error}',
+		context:
+			'Notice shown when a newly-added MCP server saves successfully but the initial connection attempt fails. {error} is the failure detail.',
+	},
+	'settings.mcp.serverCount': {
+		message: '{count} servers',
+		context:
+			'Displayed-value summary on the MCP servers page-link row, for a count other than 1. {count} is the number of configured servers.',
+	},
+	'settings.mcp.serverCountSingular': {
+		message: '{count} server',
+		context: 'Displayed-value summary on the MCP servers page-link row, for exactly 1 configured server.',
+	},
+
+	// -- Vault search index page --
+	'settings.rag.privacyNoticeName': {
+		message: 'Privacy',
+		context: 'Row heading introducing the privacy notice on the Vault search index settings sub-page.',
+	},
+	'settings.rag.privacyNotice': {
+		message:
+			'Indexing sends note content to Google File Search for semantic search. Excluded folders and attachments never leave your device.',
+		context: 'Privacy notice shown on the Vault search index settings sub-page, replacing the old inline banner.',
+	},
+	'settings.rag.enableName': {
+		message: 'Index this vault',
+		context: 'Toggle label on the Vault search index settings sub-page.',
+	},
+	'settings.rag.enableDesc': {
+		message: 'Build a searchable semantic index of your notes using Google File Search.',
+		context: 'Description under "Index this vault".',
+	},
+	'settings.rag.statusName': {
+		message: 'Status',
+		context: 'Row label for the index status/rescan/delete row on the Vault search index settings sub-page.',
+	},
+	'settings.rag.notYetIndexed': {
+		message: 'Not yet indexed.',
+		context: 'Status text shown before the vault has been indexed for the first time.',
+	},
+	'settings.rag.filesIndexed': {
+		message: '{count} files indexed.',
+		context: 'Status text showing how many files are currently indexed. {count} is the file count.',
+	},
+	'settings.rag.reindexButton': {
+		message: 'Rescan',
+		context: 'Button label that re-indexes the vault, on the Vault search index settings sub-page.',
+	},
+	'settings.rag.indexingButton': {
+		message: 'Indexing…',
+		context: 'Button label shown while a vault indexing run is in progress.',
+	},
+	'settings.rag.indexResult': {
+		message: 'Indexed {indexed}, skipped {skipped}, failed {failed}.',
+		context: 'Notice shown after a vault indexing run completes, summarizing the outcome.',
+	},
+	'settings.rag.indexingFailed': {
+		message: 'Indexing failed: {error}',
+		context: 'Notice shown when a vault indexing run throws. {error} is the failure detail.',
+	},
+	'settings.rag.serviceNotInitialized': {
+		message: 'The vault search index service is not initialized yet.',
+		context: 'Notice shown when the Rescan or Delete index button is used before the RAG indexing service has started.',
+	},
+	'settings.rag.deleteIndexButton': {
+		message: 'Delete index',
+		context: 'Button label that deletes the remote vault search index, on the Vault search index settings sub-page.',
+	},
+	'settings.rag.deletingButton': {
+		message: 'Deleting…',
+		context: 'Button label shown while the vault search index is being deleted.',
+	},
+	'settings.rag.indexDeletedNotice': {
+		message: 'Vault search index deleted.',
+		context: 'Notice shown after the vault search index is successfully deleted.',
+	},
+	'settings.rag.deleteIndexFailed': {
+		message: 'Failed to delete the vault search index: {error}',
+		context: 'Notice shown when deleting the vault search index throws. {error} is the failure detail.',
+	},
+	'settings.rag.openDeleteConfirmFailed': {
+		message: 'Failed to open the delete-index confirmation: {error}',
+		context:
+			'Notice shown when the RAG cleanup confirmation modal fails to load from the delete-index button. {error} is the failure detail.',
+	},
+	'settings.rag.storeNameName': {
+		message: 'Index name',
+		context: 'Row label for the read-only index/store-name row on the Vault search index settings sub-page.',
+	},
+	'settings.rag.storeNameDescAssigned': {
+		message: 'Assigned automatically by Google File Search.',
+		context: 'Description under the index-name row once a store has been created.',
+	},
+	'settings.rag.storeNameDescPending': {
+		message: 'Assigned automatically once the vault is first indexed.',
+		context: 'Description under the index-name row before a store exists yet.',
+	},
+	'settings.rag.copyButton': {
+		message: 'Copy',
+		context: 'Button label that copies the index/store name to the clipboard.',
+	},
+	'settings.rag.copyTooltip': {
+		message: 'Copy the index name to the clipboard',
+		context: 'Tooltip for the copy button on the index-name row.',
+	},
+	'settings.rag.storeNameCopiedNotice': {
+		message: 'Index name copied to clipboard.',
+		context: 'Notice shown after the index name is copied to the clipboard.',
+	},
+	'settings.rag.whatGetsIndexedHeading': {
+		message: 'What gets indexed',
+		context: 'Group heading on the Vault search index settings sub-page.',
+	},
+	'settings.rag.autoSyncName': {
+		message: 'Sync changes automatically',
+		context: 'Toggle label under "What gets indexed" on the Vault search index settings sub-page.',
+	},
+	'settings.rag.autoSyncDesc': {
+		message: 'Keep the index up to date as notes are created, edited, and deleted.',
+		context: 'Description under "Sync changes automatically".',
+	},
+	'settings.rag.includeAttachmentsName': {
+		message: 'Include attachments',
+		context: 'Toggle label under "What gets indexed" on the Vault search index settings sub-page.',
+	},
+	'settings.rag.includeAttachmentsDesc': {
+		message: 'Also index PDFs and other supported attachments, not just notes.',
+		context: 'Description under "Include attachments".',
+	},
+	'settings.rag.excludeFoldersName': {
+		message: 'Exclude folders',
+		context: 'Textarea label under "What gets indexed" on the Vault search index settings sub-page.',
+	},
+	'settings.rag.excludeFoldersDesc': {
+		message: "One folder path per line. {folders} are always excluded and don't need to be listed.",
+		context:
+			'Description under the exclude-folders textarea. {folders} is a comma-separated list of the always-excluded system folders.',
+	},
+	'settings.rag.excludeFoldersPlaceholder': {
+		message: 'folder/subfolder',
+		context: 'Placeholder text in the exclude-folders textarea.',
+	},
+	'settings.rag.summaryOn': {
+		message: 'On · {count} files',
+		context:
+			'Displayed-value summary on the Vault search index page-link row when indexing is enabled. {count} is the indexed file count.',
+	},
+	'settings.rag.summaryOff': {
+		message: 'Off',
+		context: 'Displayed-value summary on the Vault search index page-link row when indexing is disabled.',
+	},
+
+	// -- Tool permissions page --
+	'settings.tools.presetName': {
+		message: 'Preset',
+		context: 'Dropdown label on the Tool permissions settings page.',
+	},
+	'settings.tools.presetDesc': {
+		message: 'Custom appears here once you change a tool below.',
+		context: 'Description under the preset dropdown on the Tool permissions settings page.',
+	},
+	'settings.tools.toolsHeading': {
+		message: 'Tools',
+		context: 'Group heading for the searchable list of per-tool permission rows on the Tool permissions settings page.',
+	},
+	'settings.tools.filterPlaceholder': {
+		message: 'Filter tools…',
+		context: 'Placeholder text for the search box above the tool permission rows.',
+	},
+	'settings.tools.filterRowName': {
+		message: 'Filter by type',
+		context:
+			'Accessible name for the row of filter pills (All/Read/Write/Destructive/External/MCP) above the tool permission rows; not shown visually.',
+	},
+	'settings.tools.filterAll': {
+		message: 'All',
+		context: 'Filter pill label on the Tool permissions settings page: shows every tool.',
+	},
+	'settings.tools.filterRead': {
+		message: 'Read',
+		context: 'Filter pill label on the Tool permissions settings page: shows read-classified tools only.',
+	},
+	'settings.tools.filterWrite': {
+		message: 'Write',
+		context: 'Filter pill label on the Tool permissions settings page: shows write-classified tools only.',
+	},
+	'settings.tools.filterDestructive': {
+		message: 'Destructive',
+		context: 'Filter pill label on the Tool permissions settings page: shows destructive-classified tools only.',
+	},
+	'settings.tools.filterExternal': {
+		message: 'External',
+		context: 'Filter pill label on the Tool permissions settings page: shows external-classified tools only.',
+	},
+	'settings.tools.filterMcp': {
+		message: 'MCP',
+		context: 'Filter pill label on the Tool permissions settings page: shows only tools contributed by an MCP server.',
+	},
+	'settings.tools.noToolsName': {
+		message: 'No tools registered',
+		context: 'Row name shown on the Tool permissions settings page when no tools are registered yet.',
+	},
+	'settings.tools.noToolsDesc': {
+		message: "Tool permissions will appear here once the agent's tools finish loading.",
+		context: 'Row description shown on the Tool permissions settings page when no tools are registered yet.',
+	},
+	'settings.tools.yoloConfirmFailed': {
+		message: 'Failed to open the YOLO mode confirmation: {error}',
+		context:
+			'Notice shown when the YOLO confirmation modal fails to load while switching the tool-permission preset. {error} is the failure detail.',
+	},
 } as const satisfies Record<string, SourceString>;
 
 export type TranslationKey = keyof typeof en;
