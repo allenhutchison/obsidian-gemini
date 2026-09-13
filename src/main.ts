@@ -169,6 +169,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	public contextManager!: ContextManager;
 	public folderInitializer: FolderInitializer | null = null;
 	public modelManager!: ModelManager;
+	private settingTab!: ObsidianGeminiSettingTab;
 	public completions: GeminiCompletions | null = null;
 	public summarizer: GeminiSummary | null = null;
 	public projectManager!: ProjectManager;
@@ -222,7 +223,8 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		}
 
 		// Add settings tab early so users can configure API key even if plugin fails to fully initialize
-		this.addSettingTab(new ObsidianGeminiSettingTab(this.app, this));
+		this.settingTab = new ObsidianGeminiSettingTab(this.app, this);
+		this.addSettingTab(this.settingTab);
 
 		// Initialize lifecycle service
 		this.lifecycle = new LifecycleService(this);
@@ -240,6 +242,11 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 
 		// Always register UI components and commands
 		this.registerUIAndCommands();
+
+		// The declarative settings tab was evaluated before `lifecycle.setup()`
+		// created the model manager and registered tools; rebuild it so the
+		// provider cards and tool-permission rows reflect the loaded state.
+		this.settingTab.update();
 
 		this.app.workspace.onLayoutReady(() => this.lifecycle.onLayoutReady());
 	}

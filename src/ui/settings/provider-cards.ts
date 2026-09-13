@@ -136,11 +136,10 @@ function bumpGeneration(id: CardProviderId): number {
 
 function loadModelCount(ctx: SettingsContext, id: CardProviderId, forceRefresh: boolean): void {
 	if (id === 'gemini' || id === 'anthropic') return; // Gemini's count comes from the sync remote-list cache; Anthropic has no client.
+	const modelManager = ctx.plugin.modelManager as typeof ctx.plugin.modelManager | undefined;
+	if (!modelManager) return; // plugin still loading; the next render retries
 	const generation = bumpGeneration(id);
-	const service =
-		id === 'ollama'
-			? ctx.plugin.getModelManager().getOllamaModelsService()
-			: ctx.plugin.getModelManager().getOpenAIModelsService();
+	const service = id === 'ollama' ? modelManager.getOllamaModelsService() : modelManager.getOpenAIModelsService();
 	service
 		.getModels(forceRefresh)
 		.then((models) => {
@@ -158,8 +157,13 @@ function loadModelCount(ctx: SettingsContext, id: CardProviderId, forceRefresh: 
 
 /** "N available" / "N pulled" line for a card's Models group. */
 function modelsSummary(ctx: SettingsContext, id: CardProviderId): string {
+	// `addSettingTab()` evaluates definitions during `onload()`, before
+	// `lifecycle.setup()` has created the model manager; report "loading"
+	// until it exists rather than crashing plugin load.
+	const modelManager = ctx.plugin.modelManager as typeof ctx.plugin.modelManager | undefined;
+	if (!modelManager) return t('settings.providers.modelsLoading');
 	if (id === 'gemini') {
-		const count = ctx.plugin.getModelManager().getListProvider().getModels().length;
+		const count = modelManager.getListProvider().getModels().length;
 		return t('settings.providers.modelsAvailable', { count });
 	}
 	if (id === 'anthropic') return t('settings.providers.modelsUnavailable');
