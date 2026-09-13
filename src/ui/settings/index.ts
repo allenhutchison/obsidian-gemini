@@ -2,19 +2,29 @@ import { App, PluginSettingTab } from 'obsidian';
 import type { SettingDefinitionItem } from 'obsidian';
 import type { ObsidianGemini } from '../../types/plugin';
 import { t } from '../../i18n';
+import type { SettingsContext, SettingsTabHandle } from './context';
+import { readControlValue, writeSettingPath, resolveWriter } from './paths';
+import { providersPage } from './page-providers';
+import { featuresPage } from './page-features';
+import { vaultIndexPage } from './page-vault-index';
+import { scheduledTasksPage } from './page-scheduled-tasks';
+import { hooksPage } from './page-hooks';
+import { mcpPage } from './page-mcp';
+import { toolPermissionsPage } from './page-tool-permissions';
+import { advancedPage } from './page-advanced';
 
 /**
  * Settings tab, rebuilt on Obsidian 1.13's declarative `getSettingDefinitions()`
- * API (settings redesign; replaces the imperative `display()` tree in the
- * now-deleted `settings.ts` + eight `settings-*.ts` section modules).
+ * API (settings redesign; replaces the imperative `display()` tree that used
+ * to live in `settings.ts` + eight `settings-*.ts` section modules — all
+ * deleted).
  *
- * **This is a placeholder.** It wires the 13 top-level rows from the design
- * (five non-page controls, eight sub-pages) so `master` keeps building while
- * the settings-UI work packages fill each sub-page in with real content —
- * every `page` entry below has an empty `items: []` until then. See the
- * settings-redesign design doc §10.3.
+ * 13 top-level rows in 5 groups (design doc §5.4): Providers · Features |
+ * Chat: Your name, Keep session history, Review a diff | Vault: Vault
+ * search index, Plugin folder | Automation: Scheduled tasks, Lifecycle
+ * hooks, MCP servers | Tool permissions · Advanced · Documentation.
  */
-export default class ObsidianGeminiSettingTab extends PluginSettingTab {
+export default class ObsidianGeminiSettingTab extends PluginSettingTab implements SettingsTabHandle {
 	plugin: ObsidianGemini;
 
 	constructor(app: App, plugin: ObsidianGemini) {
@@ -22,18 +32,15 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
+	private context(): SettingsContext {
+		return { plugin: this.plugin, app: this.app, tab: this };
+	}
+
 	getSettingDefinitions(): SettingDefinitionItem[] {
+		const ctx = this.context();
 		return [
-			{
-				type: 'page',
-				name: t('settings.main.providersName'),
-				items: [],
-			},
-			{
-				type: 'page',
-				name: t('settings.main.featuresName'),
-				items: [],
-			},
+			providersPage(ctx),
+			featuresPage(ctx),
 			{
 				type: 'group',
 				heading: t('settings.main.groupChat'),
@@ -59,11 +66,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				type: 'group',
 				heading: t('settings.main.groupVault'),
 				items: [
-					{
-						type: 'page',
-						name: t('settings.main.vaultSearchIndexName'),
-						items: [],
-					},
+					vaultIndexPage(ctx),
 					{
 						name: t('settings.main.pluginFolderName'),
 						desc: t('settings.main.pluginFolderDesc'),
@@ -74,34 +77,10 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			{
 				type: 'group',
 				heading: t('settings.main.groupAutomation'),
-				items: [
-					{
-						type: 'page',
-						name: t('settings.main.scheduledTasksName'),
-						items: [],
-					},
-					{
-						type: 'page',
-						name: t('settings.main.lifecycleHooksName'),
-						items: [],
-					},
-					{
-						type: 'page',
-						name: t('settings.main.mcpServersName'),
-						items: [],
-					},
-				],
+				items: [scheduledTasksPage(ctx), hooksPage(ctx), mcpPage(ctx)],
 			},
-			{
-				type: 'page',
-				name: t('settings.main.toolPermissionsName'),
-				items: [],
-			},
-			{
-				type: 'page',
-				name: t('settings.main.advancedName'),
-				items: [],
-			},
+			toolPermissionsPage(ctx),
+			advancedPage(ctx),
 			{
 				name: t('settings.main.documentationName'),
 				desc: t('settings.main.documentationDesc'),
@@ -110,5 +89,44 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				},
 			},
 		];
+	}
+
+	/**
+	 * Reads from `plugin.settings` by dotted path (`paths.ts`). The one
+	 * exception, `toolPolicy.toolPermissions.<tool>`, returns the *effective*
+	 * permission — what the dropdown must show under a named preset — rather
+	 * than the sparse override map's raw value (design doc §5.2).
+	 */
+	getControlValue(key: string): unknown {
+		const toolMatch = /^toolPolicy\.toolPermissions\.(.+)$/.exec(key);
+		if (toolMatch) {
+			return this.plugin.toolRegistry.getEffectivePermission(toolMatch[1]);
+		}
+		return readControlValue(this.plugin.settings, key);
+	}
+
+	/**
+	 * Writes through the matching `SETTING_WRITERS` entry (longest-prefix
+	 * match), falling back to the plain-assignment `writeSettingPath`. Always
+	 * persists via `saveSettings()`, then calls `update()` (structural
+	 * change) or `refreshDomState()` (predicate-only change) per the writer's
+	 * `needsUpdate` result.
+	 */
+	async setControlValue(key: string, value: unknown): Promise<void> {
+		const writer = resolveWriter(key);
+		let needsUpdate = false;
+		if (writer) {
+			const result = await writer(this.plugin, key, value);
+			needsUpdate = result.needsUpdate;
+		} else if (!writeSettingPath(this.plugin.settings, key, value)) {
+			this.plugin.logger.warn(`[Settings] No writer registered for control key '${key}'`);
+			return;
+		}
+		await this.plugin.saveSettings();
+		if (needsUpdate) {
+			this.update();
+		} else {
+			this.refreshDomState();
+		}
 	}
 }

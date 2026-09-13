@@ -12,7 +12,8 @@ import {
 import type { Tool } from '../../tools/types';
 import { getErrorMessage } from '../../utils/error-utils';
 import { t, type TranslationKey } from '../../i18n';
-import type { SettingsContext, SettingWriter } from './context';
+import type { SettingsContext } from './context';
+import type { SettingWriter } from './writer-types';
 
 type ToolFilter = 'all' | ToolClassification | 'mcp';
 

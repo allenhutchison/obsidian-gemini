@@ -2,7 +2,8 @@ import { Notice } from 'obsidian';
 import type { SettingDefinitionPage, SettingDefinitionRender } from 'obsidian';
 import { getErrorMessage } from '../../utils/error-utils';
 import { t } from '../../i18n';
-import type { SettingsContext, SettingWriter } from './context';
+import type { SettingsContext } from './context';
+import type { SettingWriter } from './writer-types';
 
 /**
  * Vault search index settings sub-page (settings-redesign design doc

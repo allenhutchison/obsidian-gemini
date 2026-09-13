@@ -3609,6 +3609,182 @@ export const en = {
 		context:
 			'Notice shown when the YOLO confirmation modal fails to load while switching the tool-permission preset. {error} is the failure detail.',
 	},
+	// --- WP2 keys ---
+	'settings.common.listSeparator': {
+		message: ' · ',
+		context:
+			'Separator joining short items into one line (e.g. provider names, feature labels). Middle dot with surrounding spaces; keep as a single glyph appropriate to the target script.',
+	},
+	'settings.providers.shortLabel.gemini': {
+		message: 'Gemini',
+		context:
+			'Short provider name used in summary lines and dropdowns where "Google Gemini (cloud)" would be too long (e.g. "Gemini · Ollama"). "Gemini" is a product name.',
+	},
+	'settings.providers.shortLabel.ollama': {
+		message: 'Ollama',
+		context: 'Short provider name used in summary lines and dropdowns. "Ollama" is a product name.',
+	},
+	'settings.providers.shortLabel.openai': {
+		message: 'OpenAI',
+		context: 'Short provider name used in summary lines and dropdowns. "OpenAI" is a product name.',
+	},
+	'settings.providers.shortLabel.anthropic': {
+		message: 'Anthropic',
+		context:
+			'Short provider name for the card-only Anthropic placeholder (not yet a usable provider). "Anthropic" is a product name.',
+	},
+	'settings.providers.cardNameGemini': {
+		message: 'Google Gemini',
+		context: 'Title of the Gemini provider card on the Providers settings page. "Google Gemini" is a product name.',
+	},
+	'settings.providers.apiKeyName': {
+		message: 'API key',
+		context: "Row name for a provider card's API key field, backed by a secret-storage control.",
+	},
+	'settings.providers.apiKeyDesc': {
+		message: "Saved in Obsidian's secret storage, not in this vault's data.",
+		context: "Row description for a provider card's API key field, reassuring the user how the key is stored.",
+	},
+	'settings.providers.baseUrlName': {
+		message: 'Base URL',
+		context: "Row name for a provider card's endpoint/base-URL field.",
+	},
+	'settings.providers.baseUrlOptionalDesc': {
+		message: 'Leave blank to use the default endpoint.',
+		context: 'Row description for an optional base-URL field (Gemini, OpenAI).',
+	},
+	'settings.providers.baseUrlRequiredDesc': {
+		message: 'Address of the local server this provider talks to.',
+		context: 'Row description for a required base-URL field (Ollama).',
+	},
+	'settings.providers.baseUrlPlaceholder': {
+		message: 'http://localhost:11434',
+		context: "Placeholder text for a provider card's base-URL input, showing the Ollama default as an example.",
+	},
+	'settings.providers.baseUrlInvalid': {
+		message: 'Enter a valid URL.',
+		context: 'Inline validation error shown under a base-URL field that does not parse as a URL.',
+	},
+	'settings.providers.subscriptionSignInName': {
+		message: 'Sign in with your ChatGPT subscription',
+		context: 'Row name for the OpenAI provider card\'s subscription sign-in action. "ChatGPT" is a product name.',
+	},
+	'settings.providers.subscriptionComingSoon': {
+		message: 'Coming soon — use an API key below for now.',
+		context: 'Row description explaining that subscription sign-in is not yet implemented.',
+	},
+	'settings.providers.modelsHeading': {
+		message: 'Models',
+		context: 'Group heading on a provider card for the model list / refresh row.',
+	},
+	'settings.providers.modelsRowName': {
+		message: 'Available models',
+		context: "Row name for a provider card's model-count-and-refresh row.",
+	},
+	'settings.providers.refreshButton': {
+		message: 'Refresh',
+		context: "Button label that re-fetches a provider's model list.",
+	},
+	'settings.providers.modelsAvailable': {
+		message: '{count} available',
+		context: 'Model-count summary for a cloud provider (Gemini, OpenAI). {count} is the number of models.',
+	},
+	'settings.providers.modelsPulled': {
+		message: '{count} pulled',
+		context:
+			'Model-count summary for Ollama, whose models are downloaded ("pulled") to the local machine. {count} is the number of models.',
+	},
+	'settings.providers.modelsLoading': {
+		message: 'Loading…',
+		context: "Placeholder shown for a provider card's model count while the first fetch is in flight.",
+	},
+	'settings.providers.modelsUnavailable': {
+		message: 'Not applicable',
+		context: 'Model-count summary for the Anthropic placeholder card, which has no model list.',
+	},
+	'settings.providers.includesHeading': {
+		message: 'Includes',
+		context:
+			'Row name introducing a provider-bound extra capability (e.g. Google Maps grounding) that rides along with the provider rather than being its own routed feature.',
+	},
+	'settings.providers.includesMaps': {
+		message: 'Google Maps grounding',
+		context: 'One of the capabilities listed under a provider card\'s "Includes" row. "Google Maps" is a product name.',
+	},
+	'settings.providers.includesUrlFetch': {
+		message: 'Page fetch by URL',
+		context: 'One of the capabilities listed under a provider card\'s "Includes" row.',
+	},
+	'settings.providers.includesNone': {
+		message: 'Nothing extra',
+		context: 'Value shown under a provider card\'s "Includes" row when the provider has no provider-bound extras.',
+	},
+	'settings.providers.usedByHeading': {
+		message: 'Used by',
+		context: 'Row name listing which features currently route to this provider.',
+	},
+	'settings.providers.usedByNone': {
+		message: 'Nothing yet',
+		context: 'Value shown under a provider card\'s "Used by" row when no feature currently routes to this provider.',
+	},
+	'settings.providers.notYetRoutableHeading': {
+		message: 'Not yet available',
+		context: 'Row name on the Anthropic placeholder card explaining it cannot serve any feature yet.',
+	},
+	'settings.providers.anthropicPlaceholderDesc': {
+		message:
+			'Anthropic support is staged but not yet connected to any feature. Save your key now to be ready when it opens up.',
+		context: 'Row description on the Anthropic placeholder card. "Anthropic" is a product name.',
+	},
+	'settings.providers.statusConnected': {
+		message: 'Connected',
+		context: 'Provider connection status: credentials are present and valid.',
+	},
+	'settings.providers.statusNeedsKey': {
+		message: 'Not set up',
+		context: 'Provider connection status: the provider requires a key and none is configured.',
+	},
+	'settings.providers.statusUnreachable': {
+		message: 'Unreachable',
+		context: 'Provider connection status: the provider was configured but could not be reached.',
+	},
+	'settings.providers.statusUnknown': {
+		message: 'Not checked yet',
+		context: 'Provider connection status: no live signal is available yet (e.g. Ollama before its first probe).',
+	},
+	'settings.providers.defaultProviderName': {
+		message: 'Default provider',
+		context: 'Row name for the dropdown choosing which provider serves any feature not explicitly routed elsewhere.',
+	},
+	'settings.providers.defaultProviderDesc': {
+		message: 'Used by any feature you have not routed elsewhere.',
+		context: 'Row description for the "Default provider" dropdown.',
+	},
+	'settings.providers.privacyNoticeName': {
+		message: 'Privacy',
+		context: 'Row name for the single consolidated privacy note on the Providers page.',
+	},
+	'settings.providers.privacyNoticeDesc': {
+		message:
+			"Only the providers your features actually use ever receive your content. A local provider (Ollama) keeps everything on this machine; a cloud provider (Gemini, OpenAI) sends the request to that company's servers.",
+		context:
+			'The single privacy note on the Providers page, replacing four separate variants from the previous settings layout. "Ollama", "Gemini", and "OpenAI" are product names.',
+	},
+	'settings.providers.defaultMoved': {
+		message: '{count} features moved to the new default provider.',
+		context:
+			'Notice shown after changing "Default provider" when one or more features that were on the previous default automatically moved to the new one. {count} is the number of features moved (1 or more).',
+	},
+	'settings.providers.groupOnProvider': {
+		message: '{group} on {provider}',
+		context:
+			'Fragment of the top-level "Features" row\'s summary value, e.g. "Text on Ollama". {group} is a Features-page group name (Text / Web and research / Media); {provider} is a short provider name (Gemini / Ollama / OpenAI).',
+	},
+	'settings.features.modelMissingHelp': {
+		message: '{model} is no longer available from this provider. Choose another.',
+		context:
+			"Inline validation error under a Features sub-page's model dropdown when the stored model has fallen out of the provider's current list. {model} is the model's id/name.",
+	},
 } as const satisfies Record<string, SourceString>;
 
 export type TranslationKey = keyof typeof en;

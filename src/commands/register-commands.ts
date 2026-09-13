@@ -1,6 +1,6 @@
 import { Editor, MarkdownView, MarkdownFileInfo, Notice } from 'obsidian';
 import { t } from '../i18n';
-import { refreshGeminiModelList } from '../ui/settings-general';
+import { refreshGeminiModelList } from '../ui/settings/provider-cards';
 import { SelectionRewriter } from '../rewrite-selection';
 import { RewriteInstructionsModal } from '../ui/rewrite-modal';
 import { UpdateNotificationModal } from '../ui/update-notification-modal';
