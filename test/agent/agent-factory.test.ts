@@ -21,8 +21,6 @@ function createMockPlugin(overrides: any = {}): any {
 		},
 		settings: {
 			chatModelName: 'gemini-2.0-flash',
-			temperature: 1.0,
-			topP: 0.95,
 			...overrides.settings,
 		},
 		logger: {
@@ -60,8 +58,6 @@ describe('AgentFactory', () => {
 			const plugin = createMockPlugin();
 			const modelConfig: SessionModelConfig = {
 				model: 'gemini-2.5-pro',
-				temperature: 0.5,
-				topP: 0.8,
 			};
 			const session = createMockSession({ modelConfig });
 
