@@ -18,8 +18,8 @@ The agent has access to this as the `vault_semantic_search` tool. You don't need
 ### Enable Vault Indexing
 
 1. Open Settings → Gemini Scribe
-2. Scroll to **Vault search index**
-3. Toggle **Enable vault indexing** to ON
+2. Open the **Vault search index** page (Vault group)
+3. Toggle **Index this vault** to ON
 4. The initial indexing starts automatically with a progress modal
 
 ::: tip
@@ -30,13 +30,16 @@ Initial indexing time depends on vault size. A vault with 1,000 notes typically 
 
 ### Configuration Options
 
-| Setting                   | Default        | Description                                                                                                                                                                                      |
-| ------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Enable vault indexing** | Off            | Master toggle for the feature                                                                                                                                                                    |
-| **Search index name**     | Auto-generated | Read-only. The Google File Search store identifier, assigned automatically when indexing starts                                                                                                  |
-| **Auto-sync changes**     | On             | Automatically update the index when files change                                                                                                                                                 |
-| **Include attachments**   | Off            | Index PDFs, Office documents, and other supported file types beyond markdown                                                                                                                     |
-| **Exclude folders**       | None           | Folders to skip during indexing (one per line). System folders — Obsidian's configuration directory (`.obsidian` by default, or a renamed one) and the plugin state folder — are always excluded |
+| Setting                        | Default        | Description                                                                                                                                                                                      |
+| ------------------------------ | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Index this vault**           | Off            | Master toggle for the feature                                                                                                                                                                    |
+| **Index name**                 | Auto-generated | Read-only, with a copy button. The Google File Search store identifier, assigned automatically when indexing starts                                                                              |
+| **Sync changes automatically** | On             | Automatically update the index when files change                                                                                                                                                 |
+| **Include attachments**        | Off            | Index PDFs, Office documents, and other supported file types beyond markdown                                                                                                                     |
+| **Exclude folders**            | None           | Folders to skip during indexing (one per line). System folders — Obsidian's configuration directory (`.obsidian` by default, or a renamed one) and the plugin state folder — are always excluded |
+
+Routing which provider serves this feature (Gemini only today) happens separately, on the
+**Features** page's **Vault search index** row.
 
 ### Index Management
 

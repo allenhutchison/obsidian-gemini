@@ -2,13 +2,13 @@
 
 Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, providing powerful AI-driven assistance for note-taking, writing, and knowledge management directly within Obsidian. It leverages your notes as context for AI interactions, making it a highly personalized and integrated experience.
 
-> **Note:** Pick one of three setup paths in plugin settings → **Provider**:
+> **Note:** Connect a provider in plugin settings → **Providers**:
 >
 > - **Google Gemini (cloud)** — requires a Gemini API key (free tier available at [Google AI Studio](https://aistudio.google.com/apikey)).
-> - **Ollama (local)** — runs locally with no API key; install [Ollama](https://ollama.com), pull a model, and select it in settings. See [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) for details.
+> - **Ollama (local)** — runs locally with no API key; install [Ollama](https://ollama.com), pull a model, and select it on the Ollama card. See [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) for details.
 > - **OpenAI (cloud)** — requires your own OpenAI API key, or point it at an OpenAI-compatible server (LM Studio, MLX, ...) with any placeholder key. See [docs/guide/openai-setup.md](docs/guide/openai-setup.md) for details.
 >
-> See the [provider capability matrix](docs/reference/provider-capabilities.md) for what's supported on each.
+> Then route each feature to a provider on the **Features** page. See the [provider capability matrix](docs/reference/provider-capabilities.md) for what's supported on each.
 
 ## What's New in v4.11.0
 
@@ -102,9 +102,11 @@ _A large feature release — a full visual refresh plus smarter, more responsive
 5. Manage sessions directly with command palette actions: "New agent session", "Browse agent sessions", "Link project to agent session", and "Agent session settings"
 6. Start using the AI agent to work with your vault!
 
-**Prefer running models locally, or already have an OpenAI key?** Gemini Scribe also supports [Ollama](https://ollama.com) — install Ollama, pull a model with `ollama pull llama3.2`, and switch the **Provider** in settings to "Ollama (local)" — and **OpenAI** — switch **Provider** to "OpenAI (cloud)", enter your API key, and optionally point the **OpenAI base URL** at an OpenAI-compatible server like LM Studio or MLX. A few Gemini-built-in features (Google Search, Google Maps, URL Context, Deep Research, image generation, RAG) have no equivalent on either provider — but you can point those individually at Gemini under **Per-feature provider** while chat stays on your chosen provider. Nothing is sent to the cloud unless you route it there. See [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) and [docs/guide/openai-setup.md](docs/guide/openai-setup.md) for details.
+**Prefer running models locally, or already have an OpenAI key?** Gemini Scribe also supports [Ollama](https://ollama.com) — install Ollama, pull a model with `ollama pull llama3.2`, add the Ollama card in **Settings → Providers**, and route Chat to it on the **Features** page — and **OpenAI** — add the OpenAI card with your API key, and optionally point its base URL at an OpenAI-compatible server like LM Studio or MLX. A few Gemini-built-in features (Google Search, Google Maps, URL Context, Deep Research, image generation, RAG) have no equivalent on either provider — but you can point those individually at Gemini on the **Features** page while chat stays on your chosen provider. Nothing is sent to the cloud unless you route it there. See [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) and [docs/guide/openai-setup.md](docs/guide/openai-setup.md) for details.
 
 ## Installation
+
+**Requires Obsidian 1.13.1 or later** — the settings tab is built on Obsidian's declarative settings API.
 
 1.  **Community Plugins (Recommended):**
     - Open Obsidian Settings.
@@ -128,30 +130,19 @@ _A large feature release — a full visual refresh plus smarter, more responsive
 2.  **Configure Plugin Settings:**
     - Open Obsidian Settings.
     - Go to "Gemini Scribe" under "Community plugins".
-    - **Provider:** Choose `Google Gemini (cloud)` (default), `Ollama (local)`, or `OpenAI (cloud)`. This is the default for every feature; the Ollama option exposes a base-URL field and refreshes the model list from `GET /api/tags`, and the OpenAI option exposes an API key and base-URL field (also usable for OpenAI-compatible servers like LM Studio) and refreshes the model list from `GET /models`.
-    - **Per-feature provider:** Route individual features (chat, summaries, completions, rewrite, web & search, vault search index, image generation) to a different provider. Each dropdown lists only the providers that support that feature. A feature your default provider can't serve stays off unless you explicitly assign it one — the plugin never falls back to the cloud on its own.
-    - **API Key:** (Gemini only) Paste your Gemini API key here. Your key is stored securely using Obsidian's SecretStorage.
-    - **OpenAI API key / base URL:** (OpenAI only) Paste your OpenAI API key, or any placeholder value for a compatible server that doesn't check one. The base URL defaults to `https://api.openai.com/v1`.
-    - **Chat model:** Select the preferred Gemini model for chat interactions (default: `gemini-flash-latest`).
-    - **Summary model:** Select the preferred Gemini model for generating summaries (default: `gemini-flash-latest`).
-    - **Completion model:** Select the preferred model for IDE-style completions (default: `gemini-flash-lite-latest`).
-    - **Summary frontmatter key:** Specify the key to use when storing summaries in the frontmatter (default: `summary`).
+    - **Providers:** One connection card per account/endpoint. Add the Gemini card (paste your API key — stored securely via Obsidian's SecretStorage), the Ollama card (base URL, default `http://localhost:11434`), and/or the OpenAI card (API key or a compatible-server base URL). Each card shows its available models with a Refresh button, a read-only "Used by" line, and — for Gemini — an "Includes" line for provider-bound extras (Google Maps grounding, page fetch by URL). Set a **Default provider** for any feature you haven't routed elsewhere.
+    - **Features:** Route each feature — Chat and agent, Summaries, Completions, Rewrite, Web search, Deep research, Vault search index, Image generation — to a provider and model. Each row shows "provider · model"; opening it gives exactly two controls (provider, then model filtered to that provider). A feature can be set to **Off**, and a feature routed to a provider that can't serve it (or isn't connected) shows a warning and stays off — the plugin never falls back to another provider on its own.
     - **Your name:** Enter your name, which the AI will use when addressing you.
-    - **Chat History:**
-      - **Enable session history:** Toggle whether to save agent session history.
-      - **Plugin state folder:** Choose the folder within your vault to store plugin data (agent sessions and custom prompts).
+    - **Keep session history:** Toggle whether to save agent session history.
+    - **Review a diff before files are written:** Open a diff view automatically when the agent proposes file changes.
+    - **Vault search index:** Semantic search over your vault using Google File Search — its own sub-page (index toggle, rescan/delete, sync and attachment options, excluded folders).
+    - **Plugin folder:** Choose the folder within your vault to store plugin data (agent sessions, custom prompts, and so on).
+    - **Automation:** Scheduled tasks, Lifecycle hooks, and MCP servers each get their own sub-page for managing entries, plus one persistent toggle each (auto-run missed tasks, enable hooks).
+    - **Tool permissions:** A single searchable list of every tool with filter pills (All/Read/Write/Destructive/External/MCP), fronted by a permission preset dropdown.
+    - **Advanced:** Context compaction threshold, stop-on-tool-error, summary frontmatter key, tool-call logging, and a Diagnostics group (debug mode, token usage display, log-to-file).
+    - **Documentation:** Opens this documentation site.
     - **Custom Prompts:**
       - **System Prompt Override:** Set `override_system_prompt: true` in a custom prompt's frontmatter to replace the built-in system instructions. There is no global toggle. See the [Custom Prompts Guide](docs/guide/custom-prompts.md#system-prompt-override).
-    - **UI Settings:**
-      - **Enable streaming:** Toggle streaming responses for a more interactive chat experience.
-    - **Advanced Settings:** (Click "Show advanced settings" to reveal)
-      - **Temperature:** Control AI creativity and randomness (0-2.0, automatically adjusted based on available models).
-      - **Top P:** Control response diversity and focus (0-1.0).
-      - **Model Discovery:** Gemini models are automatically fetched on startup (cached for 24h); click **Refresh model list** in General settings or run the "Gemini Scribe: Refresh model list" command to fetch a newly-published model immediately. Ollama users get a separate **Refresh Ollama model list** button to re-query the daemon after pulling new models, and OpenAI users get a **Refresh OpenAI model list** button to re-query `GET /models`. Each model dropdown lists the models of the provider serving that feature.
-      - **API configuration:** Configure retry behavior, backoff delays, and the Use Interactions API transport (Gemini provider only; on by default, with `generateContent` retained as a fallback).
-      - **Tool Execution:** Control whether to stop agent execution on tool errors.
-      - **Tool loop detection:** Prevent infinite tool execution loops.
-      - **Developer Options:** Debug mode, file logging, and advanced configuration tools.
 
 ## Usage
 
@@ -187,7 +178,7 @@ Let the AI actively work with your vault through tool calling capabilities.
 - **Persistent Sessions:** Continue conversations across Obsidian restarts
 - **Permission Controls:** Choose which tools require confirmation
 - **Context Files:** Add specific notes as persistent context
-- **Session Configuration:** Override model, temperature, and prompt per session
+- **Session Configuration:** Override model and prompt per session
 - **Safety Features:** System folders are protected from modifications
 - **Tool permissions**: Granular per-tool permission system with presets (Read only, Cautious, Edit mode, YOLO) and per-tool overrides. Control which tools run automatically, which require confirmation, and which are disabled entirely.
 - **Additional Tools**:
@@ -237,7 +228,6 @@ For detailed guides on all features, visit the [Documentation Site](https://alle
 **Configuration & Development:**
 
 - [Settings Reference](docs/reference/settings.md) - Complete settings documentation
-- [Advanced Settings Guide](docs/reference/advanced-settings.md)
 - [Provider Capabilities](docs/reference/provider-capabilities.md) - Gemini vs. Ollama vs. OpenAI feature matrix
 - [Tool Development Guide](docs/contributing/tool-development.md) - Create custom agent tools
 
@@ -346,23 +336,23 @@ The plugin UI follows **Obsidian's interface language** (Settings → About → 
   - Try typing a few words and pausing to trigger the suggestion
   - Check that you're in a Markdown file
   - Disable other completion plugins that might conflict
-- **Sessions Not Loading:** Ensure "Enable session history" is on and the "Plugin state folder" path is correct. Sessions live under `[Plugin state folder]/Agent-Sessions/`.
+- **Sessions Not Loading:** Ensure "Keep session history" is on and the "Plugin folder" path is correct. Sessions live under `[Plugin state folder]/Agent-Sessions/`.
 - **Custom Prompts Not Working:**
   - Verify the prompt file exists in the `[Plugin state folder]/Prompts/` folder
   - Check that the prompt is selected in session settings (gear icon)
   - See the [Custom Prompts Guide](docs/guide/custom-prompts.md) for detailed troubleshooting
-- **Parameter/Advanced Settings Issues:**
-  - Check if your model supports the temperature range you're using
-  - Reset temperature and Top P to defaults if getting unexpected responses
-  - Restart Obsidian to trigger a fresh model list fetch (for Gemini), or click **Refresh Ollama model list** (for Ollama) / **Refresh OpenAI model list** (for OpenAI)
-  - See the [Advanced Settings Guide](docs/reference/advanced-settings.md) for detailed configuration help
+- **Model List Issues:**
+  - Open the provider's card under **Settings → Providers** and click **Refresh** to re-query its model list
+  - Restart Obsidian to trigger a fresh model list fetch (for Gemini)
+  - Check that the provider's card shows "Connected" — a missing key or unreachable Ollama/OpenAI endpoint is why a feature shows a warning on the Features page
+  - See the [Settings Reference](docs/reference/settings.md) for detailed configuration help
 - **Agent mode / Tool Issues:**
   - Verify your Gemini model supports function calling (all Gemini 2.0+ models do)
   - If tools fail, check file permissions and paths
   - System folders (plugin state folder, .obsidian) are protected from modifications
   - For session issues, try creating a new session from the chat interface
-  - Check the console (Ctrl/Cmd + Shift + I) or enable "Log to file" in settings and review `debug.log` in the plugin state folder for detailed error messages
-  - Tool loop detection may stop repeated operations - adjust settings if needed
+  - Check the console (Ctrl/Cmd + Shift + I) or enable "Log API calls to a file" under **Advanced → Diagnostics** and review `debug.log` in the plugin state folder for detailed error messages
+  - Tool loop detection (fixed at 3 identical calls within 30 seconds) may stop repeated operations — it is not configurable
 
 ## License
 
