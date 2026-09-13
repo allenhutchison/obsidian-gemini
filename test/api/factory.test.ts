@@ -123,15 +123,11 @@ describe('ModelClientFactory', () => {
 			expect(MockGeminiClient.mock.calls[0][1]).toBeDefined();
 		});
 
-		it('should use a fixed retry config, independent of any settings', () => {
+		it('wraps the client with a retry decorator using a fixed policy, independent of any settings', () => {
 			const plugin = createMockPlugin();
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
 
-			expect(MockRetryDecorator).toHaveBeenCalledWith(
-				expect.anything(),
-				{ maxRetries: 3, initialBackoffDelay: 1000 },
-				plugin.logger
-			);
+			expect(MockRetryDecorator).toHaveBeenCalledWith(expect.anything(), plugin.logger);
 		});
 
 		it('should apply overrides to Gemini config', () => {

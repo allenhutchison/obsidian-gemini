@@ -6,7 +6,6 @@ import {
 	getActiveChatModel,
 	getDefaultModelForRole,
 	getUpdatedFeatureRoutes,
-	getUpdatedModelSettings,
 	GeminiModel,
 	isInteractionsOnlyModel,
 	contextWindowForModel,
@@ -304,32 +303,6 @@ describe('getUpdatedFeatureRoutes', () => {
 		expect(result.features).not.toBe(features);
 		expect(result.memory).not.toBe(memory);
 		expect(features.chat.model).toBe('invalid-chat-model');
-	});
-});
-
-describe('getUpdatedModelSettings (deprecated adapter)', () => {
-	let originalModels: GeminiModel[];
-
-	beforeEach(() => {
-		originalModels = [...GEMINI_MODELS];
-		setTestModels([{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] }]);
-	});
-
-	afterEach(() => {
-		setTestModels(originalModels);
-	});
-
-	it('delegates to getUpdatedFeatureRoutes and writes the result back onto the settings shape', () => {
-		const settings = {
-			features: routes({ chat: { provider: 'gemini', model: 'invalid-chat-model' } }),
-			providerModelMemory: {},
-		};
-		const result = getUpdatedModelSettings(settings);
-		expect(result.settingsChanged).toBe(true);
-		expect(result.updatedSettings.features.chat.model).toBe('gemini-chat-default');
-		expect(result.changedSettingsInfo.length).toBe(1);
-		// The original object is untouched.
-		expect(settings.features.chat.model).toBe('invalid-chat-model');
 	});
 });
 

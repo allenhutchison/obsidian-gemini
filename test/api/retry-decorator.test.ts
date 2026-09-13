@@ -394,7 +394,7 @@ describe('RetryDecorator', () => {
 			const error = Object.assign(new Error('Internal server error'), { status: 500 });
 			const api = createMockApi([error, successResponse]);
 			const mockLogger = createMockLogger();
-			const decorator = new RetryDecorator(api, undefined, mockLogger);
+			const decorator = new RetryDecorator(api, mockLogger);
 
 			const promise = decorator.generateModelResponse(dummyRequest);
 			await vi.advanceTimersByTimeAsync(1200);
@@ -408,7 +408,7 @@ describe('RetryDecorator', () => {
 			const error = Object.assign(new Error('Internal server error'), { status: 500 });
 			const api = createMockApi([error, error, error, error]);
 			const mockLogger = createMockLogger();
-			const decorator = new RetryDecorator(api, undefined, mockLogger);
+			const decorator = new RetryDecorator(api, mockLogger);
 
 			const promise = decorator.generateModelResponse(dummyRequest);
 			// Attach rejection handler BEFORE advancing timers
@@ -425,7 +425,7 @@ describe('RetryDecorator', () => {
 			const error = Object.assign(new Error('Forbidden'), { status: 403 });
 			const api = createMockApi([error]);
 			const mockLogger = createMockLogger();
-			const decorator = new RetryDecorator(api, undefined, mockLogger);
+			const decorator = new RetryDecorator(api, mockLogger);
 
 			await expect(decorator.generateModelResponse(dummyRequest)).rejects.toThrow('Forbidden');
 

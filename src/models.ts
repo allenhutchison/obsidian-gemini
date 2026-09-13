@@ -272,24 +272,6 @@ export function getActiveChatModel(settings: FeatureRoutingSlice & LegacyChatMod
 }
 
 /**
- * The slice of plugin settings the deprecated `getUpdatedModelSettings`
- * adapter reads/rewrites. Structural, not `ObsidianGeminiSettings`, to keep
- * this module a leaf — importing `ObsidianGeminiSettings` here would create a
- * `models.ts` <-> `types/settings.ts` import cycle (`types/settings.ts`
- * imports `GeminiModel`/`ModelProvider` from this module).
- */
-export interface FeatureRoutingModelSlice {
-	features: FeatureRoutes;
-	providerModelMemory: ProviderModelMemory;
-}
-
-export interface ModelUpdateResult<T extends FeatureRoutingModelSlice = FeatureRoutingModelSlice> {
-	updatedSettings: T;
-	settingsChanged: boolean;
-	changedSettingsInfo: string[];
-}
-
-/**
  * Stale-model reconciliation over the dense `features` table: retired models
  * migrate to their successor (`RETIRED_MODEL_SUCCESSORS`, checked before the
  * validity short-circuit — a stale persisted `remoteModelCache` can still
@@ -366,20 +348,4 @@ export function getUpdatedFeatureRoutes(
 	}
 
 	return { features: newFeatures, memory: newMemory, changed, info };
-}
-
-/**
- * Deprecated: Adapter kept only so `ModelManager.updateModels`
- * (`src/services/model-manager.ts`) keeps compiling while the settings
- * redesign's runtime work package migrates its caller to
- * `getUpdatedFeatureRoutes` directly; removed by the tombstone-sweep work
- * package along with `ModelUpdateResult` and `FeatureRoutingModelSlice`.
- */
-export function getUpdatedModelSettings<T extends FeatureRoutingModelSlice>(currentSettings: T): ModelUpdateResult<T> {
-	const result = getUpdatedFeatureRoutes(currentSettings.features, currentSettings.providerModelMemory);
-	return {
-		updatedSettings: { ...currentSettings, features: result.features, providerModelMemory: result.memory },
-		settingsChanged: result.changed,
-		changedSettingsInfo: result.info,
-	};
 }

@@ -1,12 +1,6 @@
 import type { ObsidianGemini } from '../types/plugin';
 import * as modelsModule from '../models';
-import {
-	GeminiModel,
-	ModelProvider,
-	ModelUpdateResult,
-	getUpdatedFeatureRoutes,
-	DEFAULT_GEMINI_MODELS,
-} from '../models';
+import { GeminiModel, ModelProvider, getUpdatedFeatureRoutes, DEFAULT_GEMINI_MODELS } from '../models';
 import { activeProviders, featureProvider } from '../api/feature-routing';
 import type { ObsidianGeminiSettings } from '../types/settings';
 import { ModelListProvider, RefreshResult } from './model-list-provider';
@@ -15,6 +9,12 @@ import { OpenAIModelsService } from './openai-models-service';
 
 export interface ModelUpdateOptions {
 	forceRefresh?: boolean;
+}
+
+export interface ModelUpdateOutcome {
+	updatedSettings: ObsidianGeminiSettings;
+	settingsChanged: boolean;
+	changedSettingsInfo: string[];
 }
 
 export class ModelManager {
@@ -107,7 +107,7 @@ export class ModelManager {
 	/**
 	 * Update the global GEMINI_MODELS list from every active provider and fix any stale settings.
 	 */
-	async updateModels(options: ModelUpdateOptions = {}): Promise<ModelUpdateResult<ObsidianGeminiSettings>> {
+	async updateModels(options: ModelUpdateOptions = {}): Promise<ModelUpdateOutcome> {
 		const allModels = await this.collectActiveModels(options.forceRefresh);
 		const previousModels = this.getCurrentGeminiModels();
 

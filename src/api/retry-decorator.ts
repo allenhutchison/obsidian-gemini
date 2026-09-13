@@ -32,14 +32,9 @@ export class RetryDecorator implements ModelApi {
 
 	/**
 	 * @param wrappedApi - The API to wrap with retry logic.
-	 * @param _legacyConfig - Deprecated: Unused. `ModelClientFactory.createFromPlugin`
-	 *   (`src/api/factory.ts`) still passes a positional settings-shaped object here; the
-	 *   retry policy is fixed now (see the `DEFAULT_*` constants below) and this parameter is
-	 *   ignored. Kept only so that read-only call site keeps compiling; removed once the
-	 *   factory drops the argument (tombstone sweep).
 	 * @param logger - Optional logger for retry diagnostics.
 	 */
-	constructor(wrappedApi: ModelApi, _legacyConfig?: unknown, logger?: Logger) {
+	constructor(wrappedApi: ModelApi, logger?: Logger) {
 		this.wrappedApi = wrappedApi;
 		this.logger = logger;
 	}

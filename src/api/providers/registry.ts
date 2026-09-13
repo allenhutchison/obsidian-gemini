@@ -34,13 +34,6 @@ export type ModelProvider = 'gemini' | 'ollama' | 'openai';
 export type ProviderFeatureId =
 	'chat' | 'summary' | 'completions' | 'rewrite' | 'webSearch' | 'deepResearch' | 'rag' | 'imageGen';
 
-/**
- * Deprecated: Pre-settings-redesign name for `ProviderFeatureId`. Kept as an
- * alias so files not yet migrated to the feature-routing model keep compiling;
- * removed once every reader of it has moved to `FeatureId` / `ProviderFeatureId`.
- */
-export type ProviderUseCase = ProviderFeatureId;
-
 export interface ProviderCapabilities {
 	// --- Routable features. `false` means the provider cannot serve it at all. ---
 	chat: boolean;

@@ -80,10 +80,6 @@ export class ModelClientFactory {
 
 		const prompts = new GeminiPrompts(plugin);
 
-		// Fixed as of the settings redesign — was settings-driven (`maxRetries`,
-		// `initialBackoffDelay`); see `RetryDecorator`.
-		const retryConfig = { maxRetries: 3, initialBackoffDelay: 1000 };
-
 		if (provider === 'ollama') {
 			const config: OllamaClientConfig = {
 				baseUrl: settings.ollamaBaseUrl || 'http://localhost:11434',
@@ -91,7 +87,7 @@ export class ModelClientFactory {
 				...overrides,
 			};
 			const client = new OllamaClient(config, prompts, plugin);
-			return new RetryDecorator(client, retryConfig, plugin.logger);
+			return new RetryDecorator(client, plugin.logger);
 		}
 
 		if (provider === 'openai') {
@@ -102,7 +98,7 @@ export class ModelClientFactory {
 				...overrides,
 			};
 			const client = new OpenAIClient(config, prompts, plugin);
-			return new RetryDecorator(client, retryConfig, plugin.logger);
+			return new RetryDecorator(client, plugin.logger);
 		}
 
 		const config: GeminiClientConfig = {
@@ -112,7 +108,7 @@ export class ModelClientFactory {
 			...overrides,
 		};
 		const client = new GeminiClient(config, prompts, plugin);
-		return new RetryDecorator(client, retryConfig, plugin.logger);
+		return new RetryDecorator(client, plugin.logger);
 	}
 
 	/**
