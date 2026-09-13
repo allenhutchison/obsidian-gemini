@@ -34,16 +34,16 @@ When you connect an MCP server to Gemini Scribe, its tools appear alongside the 
 
 1. Open Obsidian Settings
 2. Navigate to **Gemini Scribe** settings
-3. Enable **Show advanced settings** if you haven't already — the **MCP servers** section only appears once it's on
-4. Scroll to the **MCP servers** section
-5. Toggle **Enable MCP servers** on
-6. Click **Add server**
-7. Select the **Transport** type:
+3. Open the **MCP servers** page — a top-level row, no toggle needed to reveal it
+4. Click **Add server**
+5. Select the **Transport** type:
    - **Stdio (local process)**: Enter the command, arguments, and optional environment variables
    - **HTTP (remote server)**: Enter the server URL
-8. Click **Test connection** to verify and discover available tools
-9. Configure tool trust settings (see below)
-10. Click **Save**
+6. Click **Test connection** to verify and discover available tools
+7. Configure tool trust settings (see below)
+8. Click **Save**
+
+There is no separate "Enable MCP servers" toggle — an empty server list means MCP is off, and adding your first server turns it on.
 
 ### Tool Trust
 
@@ -166,7 +166,7 @@ When an MCP server is connected:
 **No tools show up**
 
 - Click **Test connection** in the server settings to re-discover tools
-- Verify **Enable MCP servers** is toggled on
+- Verify the server's `enabled` flag is on and it appears in the MCP servers list
 - Check that the server's tools are compatible (MCP v1 tools)
 
 **Tools fail to execute**

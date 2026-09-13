@@ -12,11 +12,16 @@ The Tool loop detection feature prevents the AI agent from getting stuck in infi
 
 ## Configuration
 
-Loop detection can be configured in Settings → Gemini Scribe → Agent config → Tool loop detection (enable **Show advanced settings** first to reveal this section):
+Loop detection is **always on** and is not configurable — there is no settings row for it. The
+thresholds are fixed constants:
 
-- **Enable loop detection**: Toggle the feature on/off
-- **Loop threshold**: Number of identical calls before considering it a loop (default: 3)
-- **Time window**: Time period in seconds to check for repeated calls (default: 30 seconds)
+- **Loop threshold**: 3 identical calls
+- **Time window**: 30 seconds
+
+These match the defaults from earlier versions, when the feature could be tuned or disabled
+under Settings → Gemini Scribe → Agent config → Tool loop detection; that section (and the
+underlying `loopDetectionEnabled`/`loopDetectionThreshold`/`loopDetectionTimeWindowSeconds`
+settings) was removed as part of the settings redesign.
 
 ## Example Scenario
 
@@ -42,4 +47,4 @@ In addition to the per-tool detection above, the agent loop counts how many time
 - Automatically cleans up old execution history to prevent memory issues
 - Session-specific tracking - each agent session has its own loop detection history
 - History is keyed per session ID, so a brand-new session starts with no prior detection state; loading an existing session's history does not clear it (prior detector state for that session persists)
-- Per-turn abort threshold is fixed at 3 fires; the per-tool threshold and time window above are user-configurable
+- Per-turn abort threshold is fixed at 3 fires; the per-tool threshold and time window above are fixed constants too, not user-configurable

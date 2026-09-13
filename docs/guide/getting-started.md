@@ -24,13 +24,16 @@ Welcome to Gemini Scribe, an Obsidian plugin that integrates Google's Gemini AI 
 ## Quick Start
 
 1. **Get an API Key** — Get your free key from [Google AI Studio](https://aistudio.google.com/apikey)
-2. **Configure** — Add your API key in Settings → Gemini Scribe
-3. **Initialize Context** — Click "Initialize vault context" to help the agent understand your vault
-4. **Start Chatting** — Open Gemini chat with the ribbon icon or command palette and start giving the AI tasks!
+2. **Connect a provider** — Open Settings → Gemini Scribe → **Providers**, add the Gemini card, and paste your API key
+3. **Route your features** — Open the **Features** page and confirm Chat and agent (and anything else you want) is routed to Gemini — new installs default everything to Gemini automatically
+4. **Initialize Context** — Click "Initialize vault context" to help the agent understand your vault
+5. **Start Chatting** — Open Gemini chat with the ribbon icon or command palette and start giving the AI tasks!
+
+**Requires Obsidian 1.13.1 or later** — the settings tab is built on Obsidian's declarative settings API.
 
 ### Prefer running models locally, or already have an OpenAI key?
 
-Gemini Scribe also supports [Ollama](https://ollama.com) as a provider so you can use local models such as Llama 3.2, Qwen 2.5, or Gemma 3 without an API key — see the [Ollama Setup Guide](/guide/ollama-setup). If you'd rather use your own OpenAI API key, or point the plugin at an OpenAI-compatible server such as LM Studio or MLX, switch **Provider** to **OpenAI (cloud)** — see the [OpenAI Setup Guide](/guide/openai-setup). Some Gemini-built-in features (Google Search, Google Maps, URL Context, Deep Research, image generation, RAG) have no equivalent on either provider, but each can be pointed at Gemini individually under **Per-feature provider** while chat stays on your chosen provider.
+Gemini Scribe also supports [Ollama](https://ollama.com) as a provider so you can use local models such as Llama 3.2, Qwen 2.5, or Gemma 3 without an API key — see the [Ollama Setup Guide](/guide/ollama-setup). If you'd rather use your own OpenAI API key, or point the plugin at an OpenAI-compatible server such as LM Studio or MLX, add the OpenAI card on the **Providers** page — see the [OpenAI Setup Guide](/guide/openai-setup). Some Gemini-built-in features (Google Search, Google Maps, URL Context, Deep Research, image generation, RAG) have no equivalent on either provider, but each can be pointed at Gemini individually on the **Features** page while chat stays on your chosen provider.
 
 ## Feature Overview
 
@@ -97,7 +100,7 @@ Add specific notes as persistent context for your agent sessions using @ mention
 If you see a message about a missing or inaccessible API key:
 
 1. **Get a free Gemini API key** — Visit [Google AI Studio](https://aistudio.google.com/apikey) and click "Create API Key". A Google account is all you need.
-2. **Enter your key in settings** — Open Obsidian Settings, navigate to Gemini Scribe, and paste your key into the API Key field. The key is stored securely using Obsidian's secret storage.
+2. **Enter your key in settings** — Open Obsidian Settings, navigate to Gemini Scribe → **Providers** → Gemini card, and paste your key into the API Key field. The key is stored securely using Obsidian's secret storage.
 3. **Key not working after entry?** — If you see "Could not retrieve your API key from secure storage", try clearing the field and re-entering your key. This can happen if Obsidian's secure storage was reset (e.g., after a system update or vault migration).
 4. **Check the developer console** — Press `Ctrl+Shift+I` (Windows/Linux) or `Cmd+Opt+I` (macOS) to open the console and look for error messages prefixed with `[Gemini Scribe]`.
 
@@ -131,7 +134,7 @@ If you see a message about a missing or inaccessible API key:
 - Check console (Ctrl/Cmd + Shift + I) for errors
 - Verify session files aren't corrupted
 
-For detailed configuration, see the [Settings Reference](/reference/settings) and [Advanced Settings Guide](/reference/advanced-settings).
+For detailed configuration, see the [Settings Reference](/reference/settings).
 
 ## Further Reading
 
