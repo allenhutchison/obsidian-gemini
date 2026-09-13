@@ -122,7 +122,17 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab implement
 			this.plugin.logger.warn(`[Settings] No writer registered for control key '${key}'`);
 			return;
 		}
+		// Rebuild before persisting: a routing change makes `saveSettings()`
+		// await a full re-initialization (model lists, RAG, MCP), and the
+		// dependent controls — a feature's model dropdown after its provider
+		// changes — must not keep showing the previous provider's list for the
+		// seconds that takes.
+		if (needsUpdate) {
+			this.update();
+		}
 		await this.plugin.saveSettings();
+		// Rebuild again after re-initialization so anything it refreshed (a
+		// provider's fetched model list, connection state) is reflected.
 		if (needsUpdate) {
 			this.update();
 		} else {
