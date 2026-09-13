@@ -927,8 +927,6 @@ describe('SessionHistory', () => {
 			const session = createMockSession({
 				modelConfig: {
 					model: 'gemini-2.5-pro',
-					temperature: 0.7,
-					topP: 0.9,
 					promptTemplate: 'custom-prompt',
 				},
 			});
@@ -936,8 +934,6 @@ describe('SessionHistory', () => {
 			await sessionHistory.updateSessionMetadata(session);
 
 			expect(capturedFrontmatter.model).toBe('gemini-2.5-pro');
-			expect(capturedFrontmatter.temperature).toBe(0.7);
-			expect(capturedFrontmatter.top_p).toBe(0.9);
 			expect(capturedFrontmatter.prompt_template).toBe('custom-prompt');
 		});
 
@@ -950,8 +946,6 @@ describe('SessionHistory', () => {
 				async (_file: any, callback: (fm: any) => void) => {
 					const fm: any = {
 						model: 'old-model',
-						temperature: 0.5,
-						top_p: 0.8,
 						prompt_template: 'old',
 					};
 					callback(fm);
@@ -964,8 +958,6 @@ describe('SessionHistory', () => {
 			await sessionHistory.updateSessionMetadata(session);
 
 			expect(capturedFrontmatter.model).toBeUndefined();
-			expect(capturedFrontmatter.temperature).toBeUndefined();
-			expect(capturedFrontmatter.top_p).toBeUndefined();
 			expect(capturedFrontmatter.prompt_template).toBeUndefined();
 		});
 

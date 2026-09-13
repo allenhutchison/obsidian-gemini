@@ -87,12 +87,10 @@ describe('SessionManager Integration Tests', () => {
 			// Update session
 			await sessionManager.updateSessionModelConfig(session.id, {
 				model: 'gemini-1.5-pro',
-				temperature: 0.5,
 			});
 
 			const updated = sessionManager.getSession(session.id);
 			expect(updated?.modelConfig?.model).toBe('gemini-1.5-pro');
-			expect(updated?.modelConfig?.temperature).toBe(0.5);
 
 			// End session - SessionManager doesn't have endSession method
 			// Just verify we can get the session
@@ -137,15 +135,13 @@ describe('SessionManager Integration Tests', () => {
 			// Add model config
 			await sessionManager.updateSessionModelConfig(session.id, {
 				model: 'custom-model',
-				temperature: 0.7,
-				topP: 0.9,
 				promptTemplate: 'custom-prompt.md',
 			});
 
 			// Verify session was updated
 			const updated = sessionManager.getSession(session.id);
 			expect(updated?.modelConfig?.model).toBe('custom-model');
-			expect(updated?.modelConfig?.temperature).toBe(0.7);
+			expect(updated?.modelConfig?.promptTemplate).toBe('custom-prompt.md');
 		});
 	});
 

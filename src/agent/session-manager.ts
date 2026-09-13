@@ -477,14 +477,11 @@ export class SessionManager {
 			config.model = frontmatter.model;
 			hasConfig = true;
 		}
-		if (frontmatter.temperature !== undefined) {
-			config.temperature = Number(frontmatter.temperature);
-			hasConfig = true;
-		}
-		if (frontmatter.top_p !== undefined) {
-			config.topP = Number(frontmatter.top_p);
-			hasConfig = true;
-		}
+		// Note: the two legacy model-sampling frontmatter keys removed by the
+		// settings redesign are deliberately never read here — sessions saved
+		// before the redesign keep those keys on disk, but they are inert. See
+		// session-history.ts applySessionFrontmatter, which likewise never
+		// writes or deletes them.
 		if (typeof frontmatter.prompt_template === 'string' && frontmatter.prompt_template !== '') {
 			config.promptTemplate = frontmatter.prompt_template;
 			hasConfig = true;

@@ -121,10 +121,7 @@ export class SessionHistory {
 			timestamp: formatLocalTimestamp(entryTimestamp),
 			pluginVersion: this.plugin.manifest.version,
 			model: entry.model,
-			temperature: entry.metadata?.temperature,
-			topP: entry.metadata?.topP,
 			customPrompt: entry.metadata?.customPrompt,
-			isDefined: (value: unknown) => value !== undefined,
 		});
 
 		const newContent = existingContent + '\n' + entryContent;
@@ -400,17 +397,12 @@ export class SessionHistory {
 				delete frontmatter.model;
 			}
 
-			if (session.modelConfig?.temperature !== undefined) {
-				frontmatter.temperature = session.modelConfig.temperature;
-			} else {
-				delete frontmatter.temperature;
-			}
-
-			if (session.modelConfig?.topP !== undefined) {
-				frontmatter.top_p = session.modelConfig.topP;
-			} else {
-				delete frontmatter.top_p;
-			}
+			// The two legacy model-sampling frontmatter keys removed by the
+			// settings redesign are never written, read, or deleted here.
+			// Sessions saved before the redesign keep those keys on disk — they
+			// are inert, and a metadata update must not strip them out (see
+			// AGENTS.md's tolerance requirement and
+			// test/agent/session-history-legacy-params.test.ts).
 
 			if (session.modelConfig?.promptTemplate) {
 				frontmatter.prompt_template = session.modelConfig.promptTemplate;

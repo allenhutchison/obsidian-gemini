@@ -87,8 +87,6 @@ describe('AgentView UI Tests', () => {
 				historyFolder: 'gemini-scribe',
 				agentModelName: 'gemini-1.5-pro',
 				enabledTools: ['read_files', 'write_files'],
-				temperature: 0.7,
-				topP: 0.95,
 				chatHistory: true,
 			},
 			logger: {
@@ -315,7 +313,6 @@ describe('AgentView UI Tests', () => {
 			const session = await plugin.sessionManager.createAgentSession();
 			await plugin.sessionManager.updateSessionModelConfig(session.id, {
 				model: 'custom-model',
-				temperature: 0.5,
 				promptTemplate: 'custom-prompt.md',
 			});
 

@@ -38,8 +38,8 @@ export interface RetryRequestParams extends PerTurnContext {
 /**
  * The request fields the follow-up and the empty-response retry share verbatim:
  * everything except `userMessage` and (for the follow-up) `availableTools`.
- * Built in one place so a change to the model/temperature/topP resolution or the
- * project context passthrough can't land on one request shape and miss the other.
+ * Built in one place so a change to the model resolution or the project context
+ * passthrough can't land on one request shape and miss the other.
  *
  * `perTurnContext` is deliberately omitted from both: `buildToolHistoryTurns`
  * already spliced it into the user turn of `updatedHistory`. Passing it here too
@@ -55,8 +55,6 @@ function buildSharedRequestFields(params: RetryRequestParams): Omit<ExtendedMode
 		kind: 'extended',
 		conversationHistory: updatedHistory,
 		model: modelConfig.model || getActiveChatModel(plugin.settings),
-		temperature: modelConfig.temperature ?? plugin.settings.temperature,
-		topP: modelConfig.topP ?? plugin.settings.topP,
 		prompt: '', // Unused in agent pipeline — context lives in conversationHistory
 		customPrompt,
 		projectInstructions,

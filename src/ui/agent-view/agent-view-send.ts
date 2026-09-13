@@ -108,7 +108,7 @@ export class AgentViewSend {
 
 		// Accumulate plan text without a streaming UI container — showPlanApproval
 		// renders the final text with proper formatting and approval buttons.
-		if (modelApi.generateStreamingResponse && this.ctx.plugin.settings.streamingEnabled !== false) {
+		if (modelApi.generateStreamingResponse) {
 			let accumulated = '';
 			const stream = modelApi.generateStreamingResponse(planRequest, (chunk: StreamChunk) => {
 				if (chunk.text) {
@@ -479,8 +479,6 @@ To reference an attachment in your response, use the path shown above.`;
 					userMessage: message,
 					conversationHistory: compactionResult.compactedHistory,
 					model: modelName,
-					temperature: modelConfig.temperature ?? this.ctx.plugin.settings.temperature,
-					topP: modelConfig.topP ?? this.ctx.plugin.settings.topP,
 					prompt: '', // Unused in agent pipeline — perTurnContext carries context instead
 					perTurnContext: perTurn.perTurnContext,
 					customPrompt: customPrompt,
@@ -520,8 +518,8 @@ To reference an attachment in your response, use the path shown above.`;
 					request = { ...request, userMessage: messageToSend, conversationHistory: historyToSend };
 				}
 
-				// Check if streaming is supported and enabled
-				if (modelApi.generateStreamingResponse && this.ctx.plugin.settings.streamingEnabled !== false) {
+				// Streaming is always used when the provider client supports it.
+				if (modelApi.generateStreamingResponse) {
 					// Use streaming API with tool support
 					let modelMessageContainer: HTMLElement | null = null;
 					let accumulatedMarkdown = '';
