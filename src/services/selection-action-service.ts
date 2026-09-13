@@ -148,8 +148,6 @@ export class SelectionActionService {
 				conversationHistory: [],
 				model: getActiveChatModel(this.plugin.settings),
 				prompt: contextInfo,
-				temperature: this.plugin.settings.temperature,
-				topP: this.plugin.settings.topP,
 				renderContent: false,
 			});
 

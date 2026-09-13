@@ -6,6 +6,19 @@ import {
 } from '../../src/services/context-manager';
 import { ModelClientFactory, ModelUseCase } from '../../src/api';
 
+/**
+ * Build a settings fixture with the given features routed to the given
+ * providers, on top of a base settings object. Mirrors the pre-redesign
+ * `provider` + `providerOverrides` shape these tests used to build directly.
+ */
+function routedSettings(base: any, routes: Record<string, string>): any {
+	const features = { ...(base.features ?? {}) };
+	for (const [feature, provider] of Object.entries(routes)) {
+		features[feature] = { provider, model: '' };
+	}
+	return { ...base, defaultProvider: routes.chat ?? base.defaultProvider, features };
+}
+
 // Mock @google/genai
 const mockCountTokens = vi.fn();
 const mockGenerateContent = vi.fn();
@@ -54,9 +67,11 @@ describe('ContextManager', () => {
 			apiKey: 'test-api-key',
 			logger: mockLogger,
 			settings: {
-				provider: 'gemini',
+				defaultProvider: 'gemini',
 				contextCompactionThreshold: 20,
-				chatModelName: 'gemini-2.5-flash',
+				features: {
+					chat: { provider: 'gemini', model: 'gemini-2.5-flash' },
+				},
 			},
 			getModelManager: vi.fn().mockReturnValue({}),
 		};
@@ -288,7 +303,7 @@ describe('ContextManager', () => {
 				]);
 			const plugin = {
 				...mockPlugin,
-				settings: { ...mockPlugin.settings, provider: 'ollama' },
+				settings: routedSettings(mockPlugin.settings, { chat: 'ollama' }),
 				getModelManager: vi.fn().mockReturnValue({
 					getOllamaModelsService: () => ({ getRuntimeContextLength, getModels }),
 				}),
@@ -363,7 +378,7 @@ describe('ContextManager', () => {
 			await withOllamaModelRegistered(async () => {
 				const plugin = {
 					...mockPlugin,
-					settings: { ...mockPlugin.settings, provider: 'ollama' },
+					settings: routedSettings(mockPlugin.settings, { chat: 'ollama' }),
 					getModelManager: vi.fn().mockReturnValue({
 						getOllamaModelsService: () => ({
 							getRuntimeContextLength: vi.fn().mockRejectedValue(new Error('ECONNREFUSED')),
@@ -449,7 +464,7 @@ describe('ContextManager', () => {
 			const ollamaPlugin = {
 				...mockPlugin,
 				apiKey: '',
-				settings: { ...mockPlugin.settings, provider: 'ollama' },
+				settings: routedSettings(mockPlugin.settings, { chat: 'ollama' }),
 			};
 			const ollamaCtx = new ContextManager(ollamaPlugin, mockLogger);
 
@@ -477,7 +492,7 @@ describe('ContextManager', () => {
 			try {
 				const mixedPlugin = {
 					...mockPlugin,
-					settings: { ...mockPlugin.settings, provider: 'ollama', providerOverrides: { summary: 'gemini' } },
+					settings: routedSettings(mockPlugin.settings, { chat: 'ollama', summary: 'gemini' }),
 				};
 				const ctx = new ContextManager(mixedPlugin, mockLogger);
 				const contents = [{ role: 'user', parts: [{ text: 'hello world' }] }];
@@ -508,7 +523,7 @@ describe('ContextManager', () => {
 				const ollamaPlugin = {
 					...mockPlugin,
 					apiKey: 'test-api-key',
-					settings: { ...mockPlugin.settings, provider: 'ollama' },
+					settings: routedSettings(mockPlugin.settings, { chat: 'ollama' }),
 				};
 				const ctx = new ContextManager(ollamaPlugin, mockLogger);
 
@@ -524,7 +539,7 @@ describe('ContextManager', () => {
 			const ollamaPlugin = {
 				...mockPlugin,
 				apiKey: '',
-				settings: { ...mockPlugin.settings, provider: 'ollama' },
+				settings: routedSettings(mockPlugin.settings, { chat: 'ollama' }),
 			};
 			const ollamaCtx = new ContextManager(ollamaPlugin, mockLogger);
 			const contents = [{ role: 'user', parts: [{ text: 'a'.repeat(400) }] }];
@@ -543,7 +558,7 @@ describe('ContextManager', () => {
 			const ollamaPlugin = {
 				...mockPlugin,
 				apiKey: '',
-				settings: { ...mockPlugin.settings, provider: 'ollama' },
+				settings: routedSettings(mockPlugin.settings, { chat: 'ollama' }),
 			};
 			const ollamaCtx = new ContextManager(ollamaPlugin, mockLogger);
 			const contents = [{ role: 'user', parts: [{ text: 'a'.repeat(400) }] }];
@@ -560,7 +575,7 @@ describe('ContextManager', () => {
 			const ollamaPlugin = {
 				...mockPlugin,
 				apiKey: '',
-				settings: { ...mockPlugin.settings, provider: 'ollama' },
+				settings: routedSettings(mockPlugin.settings, { chat: 'ollama' }),
 			};
 			const ollamaCtx = new ContextManager(ollamaPlugin, mockLogger);
 
@@ -828,7 +843,7 @@ describe('ContextManager', () => {
 			try {
 				const mixedPlugin = {
 					...mockPlugin,
-					settings: { ...mockPlugin.settings, provider: 'gemini', providerOverrides: { summary: 'ollama' } },
+					settings: routedSettings(mockPlugin.settings, { chat: 'gemini', summary: 'ollama' }),
 				};
 				const ctx = new ContextManager(mixedPlugin, mockLogger);
 				ctx.updateUsageMetadata({ promptTokenCount: 250_000, totalTokenCount: 300_000 });
@@ -880,26 +895,35 @@ describe('ContextManager', () => {
 		});
 
 		test('handles empty Gemini summary result with fallback message', async () => {
-			contextManager.updateUsageMetadata({
-				promptTokenCount: 250_000,
-				totalTokenCount: 300_000,
-			});
-			mockCountTokens.mockResolvedValue({ totalTokens: 50_000 });
-			// Return empty summary from generateContent
-			mockGenerateContent.mockResolvedValue({
-				candidates: [{ content: { parts: [{ text: '' }] } }],
-			});
+			// Summarization goes through ModelClientFactory.createFromPlugin(...,
+			// ModelUseCase.SUMMARY), not a direct SDK call — stub the factory to
+			// return an empty response, same as the other factory-routed tests above.
+			const factorySpy = vi
+				.spyOn(ModelClientFactory, 'createFromPlugin')
+				.mockReturnValue({ generateModelResponse: vi.fn().mockResolvedValue({ markdown: '' }) });
 
-			const history = Array.from({ length: 20 }, (_, i) => ({
-				role: i % 2 === 0 ? 'user' : 'model',
-				parts: [{ text: `Message ${i}` }],
-			}));
+			try {
+				contextManager.updateUsageMetadata({
+					promptTokenCount: 250_000,
+					totalTokenCount: 300_000,
+				});
+				mockCountTokens.mockResolvedValue({ totalTokens: 50_000 });
 
-			const result = await contextManager.prepareHistory(history, 'gemini-2.5-flash');
+				const history = Array.from({ length: 20 }, (_, i) => ({
+					role: i % 2 === 0 ? 'user' : 'model',
+					parts: [{ text: `Message ${i}` }],
+				}));
 
-			expect(result.wasCompacted).toBe(true);
-			expect(result.summaryText).toContain('could not be summarized');
-			expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('Summary generation returned empty result'));
+				const result = await contextManager.prepareHistory(history, 'gemini-2.5-flash');
+
+				expect(result.wasCompacted).toBe(true);
+				expect(result.summaryText).toContain('could not be summarized');
+				expect(mockLogger.warn).toHaveBeenCalledWith(
+					expect.stringContaining('Summary generation returned empty result')
+				);
+			} finally {
+				factorySpy.mockRestore();
+			}
 		});
 
 		test('handles Gemini summary with no candidates gracefully', async () => {
@@ -1043,7 +1067,7 @@ describe('ContextManager', () => {
 				const ollamaPlugin = {
 					...mockPlugin,
 					apiKey: '',
-					settings: { ...mockPlugin.settings, provider: 'ollama' },
+					settings: routedSettings(mockPlugin.settings, { chat: 'ollama' }),
 				};
 				return new ContextManager(ollamaPlugin, mockLogger);
 			}
@@ -1104,7 +1128,7 @@ describe('ContextManager', () => {
 				const openaiPlugin = {
 					...mockPlugin,
 					apiKey: '',
-					settings: { ...mockPlugin.settings, provider: 'openai' },
+					settings: routedSettings(mockPlugin.settings, { chat: 'openai' }),
 				};
 				return new ContextManager(openaiPlugin, mockLogger);
 			}

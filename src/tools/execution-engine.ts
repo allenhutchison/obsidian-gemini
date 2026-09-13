@@ -58,8 +58,8 @@ export class ToolExecutionEngine {
 		}
 
 		// Check for execution loops. Always on, with the detector's own fixed
-		// defaults (settings redesign — was gated on `loopDetectionEnabled` with
-		// configurable threshold/window).
+		// defaults (settings redesign — was previously gated by an enable toggle
+		// with a configurable threshold/window).
 		const loopInfo = this.loopDetector.getLoopInfo(context.session.id, toolCall);
 		if (loopInfo.isLoop) {
 			this.plugin.logger.warn(`Loop detected for tool ${toolCall.name}:`, loopInfo);

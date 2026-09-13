@@ -81,8 +81,6 @@ function createMockPlugin(): any {
 		app: {},
 		settings: {
 			chatModelName: 'gemini-2.5-flash',
-			temperature: 1,
-			topP: 0.95,
 		},
 		logger: createMockLogger(),
 		promptManager: {

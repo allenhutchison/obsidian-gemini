@@ -18,7 +18,7 @@ import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory'
 import { truncateOldToolResults } from '../agent/agent-loop-helpers';
 import { getLegacyEntryTextTruthy } from '../utils/history-normalize';
 import { contextWindowForModel, findModelProvider, resolveGenerateContentModel } from '../models';
-import { isProviderActive, resolveProviderOrDefault } from '../api/provider-routing';
+import { featureProvider, isProviderActive } from '../api/feature-routing';
 import { getCapabilities } from '../api/providers/registry';
 
 import contextSummaryPromptContent from '../../prompts/contextSummaryPrompt.hbs';
@@ -120,7 +120,7 @@ export class ContextManager {
 	 * models as Gemini would mean a 1M-token limit and a doomed countTokens call.
 	 */
 	private providerForContextModel(modelName: string | null | undefined) {
-		return findModelProvider(modelName) ?? resolveProviderOrDefault(this.plugin.settings, 'chat');
+		return findModelProvider(modelName) ?? featureProvider(this.plugin.settings, 'chat') ?? 'gemini';
 	}
 
 	/**
@@ -694,7 +694,6 @@ export class ContextManager {
 			const response = await summaryClient.generateModelResponse({
 				kind: 'base',
 				prompt: fullPrompt,
-				temperature: 0.3,
 			});
 			const summary = response.markdown?.trim();
 			if (!summary) {

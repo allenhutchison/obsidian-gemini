@@ -56,7 +56,7 @@ describe('ImageGeneration.validateOutputPath (output-path validator)', () => {
 	beforeEach(() => {
 		const mockPlugin = {
 			apiKey: 'test-key',
-			settings: { historyFolder: 'gemini-scribe', temperature: 0, topP: 0 },
+			settings: { historyFolder: 'gemini-scribe' },
 			logger: { log: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 			app: { vault: { configDir: '.obsidian' } },
 		} as any;
@@ -135,7 +135,10 @@ describe('ImageGeneration.generateAndInsertImage (palette flow)', () => {
 
 		mockPlugin = {
 			apiKey: 'test-key',
-			settings: { historyFolder: 'gemini-scribe', temperature: 0, topP: 0, imageModelName: 'image-model' },
+			settings: {
+				historyFolder: 'gemini-scribe',
+				features: { imageGen: { provider: 'gemini', model: 'image-model' } },
+			},
 			logger: { log: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 			backgroundTaskManager: { submit: mockSubmit },
 			app: {
@@ -293,7 +296,7 @@ describe('ImageGeneration.validateOutputPath – edge cases', () => {
 	const createService = (historyFolder: string | undefined) => {
 		const mockPlugin = {
 			apiKey: 'test-key',
-			settings: { historyFolder, temperature: 0, topP: 0 },
+			settings: { historyFolder },
 			logger: { log: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 			app: { vault: { configDir: '.obsidian' } },
 		} as any;
@@ -341,7 +344,7 @@ describe('ImageGeneration.resolveOutputPath', () => {
 	beforeEach(() => {
 		const mockPlugin = {
 			apiKey: 'test-key',
-			settings: { historyFolder: 'gemini-scribe', temperature: 0, topP: 0 },
+			settings: { historyFolder: 'gemini-scribe' },
 			logger: { log: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 			app: { vault: { configDir: '.obsidian' } },
 		} as any;
@@ -370,7 +373,7 @@ describe('ImageGeneration.resolveDefaultOutputPath', () => {
 	beforeEach(() => {
 		const mockPlugin = {
 			apiKey: 'test-key',
-			settings: { historyFolder: 'my-state', temperature: 0, topP: 0 },
+			settings: { historyFolder: 'my-state' },
 			logger: { log: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 		} as any;
 		service = new ImageGeneration(mockPlugin);
@@ -412,7 +415,7 @@ describe('ImageGeneration.saveImageToVault (private)', () => {
 		createBinaryMock = vi.fn().mockResolvedValue(undefined);
 		mockPlugin = {
 			apiKey: 'test-key',
-			settings: { historyFolder: 'gemini-scribe', temperature: 0, topP: 0 },
+			settings: { historyFolder: 'gemini-scribe' },
 			logger: { log: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 			app: {
 				vault: { configDir: '.obsidian', createBinary: createBinaryMock },
@@ -481,7 +484,7 @@ describe('ImageGeneration.suggestPromptFromPage', () => {
 		vi.clearAllMocks();
 		mockPlugin = {
 			apiKey: 'test-key',
-			settings: { historyFolder: 'gemini-scribe', temperature: 0, topP: 0 },
+			settings: { historyFolder: 'gemini-scribe' },
 			logger: { log: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 			gfile: { getCurrentFileContent: vi.fn() },
 		} as any;
@@ -529,7 +532,7 @@ describe('ImageGeneration.generateImage (agent tool method)', () => {
 
 		mockPlugin = {
 			apiKey: 'test-key',
-			settings: { historyFolder: 'gemini-scribe', temperature: 0, topP: 0, imageModelName: 'imagen-3' },
+			settings: { historyFolder: 'gemini-scribe', features: { imageGen: { provider: 'gemini', model: 'imagen-3' } } },
 			logger: { log: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 			app: {
 				vault: { configDir: '.obsidian', createBinary: createBinaryMock },
@@ -579,7 +582,7 @@ describe('ImageGeneration.generateAndInsertSynchronously – error path', () => 
 
 		mockPlugin = {
 			apiKey: 'test-key',
-			settings: { historyFolder: 'gemini-scribe', temperature: 0, topP: 0, imageModelName: 'imagen-3' },
+			settings: { historyFolder: 'gemini-scribe', features: { imageGen: { provider: 'gemini', model: 'imagen-3' } } },
 			logger: { log: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 			backgroundTaskManager: null, // force synchronous path
 			app: {

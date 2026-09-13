@@ -34,7 +34,7 @@ import { BackgroundTaskManager } from './background-task-manager';
 import { BackgroundStatusBar } from './background-status-bar';
 import { ScheduledTaskManager } from './scheduled-task-manager';
 import { HookManager } from './hook-manager';
-import { resolveProvider } from '../api/provider-routing';
+import { featureStatus } from '../api/provider-status';
 
 import agentsMemoryTemplateContent from '../../prompts/agentsMemoryTemplate.hbs';
 
@@ -188,7 +188,8 @@ export class LifecycleService {
 
 		// Kick off MCP server connections in the background. Fire-and-forget so
 		// the layout-ready path never waits on a slow or unreachable server.
-		if (plugin.mcpManager && plugin.settings.mcpEnabled) {
+		// An empty `mcpServers` list means off — connectAllEnabled() is a no-op then.
+		if (plugin.mcpManager) {
 			void plugin.mcpManager.connectAllEnabled();
 		}
 
@@ -275,8 +276,8 @@ export class LifecycleService {
 
 		// RAG needs a provider with a cloud file-search store. Only Gemini has one,
 		// so a local-only configuration leaves it off unless the user explicitly
-		// routes `rag` to Gemini (#704).
-		if (resolveProvider(plugin.settings, 'rag') === null) {
+		// routes the `rag` feature to a connected Gemini.
+		if (featureStatus(plugin, 'rag') !== 'ok') {
 			await this.disposeRagIndexing();
 			return;
 		}
@@ -491,7 +492,7 @@ export class LifecycleService {
 		// Re-init (settings change after layout is ready): we fire-and-forget
 		// here since onLayoutReady() won't run again.
 		plugin.mcpManager = new MCPManager(plugin);
-		if (plugin.settings.mcpEnabled && plugin.app.workspace.layoutReady) {
+		if (plugin.app.workspace.layoutReady) {
 			void plugin.mcpManager.connectAllEnabled();
 		}
 
@@ -518,7 +519,7 @@ export class LifecycleService {
 		// shows a clear "not available" notice when nothing is routed here,
 		// instead of silently disappearing or pointing at an orphaned closure
 		// after a runtime routing change.
-		if (resolveProvider(plugin.settings, 'imageGen') !== null) {
+		if (featureStatus(plugin, 'imageGen') === 'ok') {
 			plugin.imageGeneration = new ImageGeneration(plugin);
 		}
 

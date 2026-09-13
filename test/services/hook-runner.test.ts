@@ -132,8 +132,6 @@ function createMockPlugin(opts: { existingPaths?: string[]; createBehaviour?: Va
 		settings: {
 			chatModelName: 'gemini-2.0-flash',
 			summaryFrontmatterKey: 'summary',
-			temperature: 1,
-			topP: 0.95,
 		},
 		sessionManager: {
 			releaseSession: vi.fn(),
