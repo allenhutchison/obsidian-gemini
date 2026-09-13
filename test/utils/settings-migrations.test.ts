@@ -1,46 +1,217 @@
-import { migrateInteractionsApiDefault, normalizeStateFolderPath } from '../../src/utils/settings-migrations';
+import { migrateToFeatureRouting, normalizeStateFolderPath } from '../../src/utils/settings-migrations';
 import { shouldExcludePath } from '../../src/utils/file-utils';
+import type { ObsidianGeminiSettings } from '../../src/types/settings';
+import type { MCPServerConfig } from '../../src/mcp/types';
 
-describe('migrateInteractionsApiDefault', () => {
-	it('flips an existing opt-in-era install (persisted false, no marker) to on and marks it', () => {
-		const settings = {
-			useInteractionsApi: false as boolean,
-			useInteractionsApiMigrated: undefined as boolean | undefined,
-		};
-		const migrated = migrateInteractionsApiDefault(settings, { useInteractionsApi: false });
+/** Minimal settings fixture the function under test reads/writes; cast covers the rest. */
+function makeSettings(overrides: Partial<ObsidianGeminiSettings> = {}): ObsidianGeminiSettings {
+	return {
+		defaultProvider: 'gemini',
+		features: {} as ObsidianGeminiSettings['features'],
+		providerModelMemory: {},
+		mcpServers: [],
+		anthropicApiKeySecretName: '',
+		settingsSchemaVersion: 1,
+		...overrides,
+	} as ObsidianGeminiSettings;
+}
+
+const REMOVED_KEYS = [
+	'provider',
+	'providerOverrides',
+	'chatModelName',
+	'summaryModelName',
+	'completionsModelName',
+	'imageModelName',
+	'ollamaModelName',
+	'ollamaSummaryModelName',
+	'ollamaCompletionsModelName',
+	'openaiModelName',
+	'openaiSummaryModelName',
+	'openaiCompletionsModelName',
+	'maxRetries',
+	'initialBackoffDelay',
+	'streamingEnabled',
+	'useInteractionsApi',
+	'useInteractionsApiMigrated',
+	'temperature',
+	'topP',
+	'loopDetectionEnabled',
+	'loopDetectionThreshold',
+	'loopDetectionTimeWindowSeconds',
+	'mcpEnabled',
+	'expandedSettingsSections',
+] as const;
+
+describe('migrateToFeatureRouting', () => {
+	it('migrates a no-overrides Gemini install: every feature on gemini', () => {
+		const settings = makeSettings();
+		const migrated = migrateToFeatureRouting(settings, { provider: 'gemini' });
 
 		expect(migrated).toBe(true);
-		expect(settings.useInteractionsApi).toBe(true);
-		expect(settings.useInteractionsApiMigrated).toBe(true);
+		expect(settings.defaultProvider).toBe('gemini');
+		for (const f of Object.keys(settings.features) as (keyof typeof settings.features)[]) {
+			expect(settings.features[f].provider).toBe('gemini');
+		}
 	});
 
-	it('does not re-flip a user who turned the transport back off after migrating', () => {
-		const settings = { useInteractionsApi: false as boolean, useInteractionsApiMigrated: true };
-		const migrated = migrateInteractionsApiDefault(settings, {
-			useInteractionsApi: false,
-			useInteractionsApiMigrated: true,
+	// The B3 regression: an Ollama-primary install with no overrides must land
+	// its Gemini-only features on 'none', never silently on 'gemini'.
+	it('an Ollama-primary install with no overrides routes cloud-only features to none', () => {
+		const settings = makeSettings();
+		migrateToFeatureRouting(settings, { provider: 'ollama' });
+
+		expect(settings.features.chat.provider).toBe('ollama');
+		expect(settings.features.summary.provider).toBe('ollama');
+		expect(settings.features.completions.provider).toBe('ollama');
+		expect(settings.features.rewrite.provider).toBe('ollama');
+		expect(settings.features.webSearch.provider).toBe('none');
+		expect(settings.features.deepResearch.provider).toBe('none');
+		expect(settings.features.rag.provider).toBe('none');
+		expect(settings.features.imageGen.provider).toBe('none');
+	});
+
+	it('resolves ollamaSummaryModelName: "" to inherit ollamaModelName', () => {
+		const settings = makeSettings();
+		migrateToFeatureRouting(settings, {
+			provider: 'ollama',
+			ollamaModelName: 'llama3',
+			ollamaSummaryModelName: '',
 		});
 
-		expect(migrated).toBe(false);
-		expect(settings.useInteractionsApi).toBe(false);
+		expect(settings.providerModelMemory.ollama?.summary).toBe('llama3');
+		expect(settings.features.summary.model).toBe('llama3');
 	});
 
-	it('leaves an install that already had the transport on untouched', () => {
-		const settings = {
-			useInteractionsApi: true as boolean,
-			useInteractionsApiMigrated: undefined as boolean | undefined,
-		};
-		const migrated = migrateInteractionsApiDefault(settings, { useInteractionsApi: true });
+	it('an explicit webSearch override also routes deepResearch to the same provider', () => {
+		const settings = makeSettings();
+		migrateToFeatureRouting(settings, {
+			provider: 'ollama',
+			providerOverrides: { rag: 'gemini', webSearch: 'gemini' },
+		});
 
-		expect(migrated).toBe(false);
-		expect(settings.useInteractionsApi).toBe(true);
+		expect(settings.features.webSearch.provider).toBe('gemini');
+		expect(settings.features.deepResearch.provider).toBe('gemini');
+		expect(settings.features.rag.provider).toBe('gemini');
 	});
 
-	it('does not migrate a fresh install (no persisted value)', () => {
-		const settings = { useInteractionsApi: true as boolean, useInteractionsApiMigrated: true };
-		expect(migrateInteractionsApiDefault(settings, {})).toBe(false);
-		expect(migrateInteractionsApiDefault(settings, null)).toBe(false);
-		expect(migrateInteractionsApiDefault(settings, undefined)).toBe(false);
+	// An explicit override is always honoured, even when the stored value is
+	// itself invalid for that feature — mapping to 'none', never to defaultProvider.
+	it('a hand-written capability-invalid override maps to none, not to the default provider', () => {
+		const settings = makeSettings();
+		migrateToFeatureRouting(settings, {
+			provider: 'gemini',
+			providerOverrides: { rag: 'ollama' },
+		});
+
+		expect(settings.features.rag.provider).toBe('none');
+	});
+
+	it('mcpEnabled absent with configured servers disables every server', () => {
+		const servers: MCPServerConfig[] = [
+			{ id: 'a', enabled: true } as unknown as MCPServerConfig,
+			{ id: 'b', enabled: true } as unknown as MCPServerConfig,
+		];
+		const settings = makeSettings({ mcpServers: servers });
+		migrateToFeatureRouting(settings, { provider: 'gemini' });
+
+		expect(settings.mcpServers.every((s) => s.enabled === false)).toBe(true);
+	});
+
+	it('mcpEnabled: false with configured servers disables every server', () => {
+		const servers: MCPServerConfig[] = [{ id: 'a', enabled: true } as unknown as MCPServerConfig];
+		const settings = makeSettings({ mcpServers: servers });
+		migrateToFeatureRouting(settings, { provider: 'gemini', mcpEnabled: false });
+
+		expect(settings.mcpServers.every((s) => s.enabled === false)).toBe(true);
+	});
+
+	it("mcpEnabled: true leaves each server's own enabled flag alone", () => {
+		const servers: MCPServerConfig[] = [
+			{ id: 'a', enabled: true } as unknown as MCPServerConfig,
+			{ id: 'b', enabled: false } as unknown as MCPServerConfig,
+		];
+		const settings = makeSettings({ mcpServers: servers });
+		migrateToFeatureRouting(settings, { provider: 'gemini', mcpEnabled: true });
+
+		expect(settings.mcpServers[0].enabled).toBe(true);
+		expect(settings.mcpServers[1].enabled).toBe(false);
+	});
+
+	it('deletes every removed key from the result', () => {
+		// Simulate Object.assign already having copied the legacy fields onto
+		// the merged settings object, the way loadSettings() does.
+		const settings = makeSettings({
+			provider: 'gemini',
+			providerOverrides: {},
+			chatModelName: 'gemini-3-pro',
+			maxRetries: 3,
+			temperature: 0.7,
+			mcpEnabled: false,
+		});
+		migrateToFeatureRouting(settings, { provider: 'gemini', chatModelName: 'gemini-3-pro' });
+
+		for (const key of REMOVED_KEYS) {
+			expect((settings as unknown as Record<string, unknown>)[key]).toBeUndefined();
+		}
+	});
+
+	it('leaves anthropicApiKeySecretName untouched', () => {
+		const settings = makeSettings({ anthropicApiKeySecretName: 'my-secret' });
+		migrateToFeatureRouting(settings, { provider: 'gemini' });
+		expect(settings.anthropicApiKeySecretName).toBe('my-secret');
+	});
+
+	it('is idempotent: running it a second time on the already-migrated settings is a no-op', () => {
+		const settings = makeSettings();
+		migrateToFeatureRouting(settings, { provider: 'ollama', providerOverrides: { rag: 'gemini' } });
+		const snapshot = JSON.parse(JSON.stringify(settings));
+
+		const migratedAgain = migrateToFeatureRouting(settings, {
+			provider: 'ollama',
+			providerOverrides: { rag: 'gemini' },
+			settingsSchemaVersion: 2,
+			features: settings.features,
+		});
+
+		expect(migratedAgain).toBe(false);
+		expect(settings).toEqual(snapshot);
+	});
+
+	// Guards the downgrade round-trip: settingsSchemaVersion survives a
+	// downgrade to a pre-redesign release (which writes its own shape back),
+	// but `features` doesn't — keying only on the version would skip the
+	// migration on the way back up and discard what the old release wrote.
+	it('re-runs when settingsSchemaVersion is 2 but features is missing (post-downgrade re-upgrade)', () => {
+		const settings = makeSettings();
+		const migrated = migrateToFeatureRouting(settings, {
+			provider: 'ollama',
+			settingsSchemaVersion: 2,
+			// no `features` key — as a pre-redesign release would have written
+		});
+
+		expect(migrated).toBe(true);
+		expect(settings.features.chat.provider).toBe('ollama');
+	});
+
+	it('does not run when rawData is null/undefined (fresh install)', () => {
+		expect(migrateToFeatureRouting(makeSettings(), null)).toBe(false);
+		expect(migrateToFeatureRouting(makeSettings(), undefined)).toBe(false);
+	});
+
+	// Folds in the old migrateOllamaModelSetting: before ollamaModelName
+	// existed, an Ollama-primary install's single picker wrote to
+	// chatModelName, so that field held an Ollama model, not a Gemini one.
+	it('a v1 Ollama install that never set ollamaModelName treats chatModelName as the Ollama model', () => {
+		const settings = makeSettings();
+		migrateToFeatureRouting(settings, {
+			provider: 'ollama',
+			chatModelName: 'llama3',
+		});
+
+		expect(settings.providerModelMemory.gemini).toBeUndefined();
+		expect(settings.providerModelMemory.ollama?.chat).toBe('llama3');
+		expect(settings.features.chat.model).toBe('llama3');
 	});
 });
 

@@ -8,12 +8,22 @@
 import {
 	getCapabilities,
 	PROVIDER_IDS,
-	PROVIDER_USE_CASES,
 	PROVIDERS,
 	providerSupports,
 	providersSupporting,
-	type ProviderUseCase,
+	type ProviderFeatureId,
 } from '../../src/api/providers/registry';
+
+const ROUTABLE_FEATURES: ProviderFeatureId[] = [
+	'chat',
+	'summary',
+	'completions',
+	'rewrite',
+	'webSearch',
+	'deepResearch',
+	'rag',
+	'imageGen',
+];
 
 describe('capability matrix', () => {
 	it('matches the documented Gemini capabilities', () => {
@@ -23,8 +33,10 @@ describe('capability matrix', () => {
 		expect(caps.completions).toBe(true);
 		expect(caps.rewrite).toBe(true);
 		expect(caps.webSearch).toBe(true);
+		expect(caps.deepResearch).toBe(true);
 		expect(caps.rag).toBe(true);
 		expect(caps.imageGen).toBe(true);
+		expect(caps.maps).toBe(true);
 		expect(caps.requiresApiKey).toBe(true);
 		expect(caps.nativeTokenCount).toBe(true);
 		expect(caps.customBaseUrl).toBe(true);
@@ -39,8 +51,10 @@ describe('capability matrix', () => {
 		// Cloud-only features. Flipping any of these to true without shipping a
 		// local implementation would silently enable a broken code path.
 		expect(caps.webSearch).toBe(false);
+		expect(caps.deepResearch).toBe(false);
 		expect(caps.rag).toBe(false);
 		expect(caps.imageGen).toBe(false);
+		expect(caps.maps).toBe(false);
 		expect(caps.requiresApiKey).toBe(false);
 		expect(caps.nativeTokenCount).toBe(false);
 		// One resident model at a time (#1077).
@@ -55,12 +69,14 @@ describe('capability matrix', () => {
 		expect(caps.rewrite).toBe(true);
 		// Cloud-only features this phase doesn't implement for OpenAI.
 		expect(caps.webSearch).toBe(false);
+		expect(caps.deepResearch).toBe(false);
 		expect(caps.rag).toBe(false);
 		expect(caps.imageGen).toBe(false);
+		expect(caps.maps).toBe(false);
 		expect(caps.requiresApiKey).toBe(true);
 		expect(caps.nativeTokenCount).toBe(false);
 		expect(caps.customBaseUrl).toBe(true);
-		// Each use case keeps its own model — no single-resident-model constraint.
+		// Each feature keeps its own model — no single-resident-model constraint.
 		expect(caps.perUseCaseModels).toBe(true);
 	});
 
@@ -70,16 +86,15 @@ describe('capability matrix', () => {
 		expect(PROVIDERS.openai.capabilities.defaultInputTokenLimit).toBe(128_000);
 	});
 
-	it('declares every routable use case for every provider', () => {
+	it('declares every routable feature for every provider', () => {
 		for (const id of PROVIDER_IDS) {
-			for (const useCase of PROVIDER_USE_CASES) {
-				expect(typeof PROVIDERS[id].capabilities[useCase]).toBe('boolean');
+			for (const feature of ROUTABLE_FEATURES) {
+				expect(typeof PROVIDERS[id].capabilities[feature]).toBe('boolean');
 			}
 		}
 	});
 
-	// Chat is the floor: a provider that can't chat can't be a primary, and
-	// `resolveProviderOrDefault` would have nothing to fall back to.
+	// Chat is the floor: a provider that can't chat can't be a default provider.
 	it('has every provider support chat', () => {
 		for (const id of PROVIDER_IDS) {
 			expect(providerSupports(id, 'chat')).toBe(true);
@@ -92,6 +107,7 @@ describe('lookup helpers', () => {
 		expect(providersSupporting('chat')).toEqual(['gemini', 'ollama', 'openai']);
 		expect(providersSupporting('rag')).toEqual(['gemini']);
 		expect(providersSupporting('imageGen')).toEqual(['gemini']);
+		expect(providersSupporting('deepResearch')).toEqual(['gemini']);
 	});
 
 	it('providerSupports rejects unknown providers rather than throwing', () => {
@@ -107,10 +123,16 @@ describe('lookup helpers', () => {
 		expect(getCapabilities(undefined)).toBe(PROVIDERS.gemini.capabilities);
 	});
 
-	it('covers every use case in the exported list', () => {
-		const declared = new Set<ProviderUseCase>(PROVIDER_USE_CASES);
-		expect(declared).toEqual(
-			new Set<ProviderUseCase>(['chat', 'summary', 'completions', 'rewrite', 'webSearch', 'rag', 'imageGen'])
-		);
+	it('covers every routable feature for every declared provider', () => {
+		for (const id of PROVIDER_IDS) {
+			for (const feature of ROUTABLE_FEATURES) {
+				expect(typeof PROVIDERS[id].capabilities[feature]).toBe('boolean');
+			}
+		}
+	});
+
+	it('carries a setup-guide docsUrl for the local/self-hosted providers', () => {
+		expect(PROVIDERS.ollama.docsUrl).toBeTruthy();
+		expect(PROVIDERS.openai.docsUrl).toBeTruthy();
 	});
 });
