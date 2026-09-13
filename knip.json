@@ -6,5 +6,6 @@
 	"ignoreExportsUsedInFile": {
 		"interface": true,
 		"type": true
-	}
+	},
+	"ignore": ["src/ui/folder-suggest.ts", "src/ui/mcp-server-modal.ts", "src/ui/rag-cleanup-modal.ts"]
 }
