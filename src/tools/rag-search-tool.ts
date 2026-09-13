@@ -4,6 +4,7 @@ import { ToolClassification } from '../types/tool-policy';
 import { getRawErrorMessage } from '../utils/error-utils';
 import { executeWithRetry } from '../utils/retry';
 import { resolveGenerateContentModel } from '../models';
+import { featureModel } from '../api/feature-routing';
 
 /**
  * Search result from RAG semantic search
@@ -201,10 +202,11 @@ export class RagSearchTool implements Tool {
 				fileSearchConfig.metadataFilter = metadataFilter;
 			}
 
-			// Perform search using generateContent with File Search tool.
-			// Use the configured chat model for consistency; an interactions-only
-			// chat model falls back to the bundled default since File Search runs
-			// on generateContent.
+			// Perform search using generateContent with File Search tool. This
+			// synthesis call is a chat-tier call (RAG the feature has no model of
+			// its own — it's Google's managed File Search embeddings); an
+			// interactions-only chat model falls back to the bundled default
+			// since File Search runs on generateContent.
 			//
 			// Wrapped in executeWithRetry like every other direct SDK call site
 			// (web-fetch, the grounding tools, the RAG vault scanner): a transient
@@ -212,7 +214,7 @@ export class RagSearchTool implements Tool {
 			const response = await executeWithRetry(
 				() =>
 					ai.models.generateContent({
-						model: resolveGenerateContentModel(plugin.settings.chatModelName),
+						model: resolveGenerateContentModel(featureModel(plugin.settings, 'chat')),
 						contents: `Search for information about: ${params.query}\n\nProvide a summary of the most relevant findings from the indexed documents. Include specific file references when available.`,
 						config: {
 							tools: [

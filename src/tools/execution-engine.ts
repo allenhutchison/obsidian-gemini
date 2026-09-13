@@ -24,10 +24,7 @@ export class ToolExecutionEngine {
 	constructor(plugin: ObsidianGemini, registry: ToolRegistry) {
 		this.plugin = plugin;
 		this.registry = registry;
-		this.loopDetector = new ToolLoopDetector(
-			plugin.settings.loopDetectionThreshold,
-			plugin.settings.loopDetectionTimeWindowSeconds
-		);
+		this.loopDetector = new ToolLoopDetector();
 	}
 
 	/**
@@ -60,37 +57,31 @@ export class ToolExecutionEngine {
 			};
 		}
 
-		// Check for execution loops if enabled
-		if (this.plugin.settings.loopDetectionEnabled) {
-			// Update loop detector config in case settings changed
-			this.loopDetector.updateConfig(
-				this.plugin.settings.loopDetectionThreshold ?? 3,
-				this.plugin.settings.loopDetectionTimeWindowSeconds ?? 30
-			);
+		// Check for execution loops. Always on, with the detector's own fixed
+		// defaults (settings redesign — was gated on `loopDetectionEnabled` with
+		// configurable threshold/window).
+		const loopInfo = this.loopDetector.getLoopInfo(context.session.id, toolCall);
+		if (loopInfo.isLoop) {
+			this.plugin.logger.warn(`Loop detected for tool ${toolCall.name}:`, loopInfo);
 
-			const loopInfo = this.loopDetector.getLoopInfo(context.session.id, toolCall);
-			if (loopInfo.isLoop) {
-				this.plugin.logger.warn(`Loop detected for tool ${toolCall.name}:`, loopInfo);
-
-				// Surface the fire on the event bus so UI (and headless) subscribers can react.
-				// Emit is fire-and-forget; a throwing subscriber must not block the block.
-				try {
-					void this.plugin.agentEventBus?.emit('toolLoopDetected', {
-						toolName: toolCall.name,
-						args: toolCall.arguments || {},
-						identicalCallCount: loopInfo.identicalCallCount,
-						timeWindowMs: loopInfo.timeWindowMs,
-					});
-				} catch (error) {
-					this.plugin.logger.error('Failed to emit toolLoopDetected event:', error);
-				}
-
-				return {
-					success: false,
-					loopDetected: true,
-					error: `Execution loop detected: ${toolCall.name} has been called ${loopInfo.identicalCallCount} times with the same parameters in the last ${loopInfo.timeWindowMs / 1000} seconds. Please try a different approach.`,
-				};
+			// Surface the fire on the event bus so UI (and headless) subscribers can react.
+			// Emit is fire-and-forget; a throwing subscriber must not block the block.
+			try {
+				void this.plugin.agentEventBus?.emit('toolLoopDetected', {
+					toolName: toolCall.name,
+					args: toolCall.arguments || {},
+					identicalCallCount: loopInfo.identicalCallCount,
+					timeWindowMs: loopInfo.timeWindowMs,
+				});
+			} catch (error) {
+				this.plugin.logger.error('Failed to emit toolLoopDetected event:', error);
 			}
+
+			return {
+				success: false,
+				loopDetected: true,
+				error: `Execution loop detected: ${toolCall.name} has been called ${loopInfo.identicalCallCount} times with the same parameters in the last ${loopInfo.timeWindowMs / 1000} seconds. Please try a different approach.`,
+			};
 		}
 
 		// Check if tool is enabled for current session

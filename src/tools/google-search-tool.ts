@@ -2,6 +2,8 @@ import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import { runGroundingTool } from './grounding-tool-runner';
+import { featureModel } from '../api/feature-routing';
+import { resolveGenerateContentModel } from '../models';
 
 /**
  * Google Search tool that uses a separate model instance with search grounding.
@@ -39,6 +41,7 @@ export class GoogleSearchTool implements Tool {
 	async execute(params: { query: string }, context: ToolExecutionContext): Promise<ToolResult> {
 		return runGroundingTool(context.plugin, {
 			query: params.query,
+			model: resolveGenerateContentModel(featureModel(context.plugin.settings, 'webSearch')),
 			groundingTool: { googleSearch: {} },
 			// Web-search evidence lives on `chunk.web`. `snippet` isn't in the SDK's
 			// GroundingChunkWeb type but the API returns it, so read it via a narrow cast.

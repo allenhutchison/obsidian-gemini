@@ -15,14 +15,6 @@ export class ToolLoopDetector {
 	}
 
 	/**
-	 * Update configuration
-	 */
-	updateConfig(loopThreshold: number, timeWindowSeconds: number) {
-		this.loopThreshold = loopThreshold;
-		this.timeWindowMs = timeWindowSeconds * 1000;
-	}
-
-	/**
 	 * Record a tool execution
 	 */
 	recordExecution(sessionId: string, toolCall: ToolCall) {

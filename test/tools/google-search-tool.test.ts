@@ -52,8 +52,9 @@ describe('GoogleSearchTool', () => {
 			plugin: {
 				apiKey: 'test-api-key',
 				settings: {
-					chatModelName: 'gemini-1.5-flash-002',
-					temperature: 0.7,
+					features: {
+						webSearch: { provider: 'gemini', model: 'gemini-1.5-flash-002' },
+					},
 				},
 			},
 			session: {
@@ -130,7 +131,6 @@ describe('GoogleSearchTool', () => {
 			expect(mockGenAI.models.generateContent).toHaveBeenCalledWith({
 				model: 'gemini-1.5-flash-002',
 				config: {
-					temperature: 0.7,
 					maxOutputTokens: 8192,
 					tools: [{ googleSearch: {} }],
 				},
@@ -187,7 +187,7 @@ describe('GoogleSearchTool', () => {
 		});
 
 		it('should use default model when not specified', async () => {
-			(mockContext.plugin as any).settings.chatModelName = undefined;
+			(mockContext.plugin as any).settings.features.webSearch.model = '';
 
 			const mockResponse = {
 				candidates: [
