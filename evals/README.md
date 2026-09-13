@@ -53,14 +53,14 @@ Rule of thumb: `N=3` for day-to-day development, `N=5` or more if you're publish
 
 ## Model overrides
 
-By default the harness uses whatever `chatModelName` is currently set in the plugin's settings. Pass `--model=<id>` to override that for the duration of the run:
+By default the harness uses whatever `features.chat.model` is currently set in the plugin's settings. Pass `--model=<id>` to override that for the duration of the run:
 
 ```bash
 npm run eval -- --model=gemini-2.5-flash-lite
 npm run eval -- --model=gemini-2.5-pro --repeat=5
 ```
 
-The override is **transient**: it's applied in memory at the start of the run and restored on exit (including on Ctrl-C / SIGTERM). The settings are **not** persisted to disk, so the user's configured models are unaffected. `--model=` sets **all three** model fields — `chatModelName`, `summaryModelName`, and `completionsModelName` — so summary- and completion-driven tasks exercise the requested model too, not just chat.
+The override is **transient**: it's applied in memory at the start of the run and restored on exit (including on Ctrl-C / SIGTERM). The settings are **not** persisted to disk, so the user's configured models are unaffected. `--model=` sets **all three** model fields — `features.chat.model`, `features.summary.model`, and `features.completions.model` — so summary- and completion-driven tasks exercise the requested model too, not just chat.
 
 The override stamps into the result file's `model` field, so a multi-model sweep produces one result file per model that can be compared and trended independently. Use the built-in sweep (below) or a shell loop:
 
@@ -99,7 +99,7 @@ These paths are Ollama-only and degrade to a no-op (with a one-line warning) if 
 npm run eval -- --model=gemma4:latest --provider=ollama
 ```
 
-Valid values are `gemini` and `ollama`. The override mirrors `--model=`: it's applied to `plugin.settings.provider` in memory at the start of the run, restored on exit (including SIGINT/SIGTERM), and never persisted to disk. Without it, an Ollama sweep needs a manual **Settings → Gemini Scribe → provider** toggle in the UI — which blocks unattended automation. The judge (always Gemini) is independent; set `EVAL_JUDGE_API_KEY` if the plugin has no Gemini key configured.
+Valid values are `gemini` and `ollama`. The override mirrors `--model=`: it's applied to `plugin.settings.features.chat.provider` in memory at the start of the run, restored on exit (including SIGINT/SIGTERM), and never persisted to disk. Without it, an Ollama sweep needs a manual **Settings → Gemini Scribe → Features → Chat and agent → Provider** toggle in the UI — which blocks unattended automation. The judge (always Gemini) is independent; set `EVAL_JUDGE_API_KEY` if the plugin has no Gemini key configured.
 
 ## Comparing against a baseline
 
@@ -369,8 +369,8 @@ ps aux | grep "node evals/run.mjs" | grep -v grep
 ps aux | grep "obsidian eval" | grep -v grep
 # 3. No leaked collector / subscribers
 obsidian eval code="JSON.stringify({hasCollector:typeof window.__evalCollector !== 'undefined', subs:(window.__evalUnsubscribers||[]).length, scratch:!!app.vault.getAbstractFileByPath('eval-scratch')})"
-# 4. chatModelName matches what you expect (model override was restored)
-obsidian eval code="app.plugins.plugins['gemini-scribe'].settings.chatModelName"
+# 4. features.chat.model matches what you expect (model override was restored)
+obsidian eval code="app.plugins.plugins['gemini-scribe'].settings.features?.chat?.model"
 ```
 
 If any of these show stale state, kill / clean before starting the new run. The harness's interrupt handler tries to restore everything but doesn't always succeed (see #777 for one known leak).
