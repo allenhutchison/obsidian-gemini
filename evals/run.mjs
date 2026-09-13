@@ -126,7 +126,7 @@ function parseArgs() {
 // `--model=` / `--models=` override chat, summary, AND completions models for
 // the run (#716) — the originals of all three are captured on the first
 // override so restore is exact even across a multi-model sweep.
-let originalModels = null; // { chatModelName, summaryModelName, completionsModelName }
+let originalModels = null; // { 'features.chat.model', 'features.summary.model', 'features.completions.model' }
 let modelWasOverridden = false;
 let originalProvider = null;
 let providerWasOverridden = false;
@@ -137,7 +137,7 @@ let completedTaskCount = 0;
 let totalPlannedTasks = 0;
 let interruptInProgress = false;
 
-const MODEL_SETTING_KEYS = ['chatModelName', 'summaryModelName', 'completionsModelName'];
+const MODEL_SETTING_KEYS = ['features.chat.model', 'features.summary.model', 'features.completions.model'];
 
 /**
  * Point chat, summary, and completions at `model` for the run. Captures the
@@ -172,7 +172,7 @@ async function restoreModelOverride() {
 async function restoreProvider() {
 	if (!providerWasOverridden) return;
 	try {
-		await setSetting('provider', originalProvider);
+		await setSetting('features.chat.provider', originalProvider);
 	} catch (err) {
 		console.error(`Failed to restore provider: ${err.message}`);
 	}
@@ -309,21 +309,23 @@ function getGitSha() {
 }
 
 /**
- * The provider serving *chat*, which is what eval tasks exercise. Since #704
- * that may differ from `settings.provider` — an install can route chat to one
- * provider and summaries or search to another — so resolve the override the
- * same way the plugin does. Cost and cache metrics below key off this value.
+ * The provider serving *chat*, which is what eval tasks exercise. Since the
+ * settings redesign this is `settings.features.chat.provider` — the routing
+ * table's per-feature entry — falling back to `settings.defaultProvider` for
+ * a feature entry that was never set (matches `featureProvider`'s seed rule
+ * in `src/api/feature-routing.ts`). Cost and cache metrics below key off
+ * this value.
  */
 const CHAT_PROVIDER_EXPR =
-	"(app.plugins.plugins['gemini-scribe'].settings.providerOverrides || {}).chat || " +
-	"app.plugins.plugins['gemini-scribe'].settings.provider || 'gemini'";
+	"app.plugins.plugins['gemini-scribe'].settings.features?.chat?.provider || " +
+	"app.plugins.plugins['gemini-scribe'].settings.defaultProvider || 'gemini'";
 
 async function getModelName() {
-	// The chat model lives in a different settings field per provider, so read
-	// the one that matches whichever provider actually serves chat.
+	// The model lives in the chat feature's own route now, regardless of which
+	// provider serves it — no more per-provider field to pick between.
 	const result = await obsidianEval(
 		`(function () { const s = app.plugins.plugins['gemini-scribe'].settings; ` +
-			`return (${CHAT_PROVIDER_EXPR}) === 'ollama' ? (s.ollamaModelName || 'unknown') : (s.chatModelName || 'unknown'); })()`
+			`return s.features?.chat?.model || 'unknown'; })()`
 	);
 	return result.replace(/^["']|["']$/g, '');
 }
@@ -695,8 +697,8 @@ async function main() {
 	// for hands-free cross-provider sweeps; without it, an Ollama run from a
 	// Gemini-default setup needed a manual UI toggle (#845).
 	if (providerOverride) {
-		originalProvider = await getSetting('provider');
-		await setSetting('provider', providerOverride);
+		originalProvider = await getSetting('features.chat.provider');
+		await setSetting('features.chat.provider', providerOverride);
 		providerWasOverridden = true;
 		console.log(`Overriding provider: ${originalProvider ?? '(unset)'} → ${providerOverride}`);
 	}
@@ -770,7 +772,7 @@ async function main() {
 			}
 			// Warm whichever model the run will actually use — the override target,
 			// or the plugin's current chat model when no override was passed.
-			const effectiveModel = model ?? (await getSetting('chatModelName'));
+			const effectiveModel = model ?? (await getSetting('features.chat.model'));
 			await prepareOllamaModel(effectiveModel, provider);
 
 			const result = await runAllTasks({ tasks, repeat, keepArtifacts, provider, judgeFn });
