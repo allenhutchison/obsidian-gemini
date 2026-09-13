@@ -54,7 +54,7 @@ describe('AgentFactory', () => {
 	});
 
 	describe('createAgentModel', () => {
-		it('should delegate to ModelClientFactory.createChatModel with session model config', () => {
+		it('should delegate to ModelClientFactory.createChatModel with just the plugin', () => {
 			const plugin = createMockPlugin();
 			const modelConfig: SessionModelConfig = {
 				model: 'gemini-2.5-pro',
@@ -63,16 +63,16 @@ describe('AgentFactory', () => {
 
 			AgentFactory.createAgentModel(plugin, session);
 
-			expect(ModelClientFactory.createChatModel).toHaveBeenCalledWith(plugin, modelConfig);
+			expect(ModelClientFactory.createChatModel).toHaveBeenCalledWith(plugin);
 		});
 
-		it('should pass undefined modelConfig when session has none', () => {
+		it('does not thread the session through when it has no modelConfig', () => {
 			const plugin = createMockPlugin();
 			const session = createMockSession({ modelConfig: undefined });
 
 			AgentFactory.createAgentModel(plugin, session);
 
-			expect(ModelClientFactory.createChatModel).toHaveBeenCalledWith(plugin, undefined);
+			expect(ModelClientFactory.createChatModel).toHaveBeenCalledWith(plugin);
 		});
 
 		it('should return the ModelApi instance from the factory', () => {
