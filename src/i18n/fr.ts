@@ -435,8 +435,6 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'agent.header.loading': 'Chargement...',
 	'agent.header.loadingProjectTooltip': 'Chargement du projet...',
 	'agent.header.tooltipModel': 'Modèle : {value}',
-	'agent.header.tooltipTemperature': 'Température : {value}',
-	'agent.header.tooltipTopP': 'Top-P : {value}',
 	'agent.header.tooltipPrompt': 'Prompt : {value}',
 	'agent.header.promptBadgeFallback': 'Personnalisé',
 	'agent.header.menuAria': 'Menu de session',
@@ -555,11 +553,6 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'agent.sessionSettings.modelDesc': "Sélectionner le modèle d'IA pour cette session",
 	'agent.sessionSettings.useDefault': 'Utiliser par défaut',
 	'agent.sessionSettings.resetToDefault': 'Réinitialiser aux valeurs par défaut',
-	'agent.sessionSettings.temperature': 'Température',
-	'agent.sessionSettings.temperatureDesc': "Contrôle l'aléa (0 = déterministe, 2 = très créatif)",
-	'agent.sessionSettings.topP': 'Top-P',
-	'agent.sessionSettings.topPDesc':
-		"Seuil d'échantillonnage de noyau (0 = uniquement le meilleur jeton, 1 = tous les jetons)",
 	'agent.sessionSettings.promptTemplate': 'Modèle de prompt',
 	'agent.sessionSettings.promptTemplateDesc': 'Sélectionner un modèle de prompt personnalisé pour cette session',
 	'agent.sessionSettings.useDefaultPrompt': 'Utiliser le prompt par défaut',
@@ -787,14 +780,6 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'notice.rewrite.selectionDone': 'Texte réécrit avec succès',
 	'notice.rewrite.rewritingFile': 'Réécriture du fichier entier...',
 	'notice.rewrite.fileDone': 'Fichier réécrit avec succès',
-	'validation.temperature.notANumber': "La température {value} n'est pas un nombre valide. Ajustée à {adjusted}.",
-	'validation.temperature.exceedsModelLimit':
-		'La température {value} dépasse la limite de {model} de {max}. Ajustée à {max}.',
-	'validation.temperature.outOfRange':
-		'La température {value} est en dehors de la plage valide [{min}, {max}]. Ajustée à {adjusted}.',
-	'validation.topP.notANumber': "Le Top P {value} n'est pas un nombre valide. Ajusté à {adjusted}.",
-	'validation.topP.outOfRange':
-		'Le Top P {value} est en dehors de la plage valide [{min}, {max}]. Ajusté à {adjusted}.',
 	'agent.planMode.toggleAria': "Activer/désactiver le mode Plan — examiner un plan avant l'exécution par l'agent",
 	'agent.planMode.label': 'Plan',
 	'agent.planMode.headerLabel': 'Agent (Plan)',

@@ -428,8 +428,6 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'agent.header.loading': '読み込み中...',
 	'agent.header.loadingProjectTooltip': 'プロジェクトを読み込み中...',
 	'agent.header.tooltipModel': 'モデル: {value}',
-	'agent.header.tooltipTemperature': '温度: {value}',
-	'agent.header.tooltipTopP': 'Top-P: {value}',
 	'agent.header.tooltipPrompt': 'プロンプト: {value}',
 	'agent.header.promptBadgeFallback': 'カスタム',
 	'agent.header.menuAria': 'セッションメニュー',
@@ -549,11 +547,6 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'agent.sessionSettings.modelDesc': 'このセッションで使用するAIモデルを選択します',
 	'agent.sessionSettings.useDefault': 'デフォルトを使用',
 	'agent.sessionSettings.resetToDefault': 'デフォルトにリセット',
-	'agent.sessionSettings.temperature': '温度',
-	'agent.sessionSettings.temperatureDesc': 'ランダム性を制御します (0 = 決定論的、2 = 非常にクリエイティブ)',
-	'agent.sessionSettings.topP': 'Top-P',
-	'agent.sessionSettings.topPDesc':
-		'ニュークリアスサンプリングのしきい値 (0 = 最上位トークンのみ、1 = すべてのトークン)',
 	'agent.sessionSettings.promptTemplate': 'プロンプトテンプレート',
 	'agent.sessionSettings.promptTemplateDesc': 'このセッション用のカスタムプロンプトテンプレートを選択します',
 	'agent.sessionSettings.useDefaultPrompt': 'デフォルトのプロンプトを使用',
@@ -774,14 +767,6 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'notice.rewrite.selectionDone': 'テキストの書き換えが完了しました',
 	'notice.rewrite.rewritingFile': 'ファイル全体を書き換え中...',
 	'notice.rewrite.fileDone': 'ファイルの書き換えが完了しました',
-	'validation.temperature.notANumber': '温度 {value} は有効な数値ではありません。{adjusted} に調整されました。',
-	'validation.temperature.exceedsModelLimit':
-		'温度 {value} は {model} の上限値 {max} を超えています。{max} に調整されました。',
-	'validation.temperature.outOfRange':
-		'温度 {value} は有効な範囲 [{min}, {max}] の外にあります。{adjusted} に調整されました。',
-	'validation.topP.notANumber': 'Top P {value} は有効な数値ではありません。{adjusted} に調整されました。',
-	'validation.topP.outOfRange':
-		'Top P {value} は有効な範囲 [{min}, {max}] の外にあります。{adjusted} に調整されました。',
 	'agent.planMode.toggleAria': '計画モードの切り替え — エージェントが実行する前に計画を確認します',
 	'agent.planMode.label': '計画',
 	'agent.planMode.headerLabel': 'エージェント (計画)',

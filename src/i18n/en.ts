@@ -1635,16 +1635,6 @@ export const en = {
 		message: 'Model: {value}',
 		context: 'Line in the session-settings badge tooltip. {value} is a model name (untranslated).',
 	},
-	'agent.header.tooltipTemperature': {
-		message: 'Temperature: {value}',
-		context:
-			'Line in the session-settings badge tooltip. "Temperature" is the AI sampling parameter; {value} is a number.',
-	},
-	'agent.header.tooltipTopP': {
-		message: 'Top-P: {value}',
-		context:
-			'Line in the session-settings badge tooltip. "Top-P" is the nucleus-sampling parameter; {value} is a number.',
-	},
 	'agent.header.tooltipPrompt': {
 		message: 'Prompt: {value}',
 		context: 'Line in the session-settings badge tooltip. {value} is the name of a custom prompt template.',
@@ -2105,22 +2095,6 @@ export const en = {
 	'agent.sessionSettings.resetToDefault': {
 		message: 'Reset to default',
 		context: 'Tooltip on the reset button next to each session setting.',
-	},
-	'agent.sessionSettings.temperature': {
-		message: 'Temperature',
-		context: 'Setting name: the AI sampling temperature parameter.',
-	},
-	'agent.sessionSettings.temperatureDesc': {
-		message: 'Controls randomness (0 = deterministic, 2 = very creative)',
-		context: 'Description of the Temperature setting.',
-	},
-	'agent.sessionSettings.topP': {
-		message: 'Top-P',
-		context: 'Setting name: the nucleus-sampling parameter. Usually kept as "Top-P" in all languages.',
-	},
-	'agent.sessionSettings.topPDesc': {
-		message: 'Nucleus sampling threshold (0 = only top token, 1 = all tokens)',
-		context: 'Description of the Top-P setting. "Token" is the AI text-unit term.',
 	},
 	'agent.sessionSettings.promptTemplate': {
 		message: 'Prompt template',
@@ -3017,27 +2991,6 @@ export const en = {
 		message: 'File rewritten successfully',
 		context: 'Toast notification when the AI finishes rewriting the whole file.',
 	},
-	'validation.temperature.notANumber': {
-		message: 'Temperature {value} is not a valid number. Adjusted to {adjusted}.',
-		context: 'Warning notice in settings when the temperature sampling parameter is not a number.',
-	},
-	'validation.temperature.exceedsModelLimit': {
-		message: 'Temperature {value} exceeds {model} limit of {max}. Adjusted to {max}.',
-		context:
-			"Warning notice in settings when temperature is above the selected model's maximum. {model} is a model name.",
-	},
-	'validation.temperature.outOfRange': {
-		message: 'Temperature {value} is outside valid range [{min}, {max}]. Adjusted to {adjusted}.',
-		context: 'Warning notice in settings when temperature is outside the allowed range.',
-	},
-	'validation.topP.notANumber': {
-		message: 'Top P {value} is not a valid number. Adjusted to {adjusted}.',
-		context: 'Warning notice in settings when the Top P sampling parameter is not a number.',
-	},
-	'validation.topP.outOfRange': {
-		message: 'Top P {value} is outside valid range [{min}, {max}]. Adjusted to {adjusted}.',
-		context: 'Warning notice in settings when Top P is outside the allowed range.',
-	},
 	'agent.planMode.toggleAria': {
 		message: 'Toggle Plan Mode — review a plan before the agent executes',
 		context: 'Accessibility label for the Plan Mode toggle button in the agent send bar.',
@@ -3216,16 +3169,6 @@ export const en = {
 		message: 'HTTP error {statusCode}: An unexpected error occurred.',
 		context: 'A non-4xx, non-5xx status with no detail text. {statusCode} is the numeric HTTP status.',
 	},
-
-	// --- WP3 keys ---
-	// Settings redesign, work package 3: the Vault search index, Scheduled
-	// tasks, Lifecycle hooks, MCP servers, Tool permissions, and Advanced
-	// settings sub-pages (src/ui/settings/page-{vault-index,scheduled-tasks,
-	// hooks,mcp,tool-permissions,advanced}.ts). Appended here rather than
-	// inlined near the WP0-seeded `settings.main.*` / `settings.features.*`
-	// keys per AGENTS.md's parallel-work-package convention (never hand-edit
-	// a non-English locale file; this block gets merged in place at
-	// integration).
 
 	// -- Advanced page --
 	'settings.advanced.compactionThresholdName': {
@@ -3609,7 +3552,6 @@ export const en = {
 		context:
 			'Notice shown when the YOLO confirmation modal fails to load while switching the tool-permission preset. {error} is the failure detail.',
 	},
-	// --- WP2 keys ---
 	'settings.common.listSeparator': {
 		message: ' · ',
 		context:

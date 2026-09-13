@@ -5377,7 +5377,6 @@ body.theme-dark {
 	color: var(--text-warning);
 }
 
-/* --- WP3 settings pages --- */
 /* Tool permissions page: filter pills above the searchable tool list
    (settings-redesign design doc §7). Rendered by page-tool-permissions.ts's
    filterPillsRow(); one .gemini-tool-filter-pill per classification, plus

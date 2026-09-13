@@ -433,8 +433,6 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'agent.header.loading': 'Загрузка...',
 	'agent.header.loadingProjectTooltip': 'Загрузка проекта...',
 	'agent.header.tooltipModel': 'Модель: {value}',
-	'agent.header.tooltipTemperature': 'Температура: {value}',
-	'agent.header.tooltipTopP': 'Top-P: {value}',
 	'agent.header.tooltipPrompt': 'Промпт: {value}',
 	'agent.header.promptBadgeFallback': 'Пользовательский',
 	'agent.header.menuAria': 'Меню сессии',
@@ -551,10 +549,6 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'agent.sessionSettings.modelDesc': 'Выберите модель ИИ для этой сессии',
 	'agent.sessionSettings.useDefault': 'Использовать по умолчанию',
 	'agent.sessionSettings.resetToDefault': 'Сбросить по умолчанию',
-	'agent.sessionSettings.temperature': 'Температура',
-	'agent.sessionSettings.temperatureDesc': 'Управляет случайностью (0 = детерминированный, 2 = очень творческий)',
-	'agent.sessionSettings.topP': 'Top-P',
-	'agent.sessionSettings.topPDesc': 'Порог ядерной выборки (0 = только верхний токен, 1 = все токены)',
 	'agent.sessionSettings.promptTemplate': 'Шаблон промпта',
 	'agent.sessionSettings.promptTemplateDesc': 'Выберите пользовательский шаблон промпта для этой сессии',
 	'agent.sessionSettings.useDefaultPrompt': 'Использовать промпт по умолчанию',
@@ -777,15 +771,6 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'notice.rewrite.selectionDone': 'Текст успешно перезаписан',
 	'notice.rewrite.rewritingFile': 'Перезапись всего файла...',
 	'notice.rewrite.fileDone': 'Файл успешно перезаписан',
-	'validation.temperature.notANumber':
-		'Температура {value} не является допустимым числом. Скорректировано на {adjusted}.',
-	'validation.temperature.exceedsModelLimit':
-		'Температура {value} превышает лимит {model}, равный {max}. Скорректировано на {max}.',
-	'validation.temperature.outOfRange':
-		'Температура {value} находится вне допустимого диапазона [{min}, {max}]. Скорректировано на {adjusted}.',
-	'validation.topP.notANumber': 'Параметр Top P {value} не является допустимым числом. Скорректировано на {adjusted}.',
-	'validation.topP.outOfRange':
-		'Параметр Top P {value} находится вне допустимого диапазона [{min}, {max}]. Скорректировано на {adjusted}.',
 	'agent.planMode.toggleAria': 'Переключить режим планирования — просмотр плана перед выполнением агентом',
 	'agent.planMode.label': 'План',
 	'agent.planMode.headerLabel': 'Агент (План)',
