@@ -5,7 +5,7 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 > **Note:** Connect a provider in plugin settings → **Providers**:
 >
 > - **Google Gemini (cloud)** — requires a Gemini API key (free tier available at [Google AI Studio](https://aistudio.google.com/apikey)).
-> - **Ollama (local)** — runs locally with no API key; install [Ollama](https://ollama.com), pull a model, and select it on the Ollama card. See [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) for details.
+> - **Ollama** — runs on your machine with no API key; install [Ollama](https://ollama.com), pull a model, and select it on the Ollama card. Ollama cloud models (marked "cloud" in the picker) are forwarded to ollama.com. See [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) for details.
 > - **OpenAI (cloud)** — requires your own OpenAI API key, or point it at an OpenAI-compatible server (LM Studio, MLX, ...) with any placeholder key. See [docs/guide/openai-setup.md](docs/guide/openai-setup.md) for details.
 >
 > Then route each feature to a provider on the **Features** page. See the [provider capability matrix](docs/reference/provider-capabilities.md) for what's supported on each.

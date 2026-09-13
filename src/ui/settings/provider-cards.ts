@@ -125,7 +125,7 @@ export async function refreshGeminiModelList(
  * `tab.update()` when it resolves — guarded by a per-card generation token so
  * a stale probe started before a base-URL change can't overwrite a fresher one.
  */
-const modelCountCache = new Map<CardProviderId, number>();
+const modelCountCache = new Map<CardProviderId, { total: number; cloud: number }>();
 const modelCountGeneration = new Map<CardProviderId, number>();
 
 function bumpGeneration(id: CardProviderId): number {
@@ -164,7 +164,7 @@ function loadModelCount(ctx: SettingsContext, id: CardProviderId, userInitiated:
 					);
 				}
 			}
-			modelCountCache.set(id, models.length);
+			modelCountCache.set(id, { total: models.length, cloud: models.filter((m) => m.remoteHost).length });
 			// The model count is a plain `desc` string, not a `displayValue`/`status`
 			// function — `refreshDomState()` only re-evaluates those in place, so
 			// picking up the new count needs a full `update()` (design doc §5.7).
@@ -195,9 +195,11 @@ function modelsSummary(ctx: SettingsContext, id: CardProviderId): string {
 		loadModelCount(ctx, id, false);
 		return t('settings.providers.modelsLoading');
 	}
-	return id === 'ollama'
-		? t('settings.providers.modelsPulled', { count: cached })
-		: t('settings.providers.modelsAvailable', { count: cached });
+	if (id !== 'ollama') return t('settings.providers.modelsAvailable', { count: cached.total });
+	const pulled = cached.total - cached.cloud;
+	return cached.cloud > 0
+		? t('settings.providers.modelsPulledAndCloud', { count: pulled, cloud: cached.cloud })
+		: t('settings.providers.modelsPulled', { count: pulled });
 }
 
 function refreshModels(ctx: SettingsContext, id: CardProviderId): void {

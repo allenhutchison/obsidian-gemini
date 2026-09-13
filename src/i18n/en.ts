@@ -97,8 +97,9 @@ export const en = {
 		context: 'Dropdown option label for the Google Gemini cloud provider. "Google Gemini" is a product name.',
 	},
 	'settings.general.providerOptionOllama': {
-		message: 'Ollama (local)',
-		context: 'Dropdown option label for the Ollama local provider. "Ollama" is a product name.',
+		message: 'Ollama',
+		context:
+			'Dropdown option label for the Ollama provider. Not qualified as "local": Ollama serves models pulled to this machine and can also proxy to Ollama cloud models. "Ollama" is a product name.',
 	},
 	'settings.general.providerOptionOpenai': {
 		message: 'OpenAI (cloud)',
@@ -3636,6 +3637,16 @@ export const en = {
 		message: '{count} available',
 		context: 'Model-count summary for a cloud provider (Gemini, OpenAI). {count} is the number of models.',
 	},
+	'settings.providers.modelsPulledAndCloud': {
+		message: '{count} pulled · {cloud} cloud',
+		context:
+			'Model-count summary for Ollama when some models are Ollama cloud models proxied to ollama.com. {count} is the number of locally pulled models; {cloud} is the number of cloud models.',
+	},
+	'settings.providers.ollamaCloudModelLabel': {
+		message: '{model} (cloud)',
+		context:
+			'Model dropdown label for an Ollama cloud model, which Ollama forwards to ollama.com instead of running locally. {model} is the model name.',
+	},
 	'settings.providers.modelsPulled': {
 		message: '{count} pulled',
 		context:
@@ -3713,7 +3724,7 @@ export const en = {
 	},
 	'settings.providers.privacyNoticeDesc': {
 		message:
-			"Only the providers your features actually use ever receive your content. A local provider (Ollama) keeps everything on this machine; a cloud provider (Gemini, OpenAI) sends the request to that company's servers.",
+			'Only the providers your features actually use ever receive your content. Ollama keeps requests on this machine, except for models marked "cloud", which it forwards to ollama.com. Gemini and OpenAI send the request to that company\'s servers.',
 		context:
 			'The single privacy note on the Providers page, replacing four separate variants from the previous settings layout. "Ollama", "Gemini", and "OpenAI" are product names.',
 	},

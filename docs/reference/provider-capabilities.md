@@ -1,6 +1,6 @@
 # Provider Capabilities
 
-Gemini Scribe can run on the **Google Gemini (cloud)**, **Ollama (local)**, or **OpenAI (cloud)** provider. Connect one or more providers on the Providers page, pick a **default provider** for anything you haven't routed elsewhere, and route individual features to a specific provider on the [Features page](/reference/settings#features). Some features depend on Gemini-specific cloud APIs and are unavailable on Ollama and OpenAI. This page is the single source of truth for what works where; `docs/guide/ollama-setup.md` and `docs/guide/openai-setup.md` link here instead of duplicating the table.
+Gemini Scribe can run on the **Google Gemini (cloud)**, **Ollama** (models pulled to your machine, plus optional Ollama cloud models), or **OpenAI (cloud)** provider. Connect one or more providers on the Providers page, pick a **default provider** for anything you haven't routed elsewhere, and route individual features to a specific provider on the [Features page](/reference/settings#features). Some features depend on Gemini-specific cloud APIs and are unavailable on Ollama and OpenAI. This page is the single source of truth for what works where; `docs/guide/ollama-setup.md` and `docs/guide/openai-setup.md` link here instead of duplicating the table.
 
 ## Capability matrix
 

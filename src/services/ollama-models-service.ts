@@ -1,6 +1,7 @@
 import { requestUrl } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { GeminiModel } from '../models';
+import { t } from '../i18n';
 
 /**
  * Models that Ollama exposes for completions are tiny by convention. We pre-bias
@@ -361,9 +362,9 @@ export class OllamaModelsService {
 
 	private formatLabel(m: OllamaTagsModel): string {
 		const param = m.details?.parameter_size;
-		if (param) {
-			return `${m.name} (${param})`;
-		}
-		return m.name;
+		const base = param ? `${m.name} (${param})` : m.name;
+		// Cloud entries are local manifests that proxy to ollama.com; say so in
+		// the picker, since the provider itself is otherwise "on this machine".
+		return m.remote_host ? t('settings.providers.ollamaCloudModelLabel', { model: base }) : base;
 	}
 }
