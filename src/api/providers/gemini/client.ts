@@ -5,24 +5,13 @@
  * streamlined implementation powered by @google/genai.
  */
 import { createGoogleGenAI } from './google-genai-factory';
-import {
-	GoogleGenAI,
-	Content,
-	Part,
-	GenerateContentConfig,
-	GenerateContentParameters,
-	GenerateContentResponse,
-	GenerateContentResponseUsageMetadata,
-	FunctionDeclaration,
-	Schema,
-} from '@google/genai';
+import { GoogleGenAI, Content, GenerateContentParameters } from '@google/genai';
 import type { ThinkingLevel } from '@google/genai';
 import {
 	ModelApi,
 	BaseModelRequest,
 	ExtendedModelRequest,
 	ModelResponse,
-	ToolCall,
 	StreamCallback,
 	StreamingModelResponse,
 	isExtendedRequest,
@@ -30,7 +19,6 @@ import {
 import { GeminiPrompts } from '../../../prompts';
 import type { ObsidianGemini } from '../../../types/plugin';
 import { getDefaultModelForRole, isInteractionsOnlyModel } from '../../../models';
-import { decodeHtmlEntities } from '../../../utils/html-entities';
 import { normalizeToContent } from '../../../utils/history-normalize';
 import type { GeminiClientConfig } from './config';
 import { ModelUseCase } from '../../model-use-case';
@@ -43,13 +31,12 @@ import {
 	InteractionStreamAccumulator,
 	type InteractionStep,
 } from './interactions-mapper';
-import { renderGroundingSources } from './grounding-render';
 
 /**
- * Per-use-case reasoning depth for Gemini 3.x `thinkingConfig.thinkingLevel`,
- * replacing the legacy global `thinkingBudget: -1` (which Gemini 2.5 models
- * still require on `generateContent` — see `supportsThinkingLevel`). These are
- * starting points
+ * Per-use-case reasoning depth for Gemini 3.x `thinkingConfig.thinkingLevel`
+ * on the Interactions API (which accepts `thinking_level` for every
+ * thinking-capable model, including Gemini 2.5 — see `supportsThinking`).
+ * These are starting points
  * (see #621; tune against the eval suite in #619): latency-sensitive paths
  * think the least, while CHAT — which is the agent loop — thinks the most.
  *
@@ -86,11 +73,7 @@ export class GeminiClient implements ModelApi {
 	private plugin?: ObsidianGemini;
 
 	constructor(config: GeminiClientConfig, prompts?: GeminiPrompts, plugin?: ObsidianGemini) {
-		this.config = {
-			temperature: 1.0,
-			topP: 0.95,
-			...config,
-		};
+		this.config = config;
 		this.plugin = plugin;
 		this.prompts = prompts || new GeminiPrompts(plugin);
 		this.ai = this.plugin ? createGoogleGenAI(this.plugin, config.apiKey) : new GoogleGenAI({ apiKey: config.apiKey });
@@ -106,38 +89,13 @@ export class GeminiClient implements ModelApi {
 	}
 
 	/**
-	 * Whether a request for `model` routes through the GA Interactions API.
-	 * Interactions-only models (e.g. gemini-omni-flash-preview) always do —
-	 * `generateContent` rejects them with a 400 ("This model only supports
-	 * Interactions API") — regardless of the user's transport toggle. Otherwise
-	 * the per-client config decides (set by the factory), falling back to live
-	 * plugin settings for `createCustom` callers that don't thread the flag
-	 * through.
-	 */
-	private usesInteractions(model: string): boolean {
-		if (isInteractionsOnlyModel(model)) {
-			return true;
-		}
-		return this.config.useInteractionsApi ?? this.plugin?.settings?.useInteractionsApi ?? false;
-	}
-
-	/**
-	 * Generate a non-streaming response
+	 * Generate a non-streaming response.
+	 *
+	 * The conversational transport unconditionally uses the GA Interactions API
+	 * as of the settings redesign (the "Use Interactions API" toggle is gone).
 	 */
 	async generateModelResponse(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
-		if (this.usesInteractions(this.resolveModel(request))) {
-			return this.generateViaInteractions(request);
-		}
-
-		const params = await this.buildGenerateContentParams(request);
-
-		try {
-			const response = await this.ai.models.generateContent(params);
-			return this.extractModelResponse(response);
-		} catch (error) {
-			this.plugin?.logger.error('[GeminiClient] Error generating content:', error);
-			throw error;
-		}
+		return this.generateViaInteractions(request);
 	}
 
 	/**
@@ -244,10 +202,9 @@ export class GeminiClient implements ModelApi {
 	}
 
 	/**
-	 * Build Interactions `create` params from our request format, mirroring
-	 * `buildGenerateContentParams` but emitting the snake_case Interactions
-	 * surface. Stateless: full history is replayed in `input` and `store` is
-	 * false, so no `previous_interaction_id` is used.
+	 * Build Interactions `create` params from our request format, emitting the
+	 * snake_case Interactions surface. Stateless: full history is replayed in
+	 * `input` and `store` is false, so no `previous_interaction_id` is used.
 	 */
 	private async buildInteractionParams(
 		request: BaseModelRequest | ExtendedModelRequest
@@ -256,8 +213,6 @@ export class GeminiClient implements ModelApi {
 		const model = this.resolveModel(request);
 
 		const generationConfig: Record<string, unknown> = {
-			temperature: request.temperature ?? this.config.temperature,
-			top_p: request.topP ?? this.config.topP,
 			...(this.config.maxOutputTokens && { max_output_tokens: this.config.maxOutputTokens }),
 		};
 		// Interactions uses lowercase thinking levels; reuse the per-use-case map.
@@ -334,395 +289,25 @@ export class GeminiClient implements ModelApi {
 	}
 
 	/**
-	 * Generate a streaming response
+	 * Generate a streaming response.
+	 *
+	 * The conversational transport unconditionally uses the GA Interactions API
+	 * as of the settings redesign (the "Use Interactions API" toggle is gone).
 	 */
 	generateStreamingResponse(
 		request: BaseModelRequest | ExtendedModelRequest,
 		onChunk: StreamCallback
 	): StreamingModelResponse {
-		if (this.usesInteractions(this.resolveModel(request))) {
-			return this.streamViaInteractions(request, onChunk);
-		}
-
-		let cancelled = false;
-		// The `cancelled` flag alone only stops the loop on the *next* chunk, so a
-		// stalled or slow stream keeps the request alive after Stop. Thread an
-		// abort signal into the request from the start — the SDK rejects the
-		// in-flight fetch when it fires, which the cancelled-in-catch arm below
-		// turns into the accumulated partial response. Same shape the sibling
-		// `streamViaInteractions` and the Ollama/OpenAI clients already use.
-		const controller = new AbortController();
-		let accumulatedText = '';
-		let accumulatedRendered = '';
-		let accumulatedThoughts = '';
-		let toolCalls: ToolCall[] | undefined;
-		let lastUsageMetadata: GenerateContentResponseUsageMetadata | undefined = undefined;
-
-		const complete = (async (): Promise<ModelResponse> => {
-			const params = await this.buildGenerateContentParams(request);
-			params.config = { ...params.config, abortSignal: controller.signal };
-
-			// Assemble the response from the current accumulator state. Called from
-			// both the success return and the cancelled-in-catch return, which must
-			// produce the identical shape.
-			const buildResponse = (): ModelResponse => ({
-				markdown: accumulatedText,
-				rendered: accumulatedRendered,
-				...(accumulatedThoughts && { thoughts: accumulatedThoughts }),
-				...(toolCalls && { toolCalls }),
-				...(lastUsageMetadata && { usageMetadata: lastUsageMetadata }),
-			});
-
-			try {
-				const stream = await this.ai.models.generateContentStream(params);
-
-				for await (const chunk of stream) {
-					if (cancelled) {
-						break;
-					}
-
-					// Extract text from chunk
-					const chunkText = this.extractTextFromChunk(chunk);
-					if (chunkText) {
-						accumulatedText += chunkText;
-					}
-
-					// Extract thought content from chunk
-					const chunkThought = this.extractThoughtFromChunk(chunk);
-					if (chunkThought) {
-						accumulatedThoughts += chunkThought;
-						this.plugin?.logger.debug(`[GeminiClient] Sending thought chunk to callback`);
-					}
-
-					// Call callback with both text and thought if either is present
-					if (chunkText || chunkThought) {
-						onChunk({
-							text: chunkText,
-							...(chunkThought && { thought: chunkThought }),
-						});
-					}
-
-					// Accumulate tool calls across chunks, preserving thought signatures.
-					// The model may stream different tool calls in separate chunks, or
-					// repeat the same calls with/without signatures in later chunks.
-					// Match by id when available (supports parallel calls to the same tool),
-					// fall back to name matching for older API versions without ids.
-					const chunkToolCalls = this.extractToolCallsFromChunk(chunk);
-					if (chunkToolCalls?.length) {
-						if (!toolCalls) {
-							toolCalls = chunkToolCalls;
-						} else {
-							for (const newCall of chunkToolCalls) {
-								const existing = newCall.id
-									? toolCalls.find((tc) => tc.id === newCall.id)
-									: toolCalls.find((tc) => tc.name === newCall.name);
-								if (!existing) {
-									toolCalls.push(newCall);
-								} else if (!existing.thoughtSignature && newCall.thoughtSignature) {
-									existing.thoughtSignature = newCall.thoughtSignature;
-								}
-							}
-						}
-					}
-
-					// Extract search grounding (rendered HTML)
-					const rendered = this.extractRenderedFromChunk(chunk);
-					if (rendered) {
-						accumulatedRendered += rendered;
-					}
-
-					// Capture usageMetadata from chunks (usually present in last chunk)
-					if (chunk.usageMetadata) {
-						lastUsageMetadata = chunk.usageMetadata;
-						this.plugin?.logger.debug(
-							`[GeminiClient] Captured usageMetadata from streaming chunk: ` +
-								`prompt=${chunk.usageMetadata.promptTokenCount}, ` +
-								`total=${chunk.usageMetadata.totalTokenCount}, ` +
-								`cached=${chunk.usageMetadata.cachedContentTokenCount ?? 0}`
-						);
-					}
-				}
-
-				if (!lastUsageMetadata) {
-					this.plugin?.logger.debug('[GeminiClient] No usageMetadata received from any streaming chunk');
-				}
-
-				return buildResponse();
-			} catch (error) {
-				if (cancelled) {
-					return buildResponse();
-				}
-				this.plugin?.logger.error('[GeminiClient] Streaming error:', error);
-				throw error;
-			}
-		})();
-
-		return {
-			complete,
-			cancel: () => {
-				cancelled = true;
-				try {
-					// Safe to call at any point: the controller exists before the request
-					// is built, so an abort that lands during setup pre-aborts the signal
-					// the SDK is about to read.
-					controller.abort();
-				} catch (err) {
-					this.plugin?.logger.debug('[GeminiClient] Abort failed:', err);
-				}
-			},
-		};
+		return this.streamViaInteractions(request, onChunk);
 	}
 
 	/**
-	 * Build GenerateContentParameters from our request format
+	 * Check if a model supports thinking/reasoning mode. Gated on this alone —
+	 * unlike `generateContent`, the Interactions API accepts `thinking_level`
+	 * for every thinking-capable model (Gemini 2.5, 3.x, thinking-exp) and
+	 * normalizes it server-side, so there is no separate "does this model take
+	 * the 3.x-only knob" check on this transport.
 	 */
-	private async buildGenerateContentParams(
-		request: BaseModelRequest | ExtendedModelRequest
-	): Promise<GenerateContentParameters> {
-		const isExtended = isExtendedRequest(request);
-		const model = this.resolveModel(request);
-
-		// Build system instruction
-		let systemInstruction = '';
-		if (isExtended) {
-			// Build layered system prompt: identity → vault context → project →
-			// agent rules → tool catalog → custom instructions → per-turn context
-			systemInstruction = await this.prompts.buildExtendedSystemInstruction(request);
-		} else {
-			// For BaseModelRequest, prompt is the full input
-			systemInstruction = request.prompt || '';
-		}
-
-		// Build conversation contents
-		const contents = this.buildContents(request);
-
-		// Build config
-		const config: GenerateContentConfig = {
-			temperature: request.temperature ?? this.config.temperature,
-			topP: request.topP ?? this.config.topP,
-			...(this.config.maxOutputTokens && { maxOutputTokens: this.config.maxOutputTokens }),
-			...(systemInstruction && { systemInstruction }),
-		};
-
-		// Add thinking config if model supports it. Gemini 3.x models take a
-		// per-use-case `thinkingLevel`; older thinking models (Gemini 2.5,
-		// thinking-exp) reject that knob with a 400 ("Thinking level is not
-		// supported for this model") and take the legacy `thinkingBudget` instead
-		// — send exactly one knob, never both. `includeThoughts` stays true so
-		// reasoning persistence (#965) keeps receiving thought parts.
-		if (this.supportsThinking(model)) {
-			config.thinkingConfig = this.supportsThinkingLevel(model)
-				? {
-						includeThoughts: true,
-						thinkingLevel: THINKING_LEVEL_BY_USE_CASE[this.config.useCase ?? ModelUseCase.CHAT],
-					}
-				: { includeThoughts: true, thinkingBudget: -1 };
-		}
-
-		// Add function calling tools
-		const hasTools = isExtended && request.availableTools?.length;
-		if (hasTools) {
-			const tools = request.availableTools!;
-			const functionDeclarations: FunctionDeclaration[] = tools.map((tool) => ({
-				name: tool.name,
-				description: tool.description,
-				// The SDK's `Schema.type` is the upper-case `Type` enum, but the Gemini API
-				// also accepts the lower-case OpenAPI `'object'` this plugin has always sent;
-				// keep that wire value and narrow the hand-built schema (whose `properties`
-				// come from the provider-agnostic `Record<string, unknown>` bag) to `Schema`.
-				parameters: {
-					type: 'object',
-					properties: tool.parameters.properties || {},
-					required: tool.parameters.required || [],
-				} as unknown as Schema,
-			}));
-
-			config.tools = config.tools || [];
-			config.tools.push({ functionDeclarations });
-		}
-
-		// Build params
-		// If no contents built, use a simple string from the prompt
-		let finalContents: Content[] | string = contents;
-		if (contents.length === 0 && !isExtended) {
-			// For BaseModelRequest with no conversation, just pass the prompt as string
-			finalContents = request.prompt || '';
-		} else if (contents.length === 0 && isExtendedRequest(request)) {
-			// For ExtendedModelRequest with no history, create a simple user message
-			finalContents = request.userMessage || '';
-		}
-
-		const params: GenerateContentParameters = {
-			model,
-			contents: finalContents,
-			config,
-		};
-
-		return params;
-	}
-
-	/**
-	 * Build Content[] array from request
-	 */
-	private buildContents(request: BaseModelRequest | ExtendedModelRequest): Content[] {
-		if (!isExtendedRequest(request)) {
-			// BaseModelRequest - just send the prompt as user message
-			if (!request.prompt) return [];
-			return [
-				{
-					role: 'user',
-					parts: [{ text: request.prompt }],
-				},
-			];
-		}
-
-		const extReq = request;
-		const contents: Content[] = [];
-
-		// Add conversation history
-		if (extReq.conversationHistory?.length) {
-			for (const entry of extReq.conversationHistory) {
-				const content = this.normalizeHistoryEntry(entry);
-				if (content) contents.push(content);
-			}
-		}
-
-		// Build user message parts (text + images)
-		const userParts: Part[] = [];
-
-		// Add text content if present
-		if (extReq.userMessage && extReq.userMessage.trim()) {
-			userParts.push({ text: extReq.userMessage });
-		}
-
-		// Add per-turn files and context if present
-		if (extReq.perTurnContext && extReq.perTurnContext.trim()) {
-			userParts.push({ text: extReq.perTurnContext });
-		}
-
-		// Add inline data attachments (images, audio, video, PDF)
-		const allAttachments = extReq.inlineAttachments ?? [];
-		for (const attachment of allAttachments) {
-			userParts.push({
-				inlineData: {
-					mimeType: attachment.mimeType,
-					data: attachment.base64,
-				},
-			});
-		}
-
-		// Add current user message with all parts (only if there are parts)
-		if (userParts.length > 0) {
-			contents.push({
-				role: 'user',
-				parts: userParts,
-			});
-		}
-
-		return contents;
-	}
-
-	/**
-	 * Extract ModelResponse from GenerateContentResponse
-	 */
-	private extractModelResponse(response: GenerateContentResponse): ModelResponse {
-		let markdown = '';
-		let rendered = '';
-		let thoughts = '';
-		let toolCalls: ToolCall[] | undefined;
-
-		// Extract text and thoughts from candidates
-		if (response.candidates?.[0]?.content?.parts) {
-			for (const part of response.candidates[0].content.parts) {
-				if ('text' in part && part.text) {
-					// Separate thought content from regular content
-					if (part.thought) {
-						thoughts += part.text;
-					} else {
-						markdown += part.text;
-					}
-				}
-			}
-		}
-
-		// Decode HTML entities that Gemini sometimes returns
-		markdown = decodeHtmlEntities(markdown);
-
-		// Extract tool calls
-		toolCalls = this.extractToolCallsFromResponse(response);
-
-		// Extract search grounding
-		rendered = this.extractRenderedFromResponse(response);
-
-		return {
-			markdown,
-			rendered,
-			...(thoughts && { thoughts }),
-			...(toolCalls && { toolCalls }),
-			...(response.usageMetadata && {
-				usageMetadata: {
-					promptTokenCount: response.usageMetadata.promptTokenCount,
-					candidatesTokenCount: response.usageMetadata.candidatesTokenCount,
-					totalTokenCount: response.usageMetadata.totalTokenCount,
-					cachedContentTokenCount: response.usageMetadata.cachedContentTokenCount,
-					// Reasoning tokens for thinking models — the SDK reports them
-					// here and they are folded into totalTokenCount (#1437).
-					...(response.usageMetadata.thoughtsTokenCount !== undefined && {
-						thoughtsTokenCount: response.usageMetadata.thoughtsTokenCount,
-					}),
-				},
-			}),
-		};
-	}
-
-	/**
-	 * Extract text from streaming chunk
-	 */
-	private extractTextFromChunk(chunk: GenerateContentResponse): string {
-		if (chunk.candidates?.[0]?.content?.parts) {
-			const text = chunk.candidates[0].content.parts
-				.filter((part: Part) => 'text' in part && part.text && !part.thought)
-				.map((part: Part) => part.text)
-				.join('');
-			return decodeHtmlEntities(text);
-		}
-		return '';
-	}
-
-	/**
-	 * Extract thought/reasoning content from streaming chunk
-	 */
-	private extractThoughtFromChunk(chunk: GenerateContentResponse): string {
-		if (chunk.candidates?.[0]?.content?.parts) {
-			const parts = chunk.candidates[0].content.parts;
-			const thoughtParts = parts.filter((part: Part) => part.thought && part.text);
-
-			if (thoughtParts.length > 0) {
-				const thoughtText = thoughtParts.map((part: Part) => part.text).join('');
-				const preview = thoughtText.length > 100 ? thoughtText.substring(0, 100) + '...' : thoughtText;
-				this.plugin?.logger.debug(`[GeminiClient] Extracted thought: ${preview}`);
-				return thoughtText;
-			}
-		}
-		return '';
-	}
-
-	/**
-	 * Check if a model supports thinking/reasoning mode
-	 */
-	/**
-	 * Whether the model takes the Gemini 3.x `thinkingConfig.thinkingLevel` knob
-	 * on `generateContent`. Older thinking-capable models (Gemini 2.5,
-	 * thinking-exp) reject it with a 400 INVALID_ARGUMENT ("Thinking level is
-	 * not supported for this model") and use the legacy `thinkingBudget`
-	 * instead. The Interactions path is unaffected — that API accepts
-	 * `thinking_level` for 2.5 models and normalizes it server-side (while
-	 * rejecting `thinking_budget` outright), so it always sends the level.
-	 */
-	private supportsThinkingLevel(model: string): boolean {
-		return model.toLowerCase().includes('gemini-3');
-	}
-
 	private supportsThinking(model: string | undefined): boolean {
 		if (!model) {
 			this.plugin?.logger.debug('[GeminiClient] No model specified for thinking check');
@@ -741,76 +326,12 @@ export class GeminiClient implements ModelApi {
 	}
 
 	/**
-	 * Extract tool calls from response
-	 */
-	private extractToolCallsFromResponse(response: GenerateContentResponse): ToolCall[] | undefined {
-		const parts = response.candidates?.[0]?.content?.parts;
-		if (!parts) return undefined;
-
-		const toolCalls: ToolCall[] = [];
-		for (const part of parts) {
-			if ('functionCall' in part && part.functionCall && part.functionCall.name) {
-				const signature = part.thoughtSignature;
-
-				// Debug logging to verify extraction
-				this.plugin?.logger.debug(
-					`[GeminiClient] Extracted tool call: ${part.functionCall.name}, ` +
-						`has signature: ${signature !== undefined}`
-				);
-
-				toolCalls.push({
-					name: part.functionCall.name,
-					arguments: part.functionCall.args || {},
-					id: part.functionCall.id,
-					thoughtSignature: signature,
-				});
-			}
-		}
-
-		return toolCalls.length > 0 ? toolCalls : undefined;
-	}
-
-	/**
-	 * Extract tool calls from streaming chunk
-	 */
-	private extractToolCallsFromChunk(chunk: GenerateContentResponse): ToolCall[] | undefined {
-		return this.extractToolCallsFromResponse(chunk);
-	}
-
-	/**
-	 * Extract rendered HTML from response (search grounding)
-	 */
-	private extractRenderedFromResponse(response: GenerateContentResponse): string {
-		// Search grounding metadata is in groundingMetadata
-		const metadata = response.candidates?.[0]?.groundingMetadata;
-		if (!metadata) return '';
-
-		// Normalize web chunks to the shared renderer's shape. `chunk.web.uri` /
-		// `chunk.web.title` are untrusted grounding metadata, so rendering goes
-		// through the single hardened renderer (escaped + scheme-validated + rel)
-		// rather than raw string concatenation — see grounding-render.ts / #1195.
-		const chunks = metadata.groundingChunks || [];
-		const sources = chunks
-			.filter((chunk) => chunk.web?.uri)
-			.map((chunk) => ({ url: chunk.web!.uri as string, title: chunk.web!.title }));
-
-		return renderGroundingSources(sources);
-	}
-
-	/**
-	 * Extract rendered content from streaming chunk
-	 */
-	private extractRenderedFromChunk(chunk: GenerateContentResponse): string {
-		return this.extractRenderedFromResponse(chunk);
-	}
-
-	/**
 	 * Generate an image from a text prompt.
 	 *
-	 * Intentionally stays on `generateContent` even when `useInteractionsApi` is
-	 * on (see #1016): image generation is a distinct one-shot capability on a
-	 * dedicated image model — not the conversational transport the flag governs —
-	 * and the existing path is proven across image-tools and scheduled tasks.
+	 * Intentionally stays on `generateContent` even though the conversational
+	 * transport always uses Interactions (see #1016): image generation is a
+	 * distinct one-shot capability on a dedicated image model, and the existing
+	 * path is proven across image-tools and scheduled tasks.
 	 * The exception is interactions-only image models (e.g.
 	 * gemini-omni-flash-preview), which `generateContent` rejects with a 400 —
 	 * those route through the Interactions image-output surface.
@@ -828,10 +349,7 @@ export class GeminiClient implements ModelApi {
 			const params: GenerateContentParameters = {
 				model,
 				contents: prompt,
-				config: {
-					// Image generation typically doesn't need temperature/topP
-					// but we can include them if needed
-				},
+				config: {},
 			};
 
 			const response = await this.ai.models.generateContent(params);

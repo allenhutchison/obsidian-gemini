@@ -16,28 +16,31 @@ import { Logger } from '../utils/logger';
 import { isRetryableApiError, executeWithRetry, RetryOptions } from '../utils/retry';
 
 /**
- * Settings-shaped retry configuration for the decorator.
- *
- * Deliberately distinct from `RetryConfig` in `src/utils/retry.ts`: this pair mirrors the
- * `settings.maxRetries` / `settings.initialBackoffDelay` surface, while the retry engine's
- * config also carries the delay cap and jitter switch. The decorator translates between them.
+ * Retry policy for model API calls. Was settings-driven (a settings-shaped config mirroring
+ * the two retry fields that used to live on `ObsidianGeminiSettings`); fixed as of the settings
+ * redesign — every call now retries with the same policy.
  */
-export interface ApiRetryConfig {
-	maxRetries: number;
-	initialBackoffDelay: number;
-}
+const DEFAULT_RETRY_COUNT = 3;
+const DEFAULT_INITIAL_BACKOFF_MS = 1000;
 
 /**
  * Decorator that adds retry logic to any ModelApi implementation
  */
 export class RetryDecorator implements ModelApi {
 	private wrappedApi: ModelApi;
-	private config: ApiRetryConfig;
 	private logger?: Logger;
 
-	constructor(wrappedApi: ModelApi, config: ApiRetryConfig, logger?: Logger) {
+	/**
+	 * @param wrappedApi - The API to wrap with retry logic.
+	 * @param _legacyConfig - Deprecated: Unused. `ModelClientFactory.createFromPlugin`
+	 *   (`src/api/factory.ts`) still passes a positional settings-shaped object here; the
+	 *   retry policy is fixed now (see the `DEFAULT_*` constants below) and this parameter is
+	 *   ignored. Kept only so that read-only call site keeps compiling; removed once the
+	 *   factory drops the argument (tombstone sweep).
+	 * @param logger - Optional logger for retry diagnostics.
+	 */
+	constructor(wrappedApi: ModelApi, _legacyConfig?: unknown, logger?: Logger) {
 		this.wrappedApi = wrappedApi;
-		this.config = config;
 		this.logger = logger;
 	}
 
@@ -58,8 +61,8 @@ export class RetryDecorator implements ModelApi {
 		return executeWithRetry(
 			operation,
 			{
-				maxRetries: this.config.maxRetries,
-				initialDelayMs: this.config.initialBackoffDelay,
+				maxRetries: DEFAULT_RETRY_COUNT,
+				initialDelayMs: DEFAULT_INITIAL_BACKOFF_MS,
 				maxDelayMs: RetryDecorator.MAX_API_DELAY_MS,
 			},
 			{

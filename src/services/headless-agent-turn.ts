@@ -110,8 +110,6 @@ export async function runHeadlessAgentTurn(
 			userMessage,
 			conversationHistory: [],
 			model,
-			temperature: plugin.settings.temperature,
-			topP: plugin.settings.topP,
 			prompt: '',
 			availableTools,
 			renderContent: false,

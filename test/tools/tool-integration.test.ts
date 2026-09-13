@@ -61,8 +61,6 @@ describe('Tool Integration Tests', () => {
 				historyFolder: 'gemini-scribe',
 				searchGrounding: true,
 				searchGroundingThreshold: 0.7,
-				loopDetectionThreshold: 3,
-				loopDetectionTimeWindowSeconds: 60,
 			},
 			app: {
 				vault: {

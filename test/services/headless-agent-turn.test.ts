@@ -80,8 +80,6 @@ function createMockPlugin(): any {
 		settings: {
 			historyFolder: 'gemini-scribe',
 			chatModelName: 'plugin-default-model',
-			temperature: 1,
-			topP: 0.95,
 		},
 		sessionManager: {
 			releaseSession: vi.fn(),
@@ -406,7 +404,7 @@ describe('runHeadlessAgentTurn', () => {
 			expect(lastRequest().userMessage).toBe('[preamble] Do the thing.');
 		});
 
-		it('sends a non-rendering, history-free extended request with plugin sampling settings', async () => {
+		it('sends a non-rendering, history-free extended request', async () => {
 			await runHeadlessAgentTurn(createMockPlugin(), makeSpec(), () => false);
 
 			expect(lastRequest()).toMatchObject({
@@ -414,8 +412,6 @@ describe('runHeadlessAgentTurn', () => {
 				conversationHistory: [],
 				prompt: '',
 				renderContent: false,
-				temperature: 1,
-				topP: 0.95,
 			});
 		});
 

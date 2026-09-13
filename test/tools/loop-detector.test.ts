@@ -178,24 +178,6 @@ describe('ToolLoopDetector', () => {
 		// Should be treated as different
 		expect(detector.isLoopDetected(sessionId, nullCall)).toBe(false);
 	});
-
-	it('should update configuration', () => {
-		const sessionId = 'test-session';
-		const toolCall: ToolCall = { name: 'test', arguments: {} };
-
-		// Record 2 calls
-		detector.recordExecution(sessionId, toolCall);
-		detector.recordExecution(sessionId, toolCall);
-
-		// Should not detect loop with threshold of 3
-		expect(detector.isLoopDetected(sessionId, toolCall)).toBe(false);
-
-		// Update config to lower threshold
-		detector.updateConfig(2, 60);
-
-		// Now should detect loop
-		expect(detector.isLoopDetected(sessionId, toolCall)).toBe(true);
-	});
 });
 
 describe('ToolLoopDetector - key cleanup (#1387)', () => {

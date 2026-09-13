@@ -102,8 +102,6 @@ function createMockPlugin(overrides: Record<string, any> = {}): any {
 		settings: {
 			historyFolder: 'gemini-scribe',
 			chatModelName: 'gemini-2.5-flash',
-			temperature: 1,
-			topP: 0.95,
 		},
 		logger: createMockLogger(),
 		agentsMemory: {

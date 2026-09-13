@@ -57,8 +57,9 @@ describe('runGroundingTool', () => {
 		mockPlugin = {
 			apiKey: 'test-api-key',
 			settings: {
-				chatModelName: 'gemini-1.5-flash-002',
-				temperature: 0.7,
+				features: {
+					webSearch: { provider: 'gemini', model: 'gemini-1.5-flash-002' },
+				},
 			},
 			logger: {
 				warn: vi.fn(),
@@ -92,7 +93,6 @@ describe('runGroundingTool', () => {
 			expect(mockGenAI.models.generateContent).toHaveBeenCalledWith({
 				model: 'gemini-1.5-flash-002',
 				config: {
-					temperature: 0.7,
 					maxOutputTokens: 8192,
 					tools: [{ googleSearch: {} }],
 				},
@@ -101,7 +101,7 @@ describe('runGroundingTool', () => {
 		});
 
 		it('falls back to the default chat model when none is configured', async () => {
-			mockPlugin.settings.chatModelName = undefined;
+			mockPlugin.settings.features.webSearch.model = '';
 			mockGenAI.models.generateContent.mockResolvedValue({
 				candidates: [{ content: { parts: [{ text: 'answer' }] } }],
 			});
@@ -116,7 +116,7 @@ describe('runGroundingTool', () => {
 		it('substitutes the default chat model when the chat model is interactions-only', async () => {
 			// Grounding runs on generateContent, which rejects interactions-only
 			// models with a 400 — the runner must not send them.
-			mockPlugin.settings.chatModelName = 'gemini-omni-flash-preview';
+			mockPlugin.settings.features.webSearch.model = 'gemini-omni-flash-preview';
 			mockGenAI.models.generateContent.mockResolvedValue({
 				candidates: [{ content: { parts: [{ text: 'answer' }] } }],
 			});

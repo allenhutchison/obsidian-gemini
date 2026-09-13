@@ -49,8 +49,6 @@ const baseConfig: OpenAIClientConfig = {
 	apiKey: 'sk-test',
 	baseUrl: 'https://api.openai.com/v1',
 	model: 'gpt-4o-mini',
-	temperature: 0.4,
-	topP: 0.9,
 };
 
 describe('OpenAIClient', () => {
@@ -73,7 +71,6 @@ describe('OpenAIClient', () => {
 			const response = await client.generateModelResponse({
 				kind: 'base',
 				prompt: 'say hi',
-				temperature: 0.2,
 			});
 
 			expect(openaiCalls.create).toHaveBeenCalledTimes(1);
@@ -81,8 +78,8 @@ describe('OpenAIClient', () => {
 			expect(args.model).toBe('gpt-4o-mini');
 			expect(args.messages).toEqual([{ role: 'user', content: 'say hi' }]);
 			expect(args.stream).toBe(false);
-			expect(args.temperature).toBe(0.2);
-			expect(args.top_p).toBe(0.9);
+			expect(args).not.toHaveProperty('temperature');
+			expect(args).not.toHaveProperty('top_p');
 
 			expect(response.markdown).toBe('hello world');
 			expect(response.usageMetadata).toEqual({
@@ -789,33 +786,15 @@ describe('OpenAIClient', () => {
 		});
 	});
 
-	describe('sampling-parameter defaults', () => {
-		it('falls back to temperature 0.7 and top_p 1 when the config omits them', async () => {
-			openaiCalls.create.mockResolvedValue({
-				choices: [{ message: { content: 'ok' } }],
-			});
-			const c = new OpenAIClient(
-				{ apiKey: 'sk-test', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
-				undefined,
-				buildPlugin()
-			);
-			await c.generateModelResponse({ kind: 'base', prompt: 'test' });
-
-			const args = openaiCalls.create.mock.calls[0][0];
-			expect(args.temperature).toBe(0.7);
-			expect(args.top_p).toBe(1);
-		});
-	});
-
-	// GPT-5.6 reasoning models reject a non-default temperature/top_p outright,
-	// and reject function tools in Chat Completions unless reasoning is off.
+	// GPT-5.6 reasoning models reject function tools in Chat Completions unless
+	// reasoning is off. (They also reject a non-default temperature/top_p, but
+	// that's moot now — every request omits both, for every model, since the
+	// settings redesign dropped the settings-driven sampling params entirely.)
 	describe('GPT-5.6 parameter handling', () => {
 		const gpt56Config: OpenAIClientConfig = {
 			apiKey: 'sk-test',
 			baseUrl: 'https://api.openai.com/v1',
 			model: 'gpt-5.6-luna',
-			temperature: 0.4,
-			topP: 0.9,
 		};
 		const readFileTool: ToolDefinition = {
 			name: 'read_file',
@@ -828,22 +807,6 @@ describe('OpenAIClient', () => {
 		beforeEach(() => {
 			gpt56Client = new OpenAIClient(gpt56Config, undefined, buildPlugin());
 			openaiCalls.create.mockResolvedValue({ choices: [{ message: { content: 'ok' } }] });
-		});
-
-		it('omits temperature and top_p for a base request', async () => {
-			await gpt56Client.generateModelResponse({ kind: 'base', prompt: 'hi' });
-
-			const args = openaiCalls.create.mock.calls[0][0];
-			expect(args).not.toHaveProperty('temperature');
-			expect(args).not.toHaveProperty('top_p');
-		});
-
-		it('omits temperature and top_p even when the request supplies them', async () => {
-			await gpt56Client.generateModelResponse({ kind: 'base', prompt: 'hi', temperature: 0.2 });
-
-			const args = openaiCalls.create.mock.calls[0][0];
-			expect(args).not.toHaveProperty('temperature');
-			expect(args).not.toHaveProperty('top_p');
 		});
 
 		it("sets reasoning_effort 'none' when sending tools", async () => {
@@ -896,7 +859,7 @@ describe('OpenAIClient', () => {
 			expect(args.reasoning_effort).toBe('none');
 		});
 
-		it('leaves non-GPT-5.6 models untouched', async () => {
+		it('leaves non-GPT-5.6 models untouched (no reasoning_effort)', async () => {
 			const c = new OpenAIClient({ ...gpt56Config, model: 'gpt-4o-mini' }, undefined, buildPlugin());
 			await c.generateModelResponse({
 				prompt: '',
@@ -907,8 +870,6 @@ describe('OpenAIClient', () => {
 			});
 
 			const args = openaiCalls.create.mock.calls[0][0];
-			expect(args.temperature).toBe(0.4);
-			expect(args.top_p).toBe(0.9);
 			expect(args).not.toHaveProperty('reasoning_effort');
 		});
 	});

@@ -50,8 +50,6 @@ const buildPlugin = () =>
 const baseConfig: OllamaClientConfig = {
 	baseUrl: 'http://localhost:11434',
 	model: 'llama3.2',
-	temperature: 0.4,
-	topP: 0.9,
 };
 
 describe('OllamaClient', () => {
@@ -77,7 +75,6 @@ describe('OllamaClient', () => {
 			const response = await client.generateModelResponse({
 				kind: 'base',
 				prompt: 'say hi',
-				temperature: 0.2,
 			});
 
 			expect(ollamaCalls.generate).toHaveBeenCalledTimes(1);
@@ -85,8 +82,6 @@ describe('OllamaClient', () => {
 			expect(args.model).toBe('llama3.2');
 			expect(args.prompt).toBe('say hi');
 			expect(args.stream).toBe(false);
-			expect(args.options.temperature).toBe(0.2);
-			expect(args.options.top_p).toBe(0.9);
 
 			expect(response.markdown).toBe('hello world');
 			expect(response.usageMetadata).toEqual({

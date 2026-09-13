@@ -46,8 +46,6 @@ export interface BaseModelRequest {
 	kind: 'base';
 	model?: string;
 	prompt: string;
-	temperature?: number;
-	topP?: number;
 }
 
 /**

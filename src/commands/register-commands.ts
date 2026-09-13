@@ -6,7 +6,7 @@ import { RewriteInstructionsModal } from '../ui/rewrite-modal';
 import { UpdateNotificationModal } from '../ui/update-notification-modal';
 import { getErrorMessage } from '../utils/error-utils';
 import type { ObsidianGemini } from '../types/plugin';
-import { resolveProvider } from '../api/provider-routing';
+import { featureStatus } from '../api/provider-status';
 
 /**
  * Shared entry gate for the RAG commands. Each of them opens with the same two
@@ -15,7 +15,7 @@ import { resolveProvider } from '../api/provider-routing';
  * `null` when the caller should bail because the notice has already been shown.
  */
 function resolveRagIndexing(plugin: ObsidianGemini): NonNullable<ObsidianGemini['ragIndexing']> | null {
-	if (resolveProvider(plugin.settings, 'rag') === null) {
+	if (featureStatus(plugin, 'rag') !== 'ok') {
 		new Notice(t('notice.main.ragUnavailableProvider'));
 		return null;
 	}
@@ -330,7 +330,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 		name: t('command.generateImage'),
 		callback: async () => {
 			if (!plugin.checkInitialized()) return;
-			if (resolveProvider(plugin.settings, 'imageGen') === null) {
+			if (featureStatus(plugin, 'imageGen') !== 'ok') {
 				new Notice(t('notice.main.imageGenUnavailableProvider'));
 				return;
 			}
