@@ -284,11 +284,6 @@ Add your project instructions here. This text will be injected into the agent's 
 
 		// Strip unsupported code blocks
 		const instructions = body.replace(UNSUPPORTED_CODE_BLOCK_RE, '').trim();
-
-		// Resolve wikilinks and embeds
-		const contextFiles = this.resolveLinks(cache?.links, file.path);
-		const embedFiles = this.resolveLinks(cache?.embeds, file.path);
-
 		// Normalize the project root so downstream path-prefix checks
 		// (e.g. `file.path.startsWith(rootPath + '/')`) behave consistently.
 		// Vault-root projects are represented as '' so the `projectRoot && ...`
@@ -296,8 +291,7 @@ Add your project instructions here. This text will be injected into the agent's 
 		// erroneously filtering every file against a bare '/'.
 		const rawParent = file.parent?.path ?? '';
 		const rootPath = rawParent === '' || rawParent === '/' ? '' : normalizePath(rawParent);
-
-		return { file, config, rootPath, instructions, contextFiles, embedFiles };
+		return { file, config, rootPath, instructions };
 	}
 
 	// --- Private helpers ---
@@ -403,19 +397,6 @@ Add your project instructions here. This text will be injected into the agent's 
 			}
 		}
 		return Object.keys(overrides).length > 0 ? { overrides } : undefined;
-	}
-
-	private resolveLinks(links: Array<{ link: string }> | undefined, sourcePath: string): TFile[] {
-		if (!links) return [];
-
-		const resolved: TFile[] = [];
-		for (const link of links) {
-			const file = this.plugin.app.metadataCache.getFirstLinkpathDest(link.link, sourcePath);
-			if (file instanceof TFile) {
-				resolved.push(file);
-			}
-		}
-		return resolved;
 	}
 
 	private async onFileCreateOrModify(file: TFile): Promise<void> {

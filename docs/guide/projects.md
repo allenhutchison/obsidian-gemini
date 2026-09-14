@@ -8,7 +8,7 @@ Projects let you create scoped agent profiles for different areas of your vault.
 
 A project is any Markdown file in your vault with the `gemini-scribe/project` tag in its frontmatter. The file's **parent directory becomes the project root** — the agent's discovery scope when the project is active.
 
-The file body contains instructions that are injected into the agent's system prompt, and wikilinks/embeds reference external context files.
+The file body contains instructions that are injected into the agent's system prompt. Wikilinks in the body are **not** resolved or fetched — the link text itself is passed through as part of the instructions, and the agent can follow them with its tools (e.g. `read_file`) when relevant.
 
 ## Creating a Project
 
@@ -103,7 +103,7 @@ Use third-person limited POV from the protagonist's perspective.
 - ![[World Building/Magic System]]
 ```
 
-- **Wikilinks** (`[[file]]`) and **embeds** (`![[file]]`) are resolved as context references
+- **Wikilinks** (`[[file]]`) and **embeds** (`![[file]]`) are **not** resolved or loaded — the literal link text reaches the model as part of the instructions. Write the links as pointers for the agent to follow with tools like `read_file` when it needs the content
 - **Dataview/Bases code blocks** are automatically stripped (not sent to the model)
 - All other Markdown content is passed through as-is
 
@@ -165,7 +165,7 @@ Open the project file and use the **"Remove project"** command to strip the `gem
 ## Tips
 
 - **Keep project files at the root of the relevant folder** — the parent directory becomes the scope boundary
-- **Use wikilinks in the body** to reference files outside the project that the agent should know about
+- **Use wikilinks in the body as pointers** — they reach the model as link text, and the agent can follow them with tools like `read_file` when relevant
 - **Start with an empty `skills` array** to allow all skills, then narrow down as needed
 - **Set `delete_file: deny`** under `toolPolicy.overrides` for projects where you want to prevent accidental deletions
 - **Project instructions stack with custom prompts** — use projects for persistent context and custom prompts for per-session behavior

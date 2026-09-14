@@ -38,12 +38,6 @@ export interface Project {
 
 	/** System prompt instructions extracted from the file body */
 	instructions: string;
-
-	/** Resolved context files from [[wikilinks]] in the body */
-	contextFiles: TFile[];
-
-	/** Resolved embed files from ![[embeds]] in the body */
-	embedFiles: TFile[];
 }
 
 /**
