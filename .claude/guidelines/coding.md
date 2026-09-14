@@ -94,6 +94,44 @@ goal, it needs a real consumer that keeps it honest (a type-only test that impor
 symbol), plus a decision about what the published artifact actually is — not an entry-point
 declaration pointing at an untracked build output.
 
+## Derive entity parameter types — don't re-list fields
+
+For a vault-backed entity managed through `FileBackedFeatureManager` (`Hook`, `ScheduledTask`, …),
+the manager's create/update parameter types must be **derived** from the entity interface, never
+written out field by field:
+
+```ts
+type EntityDefaultedField = 'enabled' | …; // fields the manager fills in when omitted
+export type EntityCreateParams = Omit<Entity, 'filePath' | EntityDefaultedField> &
+	Partial<Pick<Entity, EntityDefaultedField>>;
+export type EntityUpdateParams = Partial<Omit<EntityCreateParams, 'slug'>>;
+```
+
+A management modal builds its save payload **once** as `Omit<EntityCreateParams, 'slug'>` and
+passes that same object to both save branches, spreading the identity field into the create call —
+`{ slug: this.form.slug, ...params }` — rather than writing one object literal per branch.
+
+The reason is that nothing fails loudly when you don't. A hand-written param type still compiles
+when the entity gains a field, so the compiler cannot tell you the new field is unsettable through
+create/update, or that one save branch dropped it. The gap surfaces only when a user sets the field
+in the UI and it doesn't persist, or sets it on create and loses it on edit — and neither
+`npm run knip` nor `npm run lint:cycles` can see it (#1273, #1314, #1322).
+
+Reference implementations, both on `master`: `src/services/hook-types.ts` (`HookCreateParams` /
+`HookUpdateParams`) with `src/ui/hook-management-modal.ts`, and
+`src/services/scheduled-tasks/types.ts` (`ScheduledTaskCreateParams` /
+`ScheduledTaskUpdateParams`) with `src/ui/scheduler-management-modal.ts`. A third entity family
+should copy that shape, not re-list its fields.
+
+Two violation shapes are greppable, for reviewers and future audit runs:
+
+- a create/update parameter type that lists entity fields without deriving them (no `Omit<` over
+  the entity), and
+- a management modal with two field-list object literals inside a create/update `if`.
+
+This governs entity params specifically. Parameter types for non-entity APIs (tool params, request
+builders) are often better hand-written — the rule doesn't reach them.
+
 ## Wiring interfaces carry only what is read
 
 When you add a field to a context, callback, or capability interface (`SendContext`,
