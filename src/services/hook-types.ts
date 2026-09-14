@@ -1,10 +1,14 @@
 import type { FeatureToolPolicy } from '../types/tool-policy';
+import { parseMaxIterations, resolveFeatureToolPolicy } from './feature-definition';
+import { formatToolPolicyYaml } from './feature-policy-yaml';
+import { yamlScalar } from './yaml-scalar';
 
 /**
  * Hook definition, state, and fire-context types plus the prompt-template
- * renderer, extracted to a leaf module so both HookManager and HookRunner can
- * depend on them without importing each other (see #1155). hook-manager.ts
- * re-exports everything here, so external import paths are unchanged.
+ * renderer and the field-descriptor table that every hook field flows through,
+ * extracted to a leaf module so both HookManager and HookRunner can depend on
+ * them without importing each other (see #1155). hook-manager.ts re-exports
+ * everything here, so external import paths are unchanged.
  */
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 //
@@ -168,6 +172,290 @@ type HookDefaultedField = 'debounceMs' | 'cooldownMs' | 'enabledSkills' | 'enabl
 export type HookCreateParams = Omit<Hook, 'filePath' | HookDefaultedField> & Partial<Pick<Hook, HookDefaultedField>>;
 
 export type HookUpdateParams = Partial<Omit<HookCreateParams, 'slug'>>;
+
+// ─── Field descriptor table ───────────────────────────────────────────────────
+//
+// Every hook field used to be written out longhand in four uncompile-checked
+// places (`updateHook`'s merge ladder, `serializeHook`, `hookToParams`, and
+// `parseDefinitionFile`'s literal) plus the two the compiler did check. Adding
+// a field to `Hook` and forgetting one of those sites produced a field that
+// loaded from a hand-written file but vanished the first time the management UI
+// saved it — silent, and invisible to type-check, lint, and tests alike (#1315).
+//
+// `HOOK_FIELDS` replaces all of them with one entry per field. Its type is a
+// mapped type over `HookFieldKey`, so it is *total*: a field added to `Hook`
+// fails to compile until it is described here.
+
+/**
+ * The hook fields that live in frontmatter — everything except `slug` (the file
+ * basename), `filePath` (the file's vault path), and `prompt` (the file body).
+ */
+export type HookFieldKey = keyof Omit<Hook, 'slug' | 'filePath' | 'prompt'>;
+
+/** The frontmatter-derived slice of a `Hook`, in its canonical in-memory form. */
+export type HookFields = Pick<Hook, HookFieldKey>;
+
+export interface HookFieldDescriptor<K extends HookFieldKey> {
+	/**
+	 * Read this field out of a note's frontmatter, returning `undefined` when
+	 * the key is absent or malformed (the caller then falls through to
+	 * `normalize`). Takes the whole record rather than a single key's value
+	 * because not every field maps to one key: `toolPolicy` is resolved from
+	 * the canonical `toolPolicy` block *and* the legacy `enabledTools` array it
+	 * migrates from, and a one-key parser would silently drop unmigrated files.
+	 */
+	parse(frontmatter: Record<string, unknown>): Hook[K] | undefined;
+	/**
+	 * Put a value into its canonical in-memory form: apply the field's default
+	 * when it is absent, and fold the empty sentinels (`''`, `0`) back to
+	 * `undefined` so "unset" has exactly one representation. Used on both the
+	 * read path and the create/update path, which is what keeps them agreeing.
+	 */
+	normalize(value: Hook[K] | undefined): Hook[K] | undefined;
+	/**
+	 * Emit the field's YAML line(s), or `null` when the value is the default
+	 * and should be elided so saved files stay minimal. Returns an array rather
+	 * than a single line because `frontmatterFilter`, `enabledSkills`, and
+	 * `toolPolicy` all emit nested blocks.
+	 */
+	serialize(value: Hook[K] | undefined): string[] | null;
+}
+
+/**
+ * One descriptor per frontmatter-backed hook field.
+ *
+ * **Declaration order is emission order.** `serializeHookFields` walks this
+ * table's keys, so reordering entries rewrites every existing hook file the
+ * next time it is saved. The order below is the one `serializeHook` has always
+ * emitted, which is deliberately *not* the order `Hook` declares its fields in.
+ */
+const HOOK_FIELDS: { readonly [K in HookFieldKey]: HookFieldDescriptor<K> } = {
+	// `trigger` and `action` validate on the params path too, not just when
+	// reading frontmatter: they are closed unions the compiler protects only for
+	// typed callers, and an unrecognised literal reaching disk costs the whole
+	// hook — `parseHookFields` rejects the file on the next load. Rejecting here
+	// means an update with a bad value keeps the current one (see
+	// `REQUIRED_HOOK_FIELDS`) instead of writing a definition nothing can read.
+	trigger: {
+		parse: (fm) => parseTrigger(fm.trigger),
+		normalize: (v) => parseTrigger(v),
+		serialize: (v) => (v ? [`trigger: '${v}'`] : null),
+	},
+	action: {
+		parse: (fm) => parseAction(fm.action),
+		normalize: (v) => parseAction(v),
+		serialize: (v) => (v ? [`action: '${v}'`] : null),
+	},
+	pathGlob: {
+		parse: (fm) => (typeof fm.pathGlob === 'string' ? fm.pathGlob : undefined),
+		normalize: (v) => v || undefined,
+		serialize: (v) => (v ? [`pathGlob: ${yamlScalar(v)}`] : null),
+	},
+	frontmatterFilter: {
+		// `typeof [] === 'object'`, so the array check is load-bearing: a YAML
+		// list would otherwise survive as a filter and serialize back out as a
+		// mapping keyed by its indices.
+		parse: (fm) =>
+			fm.frontmatterFilter && typeof fm.frontmatterFilter === 'object' && !Array.isArray(fm.frontmatterFilter)
+				? (fm.frontmatterFilter as Record<string, unknown>)
+				: undefined,
+		normalize: (v) => (v && !Array.isArray(v) && Object.keys(v).length > 0 ? v : undefined),
+		serialize: (v) => {
+			if (!v || Object.keys(v).length === 0) return null;
+			const lines = ['frontmatterFilter:'];
+			for (const [key, value] of Object.entries(v)) {
+				// The key is user-authored free text, so it needs the same quoting as
+				// any other string. The value is typed `unknown` and must keep its YAML
+				// type (a boolean filter has to parse back as a boolean, not `'true'`),
+				// so only string values go through the string emitter; everything else
+				// stays on JSON.stringify, which is a valid YAML flow scalar.
+				const emitted = typeof value === 'string' ? yamlScalar(value) : JSON.stringify(value);
+				lines.push(`  ${yamlScalar(key)}: ${emitted}`);
+			}
+			return lines;
+		},
+	},
+	debounceMs: {
+		parse: (fm) => (typeof fm.debounceMs === 'number' ? fm.debounceMs : undefined),
+		normalize: (v) => v ?? DEFAULT_DEBOUNCE_MS,
+		serialize: (v) => (v !== undefined && v !== DEFAULT_DEBOUNCE_MS ? [`debounceMs: ${v}`] : null),
+	},
+	maxRunsPerHour: {
+		parse: (fm) => (typeof fm.maxRunsPerHour === 'number' ? fm.maxRunsPerHour : undefined),
+		// `0` (and anything below it) means "no limit", the same reading
+		// `serializeHook` has always taken when eliding the key. Folding it to
+		// `undefined` here is what lets the rate-limit check stay a plain
+		// `!== undefined` test.
+		normalize: (v) => (v !== undefined && v > 0 ? v : undefined),
+		serialize: (v) => (v !== undefined && v > 0 ? [`maxRunsPerHour: ${v}`] : null),
+	},
+	cooldownMs: {
+		parse: (fm) => (typeof fm.cooldownMs === 'number' ? fm.cooldownMs : undefined),
+		normalize: (v) => v ?? DEFAULT_COOLDOWN_MS,
+		serialize: (v) => (v !== undefined && v !== DEFAULT_COOLDOWN_MS ? [`cooldownMs: ${v}`] : null),
+	},
+	toolPolicy: {
+		parse: (fm) => resolveFeatureToolPolicy(fm),
+		normalize: (v) => v,
+		serialize: (v) => formatToolPolicyYaml(v),
+	},
+	enabledSkills: {
+		// Every element must actually be a string — a bare `Array.isArray` check
+		// would let `[1]` through as a `string[]`, and `Hook.enabledSkills` would
+		// then hold values its own type says it cannot.
+		parse: (fm) =>
+			Array.isArray(fm.enabledSkills) && fm.enabledSkills.every((s): s is string => typeof s === 'string')
+				? fm.enabledSkills
+				: undefined,
+		normalize: (v) => v ?? [],
+		serialize: (v) => (v && v.length > 0 ? ['enabledSkills:', ...v.map((s) => `  - ${yamlScalar(s)}`)] : null),
+	},
+	model: {
+		parse: (fm) => (typeof fm.model === 'string' ? fm.model : undefined),
+		normalize: (v) => v || undefined,
+		serialize: (v) => (v ? [`model: ${yamlScalar(v)}`] : null),
+	},
+	maxIterations: {
+		// parseMaxIterations rejects non-integers and anything <= 0 on both the
+		// read path and the write path, so an invalid value can neither load nor
+		// be persisted.
+		parse: (fm) => parseMaxIterations(fm.maxIterations),
+		normalize: (v) => parseMaxIterations(v),
+		serialize: (v) => (v !== undefined ? [`maxIterations: ${v}`] : null),
+	},
+	outputPath: {
+		parse: (fm) => (typeof fm.outputPath === 'string' ? fm.outputPath : undefined),
+		normalize: (v) => v || undefined,
+		serialize: (v) => (v ? [`outputPath: ${yamlScalar(v)}`] : null),
+	},
+	commandId: {
+		parse: (fm) => (typeof fm.commandId === 'string' ? fm.commandId : undefined),
+		normalize: (v) => v || undefined,
+		serialize: (v) => (v ? [`commandId: ${yamlScalar(v)}`] : null),
+	},
+	// Defaults are enabled=true, desktopOnly=true, focusFile=false — only the
+	// non-default value is written.
+	enabled: {
+		parse: (fm) => (typeof fm.enabled === 'boolean' ? fm.enabled : undefined),
+		normalize: (v) => v ?? true,
+		serialize: (v) => (v === false ? ['enabled: false'] : null),
+	},
+	desktopOnly: {
+		parse: (fm) => (typeof fm.desktopOnly === 'boolean' ? fm.desktopOnly : undefined),
+		normalize: (v) => v ?? true,
+		serialize: (v) => (v === false ? ['desktopOnly: false'] : null),
+	},
+	focusFile: {
+		parse: (fm) => (fm.focusFile === true ? true : undefined),
+		normalize: (v) => (v === true ? true : undefined),
+		serialize: (v) => (v === true ? ['focusFile: true'] : null),
+	},
+};
+
+/** The table's keys in emission order. */
+export const HOOK_FIELD_KEYS = Object.keys(HOOK_FIELDS) as HookFieldKey[];
+
+/**
+ * `HOOK_FIELDS[key]` for a `key` that is only known to be *some* `HookFieldKey`.
+ * TypeScript cannot correlate the index type with the descriptor's own type
+ * parameter across a loop, so the four walkers below widen once, here, rather
+ * than each dealing with the union inline.
+ */
+function descriptorFor(key: HookFieldKey): HookFieldDescriptor<HookFieldKey> {
+	return HOOK_FIELDS[key];
+}
+
+/**
+ * The fields with no default. A hook missing either one is not a usable
+ * definition, so they are the two fields that can never end up unset: reading a
+ * file without them yields `null`, and an update that tries to clear one keeps
+ * the hook's current value instead.
+ */
+const REQUIRED_HOOK_FIELDS: ReadonlySet<HookFieldKey> = new Set<HookFieldKey>(['trigger', 'action']);
+
+/**
+ * Which required fields `fields` is missing, empty when none are. A value that
+ * failed validation normalizes to `undefined`, so this catches an unrecognised
+ * `trigger` as well as an absent one.
+ */
+export function missingRequiredHookFields(fields: Partial<HookFields>): HookFieldKey[] {
+	return [...REQUIRED_HOOK_FIELDS].filter((key) => fields[key] === undefined);
+}
+
+/**
+ * Read every hook field out of a note's frontmatter.
+ *
+ * Returns `null` when `trigger` or `action` is missing or unrecognised — see
+ * `REQUIRED_HOOK_FIELDS`.
+ */
+export function parseHookFields(frontmatter: Record<string, unknown>): HookFields | null {
+	const fields: Record<string, unknown> = {};
+	for (const key of HOOK_FIELD_KEYS) {
+		const descriptor = descriptorFor(key);
+		fields[key] = descriptor.normalize(descriptor.parse(frontmatter));
+	}
+	if (missingRequiredHookFields(fields).length > 0) return null;
+	return fields as HookFields;
+}
+
+/** Put create/update params into their canonical in-memory form. */
+export function normalizeHookFields(params: Partial<HookFields>): HookFields {
+	const fields: Record<string, unknown> = {};
+	for (const key of HOOK_FIELD_KEYS) {
+		const descriptor = descriptorFor(key);
+		fields[key] = descriptor.normalize(params[key]);
+	}
+	return fields as HookFields;
+}
+
+/**
+ * Merge update params over an existing hook's fields.
+ *
+ * **Replace semantics, uniformly:** a key *present* in `params` wins even when
+ * its value is `undefined`. That is how the edit form clears a field — it sends
+ * every emptied optional field as `undefined` — and before #1315 only
+ * `toolPolicy` and `maxIterations` honoured it. The other six clearable fields
+ * used `??`, so emptying `pathGlob`, `model`, `outputPath`, `commandId`,
+ * `maxRunsPerHour`, or `focusFile` in the UI silently restored the old value.
+ *
+ * The exception is `REQUIRED_HOOK_FIELDS`. `HookUpdateParams` is a `Partial`,
+ * so nothing stops a caller passing `trigger: undefined`; clearing it would
+ * write a definition file that `parseHookFields` rejects on the next load,
+ * silently dropping the hook. Those two keep their current value instead.
+ */
+export function mergeHookFields(current: HookFields, params: Partial<HookFields>): HookFields {
+	const fields: Record<string, unknown> = {};
+	for (const key of HOOK_FIELD_KEYS) {
+		const descriptor = descriptorFor(key);
+		const merged = descriptor.normalize(key in params ? params[key] : current[key]);
+		fields[key] = merged === undefined && REQUIRED_HOOK_FIELDS.has(key) ? current[key] : merged;
+	}
+	return fields as HookFields;
+}
+
+/** Emit the frontmatter body (no `---` fences) for a set of hook fields. */
+export function serializeHookFields(fields: HookFields): string[] {
+	const lines: string[] = [];
+	for (const key of HOOK_FIELD_KEYS) {
+		const emitted = descriptorFor(key).serialize(fields[key]);
+		if (emitted) lines.push(...emitted);
+	}
+	return lines;
+}
+
+/** Narrow an unknown value to a `HookTrigger`, or `undefined` if it isn't one. */
+function parseTrigger(value: unknown): HookTrigger | undefined {
+	if (value === 'file-created' || value === 'file-modified' || value === 'file-deleted' || value === 'file-renamed') {
+		return value;
+	}
+	return undefined;
+}
+
+/** Narrow an unknown value to a `HookAction`, or `undefined` if it isn't one. */
+function parseAction(value: unknown): HookAction | undefined {
+	if (value === 'agent-task' || value === 'summarize' || value === 'rewrite' || value === 'command') return value;
+	return undefined;
+}
 
 // ─── Prompt rendering ──────────────────────────────────────────────────────────
 //
