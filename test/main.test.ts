@@ -1,5 +1,6 @@
-import { ObsidianGeminiSettings } from '../src/main';
+import ObsidianGemini, { ObsidianGeminiSettings } from '../src/main';
 import { FEATURE_IDS } from '../src/types/features';
+import type { App, PluginManifest } from 'obsidian';
 
 describe('ObsidianGeminiSettings', () => {
 	describe('feature routing (settings redesign)', () => {
@@ -71,6 +72,52 @@ describe('ObsidianGeminiSettings', () => {
 
 			settings.lastSeenVersion = '1.0.0-beta.1';
 			expect(settings.lastSeenVersion).toBe('1.0.0-beta.1');
+		});
+	});
+
+	describe('getApiKeyErrorMessage', () => {
+		function makePlugin(settings: Partial<ObsidianGeminiSettings>): ObsidianGemini {
+			const plugin = new ObsidianGemini({} as App, {} as PluginManifest);
+			plugin.settings = {
+				defaultProvider: 'gemini',
+				apiKeySecretName: '',
+				openaiApiKeySecretName: '',
+				ollamaBaseUrl: 'http://localhost:11434',
+				...settings,
+			} as ObsidianGeminiSettings;
+			return plugin;
+		}
+
+		it('describes the provider routed to chat, not the default provider', () => {
+			// Default provider is Gemini, but chat is routed to OpenAI with no
+			// OpenAI key configured — the message should be OpenAI-specific.
+			const plugin = makePlugin({
+				defaultProvider: 'gemini',
+				apiKeySecretName: 'gemini-key',
+				openaiApiKeySecretName: '',
+				features: {
+					chat: { provider: 'openai', model: '' },
+				} as ObsidianGeminiSettings['features'],
+			});
+
+			const message = (plugin as unknown as { getApiKeyErrorMessage(): string }).getApiKeyErrorMessage();
+
+			expect(message).toContain('OpenAI');
+		});
+
+		it('falls back to the default provider when chat is routed to none', () => {
+			const plugin = makePlugin({
+				defaultProvider: 'openai',
+				apiKeySecretName: '',
+				openaiApiKeySecretName: '',
+				features: {
+					chat: { provider: 'none', model: '' },
+				} as ObsidianGeminiSettings['features'],
+			});
+
+			const message = (plugin as unknown as { getApiKeyErrorMessage(): string }).getApiKeyErrorMessage();
+
+			expect(message).toContain('OpenAI');
 		});
 	});
 });

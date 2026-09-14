@@ -10,6 +10,7 @@ import { GeminiCompletions } from './completions';
 import { Notice } from 'obsidian';
 import { migrateToFeatureRouting, normalizeStateFolderPath } from './utils/settings-migrations';
 import {
+	featureProvider,
 	isProviderActive,
 	routingKey,
 	sanitizeFeatureRoutes,
@@ -291,12 +292,17 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	 * Distinguishes between "never configured" and "storage retrieval failure".
 	 */
 	private getApiKeyErrorMessage(): string {
-		// The secret-name field is provider-specific — an OpenAI-default install
+		// Chat is the feature that actually blocks plugin init, so the message
+		// should describe whatever provider is routed to serve it — not the
+		// (possibly unrelated) primary/default provider. A route of 'none' has
+		// no provider to describe, so fall back to the default in that case.
+		const provider = featureProvider(this.settings, 'chat') ?? this.settings.defaultProvider;
+		// The secret-name field is provider-specific — an OpenAI-routed install
 		// checks its own key, not Gemini's, so a missing OpenAI key surfaces the
 		// same kind of actionable notice a missing Gemini key would.
-		const apiKeySecretName = apiKeySecretNameFor(this.settings, this.settings.defaultProvider);
+		const apiKeySecretName = apiKeySecretNameFor(this.settings, provider);
 		return buildApiKeyErrorMessage({
-			provider: this.settings.defaultProvider,
+			provider,
 			lastInitError: this.lastInitError,
 			apiKeySecretName,
 			ollamaBaseUrl: this.settings.ollamaBaseUrl,
