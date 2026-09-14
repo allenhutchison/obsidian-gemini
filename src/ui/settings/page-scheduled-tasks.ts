@@ -1,5 +1,7 @@
+import { Notice } from 'obsidian';
 import type { SettingDefinitionPage } from 'obsidian';
 import { t } from '../../i18n';
+import { getErrorMessage } from '../../utils/error-utils';
 import type { SettingsContext } from './context';
 
 /**
@@ -51,6 +53,11 @@ async function openScheduler(
 	plugin: SettingsContext['plugin'],
 	view: 'list' | 'create'
 ): Promise<void> {
-	const { SchedulerManagementModal } = await import('../scheduler-management-modal');
-	new SchedulerManagementModal(app, plugin, view).open();
+	try {
+		const { SchedulerManagementModal } = await import('../scheduler-management-modal');
+		new SchedulerManagementModal(app, plugin, view).open();
+	} catch (error) {
+		plugin.logger.error('Failed to load scheduler management modal:', error);
+		new Notice(t('settings.automation.openSchedulerFailed', { error: getErrorMessage(error) }));
+	}
 }

@@ -1,5 +1,7 @@
+import { Notice } from 'obsidian';
 import type { SettingDefinitionPage } from 'obsidian';
 import { t } from '../../i18n';
+import { getErrorMessage } from '../../utils/error-utils';
 import type { SettingsContext } from './context';
 
 /**
@@ -48,6 +50,11 @@ async function openHookManager(
 	plugin: SettingsContext['plugin'],
 	view: 'list' | 'create'
 ): Promise<void> {
-	const { HookManagementModal } = await import('../hook-management-modal');
-	new HookManagementModal(app, plugin, view).open();
+	try {
+		const { HookManagementModal } = await import('../hook-management-modal');
+		new HookManagementModal(app, plugin, view).open();
+	} catch (error) {
+		plugin.logger.error('Failed to load hook management modal:', error);
+		new Notice(t('settings.automation.openHookManagerFailed', { error: getErrorMessage(error) }));
+	}
 }

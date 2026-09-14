@@ -3300,6 +3300,14 @@ export const en = {
 		message: 'Off',
 		context: 'Displayed-value summary on the Lifecycle hooks page-link row when hooks are disabled.',
 	},
+	'settings.automation.openHookManagerFailed': {
+		message: 'Failed to open the hook manager: {error}',
+		context: 'Notice shown when the lifecycle hook management modal fails to load. {error} is the failure detail.',
+	},
+	'settings.automation.openSchedulerFailed': {
+		message: 'Failed to open the scheduler: {error}',
+		context: 'Notice shown when the scheduled task management modal fails to load. {error} is the failure detail.',
+	},
 
 	// -- MCP servers page --
 	'settings.mcp.noServers': {
