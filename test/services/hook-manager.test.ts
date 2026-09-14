@@ -410,6 +410,25 @@ describe('HookManager CRUD', () => {
 		expect(hook?.prompt).toBe('Summarise {{filePath}}.');
 	});
 
+	it('updateHook keeps trigger and action when a caller passes them as undefined', async () => {
+		// `HookUpdateParams` is a Partial, so an explicit `undefined` reaches the
+		// merge. Clearing either would write a file with no `trigger:` line,
+		// which the parser rejects — the hook would vanish on the next reload.
+		const plugin = createPluginWithVaultStore();
+		const manager = newManager(plugin);
+		await manager.createHook(baseCreateParams);
+
+		await manager.updateHook('summarise', { trigger: undefined, action: undefined, model: 'gemini-2.5-pro' });
+
+		const hook = manager.getHooks().find((h) => h.slug === 'summarise');
+		expect(hook?.trigger).toBe('file-modified');
+		expect(hook?.action).toBe('agent-task');
+
+		const content = plugin.__files.get('gemini-scribe/Hooks/summarise.md');
+		expect(content).toContain("trigger: 'file-modified'");
+		expect(content).toContain("action: 'agent-task'");
+	});
+
 	it('updateHook throws when the hook is unknown', async () => {
 		const plugin = createPluginWithVaultStore();
 		const manager = newManager(plugin);

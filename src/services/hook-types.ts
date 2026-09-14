@@ -351,11 +351,18 @@ function descriptorFor(key: HookFieldKey): HookFieldDescriptor<HookFieldKey> {
 }
 
 /**
+ * The fields with no default. A hook missing either one is not a usable
+ * definition, so they are the two fields that can never end up unset: reading a
+ * file without them yields `null`, and an update that tries to clear one keeps
+ * the hook's current value instead.
+ */
+const REQUIRED_HOOK_FIELDS: ReadonlySet<HookFieldKey> = new Set<HookFieldKey>(['trigger', 'action']);
+
+/**
  * Read every hook field out of a note's frontmatter.
  *
- * Returns `null` when `trigger` or `action` is missing or unrecognised — those
- * two are the only fields with no default, so a file without them is not a
- * usable hook definition at all.
+ * Returns `null` when `trigger` or `action` is missing or unrecognised — see
+ * `REQUIRED_HOOK_FIELDS`.
  */
 export function parseHookFields(frontmatter: Record<string, unknown>): HookFields | null {
 	const fields: Record<string, unknown> = {};
@@ -363,7 +370,9 @@ export function parseHookFields(frontmatter: Record<string, unknown>): HookField
 		const descriptor = descriptorFor(key);
 		fields[key] = descriptor.normalize(descriptor.parse(frontmatter));
 	}
-	if (fields.trigger === undefined || fields.action === undefined) return null;
+	for (const key of REQUIRED_HOOK_FIELDS) {
+		if (fields[key] === undefined) return null;
+	}
 	return fields as HookFields;
 }
 
@@ -386,12 +395,18 @@ export function normalizeHookFields(params: Partial<HookFields>): HookFields {
  * `toolPolicy` and `maxIterations` honoured it. The other six clearable fields
  * used `??`, so emptying `pathGlob`, `model`, `outputPath`, `commandId`,
  * `maxRunsPerHour`, or `focusFile` in the UI silently restored the old value.
+ *
+ * The exception is `REQUIRED_HOOK_FIELDS`. `HookUpdateParams` is a `Partial`,
+ * so nothing stops a caller passing `trigger: undefined`; clearing it would
+ * write a definition file that `parseHookFields` rejects on the next load,
+ * silently dropping the hook. Those two keep their current value instead.
  */
 export function mergeHookFields(current: HookFields, params: Partial<HookFields>): HookFields {
 	const fields: Record<string, unknown> = {};
 	for (const key of HOOK_FIELD_KEYS) {
 		const descriptor = descriptorFor(key);
-		fields[key] = descriptor.normalize(key in params ? params[key] : current[key]);
+		const merged = descriptor.normalize(key in params ? params[key] : current[key]);
+		fields[key] = merged === undefined && REQUIRED_HOOK_FIELDS.has(key) ? current[key] : merged;
 	}
 	return fields as HookFields;
 }

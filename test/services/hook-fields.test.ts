@@ -228,6 +228,25 @@ describe('mergeHookFields', () => {
 		expect(merged[key]).toBeUndefined();
 	});
 
+	it('refuses to clear trigger and action, which have no default', () => {
+		// `HookUpdateParams` is a Partial, so nothing stops a caller passing
+		// `trigger: undefined`. Honouring that would serialize a definition file
+		// with no `trigger:` line, which parseHookFields rejects on the next
+		// load — the hook would silently disappear.
+		const merged = mergeHookFields(current, { trigger: undefined, action: undefined });
+
+		expect(merged.trigger).toBe(current.trigger);
+		expect(merged.action).toBe(current.action);
+		expect(parseHookFields(parseFrontmatter(serializeHookFields(merged)))).not.toBeNull();
+	});
+
+	it('still replaces trigger and action when given a real value', () => {
+		const merged = mergeHookFields(current, { trigger: 'file-created', action: 'summarize' });
+
+		expect(merged.trigger).toBe('file-created');
+		expect(merged.action).toBe('summarize');
+	});
+
 	it('leaves a field untouched when its key is absent from the params', () => {
 		const merged = mergeHookFields(current, { model: 'gemini-pro-latest' });
 
