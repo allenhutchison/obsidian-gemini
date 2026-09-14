@@ -11,7 +11,13 @@ import type {
 	HookTrigger,
 	HookUpdateParams,
 } from './hook-types';
-import { mergeHookFields, normalizeHookFields, parseHookFields, serializeHookFields } from './hook-types';
+import {
+	mergeHookFields,
+	missingRequiredHookFields,
+	normalizeHookFields,
+	parseHookFields,
+	serializeHookFields,
+} from './hook-types';
 import { extractMarkdownBody, migrateLegacyEnabledTools } from './feature-definition';
 import { FileBackedFeatureManager } from './file-backed-feature-manager';
 import { FailurePauseTracker, MAX_CONSECUTIVE_FAILURES } from './failure-pause-tracker';
@@ -211,6 +217,13 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 		// caller can't be persisted or held in memory — the same descriptor table
 		// the read path uses, so the two cannot drift.
 		const fields = normalizeHookFields(params);
+		// A `trigger` or `action` that failed validation normalizes to
+		// `undefined`, and serializing that would write a definition file
+		// `parseDefinitionFile` refuses to load — a hook that vanishes on the
+		// next reload. Reject it here instead, like an invalid slug.
+		const missing = missingRequiredHookFields(fields);
+		if (missing.length > 0) throw new Error(`Hook is missing or has an invalid ${missing.join(' and ')}`);
+
 		const content = this.serializeHook(fields, params.prompt);
 		await this.plugin.app.vault.create(filePath, content);
 

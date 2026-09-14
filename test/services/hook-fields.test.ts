@@ -8,7 +8,9 @@ import {
 	normalizeHookFields,
 	parseHookFields,
 	serializeHookFields,
+	type HookAction,
 	type HookFields,
+	type HookTrigger,
 } from '../../src/services/hook-types';
 import { PolicyPreset, ToolPermission } from '../../src/types/tool-policy';
 
@@ -177,6 +179,28 @@ describe('parseHookFields', () => {
 		});
 	});
 
+	it('rejects a frontmatterFilter that is a YAML list rather than a mapping', () => {
+		// `typeof [] === 'object'`, so without the array guard this would survive
+		// as a filter and serialize back out keyed by its indices.
+		const fields = parseHookFields({
+			trigger: 'file-created',
+			action: 'agent-task',
+			frontmatterFilter: ['draft'],
+		});
+
+		expect(fields?.frontmatterFilter).toBeUndefined();
+	});
+
+	it('rejects an enabledSkills list whose entries are not all strings', () => {
+		const fields = parseHookFields({
+			trigger: 'file-created',
+			action: 'agent-task',
+			enabledSkills: ['summarize', 7],
+		});
+
+		expect(fields?.enabledSkills).toEqual([]);
+	});
+
 	it('folds the empty sentinels to undefined so "unset" has one representation', () => {
 		const fields = parseHookFields({
 			trigger: 'file-created',
@@ -238,6 +262,19 @@ describe('mergeHookFields', () => {
 		expect(merged.trigger).toBe(current.trigger);
 		expect(merged.action).toBe(current.action);
 		expect(parseHookFields(parseFrontmatter(serializeHookFields(merged)))).not.toBeNull();
+	});
+
+	it('keeps the current trigger and action when an untyped caller sends garbage', () => {
+		// `HookManager.updateHook` is exported, so the closed unions are only
+		// compiler-enforced for typed callers. Writing an unrecognised literal
+		// would cost the whole hook: the file no longer parses on reload.
+		const merged = mergeHookFields(current, {
+			trigger: 'file-exploded' as HookTrigger,
+			action: 'transmogrify' as HookAction,
+		});
+
+		expect(merged.trigger).toBe(current.trigger);
+		expect(merged.action).toBe(current.action);
 	});
 
 	it('still replaces trigger and action when given a real value', () => {

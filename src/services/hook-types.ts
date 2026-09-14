@@ -230,14 +230,20 @@ export interface HookFieldDescriptor<K extends HookFieldKey> {
  * emitted, which is deliberately *not* the order `Hook` declares its fields in.
  */
 const HOOK_FIELDS: { readonly [K in HookFieldKey]: HookFieldDescriptor<K> } = {
+	// `trigger` and `action` validate on the params path too, not just when
+	// reading frontmatter: they are closed unions the compiler protects only for
+	// typed callers, and an unrecognised literal reaching disk costs the whole
+	// hook — `parseHookFields` rejects the file on the next load. Rejecting here
+	// means an update with a bad value keeps the current one (see
+	// `REQUIRED_HOOK_FIELDS`) instead of writing a definition nothing can read.
 	trigger: {
 		parse: (fm) => parseTrigger(fm.trigger),
-		normalize: (v) => v,
+		normalize: (v) => parseTrigger(v),
 		serialize: (v) => (v ? [`trigger: '${v}'`] : null),
 	},
 	action: {
 		parse: (fm) => parseAction(fm.action),
-		normalize: (v) => v,
+		normalize: (v) => parseAction(v),
 		serialize: (v) => (v ? [`action: '${v}'`] : null),
 	},
 	pathGlob: {
@@ -246,11 +252,14 @@ const HOOK_FIELDS: { readonly [K in HookFieldKey]: HookFieldDescriptor<K> } = {
 		serialize: (v) => (v ? [`pathGlob: ${yamlScalar(v)}`] : null),
 	},
 	frontmatterFilter: {
+		// `typeof [] === 'object'`, so the array check is load-bearing: a YAML
+		// list would otherwise survive as a filter and serialize back out as a
+		// mapping keyed by its indices.
 		parse: (fm) =>
-			fm.frontmatterFilter && typeof fm.frontmatterFilter === 'object'
+			fm.frontmatterFilter && typeof fm.frontmatterFilter === 'object' && !Array.isArray(fm.frontmatterFilter)
 				? (fm.frontmatterFilter as Record<string, unknown>)
 				: undefined,
-		normalize: (v) => (v && Object.keys(v).length > 0 ? v : undefined),
+		normalize: (v) => (v && !Array.isArray(v) && Object.keys(v).length > 0 ? v : undefined),
 		serialize: (v) => {
 			if (!v || Object.keys(v).length === 0) return null;
 			const lines = ['frontmatterFilter:'];
@@ -291,7 +300,13 @@ const HOOK_FIELDS: { readonly [K in HookFieldKey]: HookFieldDescriptor<K> } = {
 		serialize: (v) => formatToolPolicyYaml(v),
 	},
 	enabledSkills: {
-		parse: (fm) => (Array.isArray(fm.enabledSkills) ? (fm.enabledSkills as string[]) : undefined),
+		// Every element must actually be a string — a bare `Array.isArray` check
+		// would let `[1]` through as a `string[]`, and `Hook.enabledSkills` would
+		// then hold values its own type says it cannot.
+		parse: (fm) =>
+			Array.isArray(fm.enabledSkills) && fm.enabledSkills.every((s): s is string => typeof s === 'string')
+				? fm.enabledSkills
+				: undefined,
 		normalize: (v) => v ?? [],
 		serialize: (v) => (v && v.length > 0 ? ['enabledSkills:', ...v.map((s) => `  - ${yamlScalar(s)}`)] : null),
 	},
@@ -359,6 +374,15 @@ function descriptorFor(key: HookFieldKey): HookFieldDescriptor<HookFieldKey> {
 const REQUIRED_HOOK_FIELDS: ReadonlySet<HookFieldKey> = new Set<HookFieldKey>(['trigger', 'action']);
 
 /**
+ * Which required fields `fields` is missing, empty when none are. A value that
+ * failed validation normalizes to `undefined`, so this catches an unrecognised
+ * `trigger` as well as an absent one.
+ */
+export function missingRequiredHookFields(fields: Partial<HookFields>): HookFieldKey[] {
+	return [...REQUIRED_HOOK_FIELDS].filter((key) => fields[key] === undefined);
+}
+
+/**
  * Read every hook field out of a note's frontmatter.
  *
  * Returns `null` when `trigger` or `action` is missing or unrecognised — see
@@ -370,9 +394,7 @@ export function parseHookFields(frontmatter: Record<string, unknown>): HookField
 		const descriptor = descriptorFor(key);
 		fields[key] = descriptor.normalize(descriptor.parse(frontmatter));
 	}
-	for (const key of REQUIRED_HOOK_FIELDS) {
-		if (fields[key] === undefined) return null;
-	}
+	if (missingRequiredHookFields(fields).length > 0) return null;
 	return fields as HookFields;
 }
 
@@ -421,6 +443,7 @@ export function serializeHookFields(fields: HookFields): string[] {
 	return lines;
 }
 
+/** Narrow an unknown value to a `HookTrigger`, or `undefined` if it isn't one. */
 function parseTrigger(value: unknown): HookTrigger | undefined {
 	if (value === 'file-created' || value === 'file-modified' || value === 'file-deleted' || value === 'file-renamed') {
 		return value;
@@ -428,6 +451,7 @@ function parseTrigger(value: unknown): HookTrigger | undefined {
 	return undefined;
 }
 
+/** Narrow an unknown value to a `HookAction`, or `undefined` if it isn't one. */
 function parseAction(value: unknown): HookAction | undefined {
 	if (value === 'agent-task' || value === 'summarize' || value === 'rewrite' || value === 'command') return value;
 	return undefined;

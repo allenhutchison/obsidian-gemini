@@ -207,6 +207,20 @@ describe('HookManager CRUD', () => {
 		await expect(manager.createHook({ ...baseCreateParams, slug: 'a--b' })).rejects.toThrow(/lowercase/);
 	});
 
+	it('rejects a createHook trigger or action that is not a recognised value', async () => {
+		// `createHook` is exported, so an untyped caller can reach it with a bad
+		// literal. Writing it would produce a definition file the parser refuses
+		// to load — a hook that exists on disk and never appears in the UI.
+		const plugin = createPluginWithVaultStore();
+		const manager = newManager(plugin);
+
+		await expect(manager.createHook({ ...baseCreateParams, trigger: 'file-exploded' as any })).rejects.toThrow(
+			/trigger/
+		);
+		await expect(manager.createHook({ ...baseCreateParams, action: 'transmogrify' as any })).rejects.toThrow(/action/);
+		expect(plugin.__files.size).toBe(0);
+	});
+
 	it('rejects duplicate slugs', async () => {
 		const plugin = createPluginWithVaultStore();
 		const manager = newManager(plugin);
