@@ -66,6 +66,7 @@ describe('ToolRegistrar', () => {
 			warn: vi.fn(),
 		};
 		mockPlugin = {
+			apiKey: 'gemini-secret-value',
 			settings: {
 				defaultProvider: 'gemini',
 				apiKeySecretName: 'gemini-key',
@@ -100,6 +101,7 @@ describe('ToolRegistrar', () => {
 
 		it('should skip Gemini-only sources when nothing routes to Gemini and no Gemini key is configured', async () => {
 			mockPlugin.settings.apiKeySecretName = '';
+			mockPlugin.apiKey = '';
 			mockPlugin.settings.defaultProvider = 'ollama';
 			mockPlugin.settings.features = featuresAllOn('ollama');
 			await registrar.registerAll(mockRegistry, mockLogger, mockPlugin);
@@ -161,6 +163,7 @@ describe('ToolRegistrar', () => {
 
 		it('skips maps when the Gemini provider has no key configured', async () => {
 			mockPlugin.settings.apiKeySecretName = '';
+			mockPlugin.apiKey = '';
 			await registrar.registerAll(mockRegistry, mockLogger, mockPlugin);
 
 			expect(mockRegistry.registerTool).not.toHaveBeenCalledWith(expect.objectContaining({ name: 'google_maps' }));
@@ -171,6 +174,7 @@ describe('ToolRegistrar', () => {
 		// same as maps above.
 		it('skips web search when routed to gemini but no Gemini key is configured', async () => {
 			mockPlugin.settings.apiKeySecretName = '';
+			mockPlugin.apiKey = '';
 			mockPlugin.settings.defaultProvider = 'ollama';
 			mockPlugin.settings.features = featuresAllOn('ollama');
 			mockPlugin.settings.features.webSearch = { provider: 'gemini', model: '' };
@@ -179,8 +183,21 @@ describe('ToolRegistrar', () => {
 			expect(mockRegistry.registerTool).not.toHaveBeenCalledWith(expect.objectContaining({ name: 'google_search' }));
 		});
 
+		// The settings file can name a secret that SecretStorage on this device
+		// does not hold (settings synced, secrets not): the resolved key is what
+		// the tools need, so the gate checks that rather than the name.
+		it('skips Gemini-bound tools when the secret name is set but the key is missing from secret storage', async () => {
+			mockPlugin.apiKey = '';
+			await registrar.registerAll(mockRegistry, mockLogger, mockPlugin);
+
+			expect(mockRegistry.registerTool).not.toHaveBeenCalledWith(expect.objectContaining({ name: 'google_search' }));
+			expect(mockRegistry.registerTool).not.toHaveBeenCalledWith(expect.objectContaining({ name: 'google_maps' }));
+			expect(mockRegistry.registerTool).not.toHaveBeenCalledWith(expect.objectContaining({ name: 'deep_research' }));
+		});
+
 		it('skips deep research when routed to gemini but no Gemini key is configured', async () => {
 			mockPlugin.settings.apiKeySecretName = '';
+			mockPlugin.apiKey = '';
 			mockPlugin.settings.defaultProvider = 'ollama';
 			mockPlugin.settings.features = featuresAllOn('ollama');
 			mockPlugin.settings.features.deepResearch = { provider: 'gemini', model: '' };
