@@ -407,30 +407,6 @@ describe('AgentLoop', () => {
 			expect(result.markdown).toContain('read_file');
 			expect(result.markdown).toContain('completed the requested actions');
 		});
-
-		test('emits onEmptyResponseRetry hook', async () => {
-			const plugin = buildPlugin();
-			const session = buildSession();
-			const api = makeScriptedModelApi([textResponse(''), textResponse('done')]);
-			const onEmptyResponseRetry = vi.fn();
-
-			const loop = new AgentLoop();
-			await loop.run({
-				initialResponse: toolResponse([tc('read_file')]),
-				initialUserMessage: 'q',
-				initialHistory: [],
-				options: {
-					plugin,
-					session,
-					confirmationProvider,
-					isCancelled: () => false,
-					createModelApi: () => api,
-					hooks: { onEmptyResponseRetry },
-				},
-			});
-
-			expect(onEmptyResponseRetry).toHaveBeenCalledTimes(1);
-		});
 	});
 
 	describe('iteration cap', () => {

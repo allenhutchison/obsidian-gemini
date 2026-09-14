@@ -55,8 +55,6 @@ export interface AgentLoopHooks {
 	 * then "Thinking…").
 	 */
 	onFollowUpRequestStart?(): void | Promise<void>;
-	/** Fired when the loop falls into the empty-response retry path. */
-	onEmptyResponseRetry?(): void | Promise<void>;
 	/**
 	 * Fired when an intermediate follow-up response carries model reasoning but
 	 * continues to another tool batch (i.e. the model "thought" before deciding
@@ -558,8 +556,6 @@ export class AgentLoop {
 			if (isCancelled()) {
 				return this.cancelledResult(updatedHistory, iterations);
 			}
-
-			await this.safeHook('onEmptyResponseRetry', plugin, () => hooks?.onEmptyResponseRetry?.());
 
 			const retryRequest = buildRetryRequest({
 				plugin,
