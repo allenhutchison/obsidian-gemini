@@ -60,7 +60,7 @@ npm run eval -- --model=gemini-2.5-flash-lite
 npm run eval -- --model=gemini-2.5-pro --repeat=5
 ```
 
-The override is **transient**: it's applied in memory at the start of the run and restored on exit (including on Ctrl-C / SIGTERM). The settings are **not** persisted to disk, so the user's configured models are unaffected. `--model=` sets **all three** model fields — `features.chat.model`, `features.summary.model`, and `features.completions.model` — so summary- and completion-driven tasks exercise the requested model too, not just chat.
+The override is **transient**: it's applied in memory at the start of the run and restored on exit (including on Ctrl-C / SIGTERM). The settings are **not** persisted to disk, so the user's configured models are unaffected. `--model=` sets **all three** model fields — `features.chat.model`, `features.summary.model`, and `features.completions.model` — for consistency, but eval tasks only ever drive `features.chat.model` (every task goes through `sendMessage`, the agent-loop path) and, indirectly, `features.summary.model` when mid-run context compaction fires. Completions is the editor-autocomplete route and the harness never exercises it, so overriding that field has no effect on a run's behavior or scoring.
 
 The override stamps into the result file's `model` field, so a multi-model sweep produces one result file per model that can be compared and trended independently. Use the built-in sweep (below) or a shell loop:
 
@@ -99,7 +99,7 @@ These paths are Ollama-only and degrade to a no-op (with a one-line warning) if 
 npm run eval -- --model=gemma4:latest --provider=ollama
 ```
 
-Valid values are `gemini` and `ollama`. The override mirrors `--model=`: it's applied to `plugin.settings.features.chat.provider` in memory at the start of the run, restored on exit (including SIGINT/SIGTERM), and never persisted to disk. Without it, an Ollama sweep needs a manual **Settings → Gemini Scribe → Features → Chat and agent → Provider** toggle in the UI — which blocks unattended automation. The judge (always Gemini) is independent; set `EVAL_JUDGE_API_KEY` if the plugin has no Gemini key configured.
+Valid values are `gemini` and `ollama`. The override mirrors `--model=`: it's applied to `plugin.settings.features.chat.provider` **and** `features.summary.provider` in memory at the start of the run (summary too, so mid-run context compaction runs against the override provider, not whatever summary was routed to before), restored on exit (including SIGINT/SIGTERM), and never persisted to disk. Completions' provider is left alone, matching `--model=`'s reasoning above. Without it, an Ollama sweep needs a manual **Settings → Gemini Scribe → Features → Chat and agent → Provider** toggle in the UI — which blocks unattended automation. The judge (always Gemini) is independent; set `EVAL_JUDGE_API_KEY` if the plugin has no Gemini key configured.
 
 ## Comparing against a baseline
 
