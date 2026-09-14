@@ -2266,7 +2266,7 @@ export const en = {
 	},
 	'notice.main.apiKeyRetrieveFailed': {
 		message:
-			'Could not retrieve your API key from secure storage. Try re-entering it in Settings → Gemini Scribe → API key.',
+			'Could not retrieve your API key from secure storage. Try re-entering it in Settings → Gemini Scribe → Providers → Google Gemini → API key.',
 		context: 'Error notice when the stored API key could not be read back from Obsidian secret storage.',
 	},
 	'notice.main.initFailedConsole': {
@@ -2316,7 +2316,7 @@ export const en = {
 	},
 	'notice.main.imageGenUnavailableProvider': {
 		message:
-			'No provider is set up for image generation. Choose one under Settings → Gemini Scribe → Per-feature provider.',
+			'No provider is set up for image generation. Choose one under Settings → Gemini Scribe → Features → Image generation.',
 		context:
 			'Notice when the Generate Image command is used but the provider serving image generation does not support it (e.g. a local-only setup). Keep the settings path recognizable to users of the translated UI.',
 	},
@@ -2326,7 +2326,7 @@ export const en = {
 	},
 	'notice.main.ragUnavailableProvider': {
 		message:
-			'No provider is set up for the vault search index. Choose one under Settings → Gemini Scribe → Per-feature provider.',
+			'No provider is set up for the vault search index. Choose one under Settings → Gemini Scribe → Vault → Vault search index.',
 		context:
 			'Notice when a RAG (vault search index) command is used but the provider serving RAG does not support it (e.g. a local-only setup). Keep the settings path recognizable to users of the translated UI.',
 	},
