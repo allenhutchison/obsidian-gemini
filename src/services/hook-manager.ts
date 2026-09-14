@@ -1,25 +1,18 @@
 import { Platform, TAbstractFile, TFile, normalizePath } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { ensureFolderExists, shouldExcludePath } from '../utils/file-utils';
-import { formatToolPolicyYaml } from './feature-policy-yaml';
-import { yamlScalar } from './yaml-scalar';
 import type {
 	Hook,
-	HookAction,
 	HookCreateParams,
+	HookFields,
 	HookFireContext,
 	HookState,
 	HooksState,
 	HookTrigger,
 	HookUpdateParams,
 } from './hook-types';
-import { DEFAULT_COOLDOWN_MS, DEFAULT_DEBOUNCE_MS } from './hook-types';
-import {
-	extractMarkdownBody,
-	migrateLegacyEnabledTools,
-	parseMaxIterations,
-	resolveFeatureToolPolicy,
-} from './feature-definition';
+import { mergeHookFields, normalizeHookFields, parseHookFields, serializeHookFields } from './hook-types';
+import { extractMarkdownBody, migrateLegacyEnabledTools } from './feature-definition';
 import { FileBackedFeatureManager } from './file-backed-feature-manager';
 import { FailurePauseTracker, MAX_CONSECUTIVE_FAILURES } from './failure-pause-tracker';
 import { matchesFrontmatterFilter, matchesGlob } from './hook-matcher';
@@ -215,13 +208,13 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 
 		const filePath = normalizePath(`${this.hooksFolder}/${slug}.md`);
 		// Normalize at the write boundary so an invalid value from a programmatic
-		// caller can't be persisted or held in memory — matches the read-path
-		// contract (parseDefinitionFile), where invalid values fall back to the default.
-		const normalizedParams = { ...params, maxIterations: parseMaxIterations(params.maxIterations) };
-		const content = this.serializeHook({ ...normalizedParams, slug });
+		// caller can't be persisted or held in memory — the same descriptor table
+		// the read path uses, so the two cannot drift.
+		const fields = normalizeHookFields(params);
+		const content = this.serializeHook(fields, params.prompt);
 		await this.plugin.app.vault.create(filePath, content);
 
-		const hook: Hook = this.toHook(slug, filePath, normalizedParams);
+		const hook: Hook = { slug, ...fields, prompt: params.prompt, filePath };
 		this.hooks.set(slug, hook);
 		if (!this.state[slug]) {
 			this.state[slug] = {};
@@ -240,37 +233,18 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 		const file = this.plugin.app.vault.getAbstractFileByPath(hook.filePath);
 		if (!(file instanceof TFile)) throw new Error(`Hook file not found: ${hook.filePath}`);
 
-		// `toolPolicy` is genuinely optional (undefined == inherit global), so
-		// the merged shape can't use `Required<HookCreateParams>` like it used
-		// to. The other fields keep their default-coercion behavior below.
-		const merged: HookCreateParams & { slug: string } = {
-			slug,
-			trigger: params.trigger ?? hook.trigger,
-			pathGlob: params.pathGlob ?? hook.pathGlob ?? '',
-			frontmatterFilter: params.frontmatterFilter ?? hook.frontmatterFilter ?? {},
-			debounceMs: params.debounceMs ?? hook.debounceMs,
-			maxRunsPerHour: params.maxRunsPerHour ?? hook.maxRunsPerHour ?? 0,
-			cooldownMs: params.cooldownMs ?? hook.cooldownMs,
-			action: params.action ?? hook.action,
-			toolPolicy: 'toolPolicy' in params ? params.toolPolicy : hook.toolPolicy,
-			enabledSkills: params.enabledSkills ?? hook.enabledSkills,
-			model: params.model ?? hook.model ?? '',
-			// `in` check (not ??) so callers can clear back to the default by
-			// passing maxIterations: undefined explicitly. Normalize incoming
-			// values so an invalid number can't be persisted (matches parseDefinitionFile).
-			maxIterations: 'maxIterations' in params ? parseMaxIterations(params.maxIterations) : hook.maxIterations,
-			outputPath: params.outputPath ?? hook.outputPath ?? '',
-			enabled: params.enabled ?? hook.enabled,
-			desktopOnly: params.desktopOnly ?? hook.desktopOnly,
-			prompt: params.prompt ?? hook.prompt,
-			commandId: params.commandId ?? hook.commandId ?? '',
-			focusFile: params.focusFile ?? hook.focusFile ?? false,
-		};
+		// Every field merges with replace semantics: a key present in `params`
+		// wins even when its value is `undefined`, which is how the edit form
+		// clears an optional field. `prompt` is the exception — it is the file
+		// body rather than a frontmatter field, and an omitted prompt means
+		// "leave the body alone", not "blank it".
+		const merged = mergeHookFields(hook, params);
+		const prompt = params.prompt ?? hook.prompt;
 
-		const content = this.serializeHook(merged);
+		const content = this.serializeHook(merged, prompt);
 		await this.plugin.app.vault.modify(file, content);
 
-		this.hooks.set(slug, this.toHook(slug, hook.filePath, merged));
+		this.hooks.set(slug, { slug, ...merged, prompt, filePath: hook.filePath });
 	}
 
 	/**
@@ -290,95 +264,19 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 
 	// ── Serialization helpers ───────────────────────────────────────────────
 
-	private toHook(slug: string, filePath: string, params: HookCreateParams): Hook {
-		return {
-			slug,
-			trigger: params.trigger,
-			pathGlob: params.pathGlob ? params.pathGlob : undefined,
-			frontmatterFilter:
-				params.frontmatterFilter && Object.keys(params.frontmatterFilter).length > 0
-					? params.frontmatterFilter
-					: undefined,
-			debounceMs: params.debounceMs ?? DEFAULT_DEBOUNCE_MS,
-			maxRunsPerHour: params.maxRunsPerHour && params.maxRunsPerHour > 0 ? params.maxRunsPerHour : undefined,
-			cooldownMs: params.cooldownMs ?? DEFAULT_COOLDOWN_MS,
-			action: params.action,
-			toolPolicy: params.toolPolicy,
-			enabledSkills: params.enabledSkills ?? [],
-			model: params.model || undefined,
-			maxIterations: params.maxIterations,
-			outputPath: params.outputPath || undefined,
-			enabled: params.enabled ?? true,
-			desktopOnly: params.desktopOnly ?? true,
-			prompt: params.prompt,
-			commandId: params.commandId || undefined,
-			focusFile: params.focusFile === true ? true : undefined,
-			filePath,
-		};
-	}
-
 	/**
-	 * Serialize a hook definition to markdown. Only non-default values are
-	 * written so files stay minimal and re-saving doesn't add noise.
+	 * Serialize a hook definition to markdown. Field-by-field emission (order,
+	 * quoting, and which values are elided as defaults) lives in the HOOK_FIELDS
+	 * descriptor table; this only wraps the result in the frontmatter fences and
+	 * appends the prompt body.
+	 *
+	 * `summarize` and `command` actions don't use the prompt body, but
+	 * `parseDefinitionFile` rejects empty bodies for `agent-task` and `rewrite`.
+	 * Emit the body trimmed; for the prompt-less actions an empty body is fine
+	 * because the parser doesn't enforce a non-empty body for them.
 	 */
-	private serializeHook(params: HookCreateParams & { slug: string }): string {
-		const lines: string[] = ['---'];
-		lines.push(`trigger: '${params.trigger}'`);
-		lines.push(`action: '${params.action}'`);
-
-		if (params.pathGlob) lines.push(`pathGlob: ${yamlScalar(params.pathGlob)}`);
-
-		if (params.frontmatterFilter && Object.keys(params.frontmatterFilter).length > 0) {
-			lines.push('frontmatterFilter:');
-			for (const [key, value] of Object.entries(params.frontmatterFilter)) {
-				// The key is user-authored free text, so it needs the same quoting as
-				// any other string. The value is typed `unknown` and must keep its YAML
-				// type (a boolean filter has to parse back as a boolean, not `'true'`),
-				// so only string values go through the string emitter; everything else
-				// stays on JSON.stringify, which is a valid YAML flow scalar.
-				const emitted = typeof value === 'string' ? yamlScalar(value) : JSON.stringify(value);
-				lines.push(`  ${yamlScalar(key)}: ${emitted}`);
-			}
-		}
-
-		if (params.debounceMs !== undefined && params.debounceMs !== DEFAULT_DEBOUNCE_MS) {
-			lines.push(`debounceMs: ${params.debounceMs}`);
-		}
-		if (params.maxRunsPerHour !== undefined && params.maxRunsPerHour > 0) {
-			lines.push(`maxRunsPerHour: ${params.maxRunsPerHour}`);
-		}
-		if (params.cooldownMs !== undefined && params.cooldownMs !== DEFAULT_COOLDOWN_MS) {
-			lines.push(`cooldownMs: ${params.cooldownMs}`);
-		}
-
-		const policyLines = formatToolPolicyYaml(params.toolPolicy);
-		if (policyLines) {
-			lines.push(...policyLines);
-		}
-
-		const skills = params.enabledSkills ?? [];
-		if (skills.length > 0) {
-			lines.push('enabledSkills:');
-			for (const s of skills) lines.push(`  - ${yamlScalar(s)}`);
-		}
-
-		if (params.model) lines.push(`model: ${yamlScalar(params.model)}`);
-		if (params.maxIterations !== undefined) lines.push(`maxIterations: ${params.maxIterations}`);
-		if (params.outputPath) lines.push(`outputPath: ${yamlScalar(params.outputPath)}`);
-		if (params.commandId) lines.push(`commandId: ${yamlScalar(params.commandId)}`);
-
-		// Defaults are enabled=true, desktopOnly=true, focusFile=false —
-		// only write when the user picked the non-default value.
-		if (params.enabled === false) lines.push('enabled: false');
-		if (params.desktopOnly === false) lines.push('desktopOnly: false');
-		if (params.focusFile === true) lines.push('focusFile: true');
-
-		// `summarize` and `command` actions don't use the prompt body, but
-		// `parseDefinitionFile` rejects empty bodies for `agent-task` and `rewrite`.
-		// Emit the body trimmed; for the prompt-less actions an empty body
-		// is fine because the parser doesn't enforce a non-empty body for them.
-		lines.push('---', '', params.prompt.trim(), '');
-		return lines.join('\n');
+	private serializeHook(fields: HookFields, prompt: string): string {
+		return ['---', ...serializeHookFields(fields), '---', '', prompt.trim(), ''].join('\n');
 	}
 
 	// ── Event dispatch ───────────────────────────────────────────────────────
@@ -675,47 +573,24 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 		const frontmatter = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter;
 		if (!frontmatter) return null;
 
-		const trigger = this.parseTrigger(frontmatter.trigger);
-		if (!trigger) return null;
-
-		const action = this.parseAction(frontmatter.action);
-		if (!action) return null;
+		// One walk of the HOOK_FIELDS table replaces the field-by-field literal
+		// this used to build, so a field can't be added to `Hook` and read here
+		// while being silently dropped on the write path. `null` means `trigger`
+		// or `action` is missing/unrecognised — the two fields with no default.
+		const fields = parseHookFields(frontmatter);
+		if (!fields) return null;
 
 		const prompt = extractMarkdownBody(await this.plugin.app.vault.read(file));
 
 		// agent-task and rewrite need a body to know what to do; summarize
 		// and command have their own dedicated paths and treat the body as
 		// optional.
-		if ((action === 'agent-task' || action === 'rewrite') && !prompt) return null;
+		if ((fields.action === 'agent-task' || fields.action === 'rewrite') && !prompt) return null;
 		// command requires the commandId field — without it there's nothing
 		// to fire.
-		const commandId = typeof frontmatter.commandId === 'string' ? frontmatter.commandId : undefined;
-		if (action === 'command' && !commandId) return null;
+		if (fields.action === 'command' && !fields.commandId) return null;
 
-		const hook: Hook = {
-			slug: file.basename,
-			trigger,
-			pathGlob: typeof frontmatter.pathGlob === 'string' ? frontmatter.pathGlob : undefined,
-			frontmatterFilter:
-				frontmatter.frontmatterFilter && typeof frontmatter.frontmatterFilter === 'object'
-					? (frontmatter.frontmatterFilter as Record<string, unknown>)
-					: undefined,
-			debounceMs: typeof frontmatter.debounceMs === 'number' ? frontmatter.debounceMs : DEFAULT_DEBOUNCE_MS,
-			maxRunsPerHour: typeof frontmatter.maxRunsPerHour === 'number' ? frontmatter.maxRunsPerHour : undefined,
-			cooldownMs: typeof frontmatter.cooldownMs === 'number' ? frontmatter.cooldownMs : DEFAULT_COOLDOWN_MS,
-			action,
-			toolPolicy: resolveFeatureToolPolicy(frontmatter),
-			enabledSkills: Array.isArray(frontmatter.enabledSkills) ? (frontmatter.enabledSkills as string[]) : [],
-			model: typeof frontmatter.model === 'string' ? frontmatter.model : undefined,
-			maxIterations: parseMaxIterations(frontmatter.maxIterations),
-			outputPath: typeof frontmatter.outputPath === 'string' ? frontmatter.outputPath : undefined,
-			commandId,
-			focusFile: frontmatter.focusFile === true ? true : undefined,
-			enabled: frontmatter.enabled !== false,
-			desktopOnly: frontmatter.desktopOnly !== false,
-			prompt,
-			filePath: file.path,
-		};
+		const hook: Hook = { slug: file.basename, ...fields, prompt, filePath: file.path };
 
 		// Auto-migrate the legacy on-disk shape so the next load reads the new
 		// canonical key without re-running the migration. Failures are non-fatal.
@@ -723,51 +598,11 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 			this.plugin,
 			file,
 			frontmatter,
-			() => this.serializeHook(this.hookToParams(hook)),
+			() => this.serializeHook(hook, hook.prompt),
 			'[HookManager]'
 		);
 		if (migration) await migration;
 
 		return hook;
-	}
-
-	/**
-	 * Convert a Hook back into the params shape expected by serializeHook —
-	 * used by the legacy-frontmatter migration path so the rewritten file
-	 * matches what a fresh create/update would produce.
-	 */
-	private hookToParams(hook: Hook): HookCreateParams & { slug: string } {
-		return {
-			slug: hook.slug,
-			trigger: hook.trigger,
-			action: hook.action,
-			prompt: hook.prompt,
-			pathGlob: hook.pathGlob,
-			frontmatterFilter: hook.frontmatterFilter,
-			debounceMs: hook.debounceMs,
-			maxRunsPerHour: hook.maxRunsPerHour,
-			cooldownMs: hook.cooldownMs,
-			toolPolicy: hook.toolPolicy,
-			enabledSkills: hook.enabledSkills,
-			model: hook.model,
-			maxIterations: hook.maxIterations,
-			outputPath: hook.outputPath,
-			enabled: hook.enabled,
-			desktopOnly: hook.desktopOnly,
-			commandId: hook.commandId,
-			focusFile: hook.focusFile,
-		};
-	}
-
-	private parseTrigger(value: unknown): HookTrigger | null {
-		if (value === 'file-created' || value === 'file-modified' || value === 'file-deleted' || value === 'file-renamed') {
-			return value;
-		}
-		return null;
-	}
-
-	private parseAction(value: unknown): HookAction | null {
-		if (value === 'agent-task' || value === 'summarize' || value === 'rewrite' || value === 'command') return value;
-		return null;
 	}
 }

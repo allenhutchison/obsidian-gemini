@@ -333,6 +333,83 @@ describe('HookManager CRUD', () => {
 		expect(hook?.prompt).toContain('Updated prompt');
 	});
 
+	it('updateHook clears every optional field the edit form empties', async () => {
+		// Regression guard for #1315: the merge ladder used `??` for most
+		// fields, so the management modal's `|| undefined` payload silently
+		// restored the previous value instead of clearing it. Only `toolPolicy`
+		// and `maxIterations` honoured an explicit `undefined`; now all of them
+		// do, because the HOOK_FIELDS table merges by key presence.
+		const plugin = createPluginWithVaultStore();
+		const manager = newManager(plugin);
+		await manager.createHook({
+			...baseCreateParams,
+			action: 'command',
+			commandId: 'editor:save-file',
+			pathGlob: 'Daily/**/*.md',
+			model: 'gemini-2.5-flash',
+			outputPath: 'Hooks/Runs/{slug}/{date}.md',
+			maxRunsPerHour: 12,
+			maxIterations: 4,
+			focusFile: true,
+			toolPolicy: { preset: PolicyPreset.READ_ONLY },
+		});
+
+		// Exactly what hook-management-modal.ts sends when the user empties
+		// each control: the key is present, its value is undefined.
+		await manager.updateHook('summarise', {
+			pathGlob: undefined,
+			model: undefined,
+			outputPath: undefined,
+			maxRunsPerHour: undefined,
+			maxIterations: undefined,
+			commandId: undefined,
+			focusFile: undefined,
+			toolPolicy: undefined,
+		});
+
+		const hook = manager.getHooks().find((h) => h.slug === 'summarise');
+		expect(hook?.pathGlob).toBeUndefined();
+		expect(hook?.model).toBeUndefined();
+		expect(hook?.outputPath).toBeUndefined();
+		expect(hook?.maxRunsPerHour).toBeUndefined();
+		expect(hook?.maxIterations).toBeUndefined();
+		expect(hook?.commandId).toBeUndefined();
+		expect(hook?.focusFile).toBeUndefined();
+		expect(hook?.toolPolicy).toBeUndefined();
+
+		// And the cleared values are gone from disk, not just from memory.
+		const content = plugin.__files.get('gemini-scribe/Hooks/summarise.md');
+		expect(content).not.toContain('pathGlob');
+		expect(content).not.toContain('model:');
+		expect(content).not.toContain('outputPath');
+		expect(content).not.toContain('maxRunsPerHour');
+		expect(content).not.toContain('maxIterations');
+		expect(content).not.toContain('commandId');
+		expect(content).not.toContain('focusFile');
+		expect(content).not.toContain('toolPolicy');
+	});
+
+	it('updateHook leaves untouched fields alone', async () => {
+		const plugin = createPluginWithVaultStore();
+		const manager = newManager(plugin);
+		await manager.createHook({
+			...baseCreateParams,
+			pathGlob: 'Daily/**/*.md',
+			model: 'gemini-2.5-flash',
+			maxRunsPerHour: 12,
+		});
+
+		// Only `enabled` is in the payload — everything else must survive.
+		await manager.updateHook('summarise', { enabled: false });
+
+		const hook = manager.getHooks().find((h) => h.slug === 'summarise');
+		expect(hook?.enabled).toBe(false);
+		expect(hook?.pathGlob).toBe('Daily/**/*.md');
+		expect(hook?.model).toBe('gemini-2.5-flash');
+		expect(hook?.maxRunsPerHour).toBe(12);
+		expect(hook?.prompt).toBe('Summarise {{filePath}}.');
+	});
+
 	it('updateHook throws when the hook is unknown', async () => {
 		const plugin = createPluginWithVaultStore();
 		const manager = newManager(plugin);

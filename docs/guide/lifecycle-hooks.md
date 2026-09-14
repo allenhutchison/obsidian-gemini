@@ -37,6 +37,8 @@ The fastest path is the **Hook Manager** modal. Two ways to open it:
 
 The modal has a list view (toggle / edit / delete / reset on each row) and a create/edit form covering trigger, path glob, tool access, prompt, plus an Advanced section for debounce, cooldown, rate limit, model override, output path, and the desktop-only flag.
 
+Clearing an optional field in the edit form removes it from the hook: empty the **Path glob**, **Model**, **Output path**, **Command id**, or **Max runs per hour** input (or untick **Focus file**) and the field is dropped from the definition file on save, restoring that field's default.
+
 You can also create hooks by hand-editing markdown files inside `[state-folder]/Hooks/`. The filename (without `.md`) becomes the hook's **slug**.
 
 **Minimal example** — `gemini-scribe/Hooks/summarize-on-save.md`:
@@ -179,7 +181,7 @@ Each `(hook, file)` pair has its own debounce timer. Rapid saves while typing ar
 
 ### Per-Hour Rate Limit
 
-`maxRunsPerHour` enforces a sliding-window cap on how many times a single hook can fire per hour. Reached the cap? Further events are dropped with a log entry until the window slides forward.
+`maxRunsPerHour` enforces a sliding-window cap on how many times a single hook can fire per hour. Reached the cap? Further events are dropped with a log entry until the window slides forward. Omitting the field — or setting it to `0` — means no limit.
 
 ### Cooldown After Fire
 
