@@ -26,6 +26,7 @@ import { t } from '../../i18n';
 import type { SettingWriter } from './writer-types';
 import { RAG_WRITERS } from './page-vault-index';
 import { TOOL_POLICY_WRITERS } from './page-tool-permissions';
+import { invalidateModelCount, type CardProviderId } from './model-count-cache';
 
 /** Read a dotted path out of the settings object. `undefined` when any segment is missing. */
 /**
@@ -182,6 +183,29 @@ const writeHistoryFolder: SettingWriter = async (plugin, _key, value) => {
 	return { needsUpdate: false };
 };
 
+/** Which provider card's model count needs invalidating when a given credential/base-URL path changes. */
+const CREDENTIAL_PATH_PROVIDER: Record<string, CardProviderId> = {
+	apiKeySecretName: 'gemini',
+	customBaseUrl: 'gemini',
+	openaiApiKeySecretName: 'openai',
+	openaiBaseUrl: 'openai',
+	ollamaBaseUrl: 'ollama',
+};
+
+/**
+ * Writing a provider's API key secret name or base URL: a plain scalar
+ * assignment (`writeSettingPath` already handles the write itself), but the
+ * Providers page's cached model count for that card — and any probe already
+ * in flight — was measured against the old value and no longer reflects
+ * reality. Invalidate it and report `needsUpdate` so the card re-probes.
+ */
+const writeCredentialField: SettingWriter = async (plugin, key, value) => {
+	if (!writeSettingPath(plugin.settings, key, value)) return { needsUpdate: false };
+	const provider = CREDENTIAL_PATH_PROVIDER[key];
+	if (provider) invalidateModelCount(provider);
+	return { needsUpdate: true };
+};
+
 /**
  * Paths whose write needs extra work beyond the plain assignment
  * `writeSettingPath` performs. Keys are exact paths or a pattern with a
@@ -195,6 +219,11 @@ export const SETTING_WRITERS: Record<string, SettingWriter> = {
 	'features.*.model': writeFeatureModel,
 	defaultProvider: writeDefaultProvider,
 	historyFolder: writeHistoryFolder,
+	apiKeySecretName: writeCredentialField,
+	openaiApiKeySecretName: writeCredentialField,
+	customBaseUrl: writeCredentialField,
+	ollamaBaseUrl: writeCredentialField,
+	openaiBaseUrl: writeCredentialField,
 	...TOOL_POLICY_WRITERS,
 	...RAG_WRITERS,
 };

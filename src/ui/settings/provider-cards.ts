@@ -10,15 +10,21 @@ import { Notice, SecretComponent, type SettingDefinitionItem, type SettingDefini
 import type { ObsidianGemini } from '../../types/plugin';
 import { t, type TranslationKey } from '../../i18n';
 import { getErrorMessage } from '../../utils/error-utils';
-import { getCapabilities, type ModelProvider } from '../../api/providers/registry';
+import { getCapabilities } from '../../api/providers/registry';
 import { providerConnection } from '../../api/provider-status';
 import { featuresUsing } from '../../api/feature-routing';
 import type { SettingsContext } from './context';
 import { readSettingPath } from './paths';
 import { includesLine, usedByLine, providerCardDisplay } from './display-values';
-
-/** Every card the Providers page renders, including the routable `ModelProvider`s and the Anthropic placeholder. */
-export type CardProviderId = ModelProvider | 'anthropic';
+import {
+	modelCountCache,
+	modelCountGeneration,
+	bumpGeneration,
+	invalidateModelCount,
+	type CardProviderId,
+} from './model-count-cache';
+export type { CardProviderId } from './model-count-cache';
+export { invalidateModelCount } from './model-count-cache';
 
 export type AuthRow =
 	| { kind: 'secret'; settingsKey: 'apiKeySecretName' | 'openaiApiKeySecretName' | 'anthropicApiKeySecretName' }
@@ -119,20 +125,12 @@ export async function refreshGeminiModelList(
 }
 
 /**
- * Best-effort cached model count per card, refreshed in the background. Async
- * content inside the synchronous `getSettingDefinitions()` (design doc §5.7):
- * render the last known count immediately, kick the fetch, and call
- * `tab.update()` when it resolves — guarded by a per-card generation token so
- * a stale probe started before a base-URL change can't overwrite a fresher one.
+ * Async content inside the synchronous `getSettingDefinitions()` (design doc
+ * §5.7): render the last known count from `modelCountCache` immediately, kick
+ * the fetch, and call `tab.update()` when it resolves — guarded by
+ * `modelCountGeneration` so a stale probe started before a credential/base-URL
+ * change (see `invalidateModelCount`) can't overwrite a fresher one.
  */
-const modelCountCache = new Map<CardProviderId, { total: number; cloud: number }>();
-const modelCountGeneration = new Map<CardProviderId, number>();
-
-function bumpGeneration(id: CardProviderId): number {
-	const next = (modelCountGeneration.get(id) ?? 0) + 1;
-	modelCountGeneration.set(id, next);
-	return next;
-}
 
 /**
  * @param userInitiated true when the user clicked Refresh: the outcome is
@@ -225,7 +223,10 @@ function authRows(ctx: SettingsContext, spec: ProviderCardSpec): SettingDefiniti
 							.onChange(async (value) => {
 								plugin.settings[row.settingsKey] = value;
 								await plugin.saveSettings();
-								ctx.tab.refreshDomState();
+								// The cached model count (and any probe already in flight) was
+								// measured against the old key and no longer reflects reality.
+								invalidateModelCount(spec.id);
+								ctx.tab.update();
 							})
 					);
 				},

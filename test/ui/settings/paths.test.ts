@@ -13,6 +13,7 @@ import {
 import { recallModel } from '../../../src/api/feature-routing';
 import { setGeminiModels, DEFAULT_GEMINI_MODELS } from '../../../src/models';
 import { buildPlugin } from './fixtures';
+import { modelCountCache, modelCountGeneration } from '../../../src/ui/settings/model-count-cache';
 
 afterEach(() => {
 	// `GEMINI_MODELS` is a shared module-level binding paths.ts reads
@@ -156,4 +157,33 @@ describe('SETTING_WRITERS: historyFolder', () => {
 		expect(plugin.settings.historyFolder).not.toBe('/gemini-scribe/');
 		expect(plugin.settings.historyFolder.startsWith('/')).toBe(false);
 	});
+});
+
+describe('SETTING_WRITERS: provider credentials/base URLs invalidate the model count cache', () => {
+	afterEach(() => {
+		modelCountCache.clear();
+		modelCountGeneration.clear();
+	});
+
+	it.each([
+		['apiKeySecretName', 'gemini-key', 'gemini'],
+		['customBaseUrl', 'https://example.com', 'gemini'],
+		['openaiApiKeySecretName', 'openai-key', 'openai'],
+		['openaiBaseUrl', 'https://example.com', 'openai'],
+		['ollamaBaseUrl', 'http://localhost:9999', 'ollama'],
+	] as const)(
+		'writing %s clears the cached model count and bumps the generation for %s',
+		async (key, value, provider) => {
+			const plugin = buildPlugin();
+			modelCountCache.set(provider, { total: 5, cloud: 0 });
+			modelCountGeneration.set(provider, 1);
+
+			const result = await SETTING_WRITERS[key](plugin, key, value);
+
+			expect(plugin.settings[key]).toBe(value);
+			expect(modelCountCache.has(provider)).toBe(false);
+			expect(modelCountGeneration.get(provider)).toBe(2);
+			expect(result.needsUpdate).toBe(true);
+		}
+	);
 });
