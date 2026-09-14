@@ -35,7 +35,7 @@ const __dirname = dirname(__filename);
 const I18N_DIR = join(__dirname, '..', 'src', 'i18n');
 const STATE_PATH = join(I18N_DIR, 'translation-state.json');
 
-const DEFAULT_MODEL = process.env.GEMINI_TRANSLATE_MODEL || 'gemini-3.5-flash';
+const DEFAULT_MODEL = process.env.GEMINI_TRANSLATE_MODEL || 'gemini-flash-latest';
 const CHUNK_SIZE = 50;
 const MAX_API_RETRIES = 2;
 const RETRY_DELAY_MS = 2000;
