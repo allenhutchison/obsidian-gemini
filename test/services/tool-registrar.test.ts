@@ -166,6 +166,29 @@ describe('ToolRegistrar', () => {
 			expect(mockRegistry.registerTool).not.toHaveBeenCalledWith(expect.objectContaining({ name: 'google_maps' }));
 		});
 
+		// A route can say 'gemini' with no key actually configured (e.g. a
+		// stale/hand-edited settings file) — the route alone isn't enough,
+		// same as maps above.
+		it('skips web search when routed to gemini but no Gemini key is configured', async () => {
+			mockPlugin.settings.apiKeySecretName = '';
+			mockPlugin.settings.defaultProvider = 'ollama';
+			mockPlugin.settings.features = featuresAllOn('ollama');
+			mockPlugin.settings.features.webSearch = { provider: 'gemini', model: '' };
+			await registrar.registerAll(mockRegistry, mockLogger, mockPlugin);
+
+			expect(mockRegistry.registerTool).not.toHaveBeenCalledWith(expect.objectContaining({ name: 'google_search' }));
+		});
+
+		it('skips deep research when routed to gemini but no Gemini key is configured', async () => {
+			mockPlugin.settings.apiKeySecretName = '';
+			mockPlugin.settings.defaultProvider = 'ollama';
+			mockPlugin.settings.features = featuresAllOn('ollama');
+			mockPlugin.settings.features.deepResearch = { provider: 'gemini', model: '' };
+			await registrar.registerAll(mockRegistry, mockLogger, mockPlugin);
+
+			expect(mockRegistry.registerTool).not.toHaveBeenCalledWith(expect.objectContaining({ name: 'deep_research' }));
+		});
+
 		it('should continue registering other sources if one fails', async () => {
 			// Make registerTool throw for a specific tool
 			mockRegistry.registerTool.mockImplementation((tool: any) => {

@@ -38,7 +38,12 @@ export class ToolRegistrar {
 		{ name: 'vault', getTools: () => getVaultTools() },
 		{
 			name: 'web',
-			gate: (settings) => featureProvider(settings, 'webSearch') !== null,
+			// Google Search/URL-context is Gemini-only today, but the routed
+			// provider alone isn't enough: a stale/hand-edited route can still
+			// say 'gemini' with no key configured, and the tool would register
+			// only to fail at call time. Require the key too, matching 'maps'.
+			gate: (settings) =>
+				featureProvider(settings, 'webSearch') === 'gemini' && Boolean(apiKeySecretNameFor(settings, 'gemini')),
 			getTools: () => import('../tools/web-tools').then((m) => m.getWebTools()),
 		},
 		{
@@ -50,7 +55,9 @@ export class ToolRegistrar {
 		},
 		{
 			name: 'deep-research',
-			gate: (settings) => featureProvider(settings, 'deepResearch') !== null,
+			// Same reasoning as 'web': require both the route and the key.
+			gate: (settings) =>
+				featureProvider(settings, 'deepResearch') === 'gemini' && Boolean(apiKeySecretNameFor(settings, 'gemini')),
 			getTools: () => import('../tools/web-tools').then((m) => m.getDeepResearchTools()),
 		},
 		{ name: 'memory', getTools: () => import('../tools/memory-tool').then((m) => m.getMemoryTools()) },
