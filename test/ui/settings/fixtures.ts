@@ -92,6 +92,11 @@ export function buildPlugin(settingsOverrides: Partial<ObsidianGeminiSettings> =
 		logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
 		saveSettings: vi.fn(async () => {}),
 		getModelManager: vi.fn(() => modelManager),
+		// The real plugin exposes both: `getModelManager()` and the `modelManager`
+		// property resolve to the same instance (main.ts). Code under test reads
+		// `plugin.modelManager` directly (e.g. provider-cards.ts), so the fixture
+		// must mirror that rather than only the getter.
+		modelManager,
 		toolRegistry,
 		mcpManager,
 		ragIndexing,
