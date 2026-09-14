@@ -457,7 +457,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		// `features` / `providerModelMemory` model (settingsSchemaVersion 1 -> 2).
 		// Must run before the sanitizers below so they clean up what the
 		// migration produced rather than the (possibly aliased) default.
-		if (migrateToFeatureRouting(this.settings, data)) {
+		if (migrateToFeatureRouting(this.settings, data, this.logger)) {
 			await this.saveData(this.settings);
 			this.logger?.log('Migrated provider routing to the feature-routing model (settingsSchemaVersion 2)');
 		}

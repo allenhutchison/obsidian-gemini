@@ -202,6 +202,32 @@ describe('migrateToFeatureRouting', () => {
 		expect(migrateToFeatureRouting(makeSettings(), undefined)).toBe(false);
 	});
 
+	// A schema version newer than this build understands must never be
+	// migrated or have data deleted from it — that would misinterpret a
+	// future shape this migration doesn't know about (#1508 review).
+	it('does not migrate or delete anything when settingsSchemaVersion is newer than this build supports', () => {
+		const settings = makeSettings();
+		const rawData: Record<string, unknown> = {
+			provider: 'ollama',
+			settingsSchemaVersion: 3,
+			someFutureField: 'keep-me',
+		};
+		const warn = vi.fn();
+
+		const migrated = migrateToFeatureRouting(settings, rawData, { warn });
+
+		expect(migrated).toBe(false);
+		// The raw persisted data is untouched — nothing deleted from it.
+		expect(rawData).toEqual({
+			provider: 'ollama',
+			settingsSchemaVersion: 3,
+			someFutureField: 'keep-me',
+		});
+		// The settings object passed in wasn't mutated by this migration either.
+		expect(settings.features).toEqual({});
+		expect(warn).toHaveBeenCalled();
+	});
+
 	// Folds in the old migrateOllamaModelSetting: before ollamaModelName
 	// existed, an Ollama-primary install's single picker wrote to
 	// chatModelName, so that field held an Ollama model, not a Gemini one.

@@ -19,6 +19,7 @@ import {
 	type RoutedProvider,
 } from '../types/features';
 import type { ObsidianGeminiSettings } from '../types/settings';
+import type { Logger } from './logger';
 
 function isValidProvider(value: unknown): value is ModelProvider {
 	return typeof value === 'string' && (PROVIDER_IDS as readonly string[]).includes(value);
@@ -44,16 +45,33 @@ function isValidProvider(value: unknown): value is ModelProvider {
  * even when it's itself invalid for that feature (mapping to `'none'`, never to
  * `defaultProvider`).
  *
+ * A `settingsSchemaVersion` newer than this migration's target (2) means the
+ * data was written by a newer plugin version this build doesn't understand —
+ * running the 1->2 migration against it could misinterpret or delete fields
+ * it doesn't recognize, so that case is left untouched rather than guessed at.
+ *
  * @param settings - freshly merged settings (mutated in place)
  * @param rawData - raw persisted data as loaded from disk, pre-merge
+ * @param logger - optional; used to warn when a future schema version is left untouched
  * @returns true when the migration ran (and the caller should persist)
  */
 export function migrateToFeatureRouting(
 	settings: ObsidianGeminiSettings,
-	rawData: Record<string, unknown> | null | undefined
+	rawData: Record<string, unknown> | null | undefined,
+	logger?: Pick<Logger, 'warn'>
 ): boolean {
 	if (!rawData) return false;
 	const version = typeof rawData.settingsSchemaVersion === 'number' ? rawData.settingsSchemaVersion : 1;
+	if (version > 2) {
+		// Newer-than-known schema: never migrate or delete data we don't
+		// understand. Absent/non-numeric versions are still treated as legacy
+		// (1) above, and the documented version-2 downgrade/re-upgrade path
+		// (version >= 2 with no `features`) is unaffected by this guard.
+		logger?.warn(
+			`Settings schema version ${version} is newer than this plugin build supports (expected <= 2); leaving settings untouched.`
+		);
+		return false;
+	}
 	const hasFeatures = rawData.features !== undefined && rawData.features !== null;
 	if (version >= 2 && hasFeatures) return false;
 
