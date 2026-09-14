@@ -85,6 +85,7 @@ function makeStreamContainer(): HTMLElement {
 	return container;
 }
 
+/** A successful terminal `AgentLoopResult`, with per-test fields overridden. */
 function loopResult(overrides: Partial<AgentLoopResult> = {}): AgentLoopResult {
 	return {
 		markdown: 'final answer',
@@ -108,6 +109,13 @@ function scriptLoop(script: HookScript | undefined, result: AgentLoopResult = lo
 	});
 }
 
+/**
+ * Build an `AgentViewTools` over stub plugin/context collaborators, plus a
+ * `turn()` helper that drives one user turn through the adapter.
+ *
+ * @param options.withFinalize Whether the view supports `finalizeFollowUpStream`
+ *   — false exercises the `displayMessage` fallback path.
+ */
 function makeHarness(options: { withFinalize?: boolean } = {}) {
 	const { withFinalize = true } = options;
 	const addEntryToSession = vi.fn().mockResolvedValue(undefined);
