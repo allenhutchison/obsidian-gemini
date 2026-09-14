@@ -22,272 +22,9 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.recentSessions': 'Recente sessies:',
 	'agent.empty.examplesHeader': 'Probeer deze voorbeelden:',
 	'i18n.aiTranslatedNotice': "Deze interfacevertaling is door AI gegenereerd. PR's voor verbeteringen zijn welkom.",
-	'settings.common.saveFailedNotice': 'Instellingen opslaan mislukt: {error}',
-	'settings.common.advancedBadge': 'Geavanceerd',
-	'settings.general.sectionTitle': 'Algemeen',
-	'settings.general.sectionDesc':
-		'Stel je provider, API-sleutel en de modellen in die de plugin gebruikt. Vereist voor de werking van de plugin.',
-	'settings.general.documentationName': 'Documentatie',
-	'settings.general.documentationDesc': 'Bekijk de volledige documentatie en handleidingen van de plugin',
-	'settings.general.viewDocumentationButton': 'Documentatie bekijken',
-	'settings.general.providerName': 'Provider',
-	'settings.general.providerDesc':
-		'Kies de modelprovider. Gemini gebruikt de Google Cloud API. Ollama voert modellen lokaal uit op je machine; installeer vanaf https://ollama.com en haal een model op met `ollama pull <name>`. OpenAI gebruikt je OpenAI-API-sleutel, of een met OpenAI compatibele server (LM Studio, MLX, ...) via een aangepaste basis-URL.',
 	'settings.general.providerOptionGemini': 'Google Gemini (cloud)',
 	'settings.general.providerOptionOllama': 'Ollama (lokaal)',
 	'settings.general.providerOptionOpenai': 'OpenAI (cloud)',
-	'settings.general.ollamaBaseUrlName': 'Ollama basis-URL',
-	'settings.general.ollamaBaseUrlDesc':
-		'HTTP-endpoint van je lokale Ollama-daemon. Standaard is http://localhost:11434.',
-	'settings.general.refreshModelListName': 'Modellenlijst vernieuwen',
-	'settings.general.refreshOllamaModelListName': 'Ollama-modellenlijst vernieuwen',
-	'settings.general.refreshModelListOllamaDesc': 'Vraag de Ollama-daemon opnieuw om beschikbare modellen.',
-	'settings.general.openaiApiKeyName': 'OpenAI-API-sleutel',
-	'settings.general.openaiApiKeyDesc':
-		'Koppel je OpenAI-API-sleutel. Klik op "Koppelen..." en Obsidian zal vragen om een geheime naam (dit is slechts een label — gebruik een naam zoals "openai-api") en een geheime waarde (plak hier je API-sleutel). Verkrijg een sleutel op https://platform.openai.com/api-keys. Niet nodig voor een met OpenAI compatibele lokale server die er geen vereist.',
-	'settings.general.openaiBaseUrlName': 'OpenAI-basis-URL',
-	'settings.general.openaiBaseUrlDesc':
-		'Chat Completions-eindpunt. Standaard is de OpenAI-API (api.openai.com). Verwijs dit in plaats daarvan naar een met OpenAI compatibele lokale server — zoals LM Studio of MLX — om verzoeken op je machine te houden.',
-	'settings.general.refreshOpenaiModelListName': 'OpenAI-modellijst vernieuwen',
-	'settings.general.refreshModelListOpenaiDesc': 'Vraag het geconfigureerde eindpunt opnieuw om beschikbare modellen.',
-	'settings.general.openaiModelsFoundSingular': '{count} OpenAI-model gevonden.',
-	'settings.general.openaiModelsFound': '{count} OpenAI-modellen gevonden.',
-	'settings.general.openaiChatModelDesc':
-		'Model dat wordt gebruikt voor chatsessies met agents en het herschrijven van selecties.',
-	'settings.general.refreshModelListGeminiDesc':
-		'Haal nu de nieuwste Gemini-modellijst op van GitHub, waarbij de 24-uurs cache wordt omzeild. Gebruik dit nadat een nieuw model is gepubliceerd.',
-	'settings.general.refreshButton': 'Vernieuwen',
-	'settings.general.ollamaModelsFoundSingular': '{count} Ollama-model gevonden.',
-	'settings.general.ollamaModelsFound': '{count} Ollama-modellen gevonden.',
-	'settings.general.refreshFailedNotice': 'Vernieuwen mislukt: {error}',
-	'settings.general.remoteModelNoticeName': 'Melding over in de cloud gehost model',
-	'settings.general.remoteModelNoticeDesc':
-		'{models} draait op {hosts}, niet op je machine. Verzoeken — inclusief eventuele notitie-inhoud die ze verzenden — verlaten je apparaat, ook al is je provider Ollama. Kies een lokaal opgehaald model als je wilt dat alles lokaal blijft.',
-	'settings.general.localOnlyNoticeName': 'Melding over uitsluitend lokale functies',
-	'settings.general.localOnlyNoticeDesc':
-		'Alles wordt op uw machine uitgevoerd. Google Search, URL Context (web fetch), Deep Research, afbeeldingengeneratie en de vault-zoekindex zijn afhankelijk van Gemini-clouddiensten en zijn uitgeschakeld. Om een functie in te schakelen, wijst u een provider toe onder "Provider per functie" — de gegevens van die functie worden dan naar de cloud verzonden.',
-	'settings.general.perFeatureProviderTitle': 'Provider per functie',
-	'settings.general.perFeatureProviderDesc':
-		'Kies een andere provider voor afzonderlijke functies. Alles wat op de standaardwaarde blijft staan, gebruikt de hierboven geselecteerde provider.',
-	'settings.general.useProviderDefault': 'Standaard — {provider}',
-	'settings.general.useCaseUnavailableOption': 'Niet beschikbaar',
-	'settings.general.useCaseChatName': 'Chat en agent',
-	'settings.general.useCaseChatDesc': 'Interactieve chat, agentsessies, geplande taken en hooks.',
-	'settings.general.useCaseSummaryName': 'Samenvattingen',
-	'settings.general.useCaseSummaryDesc': 'De opdracht "Actief bestand samenvatten" en conversatiecompressie.',
-	'settings.general.useCaseCompletionsName': 'Aanvullingen',
-	'settings.general.useCaseCompletionsDesc': 'Inline suggesties in IDE-stijl tijdens het typen.',
-	'settings.general.useCaseRewriteName': 'Herschrijven',
-	'settings.general.useCaseRewriteDesc': 'Geselecteerde tekst herschrijven. Maakt gebruik van het chatmodel.',
-	'settings.general.useCaseWebSearchName': 'Web en zoeken',
-	'settings.general.useCaseWebSearchDesc':
-		'Google Search, Google Maps, URL Context (web fetch) en Deep Research-tools.',
-	'settings.general.useCaseRagName': 'Vault-zoekindex',
-	'settings.general.useCaseRagDesc':
-		'Semantisch zoeken in uw vault. Uploadt de inhoud van notities naar een cloud-zoekindex.',
-	'settings.general.useCaseImageGenName': 'Afbeeldingengeneratie',
-	'settings.general.useCaseImageGenDesc': 'Afbeeldingen genereren op basis van een tekstprompt.',
-	'settings.general.missingKeyNoticeName': 'API-sleutel vereist',
-	'settings.general.missingKeyNoticeDesc':
-		'Sommige functies zijn ingesteld om {providers} te gebruiken, waarvoor een API-sleutel vereist is. Voer hierboven een sleutel in, anders zullen deze functies mislukken wanneer u ze gebruikt.',
-	'settings.general.mixedProviderNoticeName': 'Sommige functies gebruiken een andere provider',
-	'settings.general.mixedProviderNoticeDesc':
-		'Deze functies gebruiken niet uw standaardprovider: {features}. Hun verzoeken — inclusief eventuele notitie-inhoud die ze verzenden — gaan naar de provider die u voor hen hebt gekozen.',
-	'settings.general.inheritOllamaChatModel': 'Hetzelfde als chatmodel',
-	'settings.general.ollamaSummaryModelDesc':
-		'Model dat wordt gebruikt voor samenvattingen. Laat dit op "Hetzelfde als chatmodel" staan, tenzij u een ander model nodig hebt — Ollama houdt één model tegelijk geladen, dus een tweede model wordt bij elke wisseling opnieuw geladen.',
-	'settings.general.ollamaCompletionsModelDesc':
-		'Model dat wordt gebruikt voor inline aanvullingen. Laat dit op "Hetzelfde als chatmodel" staan, tenzij u een ander model nodig hebt — Ollama houdt één model tegelijk geladen, dus een tweede model wordt bij elke wisseling opnieuw geladen. Een klein model kan hier de afweging waard zijn.',
-	'settings.general.apiKeyName': 'API-sleutel',
-	'settings.general.apiKeyDesc':
-		'Koppel je Google Gemini API-sleutel. Klik op "Koppelen..." en Obsidian zal vragen om een geheime naam (dit is slechts een label — gebruik een willekeurige naam zoals "gemini-api") en een geheime waarde (plak hier je API-sleutel). Krijg gratis een sleutel op https://aistudio.google.com/apikey',
-	'settings.general.chatModelName': 'Chatmodel',
-	'settings.general.chatModelDesc':
-		'Model dat wordt gebruikt voor agent-chatsessies, het herschrijven van selecties en webzoekhulpmiddelen.',
-	'settings.general.summaryModelName': 'Samenvattingsmodel',
-	'settings.general.summaryModelDesc':
-		'Model dat wordt gebruikt voor de opdracht "Actief bestand samenvatten" die samenvattingen toevoegt aan frontmatter.',
-	'settings.general.completionModelName': 'Aanvullingsmodel',
-	'settings.general.completionModelDesc':
-		'Model dat wordt gebruikt voor inline aanvullingen in IDE-stijl terwijl je in notities typt.',
-	'settings.general.ollamaModelName': 'Ollama-model',
-	'settings.general.ollamaModelDesc':
-		'Model dat wordt gebruikt voor chatten en herschrijven, en voor elke andere Ollama-functie die is ingesteld op "Hetzelfde als chatmodel".',
-	'settings.general.imageModelName': 'Afbeeldingsmodel',
-	'settings.general.imageModelDesc': 'Model dat wordt gebruikt voor het genereren van afbeeldingen.',
-	'settings.general.stateFolderName': 'Plugin-statusmap',
-	'settings.general.stateFolderDesc':
-		'Map waarin plugin-gegevens worden opgeslagen. Agentsessies bevinden zich onder Agent-Sessions/, aangepaste prompts onder Prompts/, hooks onder Hooks/, geplande taakstatussen onder Scheduled-Tasks/.',
-	'settings.general.showAdvancedName': 'Geavanceerde instellingen tonen',
-	'settings.general.showAdvancedDesc':
-		'Toon geavanceerde secties (API-configuratie, Tool-machtigingen, Tool-lusdetectie, MCP-servers, Foutopsporing) voor geavanceerde gebruikers.',
-	'settings.general.modelListUpdatedSingular': 'Modellijst bijgewerkt: {count} model.',
-	'settings.general.modelListUpdated': 'Modellijst bijgewerkt: {count} modellen.',
-	'settings.general.refreshSkippedOffline': 'Overgeslagen: offline',
-	'settings.general.refreshSkippedNotGemini': 'Overgeslagen: er is geen functie ingesteld om Gemini te gebruiken',
-	'settings.general.refreshModelListFailed': 'Bijwerken van modellijst mislukt: {error}',
-	'settings.ui.sectionTitle': 'Gebruikerservaring',
-	'settings.ui.sectionDesc':
-		'Streaming, diff-weergave, planner-inhaalslag en personalisatie-opties die invloed hebben op hoe je met de plugin interageert.',
-	'settings.ui.userNameName': 'Je naam',
-	'settings.ui.userNameDesc':
-		'Je naam die wordt gebruikt in systeeminstructies, zodat de AI je persoonlijk kan aanspreken in gesprekken.',
-	'settings.ui.userNamePlaceholder': 'Voer je naam in',
-	'settings.ui.summaryFrontmatterKeyName': 'Frontmatter-sleutel voor samenvatting',
-	'settings.ui.summaryFrontmatterKeyDesc':
-		'Frontmatter-eigenschapsnaam waar samenvattingen worden opgeslagen bij het gebruik van de opdracht "Actief bestand samenvatten".',
-	'settings.ui.enableStreamingName': 'Streaming inschakelen',
-	'settings.ui.enableStreamingDesc':
-		'Stream AI-reacties woord voor woord terwijl ze worden gegenereerd voor een meer interactieve chatervaring.',
-	'settings.ui.alwaysShowDiffViewName': 'Altijd diff-weergave tonen bij schrijven naar bestanden',
-	'settings.ui.alwaysShowDiffViewDesc':
-		'Automatisch een diff-weergave openen wanneer de agent bestandswijzigingen voorstelt, in plaats van dat er op een knop moet worden geklikt.',
-	'settings.ui.sessionHistoryName': 'Sessiegeschiedenis inschakelen',
-	'settings.ui.sessionHistoryDesc':
-		'Sla chatsessies van de agent op als markdown-bestanden in je vault. Sessies worden opgeslagen onder Agent-Sessions/ met automatisch gegenereerde titels.',
-	'settings.ui.logToolExecutionName': 'Uitvoering van tools loggen in sessiegeschiedenis',
-	'settings.ui.logToolExecutionDesc':
-		'Voeg een samenvatting van elke tool-uitvoering toe aan het sessiegeschiedenisbestand voor controle. Vereist dat sessiegeschiedenis is ingeschakeld. Vereist het opnieuw laden van de plugin om effect te hebben.',
-	'settings.automation.sectionTitle': 'Automatisering',
-	'settings.automation.sectionDesc':
-		'Voer AI-agenttaken automatisch uit — volgens een schema of in reactie op vault-gebeurtenissen (bestand aangemaakt/gewijzigd/verwijderd/hernoemd).',
-	'settings.automation.manageScheduledTasksName': 'Geplande taken beheren',
-	'settings.automation.manageScheduledTasksDesc':
-		'Geplande AI-taken maken, bewerken, in-/uitschakelen en verwijderen. Taken worden automatisch op de achtergrond uitgevoerd terwijl Obsidian geopend is.',
-	'settings.automation.openSchedulerButton': 'Planner openen',
-	'settings.automation.newTaskButton': 'Nieuwe taak',
-	'settings.automation.autoRunCatchUpName': 'Gemiste geplande taken automatisch uitvoeren bij opstarten',
-	'settings.automation.autoRunCatchUpDesc':
-		'Indien ingeschakeld, worden taken die zijn gemist toen Obsidian gesloten was (en waarbij "Run if missed" is ingesteld) automatisch ingediend bij het opstarten zonder het goedkeuringsvenster te tonen.',
-	'settings.automation.enableHooksName': 'Lifecycle-hooks inschakelen',
-	'settings.automation.enableHooksDesc':
-		'Abonneer op vault-gebeurtenissen en voer in reactie daarop AI-agenttaken uit. Standaard uitgeschakeld — vault-gebeurtenissen worden continu geactiveerd en een hook met een breed bereik kan het API-tegoed snel uitputten.',
-	'settings.automation.manageHooksName': 'Lifecycle-hooks beheren',
-	'settings.automation.manageHooksDesc':
-		'Hooks maken, bewerken, in-/uitschakelen en verwijderen. Elke hook wordt geactiveerd wanneer een overeenkomstige vault-gebeurtenis plaatsvindt en wordt uitgevoerd als een headless agentsessie.',
-	'settings.automation.openHookManagerButton': 'Hook-manager openen',
-	'settings.automation.newHookButton': 'Nieuwe hook',
-	'settings.debug.sectionTitle': 'Debug',
-	'settings.debug.sectionDesc': 'Diagnostische schakelaars voor het oplossen van problemen met plugin-gedrag.',
-	'settings.debug.debugModeName': 'Foutopsporingsmodus',
-	'settings.debug.debugModeDesc':
-		'Schakel debug-logboekregistratie naar de console in. Handig voor het oplossen van problemen.',
-	'settings.debug.showTokenUsageName': 'Tokengebruik tonen',
-	'settings.debug.showTokenUsageDesc': 'Toon het geschatte tokengebruik in de agent-weergave (voor debug-doeleinden).',
-	'settings.debug.stopOnToolErrorName': 'Stoppen bij tool-fout',
-	'settings.debug.stopOnToolErrorDesc':
-		'Stop de uitvoering van de agent wanneer een tool-aanroep mislukt. Indien uitgeschakeld, blijft de agent volgende tools uitvoeren.',
-	'settings.agentConfig.sectionTitle': 'Agent-configuratie',
-	'settings.agentConfig.sectionDesc':
-		'Pas aan hoe de agent met het model communiceert: parameters voor opnieuw proberen/genereren, samenvatting van gesprekken en lusbeveiligingen.',
-	'settings.agentConfig.apiConfigurationHeading': 'API-configuratie',
-	'settings.agentConfig.logToFileName': 'Loggen naar bestand',
-	'settings.agentConfig.logToFileDesc':
-		'Schrijf logboekvermeldingen naar een bestand in de plugin-statusmap. Fouten en waarschuwingen worden altijd gelogd; debug-vermeldingen vereisen de foutopsporingsmodus. Logbestanden worden automatisch geroteerd bij 1 MB.',
-	'settings.agentConfig.useInteractionsApiName': 'Interactions API gebruiken',
-	'settings.agentConfig.useInteractionsApiDesc':
-		"Stuur Gemini-verzoeken via Google's nieuwere Interactions API in plaats van de verouderde generateContent API. Dit is het standaardtransport. Werkt stateloos — de gespreksgeschiedenis wordt bij elke beurt opnieuw afgespeeld en niet bewaard aan de kant van Google tussen beurten. Schakel dit uit om terug te vallen op generateContent als je problemen ondervindt. Modellen die alleen de Interactions API ondersteunen (zoals Gemini Omni) gebruiken deze altijd, ongeacht deze instelling.",
-	'settings.agentConfig.customEndpointName': 'Aangepast API-eindpunt',
-	'settings.agentConfig.customEndpointDesc':
-		'Overschrijf de standaard Google API-basis-URL (bijv. voor een bedrijfsproxy of lokale gateway). Laat leeg om het officiële eindpunt te gebruiken.',
-	'settings.agentConfig.customEndpointInvalidNotice': 'Aangepast API-eindpunt is geen geldige URL — wordt gewist.',
-	'settings.agentConfig.maxRetriesName': 'Maximaal aantal pogingen',
-	'settings.agentConfig.maxRetriesDesc': 'Maximaal aantal pogingen wanneer een modelaanvraag mislukt.',
-	'settings.agentConfig.maxRetriesPlaceholder': 'bijv. 3',
-	'settings.agentConfig.initialBackoffName': 'Initiële backoff-vertraging (ms)',
-	'settings.agentConfig.initialBackoffDesc':
-		'Initiële vertraging in milliseconden vóór de eerste herpoging. Volgende pogingen maken gebruik van exponentiële backoff.',
-	'settings.agentConfig.initialBackoffPlaceholder': 'bijv. 1000',
-	'settings.agentConfig.contextManagementHeading': 'Contextbeheer',
-	'settings.agentConfig.compactionThresholdName': 'Drempelwaarde voor contextcompressie',
-	'settings.agentConfig.compactionThresholdDesc':
-		'Vat oudere gespreksrondes automatisch samen wanneer het tokengebruik dit percentage van het modelcontextvenster overschrijdt. Huidig: {percent}%',
-	'settings.agentConfig.loopDetectionHeading': 'Tool-lusdetectie',
-	'settings.agentConfig.loopDetectionName': 'Lusdetectie inschakelen',
-	'settings.agentConfig.loopDetectionDesc':
-		'Voorkom dat de AI herhaaldelijk dezelfde tool aanroept met identieke parameters.',
-	'settings.agentConfig.loopThresholdName': 'Loop-drempelwaarde',
-	'settings.agentConfig.loopThresholdDesc':
-		'Aantal identieke tool-aanroepen voordat het als een loop wordt beschouwd (standaard: 3).',
-	'settings.agentConfig.timeWindowName': 'Tijdsvenster (seconden)',
-	'settings.agentConfig.timeWindowDesc':
-		'Tijdsvenster om te controleren op herhaalde aanroepen (standaard: 30 seconden).',
-	'settings.agentConfig.temperatureName': 'Temperatuur',
-	'settings.agentConfig.temperatureDescWithInfo': 'Regelt de willekeur. Lagere waarden zijn deterministischer. {info}',
-	'settings.agentConfig.temperatureDescDefault':
-		'Regelt de willekeur. Lagere waarden zijn deterministischer. (Standaard: 0.7)',
-	'settings.agentConfig.temperatureSaveFailedNotice':
-		'Opslaan van temperatuurinstelling mislukt. Zie console voor details.',
-	'settings.agentConfig.topPName': 'Top P',
-	'settings.agentConfig.topPDescWithInfo': 'Regelt de diversiteit. Lagere waarden zijn meer gefocust. {info}',
-	'settings.agentConfig.topPDescDefault': 'Regelt de diversiteit. Lagere waarden zijn meer gefocust. (Standaard: 1)',
-	'settings.agentConfig.topPSaveFailedNotice': 'Opslaan van Top P-instelling mislukt. Zie console voor details.',
-	'settings.mcp.sectionTitle': 'MCP-servers',
-	'settings.mcp.sectionDesc':
-		'Verbind externe Model Context Protocol-servers om de agent uit te breiden met extra tools.',
-	'settings.mcp.loadErrorDesc': 'Fout bij laden van MCP-instellingen: {error}',
-	'settings.mcp.enableName': 'MCP-servers inschakelen',
-	'settings.mcp.enableDesc':
-		'Verbind met Model Context Protocol-servers om de agent uit te breiden met externe tools. Ondersteunt lokale (stdio) en externe (HTTP) servers.',
-	'settings.mcp.noServers': 'Geen MCP-servers geconfigureerd. Klik op "Server toevoegen" om aan de slag te gaan.',
-	'settings.mcp.httpUrl': 'HTTP: {url}',
-	'settings.mcp.authorized': 'Geautoriseerd ✓',
-	'settings.mcp.editButton': 'Bewerken',
-	'settings.mcp.deleteButton': 'Verwijderen',
-	'settings.mcp.addServerButton': 'Server toevoegen',
-	'settings.mcp.duplicateServerName': 'Er bestaat al een server met de naam "{name}"',
-	'settings.mcp.reconnectFailed': 'Opnieuw verbinden met "{name}" mislukt: {error}',
-	'settings.mcp.openEditorFailed': 'Openen van server-editor mislukt: {error}',
-	'settings.mcp.savedButConnectFailed': 'Server opgeslagen, maar verbinden mislukt: {error}',
-	'settings.mcp.openAddDialogFailed': 'Kan dialoogvenster voor server toevoegen niet openen: {error}',
-	'settings.rag.sectionTitle': 'Vault-zoekindex',
-	'settings.rag.sectionDesc':
-		'Semantisch zoeken in je vault met Google File Search. Maakt retrieval-augmented agent-reacties mogelijk. Privacy: geïndexeerde bestanden worden geüpload naar Google Cloud.',
-	'settings.rag.privacyNotice':
-		'⚠️ Privacyverklaring: Het inschakelen van deze functie uploadt je vault-bestanden naar Google Cloud voor semantisch zoeken. Bestanden worden verwerkt en opgeslagen door Google. Overweeg om mappen met gevoelige informatie uit te sluiten.',
-	'settings.rag.enableName': 'Vault-indexering inschakelen',
-	'settings.rag.enableDesc': 'Indexeer je vault-bestanden voor semantisch zoeken met Google File Search.',
-	'settings.rag.openCleanupFailed': 'Openen van opschoondialoogvenster mislukt: {error}',
-	'settings.rag.filesIndexed': '{count} bestanden geïndexeerd',
-	'settings.rag.notYetIndexed': 'Nog niet geïndexeerd',
-	'settings.rag.indexStatusName': 'Indexstatus',
-	'settings.rag.reindexButton': 'Vault herscannen',
-	'settings.rag.indexingButton': 'Indexeren...',
-	'settings.rag.serviceNotInitialized': 'RAG-indexeerdienst niet geïnitialiseerd',
-	'settings.rag.indexResult':
-		'Herscan voltooid: {indexed} opnieuw geïndexeerd, {skipped} overgeslagen, {failed} mislukt',
-	'settings.rag.indexingFailed': 'Indexeren mislukt: {error}',
-	'settings.rag.deleteIndexButton': 'Index verwijderen',
-	'settings.rag.deletingButton': 'Verwijderen...',
-	'settings.rag.indexDeletedNotice': 'Index verwijderd. Gebruik "Vault herscannen" om opnieuw op te bouwen.',
-	'settings.rag.deleteIndexFailed': 'Verwijderen van index mislukt: {error}',
-	'settings.rag.openDeleteConfirmFailed': 'Openen van verwijderbevestiging mislukt: {error}',
-	'settings.rag.storeNameName': 'Naam van zoekindex',
-	'settings.rag.storeNameDescAssigned':
-		'De Google File Search-opslagidentificatie, automatisch toegewezen. Verwijder de index om opnieuw te beginnen met een nieuwe.',
-	'settings.rag.storeNameDescPending': 'Automatisch toegewezen door Google File Search wanneer het indexeren start.',
-	'settings.rag.copyButton': 'Kopiëren',
-	'settings.rag.copyTooltip': 'Store-naam naar klembord kopiëren',
-	'settings.rag.storeNameCopiedNotice': 'Store-naam gekopieerd naar klembord',
-	'settings.rag.autoSyncName': 'Wijzigingen automatisch synchroniseren',
-	'settings.rag.autoSyncDesc':
-		'Werk de index automatisch bij wanneer bestanden worden gemaakt, gewijzigd of verwijderd.',
-	'settings.rag.includeAttachmentsName': 'Bijlagen opnemen',
-	'settings.rag.includeAttachmentsDesc':
-		"Indexeer pdf's en andere ondersteunde bestandstypen naast markdown-notities. Vereist herscannen.",
-	'settings.rag.attachmentSettingChangedNotice':
-		'Bijlage-instelling gewijzigd. Herscan vault om wijzigingen toe te passen.',
-	'settings.rag.excludeFoldersName': 'Mappen uitsluiten',
-	'settings.rag.excludeFoldersDesc': 'Altijd uitgesloten: {folders}. Voeg hieronder extra mappen toe (één per regel).',
-	'settings.rag.excludeFoldersPlaceholder': 'Extra uit te sluiten mappen...',
-	'settings.tools.sectionTitle': 'Tool-machtigingen',
-	'settings.tools.sectionDesc':
-		'Beheer welke agent-tools bevestiging vereisen, automatisch worden uitgevoerd of volledig worden geblokkeerd.',
-	'settings.tools.noToolsName': 'Geen tools geregistreerd',
-	'settings.tools.noToolsDesc': 'Tool-machtigingen verschijnen hier zodra tools zijn geladen.',
-	'settings.tools.presetName': 'Machtigings-preset',
-	'settings.tools.presetDesc': 'Kies een preset die de standaardmachtigingen voor alle tools bepaalt.',
-	'settings.tools.yoloConfirmFailed': 'Kan YOLO-bevestiging niet openen: {error}',
 	'explainPrompt.placeholder': 'Selecteer een prompt om de selectie uit te leggen...',
 	'ragCleanup.title': 'Vault-index verwijderen?',
 	'ragCleanup.body': 'Je vault-index is opgeslagen in Google Cloud. Wil je deze verwijderen?',
@@ -695,8 +432,6 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'agent.header.loading': 'Laden...',
 	'agent.header.loadingProjectTooltip': 'Project laden...',
 	'agent.header.tooltipModel': 'Model: {value}',
-	'agent.header.tooltipTemperature': 'Temperatuur: {value}',
-	'agent.header.tooltipTopP': 'Top-P: {value}',
 	'agent.header.tooltipPrompt': 'Prompt: {value}',
 	'agent.header.promptBadgeFallback': 'Aangepast',
 	'agent.header.menuAria': 'Sessiemenu',
@@ -814,10 +549,6 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'agent.sessionSettings.modelDesc': 'Selecteer het AI-model voor deze sessie',
 	'agent.sessionSettings.useDefault': 'Standaard gebruiken',
 	'agent.sessionSettings.resetToDefault': 'Herstellen naar standaard',
-	'agent.sessionSettings.temperature': 'Temperatuur',
-	'agent.sessionSettings.temperatureDesc': 'Bepaalt de willekeurigheid (0 = deterministisch, 2 = zeer creatief)',
-	'agent.sessionSettings.topP': 'Top-P',
-	'agent.sessionSettings.topPDesc': 'Drempelwaarde voor nucleus sampling (0 = alleen top-token, 1 = alle tokens)',
 	'agent.sessionSettings.promptTemplate': 'Promptsjabloon',
 	'agent.sessionSettings.promptTemplateDesc': 'Selecteer een aangepast promptsjabloon voor deze sessie',
 	'agent.sessionSettings.useDefaultPrompt': 'Standaardprompt gebruiken',
@@ -1039,14 +770,6 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'notice.rewrite.selectionDone': 'Tekst succesvol herschreven',
 	'notice.rewrite.rewritingFile': 'Volledig bestand herschrijven...',
 	'notice.rewrite.fileDone': 'Bestand succesvol herschreven',
-	'validation.temperature.notANumber': 'Temperatuur {value} is geen geldig getal. Aangepast naar {adjusted}.',
-	'validation.temperature.exceedsModelLimit':
-		'Temperatuur {value} overschrijdt de {model}-limiet van {max}. Aangepast naar {max}.',
-	'validation.temperature.outOfRange':
-		'Temperatuur {value} valt buiten het geldige bereik [{min}, {max}]. Aangepast naar {adjusted}.',
-	'validation.topP.notANumber': 'Top P {value} is geen geldig getal. Aangepast naar {adjusted}.',
-	'validation.topP.outOfRange':
-		'Top P {value} valt buiten het geldige bereik [{min}, {max}]. Aangepast naar {adjusted}.',
 	'agent.planMode.toggleAria': 'Planmodus in-/uitschakelen — beoordeel een plan voordat de agent het uitvoert',
 	'agent.planMode.label': 'Plan',
 	'agent.planMode.headerLabel': 'Agent (Plan)',

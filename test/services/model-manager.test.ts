@@ -136,54 +136,6 @@ describe('ModelManager', () => {
 		});
 	});
 
-	describe('getParameterRanges', () => {
-		it('should return valid parameter ranges', async () => {
-			const ranges = await modelManager.getParameterRanges();
-
-			expect(ranges.temperature.min).toBe(0);
-			expect(ranges.temperature.max).toBeGreaterThanOrEqual(1);
-			expect(ranges.topP.min).toBe(0);
-			expect(ranges.topP.max).toBe(1);
-		});
-
-		it('should return step values for temperature and topP', async () => {
-			const ranges = await modelManager.getParameterRanges();
-
-			expect(ranges.temperature.step).toBeGreaterThan(0);
-			expect(ranges.topP.step).toBeGreaterThan(0);
-		});
-	});
-
-	describe('validateParameters', () => {
-		it('should accept valid parameters', async () => {
-			const result = await modelManager.validateParameters(0.7, 0.9);
-
-			expect(result.temperature.isValid).toBe(true);
-			expect(result.topP.isValid).toBe(true);
-		});
-
-		it('should reject out-of-range parameters', async () => {
-			const result = await modelManager.validateParameters(10, 1.5);
-
-			expect(result.temperature.isValid).toBe(false);
-			expect(result.topP.isValid).toBe(false);
-		});
-
-		it('should accept edge-case zero values', async () => {
-			const result = await modelManager.validateParameters(0, 0);
-
-			expect(result.temperature.isValid).toBe(true);
-			expect(result.topP.isValid).toBe(true);
-		});
-
-		it('should reject negative values', async () => {
-			const result = await modelManager.validateParameters(-1, -0.5);
-
-			expect(result.temperature.isValid).toBe(false);
-			expect(result.topP.isValid).toBe(false);
-		});
-	});
-
 	describe('getListProvider', () => {
 		it('should return the internal ModelListProvider instance', () => {
 			const provider = modelManager.getListProvider();
@@ -232,16 +184,6 @@ describe('ModelManager', () => {
 		});
 	});
 
-	describe('getParameterDisplayInfo', () => {
-		it('should return display strings and hasModelData flag', async () => {
-			const info = await modelManager.getParameterDisplayInfo();
-
-			expect(typeof info.temperature).toBe('string');
-			expect(typeof info.topP).toBe('string');
-			expect(typeof info.hasModelData).toBe('boolean');
-		});
-	});
-
 	describe('Ollama provider', () => {
 		let ollamaPlugin: any;
 		let ollamaManager: ModelManager;
@@ -251,7 +193,8 @@ describe('ModelManager', () => {
 				...mockPlugin,
 				settings: {
 					...mockPlugin.settings,
-					provider: 'ollama',
+					defaultProvider: 'ollama',
+					features: { chat: { provider: 'ollama', model: '' } },
 				},
 			};
 			ollamaManager = new ModelManager(ollamaPlugin);
@@ -280,15 +223,6 @@ describe('ModelManager', () => {
 			const bundledValues = new Set(originalModels.map((m) => m.value));
 			expect(models.some((m) => bundledValues.has(m.value))).toBe(false);
 		});
-
-		it('getParameterRanges() returns normalized numeric ranges', async () => {
-			const ranges = await ollamaManager.getParameterRanges();
-
-			expect(ranges.temperature.min).toBe(0);
-			expect(ranges.topP.min).toBe(0);
-			expect(ranges.temperature.step).toBeGreaterThan(0);
-			expect(ranges.topP.step).toBeGreaterThan(0);
-		});
 	});
 
 	describe('OpenAI provider', () => {
@@ -300,7 +234,8 @@ describe('ModelManager', () => {
 				...mockPlugin,
 				settings: {
 					...mockPlugin.settings,
-					provider: 'openai',
+					defaultProvider: 'openai',
+					features: { chat: { provider: 'openai', model: '' } },
 					openaiBaseUrl: 'https://api.openai.com/v1',
 				},
 			};
@@ -346,15 +281,6 @@ describe('ModelManager', () => {
 			expect(service).toBeDefined();
 			expect(typeof service.getModels).toBe('function');
 			expect(typeof service.invalidate).toBe('function');
-		});
-
-		it('getParameterRanges() returns normalized numeric ranges', async () => {
-			const ranges = await openaiManager.getParameterRanges();
-
-			expect(ranges.temperature.min).toBe(0);
-			expect(ranges.topP.min).toBe(0);
-			expect(ranges.temperature.step).toBeGreaterThan(0);
-			expect(ranges.topP.step).toBeGreaterThan(0);
 		});
 	});
 });

@@ -126,9 +126,9 @@ function parseArgs() {
 // `--model=` / `--models=` override chat, summary, AND completions models for
 // the run (#716) — the originals of all three are captured on the first
 // override so restore is exact even across a multi-model sweep.
-let originalModels = null; // { chatModelName, summaryModelName, completionsModelName }
+let originalModels = null; // { 'features.chat.model', 'features.summary.model', 'features.completions.model' }
 let modelWasOverridden = false;
-let originalProvider = null;
+let originalProviders = null; // { 'features.chat.provider', 'features.summary.provider' }
 let providerWasOverridden = false;
 let originalChatHistory = null;
 let chatHistoryWasForced = false;
@@ -137,7 +137,15 @@ let completedTaskCount = 0;
 let totalPlannedTasks = 0;
 let interruptInProgress = false;
 
-const MODEL_SETTING_KEYS = ['chatModelName', 'summaryModelName', 'completionsModelName'];
+const MODEL_SETTING_KEYS = ['features.chat.model', 'features.summary.model', 'features.completions.model'];
+
+// `--provider=` overrides chat and summary — but deliberately not completions
+// (eval tasks never drive the completions route; see `getModelName` below for
+// the same reasoning about the model fields). Summary's provider matters
+// because mid-run context compaction invokes it, and a compaction that ran
+// against the *original* provider while the rest of the run used the
+// override would confuse cost/behavior attribution for the run.
+const PROVIDER_SETTING_KEYS = ['features.chat.provider', 'features.summary.provider'];
 
 /**
  * Point chat, summary, and completions at `model` for the run. Captures the
@@ -170,11 +178,13 @@ async function restoreModelOverride() {
 }
 
 async function restoreProvider() {
-	if (!providerWasOverridden) return;
-	try {
-		await setSetting('provider', originalProvider);
-	} catch (err) {
-		console.error(`Failed to restore provider: ${err.message}`);
+	if (!providerWasOverridden || !originalProviders) return;
+	for (const key of PROVIDER_SETTING_KEYS) {
+		try {
+			await setSetting(key, originalProviders[key]);
+		} catch (err) {
+			console.error(`Failed to restore ${key}: ${err.message}`);
+		}
 	}
 	providerWasOverridden = false;
 }
@@ -309,21 +319,27 @@ function getGitSha() {
 }
 
 /**
- * The provider serving *chat*, which is what eval tasks exercise. Since #704
- * that may differ from `settings.provider` — an install can route chat to one
- * provider and summaries or search to another — so resolve the override the
- * same way the plugin does. Cost and cache metrics below key off this value.
+ * The provider serving *chat*, which is what eval tasks exercise. Since the
+ * settings redesign this is `settings.features.chat.provider` — the routing
+ * table's per-feature entry — falling back to `settings.defaultProvider` for
+ * a feature entry that was never set (matches `featureProvider`'s seed rule
+ * in `src/api/feature-routing.ts`). Cost and cache metrics below key off
+ * this value.
  */
 const CHAT_PROVIDER_EXPR =
-	"(app.plugins.plugins['gemini-scribe'].settings.providerOverrides || {}).chat || " +
-	"app.plugins.plugins['gemini-scribe'].settings.provider || 'gemini'";
+	"app.plugins.plugins['gemini-scribe'].settings.features?.chat?.provider || " +
+	"app.plugins.plugins['gemini-scribe'].settings.defaultProvider || 'gemini'";
 
 async function getModelName() {
-	// The chat model lives in a different settings field per provider, so read
-	// the one that matches whichever provider actually serves chat.
+	// The model lives in the chat feature's own route now, regardless of which
+	// provider serves it — no more per-provider field to pick between. An
+	// empty model string is a legal "use this provider's default" value, not
+	// missing configuration, so report it as such rather than 'unknown' — the
+	// harness doesn't attempt to resolve which concrete model that resolves to.
 	const result = await obsidianEval(
 		`(function () { const s = app.plugins.plugins['gemini-scribe'].settings; ` +
-			`return (${CHAT_PROVIDER_EXPR}) === 'ollama' ? (s.ollamaModelName || 'unknown') : (s.chatModelName || 'unknown'); })()`
+			`const provider = s.features?.chat?.provider || s.defaultProvider || 'gemini'; ` +
+			`return s.features?.chat?.model || (provider + '-default'); })()`
 	);
 	return result.replace(/^["']|["']$/g, '');
 }
@@ -606,13 +622,21 @@ async function maybeCompareToBaseline(result) {
  * Ollama-only pre-run orchestration (#716): unload any *other* resident model
  * so the swap doesn't double-load, then fire a throwaway generation to warm the
  * target so the first *timed* task excludes cold-start load. No-op for non-Ollama
- * providers, and degrades to a no-op when the `ollama` CLI isn't reachable.
+ * providers, and degrades to a no-op when the `ollama` CLI isn't reachable. Also
+ * a no-op (logged) when `model` is empty — the harness never resolves what an
+ * empty `features.chat.model` defaults to, so there's no tag to warm.
  *
- * @param {string} model - The model to make resident (an Ollama tag, e.g. `gemma4:latest`).
+ * @param {string} model - The model to make resident (an Ollama tag, e.g. `gemma4:latest`), or '' for "provider default".
  * @param {string} provider - Active provider id.
  */
 async function prepareOllamaModel(model, provider) {
-	if (provider !== 'ollama' || !model) return;
+	if (provider !== 'ollama') return;
+	if (!model) {
+		// '' is the legal "use the provider's default model" value (see
+		// getModelName) — there's no concrete tag to make resident or warm.
+		console.log("  Skipping Ollama warmup: features.chat.model is empty (using the provider's default model)");
+		return;
+	}
 	await ensureResidentModel(model);
 	const warmupMs = await warmupOllamaModel(model);
 	if (warmupMs > 0) {
@@ -693,12 +717,21 @@ async function main() {
 	// Apply the provider override BEFORE getProvider() resolves below, so the
 	// resolved value (used for scoring + cost) reflects the override. Required
 	// for hands-free cross-provider sweeps; without it, an Ollama run from a
-	// Gemini-default setup needed a manual UI toggle (#845).
+	// Gemini-default setup needed a manual UI toggle (#845). Also overrides
+	// summary's provider (not completions — see PROVIDER_SETTING_KEYS) so
+	// mid-run compaction uses the override provider too.
 	if (providerOverride) {
-		originalProvider = await getSetting('provider');
-		await setSetting('provider', providerOverride);
+		originalProviders = {};
+		for (const key of PROVIDER_SETTING_KEYS) {
+			originalProviders[key] = await getSetting(key);
+		}
+		for (const key of PROVIDER_SETTING_KEYS) {
+			await setSetting(key, providerOverride);
+		}
 		providerWasOverridden = true;
-		console.log(`Overriding provider: ${originalProvider ?? '(unset)'} → ${providerOverride}`);
+		console.log(
+			`Overriding provider (chat, summary): ${originalProviders['features.chat.provider'] ?? '(unset)'} → ${providerOverride}`
+		);
 	}
 
 	// The scorer reads the model's response out of the session history file
@@ -770,7 +803,7 @@ async function main() {
 			}
 			// Warm whichever model the run will actually use — the override target,
 			// or the plugin's current chat model when no override was passed.
-			const effectiveModel = model ?? (await getSetting('chatModelName'));
+			const effectiveModel = model ?? (await getSetting('features.chat.model'));
 			await prepareOllamaModel(effectiveModel, provider);
 
 			const result = await runAllTasks({ tasks, repeat, keepArtifacts, provider, judgeFn });

@@ -37,7 +37,7 @@ In v4.0+, the agent is always available and can:
 
 ### 3. Configure Permissions
 
-Choose which operations require confirmation in **Settings → Gemini Scribe → Tool permissions** (enable **Show advanced settings** first):
+Choose which operations require confirmation in **Settings → Gemini Scribe → Tool permissions**:
 
 - **write_file**: Creating or modifying files
 - **delete_file**: Removing files
@@ -372,7 +372,7 @@ What do you remember about my vault?
 
 ### Web & Research Operations
 
-> All four tools in this section (`google_search`, `google_maps`, `fetch_url`, `deep_research`) require Gemini — they're registered only when the **Web and search** feature (Settings → Gemini Scribe → Per-feature provider) resolves to Gemini, whether that's your default provider or a per-feature override on an otherwise-Ollama or otherwise-OpenAI setup. See the [Provider Capabilities reference](/reference/provider-capabilities) for the full matrix.
+> All four tools in this section require Gemini, but through three different gates: `google_search` and `fetch_url` are registered only when the **Web search** row on the Features page resolves to Gemini; `deep_research` follows its own **Deep research** row; `google_maps` is provider-bound — it's registered whenever the Gemini provider is configured (has a key), regardless of which provider actually serves any Features row. See the [Provider Capabilities reference](/reference/provider-capabilities) for the full matrix.
 
 #### google_search
 
@@ -528,8 +528,6 @@ Override global settings for specific conversations:
 1. Click the settings icon next to session name
 2. Configure:
    - Model (e.g., switch to Gemini 2.5 Pro for harder reasoning)
-   - Temperature (creativity level)
-   - Top-P (response diversity)
    - Custom prompt template
 
 ### Permissions
@@ -624,7 +622,7 @@ By default, these operations require confirmation:
 - **update_memory**: Updating vault memory (AGENTS.md)
 - **google_search**, **google_maps**, **fetch_url**, **deep_research**: External web/research calls (Gemini provider only)
 
-You can configure which operations require confirmation in **Settings → Gemini Scribe → Tool permissions** (enable **Show advanced settings** first).
+You can configure which operations require confirmation in **Settings → Gemini Scribe → Tool permissions**.
 
 ### Session-Level Permissions
 

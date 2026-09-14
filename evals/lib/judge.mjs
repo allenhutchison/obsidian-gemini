@@ -103,7 +103,7 @@ async function readApiKey() {
  * Options:
  *   - `model`: judge model id (default from `EVAL_JUDGE_MODEL` env or
  *     `gemini-3.5-flash`). Pinned by design — do **not** wire this to the
- *     `chatModelName` setting, since that's what we're benchmarking.
+ *     `features.chat.model` setting, since that's what we're benchmarking.
  *   - `apiKey`: explicit override; otherwise read from the running plugin.
  *     `evals/run.mjs` wires this from `EVAL_JUDGE_API_KEY` when set.
  */

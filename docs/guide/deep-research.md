@@ -16,7 +16,15 @@ This is fundamentally different from the regular Google Search tool, which retur
 
 ## Getting Started
 
-Deep Research is always available as long as you have a valid API key configured. No additional setup is required for web-only research.
+Deep Research has its own row on the **Features** page (Web and research group) — it's a
+Gemini-only feature with no model field of its own (the underlying managed agent has no model
+parameter). It's routed to Gemini automatically as long as the Gemini provider is connected; no
+additional setup is required for web-only research.
+
+> **Note:** If your vault was migrated from an Ollama-primary setup, Deep Research comes through
+> the migration turned **Off** (Ollama can't serve it, so there's nothing to route it to
+> automatically). Turn it on under **Features → Deep research → Google Gemini** — there's no model
+> to pick, just the provider.
 
 To include your vault notes in research, you'll need [Semantic Vault Search](/guide/semantic-search) enabled and your vault indexed.
 

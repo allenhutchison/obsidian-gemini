@@ -67,34 +67,49 @@ export async function obsidianEval(code, { timeoutMs = EVAL_TIMEOUT_MS } = {}) {
 }
 
 /**
- * Read a single key from the plugin's in-memory settings.
+ * Read a key from the plugin's in-memory settings. `key` may be a flat name
+ * (`'chatHistory'`) or a dotted path into the feature-routing table
+ * (`'features.chat.model'`) — the settings redesign (#1298-family) replaced
+ * the old flat per-provider model fields with `settings.features.<feature>`
+ * routes, so the harness needs to reach into them the same way the plugin's
+ * own `readSettingPath` does.
  *
- * Returns whatever is currently on `plugin.settings[key]` (including null
- * or undefined for unset keys). Does not touch disk — pairs with `setSetting`
+ * Returns whatever is currently at that path (including null or undefined
+ * for an unset key/segment). Does not touch disk — pairs with `setSetting`
  * to apply transient overrides for an eval run.
  */
 export async function getSetting(key) {
-	const keyLiteral = JSON.stringify(key);
+	const partsLiteral = JSON.stringify(key.split('.'));
 	const result = await obsidianEval(
-		`JSON.stringify(app.plugins.plugins['gemini-scribe'].settings[${keyLiteral}] ?? null)`
+		`JSON.stringify(${partsLiteral}.reduce((o, k) => (o == null ? undefined : o[k]), ` +
+			`app.plugins.plugins['gemini-scribe'].settings) ?? null)`
 	);
 	return JSON.parse(result);
 }
 
 /**
- * Mutate a single key on the plugin's in-memory settings without persisting.
+ * Mutate a key on the plugin's in-memory settings without persisting. `key`
+ * follows the same flat-or-dotted-path rule as `getSetting`; intermediate
+ * objects on a dotted path are created if missing so a fresh path (e.g. a
+ * feature id added by a newer version) can still be written.
  *
  * Used for transient eval-run overrides (e.g. `--model=` flag). Does NOT
  * call `saveSettings()` — that would trigger a full plugin reinit, which
- * is overkill for keys like `chatModelName` that are read fresh from
+ * is overkill for keys like `features.chat.model` that are read fresh from
  * `plugin.settings` per-request.
  */
 export async function setSetting(key, value) {
-	const keyLiteral = JSON.stringify(key);
+	const partsLiteral = JSON.stringify(key.split('.'));
 	const valueLiteral = JSON.stringify(value);
 	await obsidianEval(
 		`(() => {
-    app.plugins.plugins['gemini-scribe'].settings[${keyLiteral}] = ${valueLiteral};
+    const parts = ${partsLiteral};
+    let o = app.plugins.plugins['gemini-scribe'].settings;
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (o[parts[i]] == null || typeof o[parts[i]] !== 'object') o[parts[i]] = {};
+      o = o[parts[i]];
+    }
+    o[parts[parts.length - 1]] = ${valueLiteral};
     return '"set"';
   })()`
 	);

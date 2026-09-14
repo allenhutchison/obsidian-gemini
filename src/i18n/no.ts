@@ -23,267 +23,9 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.examplesHeader': 'Prøv disse eksemplene:',
 	'i18n.aiTranslatedNotice':
 		'Denne oversettelsen av grensesnittet er AI-generert. Endringsforslag (PR-er) er velkomne.',
-	'settings.common.saveFailedNotice': 'Kunne ikke lagre innstillinger: {error}',
-	'settings.common.advancedBadge': 'Avansert',
-	'settings.general.sectionTitle': 'Generelt',
-	'settings.general.sectionDesc':
-		'Konfigurer leverandør, API-nøkkel og modellene som pluginen bruker. Kreves for at pluginen skal fungere.',
-	'settings.general.documentationName': 'Dokumentasjon',
-	'settings.general.documentationDesc': 'Vis den fullstendige dokumentasjonen og veiledningene for pluginen',
-	'settings.general.viewDocumentationButton': 'Vis dokumentasjon',
-	'settings.general.providerName': 'Leverandør',
-	'settings.general.providerDesc':
-		'Velg modell-leverandør. Gemini bruker Google Cloud API. Ollama kjører modeller lokalt på maskinen din; installer fra https://ollama.com og hent en modell med `ollama pull <name>`. OpenAI bruker din OpenAI API-nøkkel, eller en hvilken som helst OpenAI-kompatibel server (LM Studio, MLX, ...) via en egendefinert base-URL.',
 	'settings.general.providerOptionGemini': 'Google Gemini (sky)',
 	'settings.general.providerOptionOllama': 'Ollama (lokal)',
 	'settings.general.providerOptionOpenai': 'OpenAI (sky)',
-	'settings.general.ollamaBaseUrlName': 'Ollama base-URL',
-	'settings.general.ollamaBaseUrlDesc':
-		'HTTP-endepunkt for din lokale Ollama-tjeneste. Standard er http://localhost:11434.',
-	'settings.general.refreshModelListName': 'Oppdater modelliste',
-	'settings.general.refreshOllamaModelListName': 'Oppdater Ollama-modelliste',
-	'settings.general.refreshModelListOllamaDesc': 'Spør Ollama-tjenesten på nytt etter tilgjengelige modeller.',
-	'settings.general.openaiApiKeyName': 'OpenAI API-nøkkel',
-	'settings.general.openaiApiKeyDesc':
-		'Koble til din OpenAI API-nøkkel. Klikk på "Koble til..." og Obsidian vil be om et hemmelig navn (dette er bare en etikett — bruk et hvilket som helst navn som "openai-api") og en hemmelig verdi (lim inn API-nøkkelen din her). Hent en nøkkel på https://platform.openai.com/api-keys. Ikke nødvendig for en OpenAI-kompatibel lokal server som ikke krever det.',
-	'settings.general.openaiBaseUrlName': 'OpenAI base-URL',
-	'settings.general.openaiBaseUrlDesc':
-		'Endepunkt for Chat Completions. Standard er OpenAI API (api.openai.com). Pek denne mot en OpenAI-kompatibel lokal server i stedet — som LM Studio eller MLX — for å beholde forespørslene på din maskin.',
-	'settings.general.refreshOpenaiModelListName': 'Oppdater OpenAI-modelliste',
-	'settings.general.refreshModelListOpenaiDesc':
-		'Spør det konfigurerte endepunktet på nytt etter tilgjengelige modeller.',
-	'settings.general.openaiModelsFoundSingular': 'Fant {count} OpenAI-modell.',
-	'settings.general.openaiModelsFound': 'Fant {count} OpenAI-modeller.',
-	'settings.general.openaiChatModelDesc': 'Modell som brukes til agentsamtaler og omskriving av markert tekst.',
-	'settings.general.refreshModelListGeminiDesc':
-		'Hent den nyeste Gemini-modellisten fra GitHub nå, og hopp over 24-timers hurtigbufferen. Bruk dette etter at en ny modell er publisert.',
-	'settings.general.refreshButton': 'Oppdater',
-	'settings.general.ollamaModelsFoundSingular': 'Fant {count} Ollama-modell.',
-	'settings.general.ollamaModelsFound': 'Fant {count} Ollama-modeller.',
-	'settings.general.refreshFailedNotice': 'Kunne ikke oppdatere: {error}',
-	'settings.general.remoteModelNoticeName': 'Varsel om skyhostet modell',
-	'settings.general.remoteModelNoticeDesc':
-		'{models} kjører på {hosts}, ikke på din maskin. Forespørsler — inkludert eventuelt notatinnhold de sender — forlater enheten din selv om leverandøren din er Ollama. Velg en lokalt hentet modell hvis du trenger at alt forblir lokalt.',
-	'settings.general.localOnlyNoticeName': 'Varsel om kun lokale funksjoner',
-	'settings.general.localOnlyNoticeDesc':
-		'Alt kjører på din maskin. Google Søk, URL-kontekst (netthenting), Deep Research, bildegenerering og hvelvets søkeindeks er avhengige av Gemini-skytjenester og er slått av. For å aktivere en av dem, velg en leverandør under «Leverandør per funksjon» – dataene for den funksjonen vil da bli sendt til skyen.',
-	'settings.general.perFeatureProviderTitle': 'Leverandør per funksjon',
-	'settings.general.perFeatureProviderDesc':
-		'Velg en annen leverandør for enkeltfunksjoner. Alt som er satt til standard bruker leverandøren som er valgt ovenfor.',
-	'settings.general.useProviderDefault': 'Standard — {provider}',
-	'settings.general.useCaseUnavailableOption': 'Ikke tilgjengelig',
-	'settings.general.useCaseChatName': 'Chat og agent',
-	'settings.general.useCaseChatDesc': 'Interaktiv chat, agentsesjoner, planlagte oppgaver og hooks.',
-	'settings.general.useCaseSummaryName': 'Sammendrag',
-	'settings.general.useCaseSummaryDesc': 'Kommandoen «Oppsummer aktiv fil» og samtalekomprimering.',
-	'settings.general.useCaseCompletionsName': 'Fullføringer',
-	'settings.general.useCaseCompletionsDesc': 'Inline-forslag i IDE-stil mens du skriver.',
-	'settings.general.useCaseRewriteName': 'Omskriving',
-	'settings.general.useCaseRewriteDesc': 'Omskriving av valgt tekst. Bruker chat-modellen.',
-	'settings.general.useCaseWebSearchName': 'Nett og søk',
-	'settings.general.useCaseWebSearchDesc':
-		'Google Søk, Google Maps, URL-kontekst (netthenting) og Deep Research-verktøy.',
-	'settings.general.useCaseRagName': 'Søkeindeks for hvelv',
-	'settings.general.useCaseRagDesc': 'Semantisk søk i hvelvet ditt. Laster opp notatinnhold til en søkeindeks i skyen.',
-	'settings.general.useCaseImageGenName': 'Bildegenerering',
-	'settings.general.useCaseImageGenDesc': 'Generering av bilder fra en ledetekst.',
-	'settings.general.missingKeyNoticeName': 'API-nøkkel kreves',
-	'settings.general.missingKeyNoticeDesc':
-		'Enkelte funksjoner er satt til å bruke {providers}, som krever en API-nøkkel. Legg inn en ovenfor, ellers vil disse funksjonene feile når du bruker dem.',
-	'settings.general.mixedProviderNoticeName': 'Enkelte funksjoner bruker en annen leverandør',
-	'settings.general.mixedProviderNoticeDesc':
-		'Disse funksjonene bruker ikke standardleverandøren dein: {features}. Forespørslene deres – inkludert eventuelt notatinnhold de sender – går til leverandøren du valgte for dem.',
-	'settings.general.inheritOllamaChatModel': 'Samme som chat-modell',
-	'settings.general.ollamaSummaryModelDesc':
-		'Modell som brukes til sammendrag. La stå som «Samme som chat-modell» med mindre du trenger en annen – Ollama holder én modell lastet om gangen, så en ny modell må lastes inn på nytt ved hvert bytte.',
-	'settings.general.ollamaCompletionsModelDesc':
-		'Modell som brukes til inline-fullføringer. La stå som «Samme som chat-modell» med mindre du trenger en annen – Ollama holder én modell lastet om gangen, så en ny modell må lastes inn på nytt ved hvert bytte. En liten modell her kan være verdt kompromisset.',
-	'settings.general.apiKeyName': 'API-nøkkel',
-	'settings.general.apiKeyDesc':
-		'Koble til din Google Gemini API-nøkkel. Klikk på "Koble til..." og Obsidian vil be om et hemmelig navn (dette er bare en etikett — bruk et valgfritt navn som "gemini-api") og en hemmelig verdi (lim inn API-nøkkelen din her). Få en gratis nøkkel på https://aistudio.google.com/apikey',
-	'settings.general.chatModelName': 'Chat-modell',
-	'settings.general.chatModelDesc':
-		'Modell som brukes til agentsamtaler, omskriving av markert tekst og verktøy for nettsøk.',
-	'settings.general.summaryModelName': 'Sammendragsmodell',
-	'settings.general.summaryModelDesc':
-		'Modell som brukes for kommandoen "Oppsummer aktiv fil" som legger til sammendrag i frontmatter.',
-	'settings.general.completionModelName': 'Fullføringsmodell',
-	'settings.general.completionModelDesc':
-		'Modell som brukes til innebygde fullføringer i IDE-stil mens du skriver i notater.',
-	'settings.general.ollamaModelName': 'Ollama-modell',
-	'settings.general.ollamaModelDesc':
-		'Modell som brukes til chat og omskriving, og for alle andre Ollama-funksjoner som er satt til «Samme som chat-modell».',
-	'settings.general.imageModelName': 'Bildemodell',
-	'settings.general.imageModelDesc': 'Modell som brukes til bildegenerering.',
-	'settings.general.stateFolderName': 'Mappe for plugin-status',
-	'settings.general.stateFolderDesc':
-		'Mappe der plugindata lagres. Agent-økter ligger under Agent-Sessions/, egendefinerte prompter under Prompts/, hooks under Hooks/, og status for planlagte oppgaver under Scheduled-Tasks/.',
-	'settings.general.showAdvancedName': 'Vis avanserte innstillinger',
-	'settings.general.showAdvancedDesc':
-		'Vis avanserte seksjoner (API-konfigurasjon, Verktøytillatelser, Deteksjon av verktøyløkker, MCP-servere, Feilsøking) for avanserte brukere.',
-	'settings.general.modelListUpdatedSingular': 'Modelliste oppdatert: {count} modell.',
-	'settings.general.modelListUpdated': 'Modelliste oppdatert: {count} modeller.',
-	'settings.general.refreshSkippedOffline': 'Hoppet over: frakoblet',
-	'settings.general.refreshSkippedNotGemini': 'Hoppet over: ingen funksjon er satt til å bruke Gemini',
-	'settings.general.refreshModelListFailed': 'Kunne ikke oppdatere modelliste: {error}',
-	'settings.ui.sectionTitle': 'Brukeropplevelse',
-	'settings.ui.sectionDesc':
-		'Strømming, diff-visning, innhenting for planlegger og tilpasningsvalg som påvirker hvordan du samhandler med pluginen.',
-	'settings.ui.userNameName': 'Ditt navn',
-	'settings.ui.userNameDesc':
-		'Navnet ditt som brukes i systeminstruksjoner slik at AI-en kan henvende seg til deg personlig i samtaler.',
-	'settings.ui.userNamePlaceholder': 'Skriv inn navnet ditt',
-	'settings.ui.summaryFrontmatterKeyName': 'Frontmatter-nøkkel for sammendrag',
-	'settings.ui.summaryFrontmatterKeyDesc':
-		'Navn på frontmatter-egenskap der sammendrag lagres når du bruker kommandoen "Oppsummer aktiv fil".',
-	'settings.ui.enableStreamingName': 'Aktiver strømming',
-	'settings.ui.enableStreamingDesc':
-		'Strøm AI-svar ord for ord etter hvert som de genereres for en mer interaktiv chat-opplevelse.',
-	'settings.ui.alwaysShowDiffViewName': 'Vis alltid diff-visning for filskriving',
-	'settings.ui.alwaysShowDiffViewDesc':
-		'Åpne en diff-visning automatisk når agenten foreslår filendringer, i stedet for å kreve et knappeklikk.',
-	'settings.ui.sessionHistoryName': 'Aktiver økthistorikk',
-	'settings.ui.sessionHistoryDesc':
-		'Lagre agentens chat-økter som markdown-filer i din vault. Økter lagres under Agent-Sessions/ med autogenererte titler.',
-	'settings.ui.logToolExecutionName': 'Logg verktøykjøring til økthistorikk',
-	'settings.ui.logToolExecutionDesc':
-		'Legg til et sammendrag av hver verktøykjøring i økthistorikkfilen for revisjon. Krever at økthistorikk er aktivert. Krever omstart av plugin for å tre i kraft.',
-	'settings.automation.sectionTitle': 'Automatisering',
-	'settings.automation.sectionDesc':
-		'Kjør AI-agentoppgaver automatisk — etter en tidsplan, eller som respons på vault-hendelser (fil opprettet/endret/slettet/endret navn).',
-	'settings.automation.manageScheduledTasksName': 'Administrer planlagte oppgaver',
-	'settings.automation.manageScheduledTasksDesc':
-		'Opprett, rediger, aktiver/deaktiver og slett planlagte AI-oppgaver. Oppgaver kjører automatisk i bakgrunnen mens Obsidian er åpen.',
-	'settings.automation.openSchedulerButton': 'Åpne planlegger',
-	'settings.automation.newTaskButton': 'Ny oppgave',
-	'settings.automation.autoRunCatchUpName': 'Kjør tapte planlagte oppgaver automatisk ved oppstart',
-	'settings.automation.autoRunCatchUpDesc':
-		'Når aktivert, vil oppgaver som ble tapt mens Obsidian var lukket (og har "Run if missed" valgt), sendes automatisk ved oppstart uten å vise godkjenningsvinduet.',
-	'settings.automation.enableHooksName': 'Aktiver livssyklus-hooks',
-	'settings.automation.enableHooksDesc':
-		'Abonner på vault-hendelser og kjør AI-agentoppgaver som respons. Av som standard — vault-hendelser utløses kontinuerlig, og en hook med bredt omfang kan raskt bruke opp API-kvoten.',
-	'settings.automation.manageHooksName': 'Administrer livssyklus-hooks',
-	'settings.automation.manageHooksDesc':
-		'Opprett, rediger, aktiver/deaktiver og slett hooks. Hver hook utløses når en samsvarende vault-hendelse inntreffer, og kjører som en hodeløs agent-økt.',
-	'settings.automation.openHookManagerButton': 'Åpne hook-behandler',
-	'settings.automation.newHookButton': 'Ny hook',
-	'settings.debug.sectionTitle': 'Feilsøking',
-	'settings.debug.sectionDesc': 'Diagnostiske innstillinger for feilsøking av plugin-oppførsel.',
-	'settings.debug.debugModeName': 'Feilsøkingsmodus',
-	'settings.debug.debugModeDesc': 'Aktiver feilsøkingslogging til konsollen. Nyttig for feilsøking.',
-	'settings.debug.showTokenUsageName': 'Vis tokenbruk',
-	'settings.debug.showTokenUsageDesc': 'Vis estimert tokenbruk i agentvisningen (for feilsøkingsformål).',
-	'settings.debug.stopOnToolErrorName': 'Stopp ved verktøyfeil',
-	'settings.debug.stopOnToolErrorDesc':
-		'Stopp agentkjøring når et verktøykall feiler. Hvis deaktivert, vil agenten fortsette å kjøre påfølgende verktøy.',
-	'settings.agentConfig.sectionTitle': 'Agentkonfigurasjon',
-	'settings.agentConfig.sectionDesc':
-		'Juster hvordan agenten snakker med modellen: parametere for gjentakelse/generering, sammendrag av samtaler og løkkebeskyttelse.',
-	'settings.agentConfig.apiConfigurationHeading': 'API-konfigurasjon',
-	'settings.agentConfig.logToFileName': 'Logg til fil',
-	'settings.agentConfig.logToFileDesc':
-		'Skriv logginnføringer til en fil i mappen for plugin-status. Feil og advarsler logges alltid; feilsøkingsinnføringer krever feilsøkingsmodus. Loggfiler roteres automatisk ved 1 MB.',
-	'settings.agentConfig.useInteractionsApiName': 'Bruk Interactions API',
-	'settings.agentConfig.useInteractionsApiDesc':
-		'Rut Gemini-forespørsler gjennom Googles nyere Interactions API i stedet for det eldre generateContent-API-et. Dette er standard transportmetode. Kjører tilstandsløst – samtalehistorikken spilles av på nytt for hver tur og lagres ikke på Googles side mellom turene. Slå det av for å falle tilbake til generateContent hvis du støter på problemer. Modeller som bare støtter Interactions API (som Gemini Omni) bruker det alltid, uavhengig av denne innstillingen.',
-	'settings.agentConfig.customEndpointName': 'Tilpasset API-endepunkt',
-	'settings.agentConfig.customEndpointDesc':
-		'Overstyr standard Google API-base-URL (f.eks. for en bedriftsproxy eller lokal gateway). La stå tomt for å bruke det offisielle endepunktet.',
-	'settings.agentConfig.customEndpointInvalidNotice': 'Tilpasset API-endepunkt er ikke en gyldig URL — tømmer.',
-	'settings.agentConfig.maxRetriesName': 'Maksimalt antall forsøk',
-	'settings.agentConfig.maxRetriesDesc': 'Maksimalt antall forsøk på nytt når en modellforespørsel feiler.',
-	'settings.agentConfig.maxRetriesPlaceholder': 'f.eks. 3',
-	'settings.agentConfig.initialBackoffName': 'Opprinnelig ventetid (ms)',
-	'settings.agentConfig.initialBackoffDesc':
-		'Første forsinkelse i millisekunder før første forsøk på nytt. Påfølgende forsøk vil bruke eksponensiell backoff.',
-	'settings.agentConfig.initialBackoffPlaceholder': 'f.eks. 1000',
-	'settings.agentConfig.contextManagementHeading': 'Kontekstbehandling',
-	'settings.agentConfig.compactionThresholdName': 'Terskel for kontekstkomprimering',
-	'settings.agentConfig.compactionThresholdDesc':
-		'Oppsummer eldre samtalerunder automatisk når tokenbruken overskrider denne prosentandelen av modellens kontekstvindu. Nåværende: {percent}%',
-	'settings.agentConfig.loopDetectionHeading': 'Deteksjon av verktøyløkker',
-	'settings.agentConfig.loopDetectionName': 'Aktiver løkkegjenkjenning',
-	'settings.agentConfig.loopDetectionDesc':
-		'Forhindre at AI-en gjentatte ganger kaller det samme verktøyet med identiske parametere.',
-	'settings.agentConfig.loopThresholdName': 'Løkketerskel',
-	'settings.agentConfig.loopThresholdDesc': 'Antall identiske verktøykall før det anses som en løkke (standard: 3).',
-	'settings.agentConfig.timeWindowName': 'Tidsvindu (sekunder)',
-	'settings.agentConfig.timeWindowDesc': 'Tidsvindu for å sjekke etter gjentatte kall (standard: 30 sekunder).',
-	'settings.agentConfig.temperatureName': 'Temperatur',
-	'settings.agentConfig.temperatureDescWithInfo':
-		'Kontrollerer tilfeldighet. Lavere verdier er mer deterministiske. {info}',
-	'settings.agentConfig.temperatureDescDefault':
-		'Kontrollerer tilfeldighet. Lavere verdier er mer deterministiske. (Standard: 0.7)',
-	'settings.agentConfig.temperatureSaveFailedNotice':
-		'Kunne ikke lagre temperaturinnstillingen. Se konsollen for detaljer.',
-	'settings.agentConfig.topPName': 'Top P',
-	'settings.agentConfig.topPDescWithInfo': 'Kontrollerer mangfold. Lavere verdier er mer fokuserte. {info}',
-	'settings.agentConfig.topPDescDefault': 'Kontrollerer mangfold. Lavere verdier er mer fokuserte. (Standard: 1)',
-	'settings.agentConfig.topPSaveFailedNotice': 'Kunne ikke lagre Top P-innstillingen. Se konsollen for detaljer.',
-	'settings.mcp.sectionTitle': 'MCP-servere',
-	'settings.mcp.sectionDesc':
-		'Koble til eksterne Model Context Protocol-servere for å utvide agenten med ekstra verktøy.',
-	'settings.mcp.loadErrorDesc': 'Feil ved lasting av MCP-innstillinger: {error}',
-	'settings.mcp.enableName': 'Aktiver MCP-servere',
-	'settings.mcp.enableDesc':
-		'Koble til Model Context Protocol-servere for å utvide agenten med eksterne verktøy. Støtter lokale (stdio) og eksterne (HTTP) servere.',
-	'settings.mcp.noServers': 'Ingen MCP-servere er konfigurert. Klikk på "Legg til server" for å komme i gang.',
-	'settings.mcp.httpUrl': 'HTTP: {url}',
-	'settings.mcp.authorized': 'Autorisert ✓',
-	'settings.mcp.editButton': 'Rediger',
-	'settings.mcp.deleteButton': 'Slett',
-	'settings.mcp.addServerButton': 'Legg til server',
-	'settings.mcp.duplicateServerName': 'En server med navnet "{name}" eksisterer allerede',
-	'settings.mcp.reconnectFailed': 'Kunne ikke koble til "{name}" på nytt: {error}',
-	'settings.mcp.openEditorFailed': 'Kunne ikke åpne serverredigering: {error}',
-	'settings.mcp.savedButConnectFailed': 'Serveren ble lagret, men kunne ikke koble til: {error}',
-	'settings.mcp.openAddDialogFailed': 'Kunne ikke åpne dialogboksen for å legge til server: {error}',
-	'settings.rag.sectionTitle': 'Søkeindeks for vault',
-	'settings.rag.sectionDesc':
-		'Semantisk søk i din vault ved hjelp av Google File Search. Driver gjenfinningsforsterkede agentsvar. Personvern: indekserte filer lastes opp til Google Cloud.',
-	'settings.rag.privacyNotice':
-		'⚠️ Personvernerklæring: Aktivering av denne funksjonen laster opp dine vault-filer til Google Cloud for semantisk søk. Filer behandles og lagres av Google. Vurder å ekskludere mapper med sensitiv informasjon.',
-	'settings.rag.enableName': 'Aktiver vault-indeksering',
-	'settings.rag.enableDesc': 'Indekser dine vault-filer for semantisk søk ved hjelp av Google File Search.',
-	'settings.rag.openCleanupFailed': 'Kunne ikke åpne oppryddingsdialogen: {error}',
-	'settings.rag.filesIndexed': '{count} filer indeksert',
-	'settings.rag.notYetIndexed': 'Ikke indeksert ennå',
-	'settings.rag.indexStatusName': 'Indeksstatus',
-	'settings.rag.reindexButton': 'Skann vault på nytt',
-	'settings.rag.indexingButton': 'Indekserer...',
-	'settings.rag.serviceNotInitialized': 'RAG-indekseringstjenesten er ikke initialisert',
-	'settings.rag.indexResult': 'Skanning fullført: {indexed} re-indeksert, {skipped} hoppet over, {failed} feilet',
-	'settings.rag.indexingFailed': 'Indeksering feilet: {error}',
-	'settings.rag.deleteIndexButton': 'Slett indeks',
-	'settings.rag.deletingButton': 'Sletter...',
-	'settings.rag.indexDeletedNotice': 'Indeks slettet. Bruk "Skann vault på nytt" for å gjenoppbygge.',
-	'settings.rag.deleteIndexFailed': 'Kunne ikke slette indeks: {error}',
-	'settings.rag.openDeleteConfirmFailed': 'Kunne ikke åpne slettebekreftelse: {error}',
-	'settings.rag.storeNameName': 'Søkeindeksnavn',
-	'settings.rag.storeNameDescAssigned':
-		'Identifikatoren for Google File Search-lageret, tildelt automatisk. Slett indeksen for å starte på nytt med en ny.',
-	'settings.rag.storeNameDescPending': 'Tildeles automatisk av Google File Search når indekseringen starter.',
-	'settings.rag.copyButton': 'Kopier',
-	'settings.rag.copyTooltip': 'Kopier lagringsnavn til utklippstavlen',
-	'settings.rag.storeNameCopiedNotice': 'Lagringsnavn kopiert til utklippstavlen',
-	'settings.rag.autoSyncName': 'Synkroniser endringer automatisk',
-	'settings.rag.autoSyncDesc': 'Oppdater indeksen automatisk når filer opprettes, endres eller slettes.',
-	'settings.rag.includeAttachmentsName': 'Inkluder vedlegg',
-	'settings.rag.includeAttachmentsDesc':
-		'Indekser PDF-er og andre støttede filtyper i tillegg til markdown-notater. Krever ny skanning.',
-	'settings.rag.attachmentSettingChangedNotice':
-		'Innstilling for vedlegg endret. Skann vault på nytt for å bruke endringene.',
-	'settings.rag.excludeFoldersName': 'Ekskluder mapper',
-	'settings.rag.excludeFoldersDesc': 'Alltid ekskludert: {folders}. Legg til flere mapper nedenfor (én per linje).',
-	'settings.rag.excludeFoldersPlaceholder': 'Flere mapper som skal ekskluderes...',
-	'settings.tools.sectionTitle': 'Verktøytillatelser',
-	'settings.tools.sectionDesc':
-		'Kontroller hvilke agentverktøy som krever bekreftelse, kjører automatisk eller blokkeres helt.',
-	'settings.tools.noToolsName': 'Ingen verktøy registrert',
-	'settings.tools.noToolsDesc': 'Verktøytillatelser vil vises her når verktøyene er lastet inn.',
-	'settings.tools.presetName': 'Forhåndsinnstilling for tillatelser',
-	'settings.tools.presetDesc': 'Velg en forhåndsinnstilling som bestemmer standardtillatelser for alle verktøy.',
-	'settings.tools.yoloConfirmFailed': 'Kunne ikke åpne YOLO-bekreftelse: {error}',
 	'explainPrompt.placeholder': 'Velg en prompt for å forklare utvalget...',
 	'ragCleanup.title': 'Slette vault-indeks?',
 	'ragCleanup.body': 'Din vault-indeks er lagret i Google Cloud. Vil du slette den?',
@@ -685,8 +427,6 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'agent.header.loading': 'Laster inn...',
 	'agent.header.loadingProjectTooltip': 'Laster inn prosjekt...',
 	'agent.header.tooltipModel': 'Modell: {value}',
-	'agent.header.tooltipTemperature': 'Temperatur: {value}',
-	'agent.header.tooltipTopP': 'Top-P: {value}',
 	'agent.header.tooltipPrompt': 'Prompt: {value}',
 	'agent.header.promptBadgeFallback': 'Egendefinert',
 	'agent.header.menuAria': 'Øktmeny',
@@ -803,10 +543,6 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'agent.sessionSettings.modelDesc': 'Velg AI-modell for denne økten',
 	'agent.sessionSettings.useDefault': 'Bruk standard',
 	'agent.sessionSettings.resetToDefault': 'Tilbakestill til standard',
-	'agent.sessionSettings.temperature': 'Temperatur',
-	'agent.sessionSettings.temperatureDesc': 'Kontrollerer tilfeldighet (0 = deterministisk, 2 = veldig kreativ)',
-	'agent.sessionSettings.topP': 'Top-P',
-	'agent.sessionSettings.topPDesc': 'Terskel for nucleus-sampling (0 = kun beste token, 1 = alle tokener)',
 	'agent.sessionSettings.promptTemplate': 'Prompt-mal',
 	'agent.sessionSettings.promptTemplateDesc': 'Velg en egendefinert prompt-mal for denne økten',
 	'agent.sessionSettings.useDefaultPrompt': 'Bruk standard prompt',
@@ -1027,13 +763,6 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'notice.rewrite.selectionDone': 'Teksten ble omskrevet',
 	'notice.rewrite.rewritingFile': 'Skriver om hele filen...',
 	'notice.rewrite.fileDone': 'Filen ble omskrevet',
-	'validation.temperature.notANumber': 'Temperatur {value} er ikke et gyldig tall. Justert til {adjusted}.',
-	'validation.temperature.exceedsModelLimit':
-		'Temperatur {value} overskrider grensen for {model} på {max}. Justert til {max}.',
-	'validation.temperature.outOfRange':
-		'Temperatur {value} er utenfor det gyldige området [{min}, {max}]. Justert til {adjusted}.',
-	'validation.topP.notANumber': 'Top P {value} er ikke et gyldig tall. Justert til {adjusted}.',
-	'validation.topP.outOfRange': 'Top P {value} er utenfor det gyldige området [{min}, {max}]. Justert til {adjusted}.',
 	'agent.planMode.toggleAria': 'Veksle planmodus — se over en plan før agenten utfører den',
 	'agent.planMode.label': 'Plan',
 	'agent.planMode.headerLabel': 'Agent (Plan)',

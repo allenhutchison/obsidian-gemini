@@ -23,271 +23,9 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.examplesHeader': '次の例をお試しください:',
 	'i18n.aiTranslatedNotice':
 		'このインターフェースの翻訳はAIによって生成されました。改善のためのプルリクエストを歓迎します。',
-	'settings.common.saveFailedNotice': '設定の保存に失敗しました: {error}',
-	'settings.common.advancedBadge': '高度',
-	'settings.general.sectionTitle': '一般',
-	'settings.general.sectionDesc':
-		'プロバイダー、APIキー、およびプラグインが使用するモデルを設定します。プラグインを動作させるために必要です。',
-	'settings.general.documentationName': 'ドキュメント',
-	'settings.general.documentationDesc': 'プラグインの完全なドキュメントとガイドを表示します',
-	'settings.general.viewDocumentationButton': 'ドキュメントを表示',
-	'settings.general.providerName': 'プロバイダー',
-	'settings.general.providerDesc':
-		'モデルプロバイダーを選択します。GeminiはGoogle Cloud APIを使用します。Ollamaはモデルをローカルマシン上で実行します。https://ollama.com からインストールし、`ollama pull <name>` でモデルを取得してください。OpenAIは、OpenAI APIキー、またはカスタムベースURLを介したOpenAI互換サーバー（LM Studio、MLXなど）を使用します。',
 	'settings.general.providerOptionGemini': 'Google Gemini (クラウド)',
 	'settings.general.providerOptionOllama': 'Ollama (ローカル)',
 	'settings.general.providerOptionOpenai': 'OpenAI (クラウド)',
-	'settings.general.ollamaBaseUrlName': 'OllamaのベースURL',
-	'settings.general.ollamaBaseUrlDesc':
-		'ローカルのOllamaデーモンのHTTPエンドポイント。デフォルトは http://localhost:11434 です。',
-	'settings.general.refreshModelListName': 'モデルリストを更新',
-	'settings.general.refreshOllamaModelListName': 'Ollamaモデルリストを更新',
-	'settings.general.refreshModelListOllamaDesc': '利用可能なモデルについてOllamaデーモンに再問い合わせします。',
-	'settings.general.openaiApiKeyName': 'OpenAI APIキー',
-	'settings.general.openaiApiKeyDesc':
-		'OpenAI APIキーを連携します。「リンク...」をクリックすると、Obsidianがシークレット名（これは単なるラベルです。「openai-api」などの任意の名前を使用してください）とシークレット値（ここにAPIキーを貼り付けます）の入力を求めます。キーは https://platform.openai.com/api-keys で取得できます。キーを必要としないOpenAI互換のローカルサーバーを使用する場合は不要です。',
-	'settings.general.openaiBaseUrlName': 'OpenAIベースURL',
-	'settings.general.openaiBaseUrlDesc':
-		'Chat Completionsのエンドポイント。デフォルトはOpenAI API（api.openai.com）です。リクエストをローカルマシン内にとどめるには、LM StudioやMLXなどのOpenAI互換ローカルサーバーを指定してください。',
-	'settings.general.refreshOpenaiModelListName': 'OpenAIモデルリストを更新',
-	'settings.general.refreshModelListOpenaiDesc':
-		'設定されたエンドポイントに再度問い合わせて、利用可能なモデルを取得します。',
-	'settings.general.openaiModelsFoundSingular': '{count}個のOpenAIモデルが見つかりました。',
-	'settings.general.openaiModelsFound': '{count}個のOpenAIモデルが見つかりました。',
-	'settings.general.openaiChatModelDesc':
-		'エージェントのチャットセッションおよび選択範囲の書き換えに使用されるモデル。',
-	'settings.general.refreshModelListGeminiDesc':
-		'24時間のキャッシュをバイパスして、GitHubから最新のGeminiモデルリストを今すぐ取得します。新しいモデルが公開された後に使用してください。',
-	'settings.general.refreshButton': '更新',
-	'settings.general.ollamaModelsFoundSingular': '{count} 個のOllamaモデルが見つかりました。',
-	'settings.general.ollamaModelsFound': '{count} 個のOllamaモデルが見つかりました。',
-	'settings.general.refreshFailedNotice': '更新に失敗しました: {error}',
-	'settings.general.remoteModelNoticeName': 'クラウドホスト型モデルに関する注意',
-	'settings.general.remoteModelNoticeDesc':
-		'{models}はローカルマシンではなく、{hosts}上で実行されます。プロバイダーがOllamaであっても、送信されるノートの内容を含むリクエストはデバイスの外部に送信されます。すべてをローカルに維持する必要がある場合は、ローカルにプルされたモデルを選択してください。',
-	'settings.general.localOnlyNoticeName': 'ローカル専用機能の通知',
-	'settings.general.localOnlyNoticeDesc':
-		'すべての処理はローカルマシン上で実行されます。Google Search、URL Context（ウェブ取得）、Deep Research、画像生成、およびvault検索インデックスはGeminiクラウドサービスに依存しているため、オフになっています。これらを有効にするには、「機能ごとのプロバイダー」でプロバイダーを割り当ててください。その機能のデータはクラウドに送信されるようになります。',
-	'settings.general.perFeatureProviderTitle': '機能ごとのプロバイダー',
-	'settings.general.perFeatureProviderDesc':
-		'個々の機能に対して異なるプロバイダーを選択します。デフォルトのままにされた機能は、上記で選択されたプロバイダーを使用します。',
-	'settings.general.useProviderDefault': 'デフォルト — {provider}',
-	'settings.general.useCaseUnavailableOption': '利用不可',
-	'settings.general.useCaseChatName': 'チャットとエージェント',
-	'settings.general.useCaseChatDesc':
-		'インタラクティブなチャット、エージェントセッション、スケジュールされたタスク、およびフック。',
-	'settings.general.useCaseSummaryName': '要約',
-	'settings.general.useCaseSummaryDesc': '「アクティブファイルを要約」コマンドおよび会話の圧縮。',
-	'settings.general.useCaseCompletionsName': '補完',
-	'settings.general.useCaseCompletionsDesc': '入力中のIDEスタイルのインライン提案。',
-	'settings.general.useCaseRewriteName': '再執筆',
-	'settings.general.useCaseRewriteDesc': '選択したテキストの再執筆。チャットモデルを使用します。',
-	'settings.general.useCaseWebSearchName': 'ウェブと検索',
-	'settings.general.useCaseWebSearchDesc':
-		'Google Search、Google Maps、URL Context（ウェブ取得）、およびDeep Researchツール。',
-	'settings.general.useCaseRagName': 'vault検索インデックス',
-	'settings.general.useCaseRagDesc':
-		'vault全体のセマンティック検索。ノートのコンテンツをクラウドの検索インデックスにアップロードします。',
-	'settings.general.useCaseImageGenName': '画像生成',
-	'settings.general.useCaseImageGenDesc': 'テキストプロンプトからの画像生成。',
-	'settings.general.missingKeyNoticeName': 'APIキーが必要です',
-	'settings.general.missingKeyNoticeDesc':
-		'一部の機能がAPIキーを必要とする {providers} を使用するように設定されています。上にキーを入力してください。入力しない場合、それらの機能を使用する際にエラーが発生します。',
-	'settings.general.mixedProviderNoticeName': '一部の機能で異なるプロバイダーが使用されています',
-	'settings.general.mixedProviderNoticeDesc':
-		'以下の機能はデフォルトのプロバイダーを使用しません: {features}。送信されるノートのコンテンツを含むリクエストは、それぞれの機能に選択されたプロバイダーに送信されます。',
-	'settings.general.inheritOllamaChatModel': 'チャットモデルと同じ',
-	'settings.general.ollamaSummaryModelDesc':
-		'要約に使用するモデル。別のモデルが必要な場合を除き、「チャットモデルと同じ」のままにしてください。Ollamaは一度に1つのモデルのみをロードするため、別のモデルを使用すると切り替えのたびに再ロードが発生します。',
-	'settings.general.ollamaCompletionsModelDesc':
-		'インライン補完に使用するモデル。別のモデルが必要な場合を除き、「チャットモデルと同じ」のままにしてください。Ollamaは一度に1つのモデルのみをロードするため、別のモデルを使用すると切り替えのたびに再ロードが発生します。ここでは軽量なモデルを使用する価値があるかもしれません。',
-	'settings.general.apiKeyName': 'APIキー',
-	'settings.general.apiKeyDesc':
-		'Google GeminiのAPIキーを連携します。「Link...」をクリックすると、Obsidianがシークレット名（「gemini-api」などの任意のラベル名）とシークレット値（ここにAPIキーを貼り付けます）の入力を求めます。キーは https://aistudio.google.com/apikey から無料で取得できます。',
-	'settings.general.chatModelName': 'チャットモデル',
-	'settings.general.chatModelDesc':
-		'エージェントのチャットセッション、選択範囲の書き換え、およびウェブ検索ツールに使用されるモデル。',
-	'settings.general.summaryModelName': '要約モデル',
-	'settings.general.summaryModelDesc':
-		'フロントマターに要約を追加する「アクティブなファイルを要約」コマンドに使用されるモデル。',
-	'settings.general.completionModelName': '補完モデル',
-	'settings.general.completionModelDesc': 'ノートに入力する際のIDEスタイルのインライン補完に使用されるモデル。',
-	'settings.general.ollamaModelName': 'Ollamaモデル',
-	'settings.general.ollamaModelDesc':
-		'チャットと再執筆、および「チャットモデルと同じ」に設定されたその他のOllama機能に使用されるモデル。',
-	'settings.general.imageModelName': '画像モデル',
-	'settings.general.imageModelDesc': '画像生成に使用されるモデル。',
-	'settings.general.stateFolderName': 'プラグインのステートフォルダ',
-	'settings.general.stateFolderDesc':
-		'プラグインのデータが保存されるフォルダー。エージェントセッションは Agent-Sessions/、カスタムプロンプトは Prompts/、フックは Hooks/、スケジュールされたタスクの状態は Scheduled-Tasks/ の下に保存されます。',
-	'settings.general.showAdvancedName': '高度な設定を表示',
-	'settings.general.showAdvancedDesc':
-		'パワーユーザー向けに高度なセクション（API設定、ツール権限、ツールループ検出、MCPサーバー、デバッグ）を表示します。',
-	'settings.general.modelListUpdatedSingular': 'モデルリストが更新されました: {count} 個のモデル。',
-	'settings.general.modelListUpdated': 'モデルリストが更新されました: {count} 個のモデル。',
-	'settings.general.refreshSkippedOffline': 'スキップされました: オフライン',
-	'settings.general.refreshSkippedNotGemini':
-		'スキップされました: Geminiを使用するように設定されている機能がありません',
-	'settings.general.refreshModelListFailed': 'モデルリストの更新に失敗しました: {error}',
-	'settings.ui.sectionTitle': 'ユーザーエクスペリエンス',
-	'settings.ui.sectionDesc':
-		'ストリーミング、差分表示、スケジューラーのキャッチアップ、およびプラグインとのやり取りに影響するパーソナライズオプション。',
-	'settings.ui.userNameName': 'あなたの名前',
-	'settings.ui.userNameDesc':
-		'AIが会話の中であなたに個人的に呼びかけることができるよう、システム指示で使用されるあなたの名前。',
-	'settings.ui.userNamePlaceholder': '名前を入力してください',
-	'settings.ui.summaryFrontmatterKeyName': '要約のフロントマターキー',
-	'settings.ui.summaryFrontmatterKeyDesc':
-		'「アクティブなファイルを要約」コマンドの使用時に要約を保存するフロントマターのプロパティ名。',
-	'settings.ui.enableStreamingName': 'ストリーミングを有効にする',
-	'settings.ui.enableStreamingDesc':
-		'よりインタラクティブなチャット体験のために、AIの応答が生成されるにつれて一語一語ストリーミングします。',
-	'settings.ui.alwaysShowDiffViewName': 'ファイル書き込み時に常に差分ビューを表示',
-	'settings.ui.alwaysShowDiffViewDesc':
-		'エージェントがファイルの変更を提案した際、ボタンのクリックを必要とせず、自動的に差分ビューを開きます。',
-	'settings.ui.sessionHistoryName': 'セッション履歴を有効にする',
-	'settings.ui.sessionHistoryDesc':
-		'エージェントのチャットセッションをMarkdownファイルとして保管庫に保存します。セッションは自動生成されたタイトルで Agent-Sessions/ 以下に保存されます。',
-	'settings.ui.logToolExecutionName': 'ツールの実行ログをセッション履歴に記録',
-	'settings.ui.logToolExecutionDesc':
-		'監査用に、各ツールの実行要約をセッション履歴ファイルに追加します。セッション履歴が有効である必要があります。反映するにはプラグインの再読み込みが必要です。',
-	'settings.automation.sectionTitle': '自動化',
-	'settings.automation.sectionDesc':
-		'スケジュールに従って、または保管庫のイベント（ファイルの作成/変更/削除/名前変更）に応じて、AIエージェントのタスクを自動的に実行します。',
-	'settings.automation.manageScheduledTasksName': 'スケジュールタスクの管理',
-	'settings.automation.manageScheduledTasksDesc':
-		'スケジュールされたAIタスクの作成、編集、有効化/無効化、削除を行います。タスクはObsidianが開いている間、バックグラウンドで自動的に実行されます。',
-	'settings.automation.openSchedulerButton': 'スケジューラーを開く',
-	'settings.automation.newTaskButton': '新規タスク',
-	'settings.automation.autoRunCatchUpName': '起動時に実行漏れのスケジュールタスクを自動実行',
-	'settings.automation.autoRunCatchUpDesc':
-		'有効にすると、Obsidianが閉じている間に実行されなかったタスク（かつ「実行漏れ時に実行」が設定されているもの）が、起動時に承認モーダルを表示せずに自動的に実行されます。',
-	'settings.automation.enableHooksName': 'ライフサイクルフックを有効化',
-	'settings.automation.enableHooksDesc':
-		'保管庫のイベントを購読し、それに応じてAIエージェントのタスクを実行します。デフォルトはオフです。保管庫のイベントは継続的に発生するため、広範囲なフックを設定するとAPIのクォータを急速に消費する可能性があります。',
-	'settings.automation.manageHooksName': 'ライフサイクルフックの管理',
-	'settings.automation.manageHooksDesc':
-		'フックの作成、編集、有効化/無効化、削除を行います。各フックは、一致する保管庫のイベントが発生したときにトリガーされ、ヘッドレスなエージェントセッションとして実行されます。',
-	'settings.automation.openHookManagerButton': 'フックマネージャーを開く',
-	'settings.automation.newHookButton': '新規フック',
-	'settings.debug.sectionTitle': 'デバッグ',
-	'settings.debug.sectionDesc': 'プラグインの動作トラブルシューティング用の診断トグル。',
-	'settings.debug.debugModeName': 'デバッグモード',
-	'settings.debug.debugModeDesc': 'コンソールへのデバッグログ出力を有効にします。トラブルシューティングに便利です。',
-	'settings.debug.showTokenUsageName': 'トークン使用量を表示',
-	'settings.debug.showTokenUsageDesc': 'エージェントビューに見積もりトークン使用量を表示します（デバッグ用）。',
-	'settings.debug.stopOnToolErrorName': 'ツールエラー時に停止',
-	'settings.debug.stopOnToolErrorDesc':
-		'ツール呼び出しが失敗したときにエージェントの実行を停止します。無効にすると、エージェントは後続のツールの実行を継続します。',
-	'settings.agentConfig.sectionTitle': 'エージェント設定',
-	'settings.agentConfig.sectionDesc':
-		'エージェントがモデルと通信する方法を微調整します：再試行/生成パラメータ、会話の要約、ループガードなど。',
-	'settings.agentConfig.apiConfigurationHeading': 'API設定',
-	'settings.agentConfig.logToFileName': 'ファイルにログを出力',
-	'settings.agentConfig.logToFileDesc':
-		'ログエントリをプラグインのステートフォルダ内のファイルに書き込みます。エラーと警告は常に記録されます。デバッグエントリの記録にはデバッグモードが必要です。ログファイルは1 MBで自動的にローテーションされます。',
-	'settings.agentConfig.useInteractionsApiName': 'Interactions APIを使用する',
-	'settings.agentConfig.useInteractionsApiDesc':
-		'Geminiのリクエストを、従来のgenerateContent APIではなく、Googleのより新しいInteractions API経由でルーティングします。これはデフォルトのトランスポートです。ステートレスに動作し、会話履歴はターンごとにリプレイされ、ターンの間にGoogle側で保持されることはありません。問題が発生した場合は、これをオフにしてgenerateContentにフォールバックしてください。Interactions APIのみをサポートするモデル（Gemini Omniなど）は、この設定に関わらず常にこれを使用します。',
-	'settings.agentConfig.customEndpointName': 'カスタムAPIエンドポイント',
-	'settings.agentConfig.customEndpointDesc':
-		'デフォルトのGoogle APIベースURLを上書きします（例：企業プロキシやローカルゲートウェイ用）。公式エンドポイントを使用する場合は空白のままにしてください。',
-	'settings.agentConfig.customEndpointInvalidNotice':
-		'カスタムAPIエンドポイントが有効なURLではありません。クリアします。',
-	'settings.agentConfig.maxRetriesName': '最大再試行回数',
-	'settings.agentConfig.maxRetriesDesc': 'モデルへのリクエストが失敗したときの最大再試行回数。',
-	'settings.agentConfig.maxRetriesPlaceholder': '例: 3',
-	'settings.agentConfig.initialBackoffName': '初期バックオフ遅延 (ms)',
-	'settings.agentConfig.initialBackoffDesc':
-		'最初の再試行までの初期遅延（ミリ秒）。その後の再試行には指数バックオフが使用されます。',
-	'settings.agentConfig.initialBackoffPlaceholder': '例: 1000',
-	'settings.agentConfig.contextManagementHeading': 'コンテキスト管理',
-	'settings.agentConfig.compactionThresholdName': 'コンテキスト圧縮しきい値',
-	'settings.agentConfig.compactionThresholdDesc':
-		'トークン使用量がモデルのコンテキストウィンドウのこの割合を超えた場合、古い会話のやり取りを自動的に要約します。現在: {percent}%',
-	'settings.agentConfig.loopDetectionHeading': 'ツールループ検出',
-	'settings.agentConfig.loopDetectionName': 'ループ検出を有効化',
-	'settings.agentConfig.loopDetectionDesc': 'AIが同一のパラメータで同じツールを繰り返し呼び出すのを防ぎます。',
-	'settings.agentConfig.loopThresholdName': 'ループしきい値',
-	'settings.agentConfig.loopThresholdDesc': 'ループとみなすまでの同一ツール呼び出し回数（デフォルト: 3）。',
-	'settings.agentConfig.timeWindowName': 'タイムウィンドウ（秒）',
-	'settings.agentConfig.timeWindowDesc': '繰り返し呼び出しをチェックする時間枠（デフォルト: 30秒）。',
-	'settings.agentConfig.temperatureName': 'Temperature',
-	'settings.agentConfig.temperatureDescWithInfo': 'ランダム性を制御します。値が低いほど決定論的になります。{info}',
-	'settings.agentConfig.temperatureDescDefault':
-		'ランダム性を制御します。値が低いほど決定論的になります。（デフォルト: 0.7）',
-	'settings.agentConfig.temperatureSaveFailedNotice':
-		'Temperature設定の保存に失敗しました。詳細はコンソールを確認してください。',
-	'settings.agentConfig.topPName': 'Top P',
-	'settings.agentConfig.topPDescWithInfo': '多様性を制御します。値が低いほど焦点が絞られます。{info}',
-	'settings.agentConfig.topPDescDefault': '多様性を制御します。値が低いほど焦点が絞られます。（デフォルト: 1）',
-	'settings.agentConfig.topPSaveFailedNotice': 'Top P設定の保存に失敗しました。詳細はコンソールを確認してください。',
-	'settings.mcp.sectionTitle': 'MCPサーバー',
-	'settings.mcp.sectionDesc': '外部のModel Context Protocolサーバーに接続し、追加のツールでエージェントを拡張します。',
-	'settings.mcp.loadErrorDesc': 'MCP設定の読み込みエラー: {error}',
-	'settings.mcp.enableName': 'MCPサーバーを有効化',
-	'settings.mcp.enableDesc':
-		'Model Context Protocolサーバーに接続し、外部ツールでエージェントを拡張します。ローカル（stdio）およびリモート（HTTP）サーバーをサポートしています。',
-	'settings.mcp.noServers': '設定済みのMCPサーバーがありません。「サーバーを追加」をクリックして開始してください。',
-	'settings.mcp.httpUrl': 'HTTP: {url}',
-	'settings.mcp.authorized': '認証済み ✓',
-	'settings.mcp.editButton': '編集',
-	'settings.mcp.deleteButton': '削除',
-	'settings.mcp.addServerButton': 'サーバーを追加',
-	'settings.mcp.duplicateServerName': '「{name}」という名前のサーバーは既に存在します',
-	'settings.mcp.reconnectFailed': '「{name}」への再接続に失敗しました: {error}',
-	'settings.mcp.openEditorFailed': 'サーバーエディタを開くのに失敗しました: {error}',
-	'settings.mcp.savedButConnectFailed': 'サーバーは保存されましたが、接続に失敗しました: {error}',
-	'settings.mcp.openAddDialogFailed': 'サーバー追加ダイアログを開けませんでした: {error}',
-	'settings.rag.sectionTitle': '保管庫の検索インデックス',
-	'settings.rag.sectionDesc':
-		'Google File Searchを使用して保管庫全体をセマンティック検索します。検索拡張（RAG）エージェントの応答を強化します。プライバシー: インデックス化されたファイルはGoogle Cloudにアップロードされます。',
-	'settings.rag.privacyNotice':
-		'⚠️ プライバシーに関する注意: この機能を有効にすると、セマンティック検索のために保管庫のファイルがGoogle Cloudにアップロードされます。ファイルはGoogleによって処理および保存されます。機密情報を含むフォルダは除外することを検討してください。',
-	'settings.rag.enableName': '保管庫のインデックス登録を有効化',
-	'settings.rag.enableDesc':
-		'Google File Searchを使用して、セマンティック検索用に保管庫のファイルをインデックス登録します。',
-	'settings.rag.openCleanupFailed': 'クリーンアップダイアログを開くのに失敗しました: {error}',
-	'settings.rag.filesIndexed': '{count} 個のファイルがインデックス登録済み',
-	'settings.rag.notYetIndexed': '未インデックス',
-	'settings.rag.indexStatusName': 'インデックスのステータス',
-	'settings.rag.reindexButton': '保管庫を再スキャン',
-	'settings.rag.indexingButton': 'インデックス登録中...',
-	'settings.rag.serviceNotInitialized': 'RAGインデックス登録サービスが初期化されていません',
-	'settings.rag.indexResult': '再スキャン完了: {indexed} 件を再インデックス、{skipped} 件をスキップ、{failed} 件が失敗',
-	'settings.rag.indexingFailed': 'インデックス登録に失敗しました: {error}',
-	'settings.rag.deleteIndexButton': 'インデックスを削除',
-	'settings.rag.deletingButton': '削除中...',
-	'settings.rag.indexDeletedNotice':
-		'インデックスが削除されました。再構築するには「保管庫を再スキャン」を使用してください。',
-	'settings.rag.deleteIndexFailed': 'インデックスの削除に失敗しました: {error}',
-	'settings.rag.openDeleteConfirmFailed': '削除確認ダイアログを開くのに失敗しました: {error}',
-	'settings.rag.storeNameName': '検索インデックス名',
-	'settings.rag.storeNameDescAssigned':
-		'自動的に割り当てられるGoogle File Searchのストア識別子です。新しくやり直すには、インデックスを削除してください。',
-	'settings.rag.storeNameDescPending':
-		'インデックス作成の開始時に、Google File Searchによって自動的に割り当てられます。',
-	'settings.rag.copyButton': 'コピー',
-	'settings.rag.copyTooltip': 'ストア名をクリップボードにコピー',
-	'settings.rag.storeNameCopiedNotice': 'ストア名をクリップボードにコピーしました',
-	'settings.rag.autoSyncName': '変更を自動同期',
-	'settings.rag.autoSyncDesc': 'ファイルの作成、変更、削除時にインデックスを自動的に更新します。',
-	'settings.rag.includeAttachmentsName': '添付ファイルを含める',
-	'settings.rag.includeAttachmentsDesc':
-		'Markdownノートに加えて、PDFやその他のサポートされているファイル形式もインデックスします。再スキャンが必要です。',
-	'settings.rag.attachmentSettingChangedNotice':
-		'添付ファイルの設定が変更されました。変更を適用するには保管庫を再スキャンしてください。',
-	'settings.rag.excludeFoldersName': '除外するフォルダ',
-	'settings.rag.excludeFoldersDesc': '常に除外：{folders}。以下に追加のフォルダを1行に1つずつ入力してください。',
-	'settings.rag.excludeFoldersPlaceholder': '除外する追加のフォルダ...',
-	'settings.tools.sectionTitle': 'ツール権限',
-	'settings.tools.sectionDesc':
-		'どのエージェントツールに確認を求めるか、自動実行するか、または完全にブロックするかを制御します。',
-	'settings.tools.noToolsName': '登録されているツールはありません',
-	'settings.tools.noToolsDesc': 'ツールが読み込まれると、ここにツールの権限が表示されます。',
-	'settings.tools.presetName': '権限プリセット',
-	'settings.tools.presetDesc': 'すべてのツールのデフォルト権限を決定するプリセットを選択します。',
-	'settings.tools.yoloConfirmFailed': 'YOLO確認ダイアログを開けませんでした: {error}',
 	'explainPrompt.placeholder': '選択範囲を説明するためのプロンプトを選択...',
 	'ragCleanup.title': '保管庫のインデックスを削除しますか？',
 	'ragCleanup.body': '保管庫のインデックスはGoogle Cloudに保存されています。削除しますか？',
@@ -690,8 +428,6 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'agent.header.loading': '読み込み中...',
 	'agent.header.loadingProjectTooltip': 'プロジェクトを読み込み中...',
 	'agent.header.tooltipModel': 'モデル: {value}',
-	'agent.header.tooltipTemperature': '温度: {value}',
-	'agent.header.tooltipTopP': 'Top-P: {value}',
 	'agent.header.tooltipPrompt': 'プロンプト: {value}',
 	'agent.header.promptBadgeFallback': 'カスタム',
 	'agent.header.menuAria': 'セッションメニュー',
@@ -811,11 +547,6 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'agent.sessionSettings.modelDesc': 'このセッションで使用するAIモデルを選択します',
 	'agent.sessionSettings.useDefault': 'デフォルトを使用',
 	'agent.sessionSettings.resetToDefault': 'デフォルトにリセット',
-	'agent.sessionSettings.temperature': '温度',
-	'agent.sessionSettings.temperatureDesc': 'ランダム性を制御します (0 = 決定論的、2 = 非常にクリエイティブ)',
-	'agent.sessionSettings.topP': 'Top-P',
-	'agent.sessionSettings.topPDesc':
-		'ニュークリアスサンプリングのしきい値 (0 = 最上位トークンのみ、1 = すべてのトークン)',
 	'agent.sessionSettings.promptTemplate': 'プロンプトテンプレート',
 	'agent.sessionSettings.promptTemplateDesc': 'このセッション用のカスタムプロンプトテンプレートを選択します',
 	'agent.sessionSettings.useDefaultPrompt': 'デフォルトのプロンプトを使用',
@@ -1036,14 +767,6 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'notice.rewrite.selectionDone': 'テキストの書き換えが完了しました',
 	'notice.rewrite.rewritingFile': 'ファイル全体を書き換え中...',
 	'notice.rewrite.fileDone': 'ファイルの書き換えが完了しました',
-	'validation.temperature.notANumber': '温度 {value} は有効な数値ではありません。{adjusted} に調整されました。',
-	'validation.temperature.exceedsModelLimit':
-		'温度 {value} は {model} の上限値 {max} を超えています。{max} に調整されました。',
-	'validation.temperature.outOfRange':
-		'温度 {value} は有効な範囲 [{min}, {max}] の外にあります。{adjusted} に調整されました。',
-	'validation.topP.notANumber': 'Top P {value} は有効な数値ではありません。{adjusted} に調整されました。',
-	'validation.topP.outOfRange':
-		'Top P {value} は有効な範囲 [{min}, {max}] の外にあります。{adjusted} に調整されました。',
 	'agent.planMode.toggleAria': '計画モードの切り替え — エージェントが実行する前に計画を確認します',
 	'agent.planMode.label': '計画',
 	'agent.planMode.headerLabel': 'エージェント (計画)',

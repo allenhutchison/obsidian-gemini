@@ -69,8 +69,6 @@ function createMockPlugin(vaultFiles: Record<string, string> = {}): any {
 		logger: { log: vi.fn(), debug: vi.fn(), error: vi.fn(), warn: vi.fn() },
 		settings: {
 			chatModelName: 'gemini-2.0-flash',
-			temperature: 1,
-			topP: 0.95,
 		},
 		sessionManager: {
 			releaseSession: vi.fn(),

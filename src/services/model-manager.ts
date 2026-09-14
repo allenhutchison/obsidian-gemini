@@ -1,21 +1,20 @@
 import type { ObsidianGemini } from '../types/plugin';
 import * as modelsModule from '../models';
-import {
-	GeminiModel,
-	ModelProvider,
-	ModelUpdateResult,
-	getUpdatedModelSettings,
-	DEFAULT_GEMINI_MODELS,
-} from '../models';
-import { activeProviders, resolveProviderOrDefault } from '../api/provider-routing';
+import { GeminiModel, ModelProvider, getUpdatedFeatureRoutes, DEFAULT_GEMINI_MODELS } from '../models';
+import { activeProviders, featureProvider } from '../api/feature-routing';
 import type { ObsidianGeminiSettings } from '../types/settings';
 import { ModelListProvider, RefreshResult } from './model-list-provider';
 import { OllamaModelsService } from './ollama-models-service';
 import { OpenAIModelsService } from './openai-models-service';
-import { ParameterValidationService, ParameterRanges } from './parameter-validation';
 
 export interface ModelUpdateOptions {
 	forceRefresh?: boolean;
+}
+
+export interface ModelUpdateOutcome {
+	updatedSettings: ObsidianGeminiSettings;
+	settingsChanged: boolean;
+	changedSettingsInfo: string[];
 }
 
 export class ModelManager {
@@ -41,7 +40,7 @@ export class ModelManager {
 	 * right models in each row (#704).
 	 */
 	async getAvailableModels(options: ModelUpdateOptions = {}, provider?: ModelProvider): Promise<GeminiModel[]> {
-		const target = provider ?? resolveProviderOrDefault(this.plugin.settings, 'chat');
+		const target = provider ?? featureProvider(this.plugin.settings, 'chat') ?? 'gemini';
 		if (target === 'ollama') {
 			return this.ollamaModelsService.getModels(options.forceRefresh);
 		}
@@ -108,7 +107,7 @@ export class ModelManager {
 	/**
 	 * Update the global GEMINI_MODELS list from every active provider and fix any stale settings.
 	 */
-	async updateModels(options: ModelUpdateOptions = {}): Promise<ModelUpdateResult<ObsidianGeminiSettings>> {
+	async updateModels(options: ModelUpdateOptions = {}): Promise<ModelUpdateOutcome> {
 		const allModels = await this.collectActiveModels(options.forceRefresh);
 		const previousModels = this.getCurrentGeminiModels();
 
@@ -116,7 +115,12 @@ export class ModelManager {
 
 		if (hasChanges) {
 			this.updateGlobalModelsList(allModels);
-			return getUpdatedModelSettings(this.plugin.settings);
+			const result = getUpdatedFeatureRoutes(this.plugin.settings.features, this.plugin.settings.providerModelMemory);
+			return {
+				updatedSettings: { ...this.plugin.settings, features: result.features, providerModelMemory: result.memory },
+				settingsChanged: result.changed,
+				changedSettingsInfo: result.info,
+			};
 		}
 
 		return {
@@ -170,58 +174,6 @@ export class ModelManager {
 	 */
 	static getStaticModels(): GeminiModel[] {
 		return [...ModelManager.staticModels];
-	}
-
-	/**
-	 * Full model list (text + image) for the parameter helpers. Temperature/topP
-	 * are chat-request parameters, so the ranges come from the chat provider's
-	 * models rather than the union — mixing in another provider's metadata would
-	 * widen the range beyond what chat actually accepts.
-	 */
-	private async getModelsForActiveProvider(): Promise<GeminiModel[]> {
-		const provider = resolveProviderOrDefault(this.plugin.settings, 'chat');
-		if (provider === 'ollama') {
-			return this.ollamaModelsService.getModels();
-		}
-		if (provider === 'openai') {
-			return this.openaiModelsService.getModels();
-		}
-		return this.listProvider.getModels();
-	}
-
-	/**
-	 * Get parameter ranges based on available models.
-	 */
-	async getParameterRanges(): Promise<ParameterRanges> {
-		return ParameterValidationService.getParameterRanges(await this.getModelsForActiveProvider());
-	}
-
-	/**
-	 * Validate parameter values against model capabilities.
-	 */
-	async validateParameters(
-		temperature: number,
-		topP: number
-	): Promise<{
-		temperature: { isValid: boolean; adjustedValue?: number; warning?: string };
-		topP: { isValid: boolean; adjustedValue?: number; warning?: string };
-	}> {
-		const models = await this.getModelsForActiveProvider();
-		return {
-			temperature: ParameterValidationService.validateTemperature(temperature, undefined, models),
-			topP: ParameterValidationService.validateTopP(topP, undefined, models),
-		};
-	}
-
-	/**
-	 * Get parameter display information for settings UI.
-	 */
-	async getParameterDisplayInfo(): Promise<{
-		temperature: string;
-		topP: string;
-		hasModelData: boolean;
-	}> {
-		return ParameterValidationService.getParameterDisplayInfo(await this.getModelsForActiveProvider());
 	}
 
 	/**

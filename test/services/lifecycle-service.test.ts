@@ -240,6 +240,30 @@ import { ProjectActivationSubscriber } from '../../src/subscribers/project-activ
 // import { ModelManager } from '../../src/services/model-manager';
 import { ToolExecutionLogger } from '../../src/subscribers/tool-execution-logger';
 
+/** A fully-routed features table with every feature on the given provider. */
+function featuresAllOn(provider: string): Record<string, { provider: string; model: string }> {
+	return {
+		chat: { provider, model: '' },
+		summary: { provider, model: '' },
+		completions: { provider, model: '' },
+		rewrite: { provider, model: '' },
+		webSearch: { provider, model: '' },
+		deepResearch: { provider, model: '' },
+		rag: { provider, model: '' },
+		imageGen: { provider, model: '' },
+	};
+}
+
+/**
+ * Route every feature to `provider`, mirroring how the pre-redesign
+ * `settings.provider` primary used to imply everything followed it absent an
+ * explicit override.
+ */
+function routeAllTo(settings: any, provider: string): void {
+	settings.defaultProvider = provider;
+	settings.features = featuresAllOn(provider);
+}
+
 function createMockPlugin(overrides: Record<string, any> = {}): any {
 	return {
 		app: {
@@ -247,11 +271,13 @@ function createMockPlugin(overrides: Record<string, any> = {}): any {
 			workspace: { layoutReady: false },
 		},
 		settings: {
-			mcpEnabled: false,
 			ragIndexing: { enabled: false },
 			logToolExecution: true,
 			chatHistory: true,
 			lastSeenVersion: '1.0.0',
+			defaultProvider: 'gemini',
+			apiKeySecretName: 'gemini-key',
+			features: featuresAllOn('gemini'),
 		},
 		logger: {
 			log: vi.fn(),
@@ -656,33 +682,25 @@ describe('LifecycleService', () => {
 	});
 
 	describe('setup – MCP connection', () => {
-		it('should call mcpManager.connectAllEnabled() when mcpEnabled is true', async () => {
-			mockPlugin.settings.mcpEnabled = true;
+		it('calls mcpManager.connectAllEnabled() during onLayoutReady (an empty/disabled server list is a no-op inside it)', async () => {
 			await lifecycle.setup();
 			// connectAllEnabled is called during onLayoutReady (first boot path)
 			await lifecycle.onLayoutReady();
 
 			expect(mockPlugin.mcpManager.connectAllEnabled).toHaveBeenCalled();
 		});
-
-		it('should not call mcpManager.connectAllEnabled() when mcpEnabled is false', async () => {
-			mockPlugin.settings.mcpEnabled = false;
-			await lifecycle.setup();
-
-			expect(mockPlugin.mcpManager.connectAllEnabled).not.toHaveBeenCalled();
-		});
 	});
 
 	describe('setup – image generation provider gating', () => {
 		it('should skip image generation when provider is ollama', async () => {
-			mockPlugin.settings.provider = 'ollama';
+			routeAllTo(mockPlugin.settings, 'ollama');
 			await lifecycle.setup();
 
 			expect(mockPlugin.imageGeneration).toBeUndefined();
 		});
 
 		it('should create image generation when provider is not ollama', async () => {
-			mockPlugin.settings.provider = 'gemini';
+			routeAllTo(mockPlugin.settings, 'gemini');
 			await lifecycle.setup();
 
 			expect(mockPlugin.imageGeneration).toBeDefined();
@@ -772,7 +790,7 @@ describe('LifecycleService', () => {
 		it('should save settings when updateModels returns settingsChanged: true', async () => {
 			await lifecycle.setup();
 
-			const updatedSettings = { ...mockPlugin.settings, chatModelName: 'new-model' };
+			const updatedSettings = { ...mockPlugin.settings, defaultProvider: 'ollama' };
 			mockPlugin.modelManager.updateModels = vi.fn().mockResolvedValue({
 				settingsChanged: true,
 				updatedSettings,
@@ -1080,7 +1098,7 @@ describe('LifecycleService', () => {
 
 		it('cleans up existing RAG when provider is ollama', async () => {
 			const plugin = createMockPlugin();
-			plugin.settings.provider = 'ollama';
+			routeAllTo(plugin.settings, 'ollama');
 			const mockDestroy = vi.fn().mockResolvedValue(undefined);
 			plugin.ragIndexing = { destroy: mockDestroy };
 			plugin.toolRegistry = { unregisterTool: vi.fn(), registerTool: vi.fn() };
@@ -1096,8 +1114,8 @@ describe('LifecycleService', () => {
 		// The override is what enables RAG; the primary staying local is not a veto.
 		it('initializes RAG when rag is overridden to gemini under a local primary', async () => {
 			const plugin = createMockPlugin();
-			plugin.settings.provider = 'ollama';
-			plugin.settings.providerOverrides = { rag: 'gemini' };
+			routeAllTo(plugin.settings, 'ollama');
+			plugin.settings.features.rag = { provider: 'gemini', model: '' };
 			plugin.settings.ragIndexing = { enabled: true };
 			plugin.ragIndexing = null;
 			plugin.toolRegistry = { unregisterTool: vi.fn(), registerTool: vi.fn() };
@@ -1111,7 +1129,7 @@ describe('LifecycleService', () => {
 
 		it('early returns when provider is ollama and no existing ragIndexing', async () => {
 			const plugin = createMockPlugin();
-			plugin.settings.provider = 'ollama';
+			routeAllTo(plugin.settings, 'ollama');
 			plugin.ragIndexing = null;
 
 			const service = new LifecycleService(plugin);
@@ -1252,7 +1270,7 @@ describe('LifecycleService', () => {
 			(ImageGeneration as unknown as Mock).mockClear();
 
 			const plugin = createMockPlugin();
-			plugin.settings.provider = 'gemini';
+			routeAllTo(plugin.settings, 'gemini');
 			const service = new LifecycleService(plugin);
 			await service.setup();
 
@@ -1265,7 +1283,7 @@ describe('LifecycleService', () => {
 			(ImageGeneration as unknown as Mock).mockClear();
 
 			const plugin = createMockPlugin();
-			plugin.settings.provider = 'ollama';
+			routeAllTo(plugin.settings, 'ollama');
 			const service = new LifecycleService(plugin);
 			await service.setup();
 
@@ -1280,8 +1298,8 @@ describe('LifecycleService', () => {
 			(ImageGeneration as unknown as Mock).mockClear();
 
 			const plugin = createMockPlugin();
-			plugin.settings.provider = 'ollama';
-			plugin.settings.providerOverrides = { imageGen: 'gemini' };
+			routeAllTo(plugin.settings, 'ollama');
+			plugin.settings.features.imageGen = { provider: 'gemini', model: '' };
 			const service = new LifecycleService(plugin);
 			await service.setup();
 
@@ -1300,7 +1318,7 @@ describe('LifecycleService', () => {
 			(ImageGeneration as unknown as Mock).mockClear();
 
 			// (a) First setup on Gemini creates the image-gen service.
-			mockPlugin.settings.provider = 'gemini';
+			routeAllTo(mockPlugin.settings, 'gemini');
 			await lifecycle.setup();
 			expect(ImageGeneration).toHaveBeenCalledTimes(1);
 			expect(mockPlugin.imageGeneration).toBeDefined();
@@ -1308,13 +1326,13 @@ describe('LifecycleService', () => {
 			// (b) Switch to Ollama and re-setup: teardown nulls the Gemini-only
 			// service and setup skips re-creating it — no second construction.
 			mockPlugin.isGeminiInitialized = true;
-			mockPlugin.settings.provider = 'ollama';
+			routeAllTo(mockPlugin.settings, 'ollama');
 			await lifecycle.setup();
 			expect(ImageGeneration).toHaveBeenCalledTimes(1);
 			expect(mockPlugin.imageGeneration).toBeNull();
 
 			// (c) Switch back to Gemini and re-setup: the service is re-instantiated.
-			mockPlugin.settings.provider = 'gemini';
+			routeAllTo(mockPlugin.settings, 'gemini');
 			await lifecycle.setup();
 			expect(ImageGeneration).toHaveBeenCalledTimes(2);
 			expect(mockPlugin.imageGeneration).toBeDefined();

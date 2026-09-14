@@ -1,6 +1,7 @@
 import { requestUrl } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { GeminiModel } from '../models';
+import { t } from '../i18n';
 
 /**
  * Models that Ollama exposes for completions are tiny by convention. We pre-bias
@@ -122,6 +123,16 @@ export class OllamaModelsService {
 	private psInFlight = new Map<string, Promise<number | null>>();
 	/** Bumped by invalidate() so a probe started beforehand can't re-seed the cache. */
 	private cacheGeneration = 0;
+	/**
+	 * Outcome of the most recent /api/tags fetch: whether the daemon answered.
+	 * `null` until the first fetch (or after `invalidate()`), so the settings UI
+	 * can distinguish "not checked yet" from "unreachable".
+	 */
+	private lastProbeResult: 'reachable' | 'unreachable' | null = null;
+
+	get lastProbe(): 'reachable' | 'unreachable' | null {
+		return this.lastProbeResult;
+	}
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
@@ -163,9 +174,11 @@ export class OllamaModelsService {
 
 			this.cachedModels = await Promise.all(data.models.map((m) => this.toGeminiModel(m, baseUrl)));
 			this.lastBaseUrl = baseUrl;
+			this.lastProbeResult = 'reachable';
 			this.plugin.logger.log(`[OllamaModelsService] Loaded ${this.cachedModels.length} models from ${baseUrl}`);
 			return this.cachedModels;
 		} catch (error) {
+			this.lastProbeResult = 'unreachable';
 			this.plugin.logger.warn('[OllamaModelsService] Failed to fetch model list:', error);
 			// Don't poison the cache with an empty array — that would stick until
 			// the user manually clicks "Refresh" even after the daemon comes back.
@@ -182,6 +195,7 @@ export class OllamaModelsService {
 	 * Drop the cache (e.g. when the base URL changes or the user clicks "Refresh").
 	 */
 	invalidate(): void {
+		this.lastProbeResult = null;
 		this.cachedModels = null;
 		this.lastBaseUrl = null;
 		this.showCache.clear();
@@ -348,9 +362,9 @@ export class OllamaModelsService {
 
 	private formatLabel(m: OllamaTagsModel): string {
 		const param = m.details?.parameter_size;
-		if (param) {
-			return `${m.name} (${param})`;
-		}
-		return m.name;
+		const base = param ? `${m.name} (${param})` : m.name;
+		// Cloud entries are local manifests that proxy to ollama.com; say so in
+		// the picker, since the provider itself is otherwise "on this machine".
+		return m.remote_host ? t('settings.providers.ollamaCloudModelLabel', { model: base }) : base;
 	}
 }

@@ -92,360 +92,28 @@ export const en = {
 	},
 
 	// --- settings ---
-	'settings.common.saveFailedNotice': {
-		message: 'Failed to save settings: {error}',
-		context: 'Notice shown when persisting plugin settings to disk fails. {error} is the error message.',
-	},
-	'settings.common.advancedBadge': {
-		message: 'Advanced',
-		context: 'Small badge shown next to settings section titles intended for power users.',
-	},
-	'settings.general.sectionTitle': {
-		message: 'General',
-		context: 'Title of the always-open General section at the top of the settings tab.',
-	},
-	'settings.general.sectionDesc': {
-		message: 'Set up your provider, API key, and the models the plugin uses. Required for the plugin to work.',
-		context: 'Description under the General settings section title.',
-	},
-	'settings.general.documentationName': {
-		message: 'Documentation',
-		context: 'Settings field name for the row linking to plugin documentation.',
-	},
-	'settings.general.documentationDesc': {
-		message: 'View the complete plugin documentation and guides',
-		context: 'Settings field description for the documentation link row.',
-	},
-	'settings.general.viewDocumentationButton': {
-		message: 'View documentation',
-		context: 'Button label that opens the plugin documentation website in a browser.',
-	},
-	'settings.general.providerName': {
-		message: 'Provider',
-		context: 'Settings field name for choosing the AI model provider (Gemini, Ollama, or OpenAI).',
-	},
-	'settings.general.providerDesc': {
-		message:
-			'Choose the model provider. Gemini uses the Google Cloud API. Ollama runs models locally on your machine; install from https://ollama.com and pull a model with `ollama pull <name>`. OpenAI uses your OpenAI API key, or any OpenAI-compatible server (LM Studio, MLX, ...) via a custom base URL.',
-		context:
-			'Settings field description for the provider dropdown. Keep the URL and the backtick-quoted shell command untranslated.',
-	},
 	'settings.general.providerOptionGemini': {
 		message: 'Google Gemini (cloud)',
 		context: 'Dropdown option label for the Google Gemini cloud provider. "Google Gemini" is a product name.',
 	},
 	'settings.general.providerOptionOllama': {
-		message: 'Ollama (local)',
-		context: 'Dropdown option label for the Ollama local provider. "Ollama" is a product name.',
+		message: 'Ollama',
+		context:
+			'Dropdown option label for the Ollama provider. Not qualified as "local": Ollama serves models pulled to this machine and can also proxy to Ollama cloud models. "Ollama" is a product name.',
 	},
 	'settings.general.providerOptionOpenai': {
 		message: 'OpenAI (cloud)',
 		context:
 			'Dropdown option label for the OpenAI cloud provider (also used for OpenAI-compatible local servers via a custom base URL). "OpenAI" is a product name.',
 	},
-	'settings.general.ollamaBaseUrlName': {
-		message: 'Ollama base URL',
-		context: 'Settings field name for the URL of the local Ollama server. Shown only when Ollama provider is selected.',
-	},
-	'settings.general.ollamaBaseUrlDesc': {
-		message: 'HTTP endpoint of your local Ollama daemon. Default is http://localhost:11434.',
-		context: 'Settings field description for the Ollama base URL input. Keep the URL untranslated.',
-	},
-	'settings.general.refreshModelListName': {
-		message: 'Refresh model list',
-		context: 'Settings field name for the button that re-fetches the available Gemini models.',
-	},
-	'settings.general.refreshOllamaModelListName': {
-		message: 'Refresh Ollama model list',
-		context:
-			'Settings field name for the button that re-fetches available models from the local Ollama daemon. Distinct from the Gemini refresh row, since both can now appear at once. "Ollama" is a product name.',
-	},
-	'settings.general.refreshModelListOllamaDesc': {
-		message: 'Re-query the Ollama daemon for available models.',
-		context: 'Settings field description for the refresh-models row when the Ollama provider is active.',
-	},
-	'settings.general.openaiApiKeyName': {
-		message: 'OpenAI API key',
-		context: 'Settings field name for the OpenAI API key input. Shown only when the OpenAI provider is active.',
-	},
-	'settings.general.openaiApiKeyDesc': {
-		message:
-			'Link your OpenAI API key. Click "Link..." and Obsidian will ask for a secret name (this is just a label — use any name like "openai-api") and a secret value (paste your API key here). Get a key at https://platform.openai.com/api-keys. Not needed for an OpenAI-compatible local server that doesn\'t require one.',
-		context:
-			'Settings field description for the OpenAI API key. "Link...", "Secret Name", and "Secret Value" refer to Obsidian secret-storage UI labels. Keep the URL untranslated.',
-	},
-	'settings.general.openaiBaseUrlName': {
-		message: 'OpenAI base URL',
-		context:
-			'Settings field name for the endpoint OpenAI Chat Completions requests are sent to. Shown only when the OpenAI provider is active.',
-	},
-	'settings.general.openaiBaseUrlDesc': {
-		message:
-			'Chat Completions endpoint. Default is the OpenAI API (api.openai.com). Point this at an OpenAI-compatible local server instead — such as LM Studio or MLX — to keep requests on your machine.',
-		context:
-			'Settings field description for the OpenAI base URL input, explaining it can target a local OpenAI-compatible server. Keep the URL and product names (LM Studio, MLX) untranslated.',
-	},
-	'settings.general.refreshOpenaiModelListName': {
-		message: 'Refresh OpenAI model list',
-		context:
-			'Settings field name for the button that re-fetches the available models from the configured OpenAI endpoint. "OpenAI" is a product name.',
-	},
-	'settings.general.refreshModelListOpenaiDesc': {
-		message: 'Re-query the configured endpoint for available models.',
-		context: 'Settings field description for the refresh-models row when the OpenAI provider is active.',
-	},
-	'settings.general.openaiModelsFoundSingular': {
-		message: 'Found {count} OpenAI model.',
-		context: 'Notice after refreshing the OpenAI model list when exactly one model was found. {count} is the number 1.',
-	},
-	'settings.general.openaiModelsFound': {
-		message: 'Found {count} OpenAI models.',
-		context: 'Notice after refreshing the OpenAI model list. {count} is the number of models found (0 or 2+).',
-	},
-	'settings.general.openaiChatModelDesc': {
-		message: 'Model used for agent chat sessions and selection rewriting.',
-		context:
-			'Settings field description for the OpenAI chat model dropdown. Unlike the generic chat model description, this omits web search tools since the OpenAI provider does not support them.',
-	},
-	'settings.general.refreshModelListGeminiDesc': {
-		message:
-			'Fetch the latest Gemini model list from GitHub now, bypassing the 24h cache. Use this after a new model is published.',
-		context: 'Settings field description for the refresh-models row when the Gemini provider is active.',
-	},
-	'settings.general.refreshButton': {
-		message: 'Refresh',
-		context: 'Button label that triggers a refresh of the available model list.',
-	},
-	'settings.general.ollamaModelsFoundSingular': {
-		message: 'Found {count} Ollama model.',
-		context: 'Notice after refreshing the Ollama model list when exactly one model was found. {count} is the number 1.',
-	},
-	'settings.general.ollamaModelsFound': {
-		message: 'Found {count} Ollama models.',
-		context: 'Notice after refreshing the Ollama model list. {count} is the number of models found (0 or 2+).',
-	},
-	'settings.general.refreshFailedNotice': {
-		message: 'Failed to refresh: {error}',
-		context: 'Notice when refreshing the Ollama model list fails. {error} is the error message.',
-	},
-	'settings.general.remoteModelNoticeName': {
-		message: 'Cloud-hosted model notice',
-		context:
-			'Settings field name of a warning row shown when a selected Ollama model runs on a remote host instead of the local machine.',
-	},
-	'settings.general.remoteModelNoticeDesc': {
-		message:
-			'{models} runs on {hosts}, not on your machine. Requests — including any note content they send — leave your device even though your provider is Ollama. Choose a locally pulled model if you need everything to stay local.',
-		context:
-			'Description warning that a selected Ollama model is cloud-hosted. {models} is a comma-separated list of model names; {hosts} is a comma-separated list of hostnames.',
-	},
-	'settings.general.localOnlyNoticeName': {
-		message: 'Local-only feature notice',
-		context:
-			'Settings field name of an informational row shown when every feature runs on a local provider and nothing is sent to the cloud.',
-	},
-	'settings.general.localOnlyNoticeDesc': {
-		message:
-			'Everything runs on your machine. Google Search, URL Context (web fetch), Deep Research, image generation, and the vault search index rely on Gemini cloud services and are turned off. To enable one, give it a provider under "Per-feature provider" — that feature\'s data will then be sent to the cloud.',
-		context:
-			'Informational description shown when all features run locally. Lists the cloud-only features that are switched off and how to enable one. "Per-feature provider" is the title of a settings section — translate it the same way there. Feature names are plugin features.',
-	},
-	'settings.general.perFeatureProviderTitle': {
-		message: 'Per-feature provider',
-		context:
-			'Title of the settings subsection where each feature (chat, summaries, image generation, …) can be assigned its own provider.',
-	},
-	'settings.general.perFeatureProviderDesc': {
-		message:
-			'Choose a different provider for individual features. Anything left as the default uses the provider selected above.',
-		context: 'Description of the per-feature provider settings subsection.',
-	},
-	'settings.general.useProviderDefault': {
-		message: 'Default — {provider}',
-		context:
-			'Dropdown option meaning "inherit the primary provider". {provider} is the primary provider name, which itself contains parentheses (e.g. "Google Gemini (cloud)"), so avoid wrapping it in more.',
-	},
-	'settings.general.useCaseUnavailableOption': {
-		message: 'Not available',
-		context:
-			'Dropdown option shown for a feature that no configured provider supports; the dropdown is disabled in this state.',
-	},
-	'settings.general.useCaseChatName': {
-		message: 'Chat and agent',
-		context: 'Row label for the provider that serves interactive chat and agent sessions.',
-	},
-	'settings.general.useCaseChatDesc': {
-		message: 'Interactive chat, agent sessions, scheduled tasks, and hooks.',
-		context: 'Description of what the chat provider covers.',
-	},
-	'settings.general.useCaseSummaryName': {
-		message: 'Summaries',
-		context: 'Row label for the provider that serves document summarization.',
-	},
-	'settings.general.useCaseSummaryDesc': {
-		message: 'The "Summarize active file" command and conversation compaction.',
-		context:
-			'Description of what the summary provider covers. "Summarize active file" is a command name in the plugin.',
-	},
-	'settings.general.useCaseCompletionsName': {
-		message: 'Completions',
-		context: 'Row label for the provider that serves inline text completions while typing.',
-	},
-	'settings.general.useCaseCompletionsDesc': {
-		message: 'IDE-style inline suggestions while you type.',
-		context: 'Description of what the completions provider covers.',
-	},
-	'settings.general.useCaseRewriteName': {
-		message: 'Rewrite',
-		context: 'Row label for the provider that serves text rewriting.',
-	},
-	'settings.general.useCaseRewriteDesc': {
-		message: 'Rewriting selected text. Uses the chat model.',
-		context: 'Description of what the rewrite provider covers.',
-	},
-	'settings.general.useCaseWebSearchName': {
-		message: 'Web and search',
-		context: 'Row label for the provider that serves web search and page fetching tools.',
-	},
-	'settings.general.useCaseWebSearchDesc': {
-		message: 'Google Search, Google Maps, URL Context (web fetch), and Deep Research tools.',
-		context: 'Description of what the search provider covers. The listed names are Google product features.',
-	},
-	'settings.general.useCaseRagName': {
-		message: 'Vault search index',
-		context: 'Row label for the provider that serves semantic search over the vault (RAG).',
-	},
-	'settings.general.useCaseRagDesc': {
-		message: 'Semantic search across your vault. Uploads note content to a cloud search index.',
-		context: 'Description of what the RAG provider covers, including that it uploads content.',
-	},
-	'settings.general.useCaseImageGenName': {
-		message: 'Image generation',
-		context: 'Row label for the provider that generates images.',
-	},
-	'settings.general.useCaseImageGenDesc': {
-		message: 'Generating images from a text prompt.',
-		context: 'Description of what the image generation provider covers.',
-	},
-	'settings.general.missingKeyNoticeName': {
-		message: 'API key required',
-		context:
-			'Settings field name of a warning shown when a feature is routed to a provider that needs an API key, but none is configured.',
-	},
-	'settings.general.missingKeyNoticeDesc': {
-		message:
-			'Some features are set to use {providers}, which needs an API key. Enter one above, or those features will fail when you use them.',
-		context:
-			'Warning that a configured provider is missing its API key. {providers} is a comma-separated list of provider names.',
-	},
-	'settings.general.mixedProviderNoticeName': {
-		message: 'Some features use a different provider',
-		context:
-			'Settings field name of a notice shown when one or more features are routed away from the primary provider.',
-	},
-	'settings.general.mixedProviderNoticeDesc': {
-		message:
-			'These features do not use your default provider: {features}. Their requests — including any note content they send — go to the provider you chose for them.',
-		context:
-			'Description warning that overridden features send data elsewhere. {features} is a comma-separated list of feature names from the rows above.',
-	},
-	'settings.general.inheritOllamaChatModel': {
-		message: 'Same as chat model',
-		context:
-			'Dropdown option meaning this Ollama feature reuses the chat model instead of loading a second one. This is the default.',
-	},
-	'settings.general.ollamaSummaryModelDesc': {
-		message:
-			'Model used for summaries. Leave as "Same as chat model" unless you need a different one — Ollama keeps one model loaded at a time, so a second model is reloaded on every switch.',
-		context:
-			'Settings field description for the Ollama summary model dropdown, explaining the performance cost of choosing a distinct model. "Same as chat model" is the default dropdown option — translate it the same way.',
-	},
-	'settings.general.ollamaCompletionsModelDesc': {
-		message:
-			'Model used for inline completions. Leave as "Same as chat model" unless you need a different one — Ollama keeps one model loaded at a time, so a second model is reloaded on every switch. A small model here can be worth the trade-off.',
-		context:
-			'Settings field description for the Ollama completions model dropdown, explaining the performance trade-off. "Same as chat model" is the default dropdown option — translate it the same way.',
-	},
-	'settings.general.apiKeyName': {
-		message: 'API key',
-		context: 'Settings field name for the Google Gemini API key input.',
-	},
-	'settings.general.apiKeyDesc': {
-		message:
-			'Link your Google Gemini API key. Click "Link..." and Obsidian will ask for a secret name (this is just a label — use any name like "gemini-api") and a secret value (paste your API key here). Get a key free at https://aistudio.google.com/apikey',
-		context:
-			'Settings field description for the API key. "Link...", "Secret Name", and "Secret Value" refer to Obsidian secret-storage UI labels. Keep the URL untranslated.',
-	},
-	'settings.general.chatModelName': {
-		message: 'Chat model',
-		context: 'Settings field name for the model used in agent chat.',
-	},
-	'settings.general.chatModelDesc': {
-		message: 'Model used for agent chat sessions, selection rewriting, and web search tools.',
-		context: 'Settings field description for the chat model dropdown.',
-	},
-	'settings.general.summaryModelName': {
-		message: 'Summary model',
-		context: 'Settings field name for the model used to summarize notes.',
-	},
-	'settings.general.summaryModelDesc': {
-		message: 'Model used for the "Summarize active file" command that adds summaries to frontmatter.',
-		context:
-			'Settings field description for the summary model dropdown. "Summarize Active File" is a command name in the plugin.',
-	},
-	'settings.general.completionModelName': {
-		message: 'Completion model',
-		context: 'Settings field name for the model used for inline text completions.',
-	},
-	'settings.general.completionModelDesc': {
-		message: 'Model used for IDE-style inline completions as you type in notes.',
-		context: 'Settings field description for the completion model dropdown.',
-	},
-	'settings.general.ollamaModelName': {
-		message: 'Ollama model',
-		context: 'Settings field name for the single model Ollama uses for every use case.',
-	},
-	'settings.general.ollamaModelDesc': {
-		message: 'Model used for chat and rewriting, and for any other Ollama feature left set to "Same as chat model".',
-		context:
-			'Settings field description for the main Ollama model dropdown. "Same as chat model" is a dropdown option elsewhere in these settings — translate it the same way.',
-	},
-	'settings.general.imageModelName': {
-		message: 'Image model',
-		context: 'Settings field name for the model used to generate images.',
-	},
-	'settings.general.imageModelDesc': {
-		message: 'Model used for image generation.',
-		context: 'Settings field description for the image generation model dropdown.',
-	},
-	'settings.general.stateFolderName': {
-		message: 'Plugin state folder',
-		context: 'Settings field name for the vault folder where the plugin stores its data.',
-	},
-	'settings.general.stateFolderDesc': {
-		message:
-			'Folder where plugin data is stored. Agent sessions live under Agent-Sessions/, custom prompts under Prompts/, hooks under Hooks/, scheduled task state under Scheduled-Tasks/.',
-		context:
-			'Settings field description for the plugin state folder. The folder names ending in / are literal subfolder names and must stay untranslated.',
-	},
-	'settings.general.showAdvancedName': {
-		message: 'Show advanced settings',
-		context: 'Settings field name for the toggle that reveals advanced settings sections.',
-	},
-	'settings.general.showAdvancedDesc': {
-		message:
-			'Reveal advanced sections (API configuration, Tool permissions, Tool loop detection, MCP servers, Debug) for power users.',
-		context:
-			'Settings field description for the show-advanced toggle. The parenthesized names are section titles elsewhere in settings; translate them consistently with those section titles.',
+	'settings.general.modelListUpdated': {
+		message: 'Model list updated: {count} models.',
+		context: 'Notice after a successful Gemini model list refresh. {count} is the number of models (0 or 2+).',
 	},
 	'settings.general.modelListUpdatedSingular': {
 		message: 'Model list updated: {count} model.',
 		context:
 			'Notice after a successful Gemini model list refresh when exactly one model is available. {count} is the number 1.',
-	},
-	'settings.general.modelListUpdated': {
-		message: 'Model list updated: {count} models.',
-		context: 'Notice after a successful Gemini model list refresh. {count} is the number of models (0 or 2+).',
 	},
 	'settings.general.refreshSkippedOffline': {
 		message: 'Skipped: offline',
@@ -460,539 +128,201 @@ export const en = {
 		message: 'Failed to refresh model list: {error}',
 		context: 'Notice when fetching the latest Gemini model list fails. {error} is the error message.',
 	},
-	'settings.ui.sectionTitle': { message: 'User experience', context: 'Title of the User Experience settings section.' },
-	'settings.ui.sectionDesc': {
-		message:
-			'Streaming, diff view, scheduler catch-up, and personalization options that affect how you interact with the plugin.',
-		context: 'Description under the User Experience settings section title.',
+	'settings.main.groupChat': {
+		message: 'Chat',
+		context: 'Heading for the "Chat" group of rows on the top-level settings tab.',
 	},
-	'settings.ui.userNameName': {
+	'settings.main.groupVault': {
+		message: 'Vault',
+		context:
+			'Heading for the "Vault" group of rows on the top-level settings tab. "Vault" is the Obsidian term for a notes folder.',
+	},
+	'settings.main.groupAutomation': {
+		message: 'Automation',
+		context: 'Heading for the "Automation" group of rows on the top-level settings tab.',
+	},
+	'settings.main.providersName': {
+		message: 'Providers',
+		context: 'Top-level settings row opening the Providers sub-page (connection cards for Gemini, Ollama, OpenAI).',
+	},
+	'settings.main.featuresName': {
+		message: 'Features',
+		context: 'Top-level settings row opening the Features sub-page (per-feature provider + model routing).',
+	},
+	'settings.main.yourNameName': {
 		message: 'Your name',
 		context: 'Settings field name for the user name input used to personalize AI responses.',
 	},
-	'settings.ui.userNameDesc': {
+	'settings.main.yourNameDesc': {
 		message: 'Your name used in system instructions so the AI can address you personally in conversations.',
 		context: 'Settings field description for the user name input.',
 	},
-	'settings.ui.userNamePlaceholder': {
-		message: 'Enter your name',
-		context: 'Placeholder text inside the user name text input.',
-	},
-	'settings.ui.summaryFrontmatterKeyName': {
-		message: 'Summary frontmatter key',
-		context:
-			'Settings field name for the frontmatter property name where note summaries are written. "Frontmatter" is an Obsidian/Markdown term.',
-	},
-	'settings.ui.summaryFrontmatterKeyDesc': {
-		message: 'Frontmatter property name where summaries are stored when using "Summarize active file" command.',
-		context: 'Settings field description. "Summarize Active File" is a plugin command name.',
-	},
-	'settings.ui.enableStreamingName': {
-		message: 'Enable streaming',
-		context: 'Settings toggle name for streaming AI responses word-by-word.',
-	},
-	'settings.ui.enableStreamingDesc': {
-		message: 'Stream AI responses word-by-word as they are generated for a more interactive chat experience.',
-		context: 'Settings toggle description for streaming responses.',
-	},
-	'settings.ui.alwaysShowDiffViewName': {
-		message: 'Always show diff view for file writes',
-		context: 'Settings toggle name. A diff view shows proposed file changes side by side.',
-	},
-	'settings.ui.alwaysShowDiffViewDesc': {
-		message:
-			'Automatically open a diff view when the agent proposes file changes, instead of requiring a button click.',
-		context: 'Settings toggle description for automatically opening the diff view.',
-	},
-	'settings.ui.sessionHistoryName': {
-		message: 'Enable session history',
+	'settings.main.keepSessionHistoryName': {
+		message: 'Keep session history',
 		context: 'Settings toggle name for persisting agent chat sessions to disk.',
 	},
-	'settings.ui.sessionHistoryDesc': {
+	'settings.main.keepSessionHistoryDesc': {
 		message:
 			'Persist agent chat sessions as markdown files in your vault. Sessions are saved under Agent-Sessions/ with auto-generated titles.',
 		context:
 			'Settings toggle description. "Agent-Sessions/" is a literal folder name and must stay untranslated. "Vault" is the Obsidian term for a notes folder.',
 	},
-	'settings.ui.logToolExecutionName': {
-		message: 'Log tool execution to session history',
-		context: 'Settings toggle name for recording agent tool runs in the session history file.',
+	'settings.main.reviewDiffName': {
+		message: 'Review a diff before files are written',
+		context: 'Settings toggle name. A diff view shows proposed file changes side by side.',
 	},
-	'settings.ui.logToolExecutionDesc': {
+	'settings.main.reviewDiffDesc': {
 		message:
-			'Append a summary of each tool execution to the session history file for auditing. Requires session history to be enabled. Requires plugin reload to take effect.',
+			'Automatically open a diff view when the agent proposes file changes, instead of requiring a button click.',
+		context: 'Settings toggle description for automatically opening the diff view.',
+	},
+	'settings.main.vaultSearchIndexName': {
+		message: 'Vault search index',
+		context: 'Top-level settings row opening the Vault search index sub-page (Google File Search configuration).',
+	},
+	'settings.main.pluginFolderName': {
+		message: 'Plugin folder',
+		context: 'Settings field name for the vault folder where the plugin stores its data.',
+	},
+	'settings.main.pluginFolderDesc': {
+		message:
+			'Folder where plugin data is stored. Agent sessions live under Agent-Sessions/, custom prompts under Prompts/, hooks under Hooks/, scheduled task state under Scheduled-Tasks/.',
 		context:
-			'Settings toggle description. "Session History" refers to the setting named by settings.ui.sessionHistoryName; translate consistently.',
+			'Settings field description for the plugin state folder. The folder names ending in / are literal subfolder names and must stay untranslated.',
 	},
-	'settings.automation.sectionTitle': {
-		message: 'Automation',
-		context: 'Title of the Automation settings section (scheduled tasks and lifecycle hooks).',
+	'settings.main.scheduledTasksName': {
+		message: 'Scheduled tasks',
+		context: 'Top-level settings row opening the Scheduled tasks sub-page.',
 	},
-	'settings.automation.sectionDesc': {
-		message:
-			'Run AI agent tasks automatically — on a schedule, or in response to vault events (file created/modified/deleted/renamed).',
-		context: 'Description under the Automation settings section title.',
+	'settings.main.lifecycleHooksName': {
+		message: 'Lifecycle hooks',
+		context: 'Top-level settings row opening the Lifecycle hooks sub-page.',
 	},
-	'settings.automation.manageScheduledTasksName': {
-		message: 'Manage scheduled tasks',
-		context: 'Settings field name for the row with buttons to open the scheduled-task manager.',
-	},
-	'settings.automation.manageScheduledTasksDesc': {
-		message:
-			'Create, edit, enable/disable, and delete scheduled AI tasks. Tasks run automatically in the background while Obsidian is open.',
-		context: 'Settings field description for the scheduled task management row.',
-	},
-	'settings.automation.openSchedulerButton': {
-		message: 'Open scheduler',
-		context: 'Button label that opens the scheduled-task management dialog.',
-	},
-	'settings.automation.newTaskButton': {
-		message: 'New task',
-		context: 'Button label that opens the dialog to create a new scheduled task.',
-	},
-	'settings.automation.autoRunCatchUpName': {
-		message: 'Auto-run missed scheduled tasks on startup',
-		context:
-			'Settings toggle name for automatically running scheduled tasks that were missed while Obsidian was closed.',
-	},
-	'settings.automation.autoRunCatchUpDesc': {
-		message:
-			'When enabled, tasks that were missed while Obsidian was closed (and have "Run if missed" set) are submitted automatically on startup without showing the approval modal.',
-		context: 'Settings toggle description. "Run if missed" is a per-task option label in the scheduler dialog.',
-	},
-	'settings.automation.enableHooksName': {
-		message: 'Enable lifecycle hooks',
-		context: 'Settings toggle name for the lifecycle hooks feature (running agent tasks in response to vault events).',
-	},
-	'settings.automation.enableHooksDesc': {
-		message:
-			'Subscribe to vault events and run AI agent tasks in response. Off by default — vault events fire continuously, and a broadly-scoped hook can drain API quota quickly.',
-		context:
-			'Settings toggle description warning that hooks can consume API quota. "Vault" is the Obsidian term for a notes folder.',
-	},
-	'settings.automation.manageHooksName': {
-		message: 'Manage lifecycle hooks',
-		context: 'Settings field name for the row with buttons to open the hook manager.',
-	},
-	'settings.automation.manageHooksDesc': {
-		message:
-			'Create, edit, enable/disable, and delete hooks. Each hook fires when a matching vault event occurs and runs as a headless agent session.',
-		context: 'Settings field description for the hook management row.',
-	},
-	'settings.automation.openHookManagerButton': {
-		message: 'Open hook manager',
-		context: 'Button label that opens the lifecycle hook management dialog.',
-	},
-	'settings.automation.newHookButton': {
-		message: 'New hook',
-		context: 'Button label that opens the dialog to create a new lifecycle hook.',
-	},
-	'settings.debug.sectionTitle': { message: 'Debug', context: 'Title of the Debug settings section.' },
-	'settings.debug.sectionDesc': {
-		message: 'Diagnostic toggles for troubleshooting plugin behavior.',
-		context: 'Description under the Debug settings section title.',
-	},
-	'settings.debug.debugModeName': {
-		message: 'Debug mode',
-		context: 'Settings toggle name for enabling debug console logging.',
-	},
-	'settings.debug.debugModeDesc': {
-		message: 'Enable debug logging to the console. Useful for troubleshooting.',
-		context: 'Settings toggle description for debug mode.',
-	},
-	'settings.debug.showTokenUsageName': {
-		message: 'Show token usage',
-		context: 'Settings toggle name for displaying estimated AI token usage in the agent view.',
-	},
-	'settings.debug.showTokenUsageDesc': {
-		message: 'Display estimated token usage in the agent view (for debugging purposes).',
-		context: 'Settings toggle description. "Token" is the AI/LLM unit of text, not a security token.',
-	},
-	'settings.debug.stopOnToolErrorName': {
-		message: 'Stop on tool error',
-		context: 'Settings toggle name for halting agent execution when a tool call fails.',
-	},
-	'settings.debug.stopOnToolErrorDesc': {
-		message:
-			'Stop agent execution when a tool call fails. If disabled, the agent will continue executing subsequent tools.',
-		context: 'Settings toggle description for the stop-on-tool-error behavior.',
-	},
-	'settings.agentConfig.sectionTitle': {
-		message: 'Agent config',
-		context: 'Title of the advanced Agent Config settings section.',
-	},
-	'settings.agentConfig.sectionDesc': {
-		message:
-			'Tune how the agent talks to the model: retry/generation parameters, conversation summarization, and loop guards.',
-		context: 'Description under the Agent Config settings section title.',
-	},
-	'settings.agentConfig.apiConfigurationHeading': {
-		message: 'API configuration',
-		context: 'Sub-heading inside Agent Config settings, above API retry/endpoint options.',
-	},
-	'settings.agentConfig.logToFileName': {
-		message: 'Log to file',
-		context: 'Settings toggle name for writing log entries to a file.',
-	},
-	'settings.agentConfig.logToFileDesc': {
-		message:
-			'Write log entries to a file in the plugin state folder. Errors and warnings are always logged; debug entries require debug mode. Log files are automatically rotated at 1 MB.',
-		context:
-			'Settings toggle description for file logging. "Debug Mode" refers to the setting named by settings.debug.debugModeName; translate consistently.',
-	},
-	'settings.agentConfig.useInteractionsApiName': {
-		message: 'Use Interactions API',
-		context: 'Settings toggle name for routing Gemini requests through the GA Interactions API.',
-	},
-	'settings.agentConfig.useInteractionsApiDesc': {
-		message:
-			'Route Gemini requests through Google’s newer Interactions API instead of the legacy generateContent API. This is the default transport. Runs statelessly — conversation history is replayed each turn and not persisted on Google’s side between turns. Turn it off to fall back to generateContent if you hit issues. Models that only support the Interactions API (such as Gemini Omni) always use it, regardless of this setting.',
-		context:
-			'Settings toggle description for the Interactions API. "Interactions API" and "generateContent" are Google API names; keep them in English.',
-	},
-	'settings.agentConfig.customEndpointName': {
-		message: 'Custom API endpoint',
-		context: 'Settings field name for overriding the Google API base URL.',
-	},
-	'settings.agentConfig.customEndpointDesc': {
-		message:
-			'Override the default Google API base URL (e.g. for a corporate proxy or local gateway). Leave blank to use the official endpoint.',
-		context: 'Settings field description for the custom API endpoint input.',
-	},
-	'settings.agentConfig.customEndpointInvalidNotice': {
-		message: 'Custom API endpoint is not a valid URL — clearing.',
-		context: 'Notice shown when the entered custom API endpoint fails URL validation and is reset to empty.',
-	},
-	'settings.agentConfig.maxRetriesName': {
-		message: 'Maximum retries',
-		context: 'Settings field name for the maximum number of retries on failed model requests.',
-	},
-	'settings.agentConfig.maxRetriesDesc': {
-		message: 'Maximum number of retries when a model request fails.',
-		context: 'Settings field description for the maximum retries input.',
-	},
-	'settings.agentConfig.maxRetriesPlaceholder': {
-		message: 'e.g., 3',
-		context: 'Placeholder showing an example value (the number 3) in the maximum retries text input.',
-	},
-	'settings.agentConfig.initialBackoffName': {
-		message: 'Initial backoff delay (ms)',
-		context: 'Settings field name for the initial retry delay in milliseconds. "ms" abbreviates milliseconds.',
-	},
-	'settings.agentConfig.initialBackoffDesc': {
-		message: 'Initial delay in milliseconds before the first retry. Subsequent retries will use exponential backoff.',
-		context: 'Settings field description for the initial backoff delay input.',
-	},
-	'settings.agentConfig.initialBackoffPlaceholder': {
-		message: 'e.g., 1000',
-		context: 'Placeholder showing an example value (the number 1000) in the initial backoff delay text input.',
-	},
-	'settings.agentConfig.contextManagementHeading': {
-		message: 'Context management',
-		context: 'Sub-heading inside Agent Config settings, above conversation context options.',
-	},
-	'settings.agentConfig.compactionThresholdName': {
-		message: 'Context compaction threshold',
-		context: 'Settings slider name for the token-usage percentage that triggers conversation summarization.',
-	},
-	'settings.agentConfig.compactionThresholdDesc': {
-		message:
-			'Automatically summarize older conversation turns when token usage exceeds this percentage of the model context window. Current: {percent}%',
-		context:
-			'Settings slider description. {percent} is the currently selected number, displayed before a percent sign.',
-	},
-	'settings.agentConfig.loopDetectionHeading': {
-		message: 'Tool loop detection',
-		context: 'Sub-heading inside Agent Config settings, above loop detection options.',
-	},
-	'settings.agentConfig.loopDetectionName': {
-		message: 'Enable loop detection',
-		context: 'Settings toggle name for detecting repeated identical AI tool calls.',
-	},
-	'settings.agentConfig.loopDetectionDesc': {
-		message: 'Prevent the AI from repeatedly calling the same tool with identical parameters.',
-		context: 'Settings toggle description for loop detection.',
-	},
-	'settings.agentConfig.loopThresholdName': {
-		message: 'Loop threshold',
-		context: 'Settings slider name for how many identical tool calls count as a loop.',
-	},
-	'settings.agentConfig.loopThresholdDesc': {
-		message: 'Number of identical tool calls before considering it a loop (default: 3).',
-		context: 'Settings slider description for the loop threshold.',
-	},
-	'settings.agentConfig.timeWindowName': {
-		message: 'Time window (seconds)',
-		context: 'Settings slider name for the loop-detection time window in seconds.',
-	},
-	'settings.agentConfig.timeWindowDesc': {
-		message: 'Time window to check for repeated calls (default: 30 seconds).',
-		context: 'Settings slider description for the loop-detection time window.',
-	},
-	'settings.agentConfig.temperatureName': {
-		message: 'Temperature',
-		context: 'Settings slider name. "Temperature" is the standard AI generation parameter controlling randomness.',
-	},
-	'settings.agentConfig.temperatureDescWithInfo': {
-		message: 'Controls randomness. Lower values are more deterministic. {info}',
-		context:
-			'Settings slider description for temperature. {info} is an English range/default string supplied by the model metadata, appended verbatim.',
-	},
-	'settings.agentConfig.temperatureDescDefault': {
-		message: 'Controls randomness. Lower values are more deterministic. (Default: 0.7)',
-		context: 'Settings slider description for temperature when no model metadata is available.',
-	},
-	'settings.agentConfig.temperatureSaveFailedNotice': {
-		message: 'Failed to save temperature setting. See console for details.',
-		context: 'Notice when saving the temperature setting fails.',
-	},
-	'settings.agentConfig.topPName': {
-		message: 'Top P',
-		context: 'Settings slider name. "Top P" is the standard AI nucleus-sampling parameter; usually left untranslated.',
-	},
-	'settings.agentConfig.topPDescWithInfo': {
-		message: 'Controls diversity. Lower values are more focused. {info}',
-		context:
-			'Settings slider description for Top P. {info} is an English range/default string supplied by the model metadata, appended verbatim.',
-	},
-	'settings.agentConfig.topPDescDefault': {
-		message: 'Controls diversity. Lower values are more focused. (Default: 1)',
-		context: 'Settings slider description for Top P when no model metadata is available.',
-	},
-	'settings.agentConfig.topPSaveFailedNotice': {
-		message: 'Failed to save Top P setting. See console for details.',
-		context: 'Notice when saving the Top P setting fails.',
-	},
-	'settings.mcp.sectionTitle': {
+	'settings.main.mcpServersName': {
 		message: 'MCP servers',
 		context:
-			'Title of the MCP Servers settings section. MCP stands for Model Context Protocol; usually left untranslated.',
+			'Top-level settings row opening the MCP servers sub-page. "MCP" (Model Context Protocol) is a proper noun/acronym and should stay untranslated.',
 	},
-	'settings.mcp.sectionDesc': {
-		message: 'Connect external Model Context Protocol servers to extend the agent with additional tools.',
-		context: 'Description under the MCP Servers settings section title.',
-	},
-	'settings.mcp.loadErrorDesc': {
-		message: 'Error loading MCP settings: {error}',
-		context:
-			'Fallback settings row description shown when the MCP settings section fails to render. {error} is the error message.',
-	},
-	'settings.mcp.enableName': {
-		message: 'Enable MCP servers',
-		context: 'Settings toggle name for the MCP server integration.',
-	},
-	'settings.mcp.enableDesc': {
-		message:
-			'Connect to Model Context Protocol servers to extend the agent with external tools. Supports local (stdio) and remote (HTTP) servers.',
-		context: 'Settings toggle description. "stdio" and "HTTP" are technical transport names; keep untranslated.',
-	},
-	'settings.mcp.noServers': {
-		message: 'No MCP servers configured. Click "Add server" to get started.',
-		context:
-			'Empty-state text in the MCP server list. "Add Server" refers to the button labeled by settings.mcp.addServerButton; translate consistently.',
-	},
-	'settings.mcp.httpUrl': {
-		message: 'HTTP: {url}',
-		context: 'Part of a server description line showing the remote server URL. {url} is the server address.',
-	},
-	'settings.mcp.authorized': {
-		message: 'Authorized ✓',
-		context: 'Status tag in a server description indicating OAuth authorization completed. Keep the check mark.',
-	},
-	'settings.mcp.editButton': { message: 'Edit', context: 'Button label to edit an MCP server configuration.' },
-	'settings.mcp.deleteButton': { message: 'Delete', context: 'Button label to delete an MCP server configuration.' },
-	'settings.mcp.addServerButton': { message: 'Add server', context: 'Button label to add a new MCP server.' },
-	'settings.mcp.duplicateServerName': {
-		message: 'A server named "{name}" already exists',
-		context: 'Notice when saving an MCP server whose name duplicates an existing one. {name} is the server name.',
-	},
-	'settings.mcp.reconnectFailed': {
-		message: 'Failed to reconnect "{name}": {error}',
-		context:
-			'Notice when reconnecting to an MCP server after editing fails. {name} is the server name, {error} the error message.',
-	},
-	'settings.mcp.openEditorFailed': {
-		message: 'Failed to open server editor: {error}',
-		context: 'Notice when the MCP server edit dialog fails to open. {error} is the error message.',
-	},
-	'settings.mcp.savedButConnectFailed': {
-		message: 'Server saved but failed to connect: {error}',
-		context: 'Notice when a new MCP server was saved but the initial connection failed. {error} is the error message.',
-	},
-	'settings.mcp.openAddDialogFailed': {
-		message: 'Failed to open add server dialog: {error}',
-		context:
-			'Notice when the Add Server dialog fails to open. {error} is the error message. "Add Server" refers to settings.mcp.addServerButton; translate consistently.',
-	},
-	'settings.rag.sectionTitle': {
-		message: 'Vault search index',
-		context:
-			'Title of the settings section for the semantic vault search index. "Vault" is the Obsidian term for a notes folder.',
-	},
-	'settings.rag.sectionDesc': {
-		message:
-			'Semantic search across your vault using Google File Search. Powers retrieval-augmented agent responses. Privacy: indexed files are uploaded to Google Cloud.',
-		context:
-			'Description under the Vault Search Index section title. "Google File Search" and "Google Cloud" are product names.',
-	},
-	'settings.rag.privacyNotice': {
-		message:
-			'⚠️ Privacy notice: Enabling this feature uploads your vault files to Google Cloud for semantic search. Files are processed and stored by Google. Consider excluding folders with sensitive information.',
-		context: 'Privacy warning paragraph at the top of the Vault Search Index section. Keep the warning emoji.',
-	},
-	'settings.rag.enableName': {
-		message: 'Enable vault indexing',
-		context: 'Settings toggle name for the vault search indexing feature.',
-	},
-	'settings.rag.enableDesc': {
-		message: 'Index your vault files for semantic search using Google File Search.',
-		context: 'Settings toggle description for vault indexing.',
-	},
-	'settings.rag.openCleanupFailed': {
-		message: 'Failed to open cleanup dialog: {error}',
-		context:
-			'Notice when the index-cleanup confirmation dialog fails to open while disabling indexing. {error} is the error message.',
-	},
-	'settings.rag.filesIndexed': {
-		message: '{count} files indexed',
-		context: 'Index status text showing how many files are in the search index. {count} is the file count.',
-	},
-	'settings.rag.notYetIndexed': {
-		message: 'Not yet indexed',
-		context: 'Index status text when the vault has never been indexed.',
-	},
-	'settings.rag.indexStatusName': {
-		message: 'Index status',
-		context: 'Settings field name for the row showing index state with reindex/delete buttons.',
-	},
-	'settings.rag.reindexButton': {
-		message: 'Rescan vault',
-		context: 'Button label that rescans the vault for changed files and updates the search index.',
-	},
-	'settings.rag.indexingButton': {
-		message: 'Indexing...',
-		context: 'Temporary button label while the vault is being indexed.',
-	},
-	'settings.rag.serviceNotInitialized': {
-		message: 'RAG indexing service not initialized',
-		context:
-			'Notice when an indexing action is attempted before the indexing service is ready. RAG stands for retrieval-augmented generation.',
-	},
-	'settings.rag.indexResult': {
-		message: 'Rescan complete: {indexed} re-indexed, {skipped} skipped, {failed} failed',
-		context: 'Notice summarizing a rescan run. {indexed}, {skipped}, and {failed} are file counts.',
-	},
-	'settings.rag.indexingFailed': {
-		message: 'Indexing failed: {error}',
-		context: 'Notice when vault indexing fails. {error} is the error message.',
-	},
-	'settings.rag.deleteIndexButton': {
-		message: 'Delete index',
-		context: 'Button label that deletes the vault search index.',
-	},
-	'settings.rag.deletingButton': {
-		message: 'Deleting...',
-		context: 'Temporary button label while the search index is being deleted.',
-	},
-	'settings.rag.indexDeletedNotice': {
-		message: 'Index deleted. Use "Rescan vault" to rebuild.',
-		context:
-			'Notice after the search index was deleted. "Rescan vault" refers to the button labeled by settings.rag.reindexButton; translate consistently.',
-	},
-	'settings.rag.deleteIndexFailed': {
-		message: 'Failed to delete index: {error}',
-		context: 'Notice when deleting the search index fails. {error} is the error message.',
-	},
-	'settings.rag.openDeleteConfirmFailed': {
-		message: 'Failed to open delete confirmation: {error}',
-		context: 'Notice when the delete-index confirmation dialog fails to open. {error} is the error message.',
-	},
-	'settings.rag.storeNameName': {
-		message: 'Search index name',
-		context: 'Settings field name for the read-only Google File Search store identifier.',
-	},
-	'settings.rag.storeNameDescAssigned': {
-		message:
-			'The Google File Search store identifier, assigned automatically. Delete the index to start over with a new one.',
-		context: 'Settings field description when a search index store already exists.',
-	},
-	'settings.rag.storeNameDescPending': {
-		message: 'Assigned automatically by Google File Search when indexing starts.',
-		context: 'Settings field description when no search index store exists yet.',
-	},
-	'settings.rag.copyButton': {
-		message: 'Copy',
-		context: 'Button label that copies the search index store name to the clipboard.',
-	},
-	'settings.rag.copyTooltip': {
-		message: 'Copy store name to clipboard',
-		context: 'Tooltip on the Copy button for the search index store name.',
-	},
-	'settings.rag.storeNameCopiedNotice': {
-		message: 'Store name copied to clipboard',
-		context: 'Notice after the search index store name was copied to the clipboard.',
-	},
-	'settings.rag.autoSyncName': {
-		message: 'Auto-sync changes',
-		context: 'Settings toggle name for automatically keeping the search index in sync with file changes.',
-	},
-	'settings.rag.autoSyncDesc': {
-		message: 'Automatically update the index when files are created, modified, or deleted.',
-		context: 'Settings toggle description for index auto-sync.',
-	},
-	'settings.rag.includeAttachmentsName': {
-		message: 'Include attachments',
-		context: 'Settings toggle name for indexing non-markdown files such as PDFs.',
-	},
-	'settings.rag.includeAttachmentsDesc': {
-		message: 'Index PDFs and other supported file types in addition to markdown notes. Requires rescanning.',
-		context: 'Settings toggle description for including attachments in the search index.',
-	},
-	'settings.rag.attachmentSettingChangedNotice': {
-		message: 'Attachment setting changed. Rescan vault to apply changes.',
-		context: 'Notice after toggling attachment indexing, reminding the user to rescan.',
-	},
-	'settings.rag.excludeFoldersName': {
-		message: 'Exclude folders',
-		context: 'Settings field name for the textarea listing folders excluded from indexing.',
-	},
-	'settings.rag.excludeFoldersDesc': {
-		message: 'Always excluded: {folders}. Add additional folders below (one per line).',
-		context:
-			'Settings field description for the exclude-folders textarea. {folders} is a comma-separated list of system folder paths that are always excluded.',
-	},
-	'settings.rag.excludeFoldersPlaceholder': {
-		message: 'Additional folders to exclude...',
-		context: 'Placeholder text inside the exclude-folders textarea.',
-	},
-	'settings.tools.sectionTitle': {
+	'settings.main.toolPermissionsName': {
 		message: 'Tool permissions',
-		context: 'Title of the Tool Permissions settings section.',
+		context: 'Top-level settings row opening the Tool permissions sub-page.',
 	},
-	'settings.tools.sectionDesc': {
-		message: 'Control which agent tools require confirmation, run automatically, or are blocked entirely.',
-		context: 'Description under the Tool Permissions settings section title.',
+	'settings.main.advancedName': {
+		message: 'Advanced',
+		context: 'Top-level settings row opening the Advanced sub-page.',
 	},
-	'settings.tools.noToolsName': {
-		message: 'No tools registered',
-		context: 'Settings field name shown when the agent tool registry is empty.',
+	'settings.main.documentationName': {
+		message: 'Documentation',
+		context: 'Settings field name for the row linking to plugin documentation.',
 	},
-	'settings.tools.noToolsDesc': {
-		message: 'Tool permissions will appear here once tools are loaded.',
-		context: 'Settings field description shown when no agent tools are registered yet.',
+	'settings.main.documentationDesc': {
+		message: 'View the complete plugin documentation and guides',
+		context: 'Settings field description for the documentation link row.',
 	},
-	'settings.tools.presetName': {
-		message: 'Permission preset',
-		context: 'Settings dropdown name for choosing a tool-permission preset.',
+	'settings.main.viewDocumentationButton': {
+		message: 'View documentation',
+		context: 'Button label that opens the plugin documentation website in a browser.',
 	},
-	'settings.tools.presetDesc': {
-		message: 'Choose a preset that determines default permissions for all tools.',
-		context: 'Settings dropdown description for the permission preset.',
+	'settings.features.pageName': {
+		message: 'Features',
+		context: 'Title of the Features settings sub-page, where each AI capability is routed to a provider and model.',
 	},
-	'settings.tools.yoloConfirmFailed': {
-		message: 'Failed to open YOLO confirmation: {error}',
+	'settings.features.groupText': {
+		message: 'Text',
+		context: 'Heading for the "Text" group of rows on the Features settings page.',
+	},
+	'settings.features.groupTextDesc': {
+		message: 'Chat and agent, summaries, completions, and rewrite.',
+		context: 'Description under the "Text" group heading on the Features settings page.',
+	},
+	'settings.features.groupWeb': {
+		message: 'Web and research',
+		context: 'Heading for the "Web and research" group of rows on the Features settings page.',
+	},
+	'settings.features.groupWebDesc': {
+		message: 'Web search, deep research, and the vault search index.',
+		context: 'Description under the "Web and research" group heading on the Features settings page.',
+	},
+	'settings.features.groupMedia': {
+		message: 'Media',
+		context: 'Heading for the "Media" group of rows on the Features settings page.',
+	},
+	'settings.features.provider': {
+		message: 'Provider',
+		context: 'Label for the provider dropdown on a Features sub-page (e.g. the page for the Chat feature).',
+	},
+	'settings.features.model': {
+		message: 'Model',
+		context: 'Label for the model dropdown on a Features sub-page.',
+	},
+	'settings.features.modelDefault': {
+		message: 'Default for this provider',
 		context:
-			'Notice when the confirmation dialog for the unrestricted "YOLO" permission preset fails to open. {error} is the error message. YOLO is the preset name; keep untranslated.',
+			'Model dropdown option meaning "use the provider\'s own default model for this feature" rather than a specific named model.',
+	},
+	'settings.features.sameAsChat': {
+		message: 'Same as chat',
+		context:
+			'Model dropdown option meaning this feature uses whatever model the Chat feature is using, for a provider that keeps one model resident.',
+	},
+	'settings.features.modelMissing': {
+		message: 'No longer available',
+		context:
+			"Label appended to a model option that is stored in settings but no longer present in the provider's current model list.",
+	},
+	'settings.features.off': {
+		message: 'Off',
+		context: 'Displayed value for a Feature row that is deliberately not routed to any provider.',
+	},
+	'settings.features.chooseProvider': {
+		message: 'Choose a provider',
+		context: 'Displayed value / prompt for a Feature row whose stored provider can no longer serve that feature.',
+	},
+	'settings.features.notConnected': {
+		message: 'not connected',
+		context:
+			'Part of a Feature row\'s displayed value, e.g. "OpenAI · not connected", when the routed provider is missing credentials.',
+	},
+	'settings.features.deepResearchAgent': {
+		message: 'Deep Research agent',
+		context: 'Displayed value for the Deep research feature, which has no separate model setting of its own.',
+	},
+	'settings.features.fileSearch': {
+		message: 'Google File Search',
+		context:
+			'Displayed value for the Vault search index feature, which has no separate model setting of its own. "Google File Search" is a product name.',
+	},
+	'settings.features.label.chat': {
+		message: 'Chat and agent',
+		context: 'Feature row label on the Features settings page for the chat/agent conversation feature.',
+	},
+	'settings.features.label.summary': {
+		message: 'Summaries',
+		context: 'Feature row label on the Features settings page for the note-summarization feature.',
+	},
+	'settings.features.label.completions': {
+		message: 'Completions',
+		context: 'Feature row label on the Features settings page for the inline text-completion feature.',
+	},
+	'settings.features.label.rewrite': {
+		message: 'Rewrite',
+		context: 'Feature row label on the Features settings page for the text-rewrite feature.',
+	},
+	'settings.features.label.webSearch': {
+		message: 'Web search',
+		context: 'Feature row label on the Features settings page for the web search / page fetch feature.',
+	},
+	'settings.features.label.deepResearch': {
+		message: 'Deep research',
+		context: 'Feature row label on the Features settings page for the Deep Research agent feature.',
+	},
+	'settings.features.label.rag': {
+		message: 'Vault search index',
+		context: 'Feature row label on the Features settings page for the semantic vault search feature.',
+	},
+	'settings.features.label.imageGen': {
+		message: 'Image generation',
+		context: 'Feature row label on the Features settings page for the image-generation feature.',
 	},
 
 	// --- modals ---
@@ -2306,16 +1636,6 @@ export const en = {
 		message: 'Model: {value}',
 		context: 'Line in the session-settings badge tooltip. {value} is a model name (untranslated).',
 	},
-	'agent.header.tooltipTemperature': {
-		message: 'Temperature: {value}',
-		context:
-			'Line in the session-settings badge tooltip. "Temperature" is the AI sampling parameter; {value} is a number.',
-	},
-	'agent.header.tooltipTopP': {
-		message: 'Top-P: {value}',
-		context:
-			'Line in the session-settings badge tooltip. "Top-P" is the nucleus-sampling parameter; {value} is a number.',
-	},
 	'agent.header.tooltipPrompt': {
 		message: 'Prompt: {value}',
 		context: 'Line in the session-settings badge tooltip. {value} is the name of a custom prompt template.',
@@ -2777,22 +2097,6 @@ export const en = {
 		message: 'Reset to default',
 		context: 'Tooltip on the reset button next to each session setting.',
 	},
-	'agent.sessionSettings.temperature': {
-		message: 'Temperature',
-		context: 'Setting name: the AI sampling temperature parameter.',
-	},
-	'agent.sessionSettings.temperatureDesc': {
-		message: 'Controls randomness (0 = deterministic, 2 = very creative)',
-		context: 'Description of the Temperature setting.',
-	},
-	'agent.sessionSettings.topP': {
-		message: 'Top-P',
-		context: 'Setting name: the nucleus-sampling parameter. Usually kept as "Top-P" in all languages.',
-	},
-	'agent.sessionSettings.topPDesc': {
-		message: 'Nucleus sampling threshold (0 = only top token, 1 = all tokens)',
-		context: 'Description of the Top-P setting. "Token" is the AI text-unit term.',
-	},
 	'agent.sessionSettings.promptTemplate': {
 		message: 'Prompt template',
 		context: 'Setting name: which custom prompt template the session uses.',
@@ -2962,7 +2266,7 @@ export const en = {
 	},
 	'notice.main.apiKeyRetrieveFailed': {
 		message:
-			'Could not retrieve your API key from secure storage. Try re-entering it in Settings → Gemini Scribe → API key.',
+			'Could not retrieve your API key from secure storage. Try re-entering it in Settings → Gemini Scribe → Providers → Google Gemini → API key.',
 		context: 'Error notice when the stored API key could not be read back from Obsidian secret storage.',
 	},
 	'notice.main.initFailedConsole': {
@@ -3012,7 +2316,7 @@ export const en = {
 	},
 	'notice.main.imageGenUnavailableProvider': {
 		message:
-			'No provider is set up for image generation. Choose one under Settings → Gemini Scribe → Per-feature provider.',
+			'No provider is set up for image generation. Choose one under Settings → Gemini Scribe → Features → Image generation.',
 		context:
 			'Notice when the Generate Image command is used but the provider serving image generation does not support it (e.g. a local-only setup). Keep the settings path recognizable to users of the translated UI.',
 	},
@@ -3022,7 +2326,7 @@ export const en = {
 	},
 	'notice.main.ragUnavailableProvider': {
 		message:
-			'No provider is set up for the vault search index. Choose one under Settings → Gemini Scribe → Per-feature provider.',
+			'No provider is set up for the vault search index. Choose one under Settings → Gemini Scribe → Vault → Vault search index.',
 		context:
 			'Notice when a RAG (vault search index) command is used but the provider serving RAG does not support it (e.g. a local-only setup). Keep the settings path recognizable to users of the translated UI.',
 	},
@@ -3688,27 +2992,6 @@ export const en = {
 		message: 'File rewritten successfully',
 		context: 'Toast notification when the AI finishes rewriting the whole file.',
 	},
-	'validation.temperature.notANumber': {
-		message: 'Temperature {value} is not a valid number. Adjusted to {adjusted}.',
-		context: 'Warning notice in settings when the temperature sampling parameter is not a number.',
-	},
-	'validation.temperature.exceedsModelLimit': {
-		message: 'Temperature {value} exceeds {model} limit of {max}. Adjusted to {max}.',
-		context:
-			"Warning notice in settings when temperature is above the selected model's maximum. {model} is a model name.",
-	},
-	'validation.temperature.outOfRange': {
-		message: 'Temperature {value} is outside valid range [{min}, {max}]. Adjusted to {adjusted}.',
-		context: 'Warning notice in settings when temperature is outside the allowed range.',
-	},
-	'validation.topP.notANumber': {
-		message: 'Top P {value} is not a valid number. Adjusted to {adjusted}.',
-		context: 'Warning notice in settings when the Top P sampling parameter is not a number.',
-	},
-	'validation.topP.outOfRange': {
-		message: 'Top P {value} is outside valid range [{min}, {max}]. Adjusted to {adjusted}.',
-		context: 'Warning notice in settings when Top P is outside the allowed range.',
-	},
 	'agent.planMode.toggleAria': {
 		message: 'Toggle Plan Mode — review a plan before the agent executes',
 		context: 'Accessibility label for the Plan Mode toggle button in the agent send bar.',
@@ -3886,6 +3169,587 @@ export const en = {
 	'error.http.genericWithCodeNoDetail': {
 		message: 'HTTP error {statusCode}: An unexpected error occurred.',
 		context: 'A non-4xx, non-5xx status with no detail text. {statusCode} is the numeric HTTP status.',
+	},
+
+	// -- Advanced page --
+	'settings.advanced.compactionThresholdName': {
+		message: 'Context compaction threshold',
+		context: 'Slider label on the Advanced settings sub-page.',
+	},
+	'settings.advanced.compactionThresholdDesc': {
+		message: 'Older turns are summarized once the context window reaches this percentage full.',
+		context: 'Description under the context-compaction-threshold slider on the Advanced settings sub-page.',
+	},
+	'settings.advanced.stopOnToolErrorName': {
+		message: 'Stop the agent when a tool fails',
+		context: 'Toggle label on the Advanced settings sub-page.',
+	},
+	'settings.advanced.stopOnToolErrorDesc': {
+		message: 'When off, the agent keeps going after a tool call fails instead of ending the turn.',
+		context: 'Description under the "Stop the agent when a tool fails" toggle.',
+	},
+	'settings.advanced.summaryFrontmatterKeyName': {
+		message: 'Summary frontmatter key',
+		context:
+			'Text field label on the Advanced settings sub-page; controls which frontmatter key note summaries are written to.',
+	},
+	'settings.advanced.summaryFrontmatterKeyDesc': {
+		message: "The frontmatter property name used to store a note's generated summary.",
+		context: 'Description under the summary-frontmatter-key text field.',
+	},
+	'settings.advanced.logToolExecutionName': {
+		message: 'Record tool calls in session history',
+		context: 'Toggle label on the Advanced settings sub-page.',
+	},
+	'settings.advanced.logToolExecutionDesc': {
+		message: 'Requires session history to be enabled.',
+		context: 'Description under the "Record tool calls in session history" toggle, explaining why it may be disabled.',
+	},
+	'settings.advanced.diagnosticsHeading': {
+		message: 'Diagnostics',
+		context: 'Group heading on the Advanced settings sub-page.',
+	},
+	'settings.advanced.debugModeName': {
+		message: 'Debug mode',
+		context: 'Toggle label on the Advanced settings sub-page.',
+	},
+	'settings.advanced.debugModeDesc': {
+		message: 'Logs extra detail to the developer console to help diagnose issues.',
+		context: 'Description under the debug-mode toggle.',
+	},
+	'settings.advanced.showTokenUsageName': {
+		message: 'Show token usage',
+		context: 'Toggle label on the Advanced settings sub-page.',
+	},
+	'settings.advanced.showTokenUsageDesc': {
+		message: 'Displays the token count for each message in the agent view.',
+		context: 'Description under the show-token-usage toggle.',
+	},
+	'settings.advanced.logToFileName': {
+		message: 'Log API calls to a file',
+		context: 'Toggle label on the Advanced settings sub-page.',
+	},
+	'settings.advanced.logToFileDesc': {
+		message: 'Writes every model API request and response to a log file in the plugin folder.',
+		context: 'Description under the "Log API calls to a file" toggle.',
+	},
+
+	// -- Scheduled tasks / Lifecycle hooks pages (Automation group) --
+	'settings.automation.manageScheduledTasksName': {
+		message: 'Manage scheduled tasks',
+		context: 'Action row label on the Scheduled tasks settings sub-page; opens the scheduler management modal.',
+	},
+	'settings.automation.manageScheduledTasksDesc': {
+		message: 'View, edit, and run your scheduled agent tasks.',
+		context: 'Description under "Manage scheduled tasks".',
+	},
+	'settings.automation.newTaskName': {
+		message: 'New scheduled task',
+		context: 'Action row label on the Scheduled tasks settings sub-page; opens the scheduler modal in create mode.',
+	},
+	'settings.automation.newTaskDesc': {
+		message: 'Create a new scheduled task.',
+		context: 'Description under "New scheduled task".',
+	},
+	'settings.automation.autoRunCatchUpName': {
+		message: 'Auto-run missed tasks on startup',
+		context: 'Toggle label on the Scheduled tasks settings sub-page.',
+	},
+	'settings.automation.autoRunCatchUpDesc': {
+		message: "When Obsidian was closed at a task's scheduled time, run it automatically the next time the vault opens.",
+		context: 'Description under "Auto-run missed tasks on startup".',
+	},
+	'settings.automation.taskCount': {
+		message: '{count} tasks',
+		context:
+			'Displayed-value summary on the Scheduled tasks page-link row, for a count other than 1. {count} is the number of scheduled tasks.',
+	},
+	'settings.automation.taskCountSingular': {
+		message: '{count} task',
+		context: 'Displayed-value summary on the Scheduled tasks page-link row, for exactly 1 task.',
+	},
+	'settings.automation.enableHooksName': {
+		message: 'Enable lifecycle hooks',
+		context: "Toggle label on the Lifecycle hooks settings sub-page; the page's first row.",
+	},
+	'settings.automation.enableHooksDesc': {
+		message: 'Let the AI run automatically in response to vault events, like a file being created or modified.',
+		context: 'Description under "Enable lifecycle hooks".',
+	},
+	'settings.automation.manageHooksName': {
+		message: 'Manage hooks',
+		context: 'Action row label on the Lifecycle hooks settings sub-page; opens the hook management modal.',
+	},
+	'settings.automation.manageHooksDesc': {
+		message: 'View, edit, and run your lifecycle hooks.',
+		context: 'Description under "Manage hooks".',
+	},
+	'settings.automation.newHookName': {
+		message: 'New hook',
+		context: 'Action row label on the Lifecycle hooks settings sub-page; opens the hook modal in create mode.',
+	},
+	'settings.automation.newHookDesc': {
+		message: 'Create a new lifecycle hook.',
+		context: 'Description under "New hook".',
+	},
+	'settings.automation.hooksStatusOn': {
+		message: 'On',
+		context: 'Displayed-value summary on the Lifecycle hooks page-link row when hooks are enabled.',
+	},
+	'settings.automation.hooksStatusOff': {
+		message: 'Off',
+		context: 'Displayed-value summary on the Lifecycle hooks page-link row when hooks are disabled.',
+	},
+	'settings.automation.openHookManagerFailed': {
+		message: 'Failed to open the hook manager: {error}',
+		context: 'Notice shown when the lifecycle hook management modal fails to load. {error} is the failure detail.',
+	},
+	'settings.automation.openSchedulerFailed': {
+		message: 'Failed to open the scheduler: {error}',
+		context: 'Notice shown when the scheduled task management modal fails to load. {error} is the failure detail.',
+	},
+
+	// -- MCP servers page --
+	'settings.mcp.noServers': {
+		message: 'No MCP servers configured yet.',
+		context: 'Empty-state text for the MCP servers list on the MCP servers settings sub-page.',
+	},
+	'settings.mcp.addServerButton': {
+		message: 'Add MCP server',
+		context: 'Tooltip/mobile-row label for the add-item affordance on the MCP servers list.',
+	},
+	'settings.mcp.editButton': {
+		message: 'Edit',
+		context: 'Tooltip for the per-row edit button on the MCP servers settings sub-page.',
+	},
+	'settings.mcp.httpUrl': {
+		message: 'URL: {url}',
+		context:
+			"Part of an MCP server row's description for an HTTP-transport server. {url} is the server's endpoint URL.",
+	},
+	'settings.mcp.authorized': {
+		message: 'Authorized',
+		context: "Part of an MCP server row's description when an OAuth token is present for that server.",
+	},
+	'settings.mcp.duplicateServerName': {
+		message: 'A server named "{name}" already exists.',
+		context:
+			'Notice shown when adding or renaming an MCP server to a name already in use. {name} is the conflicting server name.',
+	},
+	'settings.mcp.reconnectFailed': {
+		message: 'Saved, but reconnecting to "{name}" failed: {error}',
+		context:
+			'Notice shown when an MCP server edit saves successfully but the reconnect attempt fails. {name} is the server name, {error} the failure detail.',
+	},
+	'settings.mcp.openEditorFailed': {
+		message: 'Failed to open the MCP server editor: {error}',
+		context: 'Notice shown when the MCP server edit modal fails to load. {error} is the failure detail.',
+	},
+	'settings.mcp.openAddDialogFailed': {
+		message: 'Failed to open the add-server dialog: {error}',
+		context: 'Notice shown when the MCP add-server modal fails to load. {error} is the failure detail.',
+	},
+	'settings.mcp.savedButConnectFailed': {
+		message: 'Saved, but connecting to the server failed: {error}',
+		context:
+			'Notice shown when a newly-added MCP server saves successfully but the initial connection attempt fails. {error} is the failure detail.',
+	},
+	'settings.mcp.serverCount': {
+		message: '{count} servers',
+		context:
+			'Displayed-value summary on the MCP servers page-link row, for a count other than 1. {count} is the number of configured servers.',
+	},
+	'settings.mcp.serverCountSingular': {
+		message: '{count} server',
+		context: 'Displayed-value summary on the MCP servers page-link row, for exactly 1 configured server.',
+	},
+
+	// -- Vault search index page --
+	'settings.rag.privacyNoticeName': {
+		message: 'Privacy',
+		context: 'Row heading introducing the privacy notice on the Vault search index settings sub-page.',
+	},
+	'settings.rag.privacyNotice': {
+		message:
+			'Indexing sends note content to Google File Search for semantic search. Excluded folders and attachments never leave your device.',
+		context: 'Privacy notice shown on the Vault search index settings sub-page, replacing the old inline banner.',
+	},
+	'settings.rag.enableName': {
+		message: 'Index this vault',
+		context: 'Toggle label on the Vault search index settings sub-page.',
+	},
+	'settings.rag.enableDesc': {
+		message: 'Build a searchable semantic index of your notes using Google File Search.',
+		context: 'Description under "Index this vault".',
+	},
+	'settings.rag.statusName': {
+		message: 'Status',
+		context: 'Row label for the index status/rescan/delete row on the Vault search index settings sub-page.',
+	},
+	'settings.rag.notYetIndexed': {
+		message: 'Not yet indexed.',
+		context: 'Status text shown before the vault has been indexed for the first time.',
+	},
+	'settings.rag.filesIndexed': {
+		message: '{count} files indexed.',
+		context: 'Status text showing how many files are currently indexed. {count} is the file count.',
+	},
+	'settings.rag.reindexButton': {
+		message: 'Rescan',
+		context: 'Button label that re-indexes the vault, on the Vault search index settings sub-page.',
+	},
+	'settings.rag.indexingButton': {
+		message: 'Indexing…',
+		context: 'Button label shown while a vault indexing run is in progress.',
+	},
+	'settings.rag.indexResult': {
+		message: 'Indexed {indexed}, skipped {skipped}, failed {failed}.',
+		context: 'Notice shown after a vault indexing run completes, summarizing the outcome.',
+	},
+	'settings.rag.indexingFailed': {
+		message: 'Indexing failed: {error}',
+		context: 'Notice shown when a vault indexing run throws. {error} is the failure detail.',
+	},
+	'settings.rag.serviceNotInitialized': {
+		message: 'The vault search index service is not initialized yet.',
+		context: 'Notice shown when the Rescan or Delete index button is used before the RAG indexing service has started.',
+	},
+	'settings.rag.deleteIndexButton': {
+		message: 'Delete index',
+		context: 'Button label that deletes the remote vault search index, on the Vault search index settings sub-page.',
+	},
+	'settings.rag.deletingButton': {
+		message: 'Deleting…',
+		context: 'Button label shown while the vault search index is being deleted.',
+	},
+	'settings.rag.indexDeletedNotice': {
+		message: 'Vault search index deleted.',
+		context: 'Notice shown after the vault search index is successfully deleted.',
+	},
+	'settings.rag.deleteIndexFailed': {
+		message: 'Failed to delete the vault search index: {error}',
+		context: 'Notice shown when deleting the vault search index throws. {error} is the failure detail.',
+	},
+	'settings.rag.openDeleteConfirmFailed': {
+		message: 'Failed to open the delete-index confirmation: {error}',
+		context:
+			'Notice shown when the RAG cleanup confirmation modal fails to load from the delete-index button. {error} is the failure detail.',
+	},
+	'settings.rag.storeNameName': {
+		message: 'Index name',
+		context: 'Row label for the read-only index/store-name row on the Vault search index settings sub-page.',
+	},
+	'settings.rag.storeNameDescAssigned': {
+		message: 'Assigned automatically by Google File Search.',
+		context: 'Description under the index-name row once a store has been created.',
+	},
+	'settings.rag.storeNameDescPending': {
+		message: 'Assigned automatically once the vault is first indexed.',
+		context: 'Description under the index-name row before a store exists yet.',
+	},
+	'settings.rag.copyButton': {
+		message: 'Copy',
+		context: 'Button label that copies the index/store name to the clipboard.',
+	},
+	'settings.rag.copyTooltip': {
+		message: 'Copy the index name to the clipboard',
+		context: 'Tooltip for the copy button on the index-name row.',
+	},
+	'settings.rag.storeNameCopiedNotice': {
+		message: 'Index name copied to clipboard.',
+		context: 'Notice shown after the index name is copied to the clipboard.',
+	},
+	'settings.rag.whatGetsIndexedHeading': {
+		message: 'What gets indexed',
+		context: 'Group heading on the Vault search index settings sub-page.',
+	},
+	'settings.rag.autoSyncName': {
+		message: 'Sync changes automatically',
+		context: 'Toggle label under "What gets indexed" on the Vault search index settings sub-page.',
+	},
+	'settings.rag.autoSyncDesc': {
+		message: 'Keep the index up to date as notes are created, edited, and deleted.',
+		context: 'Description under "Sync changes automatically".',
+	},
+	'settings.rag.includeAttachmentsName': {
+		message: 'Include attachments',
+		context: 'Toggle label under "What gets indexed" on the Vault search index settings sub-page.',
+	},
+	'settings.rag.includeAttachmentsDesc': {
+		message: 'Also index PDFs and other supported attachments, not just notes.',
+		context: 'Description under "Include attachments".',
+	},
+	'settings.rag.excludeFoldersName': {
+		message: 'Exclude folders',
+		context: 'Textarea label under "What gets indexed" on the Vault search index settings sub-page.',
+	},
+	'settings.rag.excludeFoldersDesc': {
+		message: "One folder path per line. {folders} are always excluded and don't need to be listed.",
+		context:
+			'Description under the exclude-folders textarea. {folders} is a comma-separated list of the always-excluded system folders.',
+	},
+	'settings.rag.excludeFoldersPlaceholder': {
+		message: 'folder/subfolder',
+		context: 'Placeholder text in the exclude-folders textarea.',
+	},
+	'settings.rag.summaryOn': {
+		message: 'On · {count} files',
+		context:
+			'Displayed-value summary on the Vault search index page-link row when indexing is enabled. {count} is the indexed file count.',
+	},
+	'settings.rag.summaryOff': {
+		message: 'Off',
+		context: 'Displayed-value summary on the Vault search index page-link row when indexing is disabled.',
+	},
+
+	// -- Tool permissions page --
+	'settings.tools.presetName': {
+		message: 'Preset',
+		context: 'Dropdown label on the Tool permissions settings page.',
+	},
+	'settings.tools.presetDesc': {
+		message: 'Custom appears here once you change a tool below.',
+		context: 'Description under the preset dropdown on the Tool permissions settings page.',
+	},
+	'settings.tools.toolsHeading': {
+		message: 'Tools',
+		context: 'Group heading for the searchable list of per-tool permission rows on the Tool permissions settings page.',
+	},
+	'settings.tools.filterPlaceholder': {
+		message: 'Filter tools…',
+		context: 'Placeholder text for the search box above the tool permission rows.',
+	},
+	'settings.tools.filterRowName': {
+		message: 'Filter by type',
+		context:
+			'Accessible name for the row of filter pills (All/Read/Write/Destructive/External/MCP) above the tool permission rows; not shown visually.',
+	},
+	'settings.tools.filterAll': {
+		message: 'All',
+		context: 'Filter pill label on the Tool permissions settings page: shows every tool.',
+	},
+	'settings.tools.filterRead': {
+		message: 'Read',
+		context: 'Filter pill label on the Tool permissions settings page: shows read-classified tools only.',
+	},
+	'settings.tools.filterWrite': {
+		message: 'Write',
+		context: 'Filter pill label on the Tool permissions settings page: shows write-classified tools only.',
+	},
+	'settings.tools.filterDestructive': {
+		message: 'Destructive',
+		context: 'Filter pill label on the Tool permissions settings page: shows destructive-classified tools only.',
+	},
+	'settings.tools.filterExternal': {
+		message: 'External',
+		context: 'Filter pill label on the Tool permissions settings page: shows external-classified tools only.',
+	},
+	'settings.tools.filterMcp': {
+		message: 'MCP',
+		context: 'Filter pill label on the Tool permissions settings page: shows only tools contributed by an MCP server.',
+	},
+	'settings.tools.noToolsName': {
+		message: 'No tools registered',
+		context: 'Row name shown on the Tool permissions settings page when no tools are registered yet.',
+	},
+	'settings.tools.noToolsDesc': {
+		message: "Tool permissions will appear here once the agent's tools finish loading.",
+		context: 'Row description shown on the Tool permissions settings page when no tools are registered yet.',
+	},
+	'settings.tools.yoloConfirmFailed': {
+		message: 'Failed to open the YOLO mode confirmation: {error}',
+		context:
+			'Notice shown when the YOLO confirmation modal fails to load while switching the tool-permission preset. {error} is the failure detail.',
+	},
+	'settings.common.listSeparator': {
+		message: ' · ',
+		context:
+			'Separator joining short items into one line (e.g. provider names, feature labels). Middle dot with surrounding spaces; keep as a single glyph appropriate to the target script.',
+	},
+	'settings.providers.shortLabel.gemini': {
+		message: 'Gemini',
+		context:
+			'Short provider name used in summary lines and dropdowns where "Google Gemini (cloud)" would be too long (e.g. "Gemini · Ollama"). "Gemini" is a product name.',
+	},
+	'settings.providers.shortLabel.ollama': {
+		message: 'Ollama',
+		context: 'Short provider name used in summary lines and dropdowns. "Ollama" is a product name.',
+	},
+	'settings.providers.shortLabel.openai': {
+		message: 'OpenAI',
+		context: 'Short provider name used in summary lines and dropdowns. "OpenAI" is a product name.',
+	},
+	'settings.providers.shortLabel.anthropic': {
+		message: 'Anthropic',
+		context:
+			'Short provider name for the card-only Anthropic placeholder (not yet a usable provider). "Anthropic" is a product name.',
+	},
+	'settings.providers.cardNameGemini': {
+		message: 'Google Gemini',
+		context: 'Title of the Gemini provider card on the Providers settings page. "Google Gemini" is a product name.',
+	},
+	'settings.providers.apiKeyName': {
+		message: 'API key',
+		context: "Row name for a provider card's API key field, backed by a secret-storage control.",
+	},
+	'settings.providers.apiKeyDesc': {
+		message: "Saved in Obsidian's secret storage, not in this vault's data.",
+		context: "Row description for a provider card's API key field, reassuring the user how the key is stored.",
+	},
+	'settings.providers.baseUrlName': {
+		message: 'Base URL',
+		context: "Row name for a provider card's endpoint/base-URL field.",
+	},
+	'settings.providers.baseUrlOptionalDesc': {
+		message: 'Leave blank to use the default endpoint.',
+		context: 'Row description for an optional base-URL field (Gemini, OpenAI).',
+	},
+	'settings.providers.baseUrlRequiredDesc': {
+		message: 'Address of the local server this provider talks to.',
+		context: 'Row description for a required base-URL field (Ollama).',
+	},
+	'settings.providers.baseUrlPlaceholder': {
+		message: 'http://localhost:11434',
+		context: "Placeholder text for a provider card's base-URL input, showing the Ollama default as an example.",
+	},
+	'settings.providers.baseUrlInvalid': {
+		message: 'Enter a valid URL.',
+		context: 'Inline validation error shown under a base-URL field that does not parse as a URL.',
+	},
+	'settings.providers.subscriptionSignInName': {
+		message: 'Sign in with your ChatGPT subscription',
+		context: 'Row name for the OpenAI provider card\'s subscription sign-in action. "ChatGPT" is a product name.',
+	},
+	'settings.providers.subscriptionComingSoon': {
+		message: 'Coming soon — use an API key below for now.',
+		context: 'Row description explaining that subscription sign-in is not yet implemented.',
+	},
+	'settings.providers.modelsHeading': {
+		message: 'Models',
+		context: 'Group heading on a provider card for the model list / refresh row.',
+	},
+	'settings.providers.modelsRowName': {
+		message: 'Available models',
+		context: "Row name for a provider card's model-count-and-refresh row.",
+	},
+	'settings.providers.refreshButton': {
+		message: 'Refresh',
+		context: "Button label that re-fetches a provider's model list.",
+	},
+	'settings.providers.refreshUnreachable': {
+		message: 'Could not reach {provider}. Check the endpoint and try again.',
+		context:
+			'Notice after the user clicks Refresh on a provider card and the model list could not be fetched. {provider} is the provider name (Ollama / OpenAI).',
+	},
+	'settings.providers.modelsAvailable': {
+		message: '{count} available',
+		context: 'Model-count summary for a cloud provider (Gemini, OpenAI). {count} is the number of models.',
+	},
+	'settings.providers.modelsPulledAndCloud': {
+		message: '{count} pulled · {cloud} cloud',
+		context:
+			'Model-count summary for Ollama when some models are Ollama cloud models proxied to ollama.com. {count} is the number of locally pulled models; {cloud} is the number of cloud models.',
+	},
+	'settings.providers.ollamaCloudModelLabel': {
+		message: '{model} (cloud)',
+		context:
+			'Model dropdown label for an Ollama cloud model, which Ollama forwards to ollama.com instead of running locally. {model} is the model name.',
+	},
+	'settings.providers.modelsPulled': {
+		message: '{count} pulled',
+		context:
+			'Model-count summary for Ollama, whose models are downloaded ("pulled") to the local machine. {count} is the number of models.',
+	},
+	'settings.providers.modelsLoading': {
+		message: 'Loading…',
+		context: "Placeholder shown for a provider card's model count while the first fetch is in flight.",
+	},
+	'settings.providers.modelsUnavailable': {
+		message: 'Not applicable',
+		context: 'Model-count summary for the Anthropic placeholder card, which has no model list.',
+	},
+	'settings.providers.includesHeading': {
+		message: 'Includes',
+		context:
+			'Row name introducing a provider-bound extra capability (e.g. Google Maps grounding) that rides along with the provider rather than being its own routed feature.',
+	},
+	'settings.providers.includesMaps': {
+		message: 'Google Maps grounding',
+		context: 'One of the capabilities listed under a provider card\'s "Includes" row. "Google Maps" is a product name.',
+	},
+	'settings.providers.includesUrlFetch': {
+		message: 'Page fetch by URL',
+		context: 'One of the capabilities listed under a provider card\'s "Includes" row.',
+	},
+	'settings.providers.includesNone': {
+		message: 'Nothing extra',
+		context: 'Value shown under a provider card\'s "Includes" row when the provider has no provider-bound extras.',
+	},
+	'settings.providers.usedByHeading': {
+		message: 'Used by',
+		context: 'Row name listing which features currently route to this provider.',
+	},
+	'settings.providers.usedByNone': {
+		message: 'Nothing yet',
+		context: 'Value shown under a provider card\'s "Used by" row when no feature currently routes to this provider.',
+	},
+	'settings.providers.notYetRoutableHeading': {
+		message: 'Not yet available',
+		context: 'Row name on the Anthropic placeholder card explaining it cannot serve any feature yet.',
+	},
+	'settings.providers.anthropicPlaceholderDesc': {
+		message:
+			'Anthropic support is staged but not yet connected to any feature. Save your key now to be ready when it opens up.',
+		context: 'Row description on the Anthropic placeholder card. "Anthropic" is a product name.',
+	},
+	'settings.providers.statusConnected': {
+		message: 'Connected',
+		context: 'Provider connection status: credentials are present and valid.',
+	},
+	'settings.providers.statusNeedsKey': {
+		message: 'Not set up',
+		context: 'Provider connection status: the provider requires a key and none is configured.',
+	},
+	'settings.providers.statusUnreachable': {
+		message: 'Unreachable',
+		context: 'Provider connection status: the provider was configured but could not be reached.',
+	},
+	'settings.providers.statusUnknown': {
+		message: 'Not checked yet',
+		context: 'Provider connection status: no live signal is available yet (e.g. Ollama before its first probe).',
+	},
+	'settings.providers.defaultProviderName': {
+		message: 'Default provider',
+		context: 'Row name for the dropdown choosing which provider serves any feature not explicitly routed elsewhere.',
+	},
+	'settings.providers.defaultProviderDesc': {
+		message: 'Used by any feature you have not routed elsewhere.',
+		context: 'Row description for the "Default provider" dropdown.',
+	},
+	'settings.providers.privacyNoticeName': {
+		message: 'Privacy',
+		context: 'Row name for the single consolidated privacy note on the Providers page.',
+	},
+	'settings.providers.privacyNoticeDesc': {
+		message:
+			'Only the providers your features actually use ever receive your content. Ollama keeps requests on this machine, except for models marked "cloud", which it forwards to ollama.com. Gemini and OpenAI send the request to that company\'s servers.',
+		context:
+			'The single privacy note on the Providers page, replacing four separate variants from the previous settings layout. "Ollama", "Gemini", and "OpenAI" are product names.',
+	},
+	'settings.providers.defaultMoved': {
+		message: '{count} features moved to the new default provider.',
+		context:
+			'Notice shown after changing "Default provider" when one or more features that were on the previous default automatically moved to the new one. {count} is the number of features moved (1 or more).',
+	},
+	'settings.providers.groupOnProvider': {
+		message: '{group} on {provider}',
+		context:
+			'Fragment of the top-level "Features" row\'s summary value, e.g. "Text on Ollama". {group} is a Features-page group name (Text / Web and research / Media); {provider} is a short provider name (Gemini / Ollama / OpenAI).',
+	},
+	'settings.features.modelMissingHelp': {
+		message: '{model} is no longer available from this provider. Choose another.',
+		context:
+			"Inline validation error under a Features sub-page's model dropdown when the stored model has fallen out of the provider's current list. {model} is the model's id/name.",
 	},
 } as const satisfies Record<string, SourceString>;
 

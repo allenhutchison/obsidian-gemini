@@ -276,19 +276,14 @@ export class AgentViewTools {
 	}
 
 	/**
-	 * The two AgentLoop hooks that opt a turn into a streamed follow-up response,
-	 * or an empty object when the user has turned streaming off.
+	 * The two AgentLoop hooks that opt a turn into a streamed follow-up response.
 	 *
 	 * `AgentLoop` selects its streaming branch purely from the presence of
-	 * `onFollowUpChunk`, so withholding these hooks is what routes follow-ups
-	 * through the non-streaming call — which is how the "Enable streaming"
-	 * setting reaches the responses that come back after a tool batch. The
-	 * initial request is gated on the same setting in `agent-view-send.ts`; the
-	 * gate was missing here, so an agent turn that called tools still streamed
-	 * every one of its responses with the toggle off.
+	 * `onFollowUpChunk`, so always supplying these hooks is what routes
+	 * follow-ups through the streaming call — the plugin always streams when
+	 * the provider client supports it (there is no user-facing toggle).
 	 */
 	private followUpStreamingHooks(): Pick<AgentLoopHooks, 'onFollowUpChunk' | 'onFollowUpStreamReady'> {
-		if (this.plugin.settings.streamingEnabled === false) return {};
 		return {
 			onFollowUpChunk: (chunk: StreamChunk) => {
 				if (!chunk.text) return;

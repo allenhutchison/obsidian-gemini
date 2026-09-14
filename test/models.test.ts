@@ -2,25 +2,40 @@ import {
 	DEFAULT_GEMINI_MODELS,
 	GEMINI_MODELS,
 	findModelProvider,
+	geminiGroundingModel,
 	getActiveChatModel,
 	getDefaultModelForRole,
-	getOllamaModelForRole,
-	getOpenAIModelForRole,
+	getUpdatedFeatureRoutes,
 	GeminiModel,
-	getUpdatedModelSettings,
 	isInteractionsOnlyModel,
 	contextWindowForModel,
-	migrateOllamaModelSetting,
 	providerForModel,
+	resolveFeatureModel,
 	resolveGenerateContentModel,
 	RETIRED_MODEL_SUCCESSORS,
 	setGeminiModels,
 } from '../src/models';
+import type { FeatureRoutes, ProviderModelMemory } from '../src/types/features';
+import type { FeatureRoutingSlice } from '../src/api/feature-routing';
 
 // Helper to temporarily modify GEMINI_MODELS for specific tests
 const setTestModels = (models: GeminiModel[]) => {
 	setGeminiModels(models);
 };
+
+function routes(overrides: Partial<FeatureRoutes>): FeatureRoutes {
+	const base: FeatureRoutes = {
+		chat: { provider: 'none', model: '' },
+		summary: { provider: 'none', model: '' },
+		completions: { provider: 'none', model: '' },
+		rewrite: { provider: 'none', model: '' },
+		webSearch: { provider: 'none', model: '' },
+		deepResearch: { provider: 'none', model: '' },
+		rag: { provider: 'none', model: '' },
+		imageGen: { provider: 'none', model: '' },
+	};
+	return { ...base, ...overrides };
+}
 
 describe('getDefaultModelForRole', () => {
 	let originalModels: GeminiModel[];
@@ -92,8 +107,6 @@ describe('getDefaultModelForRole', () => {
 	});
 
 	it('should return the completions model when completions role is specified', () => {
-		// Assuming originalModels has a default for 'completions'
-		// Or add a specific setup if needed:
 		setTestModels([
 			{ value: 'gemini-2.5-pro-preview-05-06', label: 'Gemini 2.5 Pro', defaultForRoles: ['chat'] },
 			{ value: 'gemini-2.5-flash-preview-04-17', label: 'Gemini 2.5 Flash', defaultForRoles: ['summary'] },
@@ -112,12 +125,91 @@ describe('getDefaultModelForRole', () => {
 	});
 });
 
-describe('getUpdatedModelSettings', () => {
+describe('bundled model catalog', () => {
+	it('no longer ships retired models, and every retired model’s successor is bundled', () => {
+		const bundledIds = new Set(DEFAULT_GEMINI_MODELS.map((m) => m.value));
+		for (const [retired, successor] of Object.entries(RETIRED_MODEL_SUCCESSORS)) {
+			// Retired models must be out of the catalog (the API 404s on them)...
+			expect(bundledIds.has(retired)).toBe(false);
+			// ...and their successor must still be live, or the migration is a no-op.
+			expect(bundledIds.has(successor)).toBe(true);
+		}
+	});
+});
+
+describe('resolveFeatureModel', () => {
 	let originalModels: GeminiModel[];
 
 	beforeEach(() => {
 		originalModels = [...GEMINI_MODELS];
-		// Setup default test models
+		setTestModels([
+			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
+			{ value: 'gemini-flash-lite', label: 'Flash Lite' },
+			{ value: 'llama3.2', label: 'Llama 3.2', provider: 'ollama' as const, defaultForRoles: ['chat'] },
+		]);
+	});
+
+	afterEach(() => {
+		setTestModels(originalModels);
+	});
+
+	it('returns the stored model for a routed feature', () => {
+		const s: FeatureRoutingSlice = { features: routes({ chat: { provider: 'gemini', model: 'gemini-flash-lite' } }) };
+		expect(resolveFeatureModel(s, 'chat')).toBe('gemini-flash-lite');
+	});
+
+	it('falls back to getDefaultModelForRole when the stored model is ""', () => {
+		const s: FeatureRoutingSlice = { features: routes({ chat: { provider: 'ollama', model: '' } }) };
+		expect(resolveFeatureModel(s, 'chat')).toBe('llama3.2');
+	});
+
+	// Even for a feature routed to 'none', resolveFeatureModel must not throw —
+	// it falls back to the Gemini default, since there's no provider to ask.
+	it('falls back to the Gemini default for a "none" route', () => {
+		const s: FeatureRoutingSlice = { features: routes({ chat: { provider: 'none', model: '' } }) };
+		expect(resolveFeatureModel(s, 'chat')).toBe('gemini-chat-default');
+	});
+
+	it('returns "" for a model-less feature (deepResearch, rag)', () => {
+		const s: FeatureRoutingSlice = { features: routes({ rag: { provider: 'gemini', model: '' } }) };
+		expect(resolveFeatureModel(s, 'rag')).toBe('');
+	});
+});
+
+describe('geminiGroundingModel', () => {
+	let originalModels: GeminiModel[];
+
+	beforeEach(() => {
+		originalModels = [...GEMINI_MODELS];
+	});
+
+	afterEach(() => {
+		setGeminiModels(originalModels);
+	});
+
+	it('follows the webSearch model when webSearch is on Gemini', () => {
+		const s: FeatureRoutingSlice = {
+			features: routes({ webSearch: { provider: 'gemini', model: 'gemini-2.5-flash' } }),
+		};
+		expect(geminiGroundingModel(s)).toBe('gemini-2.5-flash');
+	});
+
+	it('falls back to the bundled Gemini chat default when webSearch is on another provider', () => {
+		const s: FeatureRoutingSlice = { features: routes({ webSearch: { provider: 'ollama', model: 'llama3.2' } }) };
+		expect(geminiGroundingModel(s)).toBe('gemini-flash-latest');
+	});
+
+	it('falls back to the bundled Gemini chat default when webSearch is off', () => {
+		const s: FeatureRoutingSlice = { features: routes({ webSearch: { provider: 'none', model: '' } }) };
+		expect(geminiGroundingModel(s)).toBe('gemini-flash-latest');
+	});
+});
+
+describe('getUpdatedFeatureRoutes', () => {
+	let originalModels: GeminiModel[];
+
+	beforeEach(() => {
+		originalModels = [...GEMINI_MODELS];
 		setTestModels([
 			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
 			{ value: 'gemini-summary-default', label: 'Summary Default', defaultForRoles: ['summary'] },
@@ -131,450 +223,86 @@ describe('getUpdatedModelSettings', () => {
 		setTestModels(originalModels);
 	});
 
-	it('should not change settings if all current models are valid and available', () => {
-		const currentSettings = {
-			chatModelName: 'gemini-chat-default',
-			summaryModelName: 'gemini-summary-default',
-			completionsModelName: 'gemini-completions-default',
-			imageModelName: 'gemini-image-default',
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(false);
-		expect(result.updatedSettings).toEqual(currentSettings);
-		expect(result.changedSettingsInfo).toEqual([]);
+	it('does not change anything when every route names a valid model', () => {
+		const features = routes({
+			chat: { provider: 'gemini', model: 'gemini-chat-default' },
+			summary: { provider: 'gemini', model: 'gemini-summary-default' },
+		});
+		const result = getUpdatedFeatureRoutes(features, {});
+		expect(result.changed).toBe(false);
+		expect(result.info).toEqual([]);
+		expect(result.features).toEqual(features);
 	});
 
-	it('should update chatModelName to default if current is invalid/unavailable', () => {
-		const currentSettings = {
-			chatModelName: 'invalid-chat-model',
-			summaryModelName: 'gemini-summary-default',
-			completionsModelName: 'gemini-completions-default',
-			imageModelName: 'gemini-image-default',
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(true);
-		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default');
-		expect(result.updatedSettings.summaryModelName).toBe('gemini-summary-default'); // Should remain unchanged
-		expect(result.updatedSettings.completionsModelName).toBe('gemini-completions-default'); // Should remain unchanged
-		expect(result.changedSettingsInfo).toEqual([
-			"Chat model: 'invalid-chat-model' -> 'gemini-chat-default' (legacy model update)",
-		]);
+	it('resets an invalid model to the role default and records it', () => {
+		const features = routes({ chat: { provider: 'gemini', model: 'invalid-chat-model' } });
+		const result = getUpdatedFeatureRoutes(features, {});
+		expect(result.changed).toBe(true);
+		expect(result.features.chat.model).toBe('gemini-chat-default');
+		expect(result.info).toEqual(["chat model: 'invalid-chat-model' -> 'gemini-chat-default' (legacy model update)"]);
 	});
 
-	it('should update summaryModelName to default if current is invalid/unavailable', () => {
-		const currentSettings = {
-			chatModelName: 'gemini-chat-default',
-			summaryModelName: 'invalid-summary-model',
-			completionsModelName: 'gemini-completions-default',
-			imageModelName: 'gemini-image-default',
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(true);
-		expect(result.updatedSettings.summaryModelName).toBe('gemini-summary-default');
-		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default'); // Should remain unchanged
-		expect(result.updatedSettings.completionsModelName).toBe('gemini-completions-default'); // Should remain unchanged
-		expect(result.changedSettingsInfo).toEqual([
-			"Summary model: 'invalid-summary-model' -> 'gemini-summary-default' (legacy model update)",
-		]);
+	it('leaves a "none" route and a model-less feature alone', () => {
+		const features = routes({
+			webSearch: { provider: 'none', model: 'anything' },
+			rag: { provider: 'gemini', model: 'anything' },
+		});
+		const result = getUpdatedFeatureRoutes(features, {});
+		expect(result.changed).toBe(false);
+		expect(result.features.webSearch.model).toBe('anything');
+		expect(result.features.rag.model).toBe('anything');
 	});
 
-	it('should update completionsModelName to default if current is invalid/unavailable', () => {
-		const currentSettings = {
-			chatModelName: 'gemini-chat-default',
-			summaryModelName: 'gemini-summary-default',
-			completionsModelName: 'invalid-completions-model',
-			imageModelName: 'gemini-image-default',
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(true);
-		expect(result.updatedSettings.completionsModelName).toBe('gemini-completions-default');
-		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default'); // Should remain unchanged
-		expect(result.updatedSettings.summaryModelName).toBe('gemini-summary-default'); // Should remain unchanged
-		expect(result.changedSettingsInfo).toEqual([
-			"Completions model: 'invalid-completions-model' -> 'gemini-completions-default' (legacy model update)",
-		]);
-	});
-
-	it('should update multiple model names if they are invalid', () => {
-		const currentSettings = {
-			chatModelName: 'invalid-chat-model',
-			summaryModelName: 'invalid-summary-model',
-			completionsModelName: 'gemini-completions-default', // This one is valid
-			imageModelName: 'gemini-image-default',
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(true);
-		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default');
-		expect(result.updatedSettings.summaryModelName).toBe('gemini-summary-default');
-		expect(result.updatedSettings.completionsModelName).toBe('gemini-completions-default');
-		expect(result.changedSettingsInfo).toEqual([
-			"Chat model: 'invalid-chat-model' -> 'gemini-chat-default' (legacy model update)",
-			"Summary model: 'invalid-summary-model' -> 'gemini-summary-default' (legacy model update)",
-		]);
-	});
-
-	it('should update all model names if all are invalid', () => {
-		const currentSettings = {
-			chatModelName: 'invalid-chat-model',
-			summaryModelName: 'invalid-summary-model',
-			completionsModelName: 'invalid-completions-model',
-			imageModelName: 'invalid-image-model',
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(true);
-		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default');
-		expect(result.updatedSettings.summaryModelName).toBe('gemini-summary-default');
-		expect(result.updatedSettings.completionsModelName).toBe('gemini-completions-default');
-		expect(result.changedSettingsInfo).toEqual([
-			"Chat model: 'invalid-chat-model' -> 'gemini-chat-default' (legacy model update)",
-			"Summary model: 'invalid-summary-model' -> 'gemini-summary-default' (legacy model update)",
-			"Completions model: 'invalid-completions-model' -> 'gemini-completions-default' (legacy model update)",
-			"Image model: 'invalid-image-model' -> 'gemini-image-default' (legacy model update)",
-		]);
-	});
-
-	it('should update to the first model in GEMINI_MODELS if no role-specific default exists for an invalid model', () => {
-		// No model has defaultForRoles: ['chat'] in this setup
-		setTestModels([
-			{ value: 'first-model-in-list', label: 'First Model' },
-			{ value: 'gemini-summary-default', label: 'Summary Default', defaultForRoles: ['summary'] },
-			{ value: 'gemini-completions-default', label: 'Completions Default', defaultForRoles: ['completions'] },
-		]);
-		const currentSettings = {
-			chatModelName: 'invalid-chat-model', // This needs update
-			summaryModelName: 'gemini-summary-default',
-			completionsModelName: 'gemini-completions-default',
-			imageModelName: 'gemini-image-default', // This one is valid (but not in list, so it will be updated too? No, wait, it's not in list so it will be updated to first model)
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(true);
-		expect(result.updatedSettings.chatModelName).toBe('first-model-in-list'); // Falls back to first model
-		expect(result.changedSettingsInfo).toEqual([
-			"Chat model: 'invalid-chat-model' -> 'first-model-in-list' (legacy model update)",
-			"Image model: 'gemini-image-default' -> 'first-model-in-list' (legacy model update)",
-		]);
-	});
-
-	it('migrates a retired model to its designated successor instead of the role default', () => {
+	it('migrates a retired model to its successor instead of the role default', () => {
 		setTestModels([
 			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
-			{ value: 'gemini-summary-default', label: 'Summary Default', defaultForRoles: ['summary'] },
-			{ value: 'gemini-completions-default', label: 'Completions Default', defaultForRoles: ['completions'] },
-			{ value: 'gemini-image-default', label: 'Image Default', defaultForRoles: ['image'] },
 			{ value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview' },
 		]);
-		const currentSettings = {
-			chatModelName: 'gemini-3-pro-preview', // retired by Google (404 "no longer available")
-			summaryModelName: 'gemini-summary-default',
-			completionsModelName: 'gemini-completions-default',
-			imageModelName: 'gemini-image-default',
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(true);
-		expect(result.updatedSettings.chatModelName).toBe('gemini-3.1-pro-preview');
-		expect(result.changedSettingsInfo).toEqual([
-			"Chat model: 'gemini-3-pro-preview' -> 'gemini-3.1-pro-preview' (retired model migrated to successor)",
+		const features = routes({ chat: { provider: 'gemini', model: 'gemini-3-pro-preview' } });
+		const result = getUpdatedFeatureRoutes(features, {});
+		expect(result.changed).toBe(true);
+		expect(result.features.chat.model).toBe('gemini-3.1-pro-preview');
+		expect(result.info).toEqual([
+			"chat model: 'gemini-3-pro-preview' -> 'gemini-3.1-pro-preview' (retired model migrated to successor)",
 		]);
 	});
 
-	it('migrates a retired model even when a stale model list still advertises it', () => {
-		// GEMINI_MODELS can be populated from a persisted remoteModelCache that
-		// predates the retirement, so the retired id may still pass the validity
-		// check — it must migrate anyway, since Google 404s it server-side.
+	it('reconciles each route against its own provider list only', () => {
 		setTestModels([
 			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
-			{ value: 'gemini-summary-default', label: 'Summary Default', defaultForRoles: ['summary'] },
-			{ value: 'gemini-completions-default', label: 'Completions Default', defaultForRoles: ['completions'] },
-			{ value: 'gemini-image-default', label: 'Image Default', defaultForRoles: ['image'] },
-			{ value: 'gemini-3-pro-preview', label: 'Gemini 3 Pro Preview' }, // stale cache entry
-			{ value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview' },
-		]);
-		const currentSettings = {
-			chatModelName: 'gemini-3-pro-preview',
-			summaryModelName: 'gemini-summary-default',
-			completionsModelName: 'gemini-completions-default',
-			imageModelName: 'gemini-image-default',
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(true);
-		expect(result.updatedSettings.chatModelName).toBe('gemini-3.1-pro-preview');
-		expect(result.changedSettingsInfo).toEqual([
-			"Chat model: 'gemini-3-pro-preview' -> 'gemini-3.1-pro-preview' (retired model migrated to successor)",
-		]);
-	});
-
-	it('falls back to the role default when a retired model’s successor is not in the list', () => {
-		// Default test models from beforeEach do NOT include gemini-3.1-pro-preview.
-		const currentSettings = {
-			chatModelName: 'gemini-3-pro-preview',
-			summaryModelName: 'gemini-summary-default',
-			completionsModelName: 'gemini-completions-default',
-			imageModelName: 'gemini-image-default',
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(true);
-		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default');
-		expect(result.changedSettingsInfo).toEqual([
-			"Chat model: 'gemini-3-pro-preview' -> 'gemini-chat-default' (legacy model update)",
-		]);
-	});
-
-	it('tolerates an empty Ollama model while the daemon list has not loaded yet', () => {
-		// Only Gemini models are registered here — the Ollama list loads later via
-		// /api/tags. The Gemini fields stay valid and the empty ollamaModelName is
-		// left untouched (rather than throwing or blanking a Gemini field).
-		const currentSettings = {
-			provider: 'ollama',
-			chatModelName: 'gemini-chat-default',
-			summaryModelName: 'gemini-summary-default',
-			completionsModelName: 'gemini-completions-default',
-			imageModelName: 'gemini-image-default',
-			ollamaModelName: '',
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(false);
-		expect(result.updatedSettings.ollamaModelName).toBe('');
-		expect(result.changedSettingsInfo).toEqual([]);
-	});
-
-	it('backfills an empty Ollama model once the daemon list has loaded', () => {
-		setTestModels([
-			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
-			{ value: 'gemini-summary-default', label: 'Summary Default', defaultForRoles: ['summary'] },
-			{ value: 'gemini-completions-default', label: 'Completions Default', defaultForRoles: ['completions'] },
-			{ value: 'gemini-image-default', label: 'Image Default', defaultForRoles: ['image'] },
-			{ value: 'llama3.2', label: 'Llama 3.2', provider: 'ollama' as const, defaultForRoles: ['chat'] },
-			{ value: 'mistral', label: 'Mistral', provider: 'ollama' as const },
-		]);
-		const currentSettings = {
-			provider: 'ollama',
-			chatModelName: 'gemini-chat-default',
-			summaryModelName: 'gemini-summary-default',
-			completionsModelName: 'gemini-completions-default',
-			imageModelName: 'gemini-image-default',
-			ollamaModelName: '',
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(true);
-		expect(result.updatedSettings.ollamaModelName).toBe('llama3.2');
-		// Gemini fields are preserved across an Ollama-active reconcile.
-		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default');
-	});
-
-	it('preserves the Gemini model fields when the active provider is Ollama (#1125 regression)', () => {
-		// The core of the fix: reconciling while Ollama is active must never touch
-		// the Gemini per-use-case fields, so a Gemini → Ollama → Gemini round trip
-		// keeps the user's Gemini chat model instead of resetting it to the default.
-		setTestModels([
-			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
-			{ value: 'gemini-flash-lite', label: 'Flash Lite' },
-			{ value: 'gemini-summary-default', label: 'Summary Default', defaultForRoles: ['summary'] },
-			{ value: 'gemini-completions-default', label: 'Completions Default', defaultForRoles: ['completions'] },
-			{ value: 'gemini-image-default', label: 'Image Default', defaultForRoles: ['image'] },
 			{ value: 'llama3.2', label: 'Llama 3.2', provider: 'ollama' as const, defaultForRoles: ['chat'] },
 		]);
-		const currentSettings = {
-			provider: 'ollama',
-			chatModelName: 'gemini-flash-lite', // a non-default Gemini choice
-			summaryModelName: 'gemini-summary-default',
-			completionsModelName: 'gemini-completions-default',
-			imageModelName: 'gemini-image-default',
-			ollamaModelName: 'llama3.2',
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(false);
-		expect(result.updatedSettings.chatModelName).toBe('gemini-flash-lite');
-		expect(result.updatedSettings.ollamaModelName).toBe('llama3.2');
+		const features = routes({
+			chat: { provider: 'ollama', model: 'gemini-chat-default' }, // a Gemini id under Ollama is invalid
+		});
+		const result = getUpdatedFeatureRoutes(features, {});
+		expect(result.changed).toBe(true);
+		expect(result.features.chat.model).toBe('llama3.2');
 	});
 
-	it('tolerates a stale OpenAI model while the discovered list has not loaded yet', () => {
-		// Only Gemini models are registered — the OpenAI list loads later via
-		// /v1/models. The Gemini fields stay valid and the OpenAI fields are left
-		// untouched rather than throwing or being blanked.
-		const currentSettings = {
-			provider: 'openai',
-			chatModelName: 'gemini-chat-default',
-			summaryModelName: 'gemini-summary-default',
-			completionsModelName: 'gemini-completions-default',
-			imageModelName: 'gemini-image-default',
-			openaiModelName: 'gpt-5.6',
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(false);
-		expect(result.updatedSettings.openaiModelName).toBe('gpt-5.6');
-		expect(result.changedSettingsInfo).toEqual([]);
+	it('tolerates a stale model while the provider list has not loaded yet (empty list)', () => {
+		// Only Gemini models are registered — Ollama's list loads later.
+		const features = routes({ chat: { provider: 'ollama', model: 'llama3.2' } });
+		const result = getUpdatedFeatureRoutes(features, {});
+		expect(result.changed).toBe(false);
+		expect(result.features.chat.model).toBe('llama3.2');
 	});
 
-	it('reconciles each OpenAI per-use-case field independently once the list has loaded (perUseCaseModels)', () => {
-		// Unlike Ollama, OpenAI reconciles chat/summary/completions independently
-		// against their own role defaults rather than inheriting the chat model.
-		setTestModels([
-			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
-			{ value: 'gemini-summary-default', label: 'Summary Default', defaultForRoles: ['summary'] },
-			{ value: 'gemini-completions-default', label: 'Completions Default', defaultForRoles: ['completions'] },
-			{ value: 'gemini-image-default', label: 'Image Default', defaultForRoles: ['image'] },
-			{ value: 'gpt-5.6', label: 'gpt-5.6', provider: 'openai' as const, defaultForRoles: ['chat'] },
-			{ value: 'gpt-5.6-terra', label: 'gpt-5.6-terra', provider: 'openai' as const, defaultForRoles: ['summary'] },
-			{
-				value: 'gpt-5.6-luna',
-				label: 'gpt-5.6-luna',
-				provider: 'openai' as const,
-				defaultForRoles: ['completions'],
-			},
-		]);
-		const currentSettings = {
-			provider: 'openai',
-			chatModelName: 'gemini-chat-default',
-			summaryModelName: 'gemini-summary-default',
-			completionsModelName: 'gemini-completions-default',
-			imageModelName: 'gemini-image-default',
-			openaiModelName: 'retired-openai-model',
-			openaiSummaryModelName: '',
-			openaiCompletionsModelName: '',
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(true);
-		expect(result.updatedSettings.openaiModelName).toBe('gpt-5.6');
-		expect(result.updatedSettings.openaiSummaryModelName).toBe('gpt-5.6-terra');
-		expect(result.updatedSettings.openaiCompletionsModelName).toBe('gpt-5.6-luna');
-		// Gemini fields are preserved across an OpenAI-active reconcile.
-		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default');
+	it('reconciles providerModelMemory the same way, per provider', () => {
+		const memory: ProviderModelMemory = { gemini: { chat: 'invalid-chat-model', summary: 'gemini-summary-default' } };
+		const result = getUpdatedFeatureRoutes(routes({}), memory);
+		expect(result.changed).toBe(true);
+		expect(result.memory.gemini?.chat).toBe('gemini-chat-default');
+		expect(result.memory.gemini?.summary).toBe('gemini-summary-default');
 	});
 
-	it('should propagate error if GEMINI_MODELS is empty and a model update is attempted', () => {
-		setTestModels([]); // GEMINI_MODELS is empty
-		const currentSettings = {
-			chatModelName: 'any-model', // This will trigger a call to getDefaultModelForRole
-			summaryModelName: 'any-other-model',
-			completionsModelName: 'yet-another-model',
-			imageModelName: 'and-another-one',
-		};
-		// Expect getUpdatedModelSettings to throw the error from getDefaultModelForRole
-		expect(() => getUpdatedModelSettings(currentSettings)).toThrow(
-			'CRITICAL: GEMINI_MODELS array is empty. Please configure available models.'
-		);
-	});
-});
-
-describe('bundled model catalog', () => {
-	it('no longer ships retired models, and every retired model’s successor is bundled', () => {
-		const bundledIds = new Set(DEFAULT_GEMINI_MODELS.map((m) => m.value));
-		for (const [retired, successor] of Object.entries(RETIRED_MODEL_SUCCESSORS)) {
-			// Retired models must be out of the catalog (the API 404s on them)...
-			expect(bundledIds.has(retired)).toBe(false);
-			// ...and their successor must still be live, or the migration is a no-op.
-			expect(bundledIds.has(successor)).toBe(true);
-		}
-	});
-});
-
-describe('getActiveChatModel', () => {
-	let originalModels: GeminiModel[];
-
-	beforeEach(() => {
-		originalModels = [...GEMINI_MODELS];
-		setTestModels([
-			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
-			{ value: 'gemini-flash-lite', label: 'Flash Lite' },
-			{ value: 'llama3.2', label: 'Llama 3.2', provider: 'ollama' as const, defaultForRoles: ['chat'] },
-		]);
-	});
-
-	afterEach(() => {
-		setTestModels(originalModels);
-	});
-
-	it('returns chatModelName under the Gemini provider', () => {
-		expect(
-			getActiveChatModel({ provider: 'gemini', chatModelName: 'gemini-flash-lite', ollamaModelName: 'llama3.2' })
-		).toBe('gemini-flash-lite');
-	});
-
-	it('defaults to the provider when no explicit provider is set', () => {
-		expect(getActiveChatModel({ chatModelName: 'gemini-flash-lite' })).toBe('gemini-flash-lite');
-	});
-
-	it('returns ollamaModelName under the Ollama provider', () => {
-		expect(
-			getActiveChatModel({ provider: 'ollama', chatModelName: 'gemini-flash-lite', ollamaModelName: 'llama3.2' })
-		).toBe('llama3.2');
-	});
-
-	it('falls back to the Gemini chat default when chatModelName is empty', () => {
-		expect(getActiveChatModel({ provider: 'gemini', chatModelName: '' })).toBe('gemini-chat-default');
-	});
-
-	it('falls back to the Ollama chat default when ollamaModelName is empty', () => {
-		expect(getActiveChatModel({ provider: 'ollama', chatModelName: 'gemini-flash-lite', ollamaModelName: '' })).toBe(
-			'llama3.2'
-		);
-	});
-});
-
-describe('migrateOllamaModelSetting', () => {
-	let originalModels: GeminiModel[];
-
-	beforeEach(() => {
-		originalModels = [...GEMINI_MODELS];
-		setTestModels([{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] }]);
-	});
-
-	afterEach(() => {
-		setTestModels(originalModels);
-	});
-
-	it('moves the legacy Ollama chatModelName into ollamaModelName and resets chatModelName', () => {
-		// The pre-migration shape: an Ollama user whose data.json predates
-		// ollamaModelName (so rawData.ollamaModelName is undefined) and whose
-		// chatModelName holds the Ollama model.
-		const rawData = { provider: 'ollama', chatModelName: 'gemma4:31b-mlx' };
-		const settings = { provider: 'ollama' as const, chatModelName: 'gemma4:31b-mlx', ollamaModelName: '' };
-
-		const migrated = migrateOllamaModelSetting(settings, rawData);
-
-		expect(migrated).toBe(true);
-		expect(settings.ollamaModelName).toBe('gemma4:31b-mlx');
-		expect(settings.chatModelName).toBe('gemini-chat-default');
-	});
-
-	it('does not migrate a Gemini user (leaves chatModelName intact)', () => {
-		const rawData = { provider: 'gemini', chatModelName: 'gemini-chat-default' };
-		const settings = { provider: 'gemini' as const, chatModelName: 'gemini-chat-default', ollamaModelName: '' };
-
-		const migrated = migrateOllamaModelSetting(settings, rawData);
-
-		expect(migrated).toBe(false);
-		expect(settings.chatModelName).toBe('gemini-chat-default');
-		expect(settings.ollamaModelName).toBe('');
-	});
-
-	it('does not migrate when the data already has ollamaModelName (already migrated)', () => {
-		const rawData = { provider: 'ollama', chatModelName: 'gemini-chat-default', ollamaModelName: 'llama3.2' };
-		const settings = { provider: 'ollama' as const, chatModelName: 'gemini-chat-default', ollamaModelName: 'llama3.2' };
-
-		const migrated = migrateOllamaModelSetting(settings, rawData);
-
-		expect(migrated).toBe(false);
-		expect(settings.chatModelName).toBe('gemini-chat-default');
-		expect(settings.ollamaModelName).toBe('llama3.2');
-	});
-
-	it('does not migrate a first-run install (no persisted data)', () => {
-		const settings = { provider: 'ollama' as const, chatModelName: 'gemini-chat-default', ollamaModelName: '' };
-
-		expect(migrateOllamaModelSetting(settings, null)).toBe(false);
-		expect(migrateOllamaModelSetting(settings, undefined)).toBe(false);
-	});
-
-	it('tolerates an empty legacy chatModelName', () => {
-		const rawData = { provider: 'ollama', chatModelName: '' };
-		const settings = { provider: 'ollama' as const, chatModelName: '', ollamaModelName: '' };
-
-		const migrated = migrateOllamaModelSetting(settings, rawData);
-
-		expect(migrated).toBe(true);
-		expect(settings.ollamaModelName).toBe('');
-		expect(settings.chatModelName).toBe('gemini-chat-default');
+	it('returns fresh objects, never mutating the inputs', () => {
+		const features = routes({ chat: { provider: 'gemini', model: 'invalid-chat-model' } });
+		const memory: ProviderModelMemory = {};
+		const result = getUpdatedFeatureRoutes(features, memory);
+		expect(result.features).not.toBe(features);
+		expect(result.memory).not.toBe(memory);
+		expect(features.chat.model).toBe('invalid-chat-model');
 	});
 });
 
@@ -723,90 +451,7 @@ describe('findModelProvider / providerForModel', () => {
 	});
 });
 
-describe('getOllamaModelForRole', () => {
-	let originalModels: GeminiModel[];
-
-	beforeEach(() => {
-		originalModels = [...GEMINI_MODELS];
-		setTestModels([{ value: 'llama3.2', label: 'Llama 3.2', provider: 'ollama' as const, defaultForRoles: ['chat'] }]);
-	});
-
-	afterEach(() => {
-		setTestModels(originalModels);
-	});
-
-	// Empty per-use-case fields are the default: Ollama keeps one model resident,
-	// so summary/completions inherit the chat model rather than forcing a swap.
-	it('inherits ollamaModelName when the per-use-case field is empty', () => {
-		const settings = { ollamaModelName: 'ollama-chat', ollamaSummaryModelName: '', ollamaCompletionsModelName: '' };
-		expect(getOllamaModelForRole(settings, 'chat')).toBe('ollama-chat');
-		expect(getOllamaModelForRole(settings, 'summary')).toBe('ollama-chat');
-		expect(getOllamaModelForRole(settings, 'completions')).toBe('ollama-chat');
-	});
-
-	it('uses a per-use-case model when one is configured', () => {
-		const settings = {
-			ollamaModelName: 'ollama-chat',
-			ollamaSummaryModelName: 'ollama-summary',
-			ollamaCompletionsModelName: 'ollama-tiny',
-		};
-		expect(getOllamaModelForRole(settings, 'chat')).toBe('ollama-chat');
-		expect(getOllamaModelForRole(settings, 'summary')).toBe('ollama-summary');
-		expect(getOllamaModelForRole(settings, 'completions')).toBe('ollama-tiny');
-	});
-
-	// Rewrite has no field of its own and deliberately reuses the chat model.
-	it('resolves roles without a dedicated field to the chat model', () => {
-		expect(getOllamaModelForRole({ ollamaModelName: 'ollama-chat' }, 'rewrite')).toBe('ollama-chat');
-	});
-
-	it('falls back to the Ollama chat default when nothing is configured', () => {
-		expect(getOllamaModelForRole({}, 'summary')).toBe('llama3.2');
-	});
-});
-
-describe('getOpenAIModelForRole', () => {
-	let originalModels: GeminiModel[];
-
-	beforeEach(() => {
-		originalModels = [...GEMINI_MODELS];
-		setTestModels([
-			{ value: 'gpt-5.6', label: 'gpt-5.6', provider: 'openai' as const, defaultForRoles: ['chat'] },
-			{ value: 'gpt-5.6-terra', label: 'gpt-5.6-terra', provider: 'openai' as const, defaultForRoles: ['summary'] },
-		]);
-	});
-
-	afterEach(() => {
-		setTestModels(originalModels);
-	});
-
-	// Unlike Ollama, OpenAI has no single-resident-model constraint: an unset
-	// per-use-case field falls back to that role's own default, not to
-	// `openaiModelName` (the chat model).
-	it('falls back to the role default rather than inheriting the chat model', () => {
-		const settings = { openaiModelName: 'gpt-5.6', openaiSummaryModelName: '', openaiCompletionsModelName: '' };
-		expect(getOpenAIModelForRole(settings, 'chat')).toBe('gpt-5.6');
-		expect(getOpenAIModelForRole(settings, 'summary')).toBe('gpt-5.6-terra');
-	});
-
-	it('uses a per-use-case model when one is configured', () => {
-		const settings = {
-			openaiModelName: 'gpt-5.6',
-			openaiSummaryModelName: 'gpt-5.6-terra',
-			openaiCompletionsModelName: 'gpt-5.6-luna',
-		};
-		expect(getOpenAIModelForRole(settings, 'chat')).toBe('gpt-5.6');
-		expect(getOpenAIModelForRole(settings, 'summary')).toBe('gpt-5.6-terra');
-		expect(getOpenAIModelForRole(settings, 'completions')).toBe('gpt-5.6-luna');
-	});
-
-	// Rewrite has no field of its own and deliberately reuses the chat model.
-	it('resolves roles without a dedicated field to the chat model', () => {
-		expect(getOpenAIModelForRole({ openaiModelName: 'gpt-5.6' }, 'rewrite')).toBe('gpt-5.6');
-	});
-});
-
-describe('getActiveChatModel under per-use-case routing', () => {
+describe('getActiveChatModel', () => {
 	let originalModels: GeminiModel[];
 
 	beforeEach(() => {
@@ -823,37 +468,28 @@ describe('getActiveChatModel under per-use-case routing', () => {
 		setTestModels(originalModels);
 	});
 
-	it('follows a chat override rather than the primary provider', () => {
-		expect(
-			getActiveChatModel({
-				provider: 'gemini',
-				providerOverrides: { chat: 'ollama' },
-				chatModelName: 'gemini-flash-lite',
-				ollamaModelName: 'llama3.2',
-			})
-		).toBe('llama3.2');
+	it('returns the stored model for whichever provider serves chat', () => {
+		const s: FeatureRoutingSlice = { features: routes({ chat: { provider: 'gemini', model: 'gemini-flash-lite' } }) };
+		expect(getActiveChatModel(s)).toBe('gemini-flash-lite');
 	});
 
-	// Overriding an unrelated use case must not move chat.
-	it('ignores overrides for other use cases', () => {
-		expect(
-			getActiveChatModel({
-				provider: 'gemini',
-				providerOverrides: { summary: 'ollama' },
-				chatModelName: 'gemini-flash-lite',
-				ollamaModelName: 'llama3.2',
-			})
-		).toBe('gemini-flash-lite');
+	it('follows chat to whichever provider it is routed to, independent of other features', () => {
+		const s: FeatureRoutingSlice = {
+			features: routes({
+				chat: { provider: 'ollama', model: 'llama3.2' },
+				summary: { provider: 'gemini', model: 'gemini-flash-lite' },
+			}),
+		};
+		expect(getActiveChatModel(s)).toBe('llama3.2');
+	});
+
+	it('falls back to the Gemini chat default when chat is off', () => {
+		const s: FeatureRoutingSlice = { features: routes({ chat: { provider: 'none', model: '' } }) };
+		expect(getActiveChatModel(s)).toBe('gemini-chat-default');
 	});
 
 	it('resolves the OpenAI model when OpenAI serves chat', () => {
-		expect(
-			getActiveChatModel({
-				provider: 'openai',
-				chatModelName: 'gemini-flash-lite',
-				ollamaModelName: 'llama3.2',
-				openaiModelName: 'gpt-5.6',
-			})
-		).toBe('gpt-5.6');
+		const s: FeatureRoutingSlice = { features: routes({ chat: { provider: 'openai', model: 'gpt-5.6' } }) };
+		expect(getActiveChatModel(s)).toBe('gpt-5.6');
 	});
 });

@@ -23,269 +23,9 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.examplesHeader': 'Thử các ví dụ sau:',
 	'i18n.aiTranslatedNotice':
 		'Bản dịch giao diện này được tạo bởi AI. Chúng tôi rất hoan nghênh các PR cải thiện bản dịch.',
-	'settings.common.saveFailedNotice': 'Không thể lưu cài đặt: {error}',
-	'settings.common.advancedBadge': 'Nâng cao',
-	'settings.general.sectionTitle': 'Tổng quan',
-	'settings.general.sectionDesc':
-		'Thiết lập nhà cung cấp, API key và các mô hình mà plugin sử dụng. Bắt buộc để plugin hoạt động.',
-	'settings.general.documentationName': 'Tài liệu',
-	'settings.general.documentationDesc': 'Xem tài liệu hướng dẫn và các bài viết hướng dẫn đầy đủ của plugin',
-	'settings.general.viewDocumentationButton': 'Xem tài liệu hướng dẫn',
-	'settings.general.providerName': 'Nhà cung cấp',
-	'settings.general.providerDesc':
-		'Chọn nhà cung cấp mô hình. Gemini sử dụng Google Cloud API. Ollama chạy các mô hình cục bộ trên máy của bạn; cài đặt từ https://ollama.com và tải mô hình bằng lệnh `ollama pull <name>`. OpenAI sử dụng API key OpenAI của bạn, hoặc bất kỳ máy chủ tương thích với OpenAI nào (LM Studio, MLX, ...) thông qua URL cơ sở tùy chỉnh.',
 	'settings.general.providerOptionGemini': 'Google Gemini (đám mây)',
 	'settings.general.providerOptionOllama': 'Ollama (cục bộ)',
 	'settings.general.providerOptionOpenai': 'OpenAI (đám mây)',
-	'settings.general.ollamaBaseUrlName': 'URL cơ sở của Ollama',
-	'settings.general.ollamaBaseUrlDesc':
-		'Điểm cuối HTTP (endpoint) của tiến trình Ollama cục bộ. Mặc định là http://localhost:11434.',
-	'settings.general.refreshModelListName': 'Làm mới danh sách mô hình',
-	'settings.general.refreshOllamaModelListName': 'Làm mới danh sách mô hình Ollama',
-	'settings.general.refreshModelListOllamaDesc': 'Truy vấn lại tiến trình Ollama để tìm các mô hình hiện có.',
-	'settings.general.openaiApiKeyName': 'API key OpenAI',
-	'settings.general.openaiApiKeyDesc':
-		'Liên kết API key OpenAI của bạn. Nhấp vào "Liên kết..." và Obsidian sẽ yêu cầu nhập tên bí mật (đây chỉ là một nhãn — sử dụng bất kỳ tên nào như "openai-api") và giá trị bí mật (dán API key của bạn vào đây). Lấy key tại https://platform.openai.com/api-keys. Không cần thiết đối với máy chủ cục bộ tương thích với OpenAI mà không yêu cầu key.',
-	'settings.general.openaiBaseUrlName': 'URL cơ sở OpenAI',
-	'settings.general.openaiBaseUrlDesc':
-		'Endpoint của Chat Completions. Mặc định là OpenAI API (api.openai.com). Trỏ URL này đến một máy chủ cục bộ tương thích với OpenAI — chẳng hạn như LM Studio hoặc MLX — để giữ các yêu cầu trên máy của bạn.',
-	'settings.general.refreshOpenaiModelListName': 'Làm mới danh sách mô hình OpenAI',
-	'settings.general.refreshModelListOpenaiDesc': 'Truy vấn lại endpoint đã cấu hình để tìm các mô hình khả dụng.',
-	'settings.general.openaiModelsFoundSingular': 'Đã tìm thấy {count} mô hình OpenAI.',
-	'settings.general.openaiModelsFound': 'Đã tìm thấy {count} mô hình OpenAI.',
-	'settings.general.openaiChatModelDesc':
-		'Mô hình được sử dụng cho các phiên trò chuyện của agent và viết lại vùng chọn.',
-	'settings.general.refreshModelListGeminiDesc':
-		'Tải danh sách mô hình Gemini mới nhất từ GitHub ngay bây giờ, bỏ qua bộ nhớ đệm 24 giờ. Sử dụng tính năng này sau khi một mô hình mới được phát hành.',
-	'settings.general.refreshButton': 'Làm mới',
-	'settings.general.ollamaModelsFoundSingular': 'Tìm thấy {count} mô hình Ollama.',
-	'settings.general.ollamaModelsFound': 'Tìm thấy {count} mô hình Ollama.',
-	'settings.general.refreshFailedNotice': 'Không thể làm mới: {error}',
-	'settings.general.remoteModelNoticeName': 'Thông báo mô hình lưu trữ trên đám mây',
-	'settings.general.remoteModelNoticeDesc':
-		'{models} chạy trên {hosts}, không phải trên máy của bạn. Các yêu cầu — bao gồm cả nội dung ghi chú được gửi đi — sẽ rời khỏi thiết bị của bạn mặc dù nhà cung cấp của bạn là Ollama. Hãy chọn một mô hình được tải về cục bộ nếu bạn muốn mọi thứ ở lại cục bộ.',
-	'settings.general.localOnlyNoticeName': 'Thông báo tính năng chỉ chạy cục bộ',
-	'settings.general.localOnlyNoticeDesc':
-		'Mọi thứ đều chạy trên máy của bạn. Google Tìm kiếm, URL Context (tải trang web), Deep Research, tạo hình ảnh và chỉ mục tìm kiếm vault phụ thuộc vào dịch vụ đám mây Gemini và đã bị tắt. Để bật một tính năng, hãy chỉ định nhà cung cấp cho nó trong mục "Nhà cung cấp cho từng tính năng" — dữ liệu của tính năng đó sau đó sẽ được gửi lên đám mây.',
-	'settings.general.perFeatureProviderTitle': 'Nhà cung cấp cho từng tính năng',
-	'settings.general.perFeatureProviderDesc':
-		'Chọn một nhà cung cấp khác cho các tính năng riêng lẻ. Bất kỳ tính năng nào để mặc định sẽ sử dụng nhà cung cấp được chọn ở trên.',
-	'settings.general.useProviderDefault': 'Mặc định — {provider}',
-	'settings.general.useCaseUnavailableOption': 'Không khả dụng',
-	'settings.general.useCaseChatName': 'Trò chuyện và agent',
-	'settings.general.useCaseChatDesc': 'Trò chuyện tương tác, phiên làm việc của agent, tác vụ được lên lịch và hook.',
-	'settings.general.useCaseSummaryName': 'Tóm tắt',
-	'settings.general.useCaseSummaryDesc': 'Lệnh "Tóm tắt tệp đang hoạt động" và nén cuộc trò chuyện.',
-	'settings.general.useCaseCompletionsName': 'Tự động hoàn thành',
-	'settings.general.useCaseCompletionsDesc': 'Gợi ý nội dòng kiểu IDE khi bạn nhập.',
-	'settings.general.useCaseRewriteName': 'Viết lại',
-	'settings.general.useCaseRewriteDesc': 'Viết lại văn bản được chọn. Sử dụng mô hình trò chuyện.',
-	'settings.general.useCaseWebSearchName': 'Web và tìm kiếm',
-	'settings.general.useCaseWebSearchDesc':
-		'Các công cụ Google Tìm kiếm, Google Maps, URL Context (tải trang web) và Deep Research.',
-	'settings.general.useCaseRagName': 'Chỉ mục tìm kiếm vault',
-	'settings.general.useCaseRagDesc':
-		'Tìm kiếm ngữ nghĩa trên toàn bộ vault của bạn. Tải nội dung ghi chú lên chỉ mục tìm kiếm đám mây.',
-	'settings.general.useCaseImageGenName': 'Tạo hình ảnh',
-	'settings.general.useCaseImageGenDesc': 'Tạo hình ảnh từ lời nhắc văn bản.',
-	'settings.general.missingKeyNoticeName': 'Yêu cầu khóa API',
-	'settings.general.missingKeyNoticeDesc':
-		'Một số tính năng được thiết lập để sử dụng {providers}, vốn yêu cầu khóa API. Hãy nhập khóa ở trên, nếu không các tính năng đó sẽ bị lỗi khi bạn sử dụng.',
-	'settings.general.mixedProviderNoticeName': 'Một số tính năng sử dụng nhà cung cấp khác',
-	'settings.general.mixedProviderNoticeDesc':
-		'Các tính năng này không sử dụng nhà cung cấp mặc định của bạn: {features}. Các yêu cầu của chúng — bao gồm cả nội dung ghi chú được gửi đi — sẽ chuyển đến nhà cung cấp mà bạn đã chọn cho chúng.',
-	'settings.general.inheritOllamaChatModel': 'Giống như mô hình trò chuyện',
-	'settings.general.ollamaSummaryModelDesc':
-		'Mô hình được sử dụng cho tóm tắt. Hãy để là "Giống như mô hình trò chuyện" trừ khi bạn cần một mô hình khác — Ollama chỉ tải một mô hình tại một thời điểm, vì vậy mô hình thứ hai sẽ được tải lại mỗi khi chuyển đổi.',
-	'settings.general.ollamaCompletionsModelDesc':
-		'Mô hình được sử dụng cho tự động hoàn thành nội dòng. Hãy để là "Giống như mô hình trò chuyện" trừ khi bạn cần một mô hình khác — Ollama chỉ tải một mô hình tại một thời điểm, vì vậy mô hình thứ hai sẽ được tải lại mỗi khi chuyển đổi. Sử dụng một mô hình nhỏ ở đây có thể là một sự đánh đổi xứng đáng.',
-	'settings.general.apiKeyName': 'API key',
-	'settings.general.apiKeyDesc':
-		'Liên kết API key Google Gemini của bạn. Nhấp vào "Liên kết..." và Obsidian sẽ yêu cầu nhập tên khóa bí mật (đây chỉ là nhãn — sử dụng bất kỳ tên nào như "gemini-api") và giá trị bí mật (dán API key của bạn vào đây). Nhận key miễn phí tại https://aistudio.google.com/apikey',
-	'settings.general.chatModelName': 'Mô hình chat',
-	'settings.general.chatModelDesc':
-		'Mô hình được sử dụng cho các phiên trò chuyện của agent, viết lại vùng chọn và các công cụ tìm kiếm web.',
-	'settings.general.summaryModelName': 'Mô hình tóm tắt',
-	'settings.general.summaryModelDesc':
-		'Mô hình được sử dụng cho lệnh "Tóm tắt tệp đang hoạt động" để thêm tóm tắt vào frontmatter.',
-	'settings.general.completionModelName': 'Mô hình hoàn thành',
-	'settings.general.completionModelDesc':
-		'Mô hình được sử dụng để tự động hoàn thành nội dung trực tiếp (inline) kiểu IDE khi bạn nhập trong ghi chú.',
-	'settings.general.ollamaModelName': 'Mô hình Ollama',
-	'settings.general.ollamaModelDesc':
-		'Mô hình được sử dụng cho trò chuyện và viết lại, và cho bất kỳ tính năng Ollama nào khác được để là "Giống như mô hình trò chuyện".',
-	'settings.general.imageModelName': 'Mô hình hình ảnh',
-	'settings.general.imageModelDesc': 'Mô hình được sử dụng để tạo hình ảnh.',
-	'settings.general.stateFolderName': 'Thư mục trạng thái plugin',
-	'settings.general.stateFolderDesc':
-		'Thư mục lưu trữ dữ liệu của plugin. Các phiên Agent nằm trong Agent-Sessions/, các prompt tùy chỉnh trong Prompts/, các hook trong Hooks/, trạng thái tác vụ đã lên lịch trong Scheduled-Tasks/.',
-	'settings.general.showAdvancedName': 'Hiển thị cài đặt nâng cao',
-	'settings.general.showAdvancedDesc':
-		'Hiển thị các phần nâng cao (Cấu hình API, Quyền hạn công cụ, Phát hiện vòng lặp công cụ, Máy chủ MCP, Gỡ lỗi) dành cho người dùng nâng cao.',
-	'settings.general.modelListUpdatedSingular': 'Đã cập nhật danh sách mô hình: {count} mô hình.',
-	'settings.general.modelListUpdated': 'Đã cập nhật danh sách mô hình: {count} mô hình.',
-	'settings.general.refreshSkippedOffline': 'Đã bỏ qua: ngoại tuyến',
-	'settings.general.refreshSkippedNotGemini': 'Đã bỏ qua: không có tính năng nào được thiết lập để sử dụng Gemini',
-	'settings.general.refreshModelListFailed': 'Không thể làm mới danh sách mô hình: {error}',
-	'settings.ui.sectionTitle': 'Trải nghiệm người dùng',
-	'settings.ui.sectionDesc':
-		'Các tùy chọn truyền phát (streaming), chế độ xem khác biệt (diff view), bù tác vụ đã lên lịch và cá nhân hóa ảnh hưởng đến cách bạn tương tác với plugin.',
-	'settings.ui.userNameName': 'Tên của bạn',
-	'settings.ui.userNameDesc':
-		'Tên của bạn được sử dụng trong các chỉ dẫn hệ thống để AI có thể xưng hô cá nhân với bạn trong các cuộc trò chuyện.',
-	'settings.ui.userNamePlaceholder': 'Nhập tên của bạn',
-	'settings.ui.summaryFrontmatterKeyName': 'Khóa frontmatter tóm tắt',
-	'settings.ui.summaryFrontmatterKeyDesc':
-		'Tên thuộc tính frontmatter nơi lưu trữ các tóm tắt khi sử dụng lệnh "Tóm tắt tệp đang hoạt động".',
-	'settings.ui.enableStreamingName': 'Bật truyền phát',
-	'settings.ui.enableStreamingDesc':
-		'Truyền phát câu trả lời của AI theo từng từ khi chúng được tạo ra để có trải nghiệm trò chuyện tương tác tốt hơn.',
-	'settings.ui.alwaysShowDiffViewName': 'Luôn hiển thị chế độ xem diff khi ghi file',
-	'settings.ui.alwaysShowDiffViewDesc':
-		'Tự động mở chế độ xem diff khi agent đề xuất các thay đổi file, thay vì yêu cầu nhấp nút.',
-	'settings.ui.sessionHistoryName': 'Bật lịch sử phiên',
-	'settings.ui.sessionHistoryDesc':
-		'Lưu các phiên trò chuyện của agent dưới dạng file markdown trong vault của bạn. Các phiên được lưu dưới thư mục Agent-Sessions/ với tiêu đề được tạo tự động.',
-	'settings.ui.logToolExecutionName': 'Ghi nhật ký thực thi công cụ vào lịch sử phiên',
-	'settings.ui.logToolExecutionDesc':
-		'Thêm tóm tắt của mỗi lần thực thi công cụ vào tệp lịch sử phiên để kiểm tra. Yêu cầu phải bật lịch sử phiên. Yêu cầu tải lại plugin để có hiệu lực.',
-	'settings.automation.sectionTitle': 'Tự động hóa',
-	'settings.automation.sectionDesc':
-		'Chạy các tác vụ agent AI tự động — theo lịch trình, hoặc để phản hồi các sự kiện vault (file được tạo/sửa đổi/xóa/đổi tên).',
-	'settings.automation.manageScheduledTasksName': 'Quản lý các tác vụ đã lên lịch',
-	'settings.automation.manageScheduledTasksDesc':
-		'Tạo, chỉnh sửa, bật/tắt và xóa các tác vụ AI đã lên lịch. Các tác vụ chạy tự động trong nền khi Obsidian đang mở.',
-	'settings.automation.openSchedulerButton': 'Mở trình lập lịch',
-	'settings.automation.newTaskButton': 'Tác vụ mới',
-	'settings.automation.autoRunCatchUpName': 'Tự động chạy các tác vụ đã lên lịch bị bỏ lỡ khi khởi động',
-	'settings.automation.autoRunCatchUpDesc':
-		'Khi được bật, các tác vụ bị bỏ lỡ khi Obsidian đang đóng (và đã thiết lập "Chạy nếu bỏ lỡ") sẽ tự động được gửi khi khởi động mà không hiển thị hộp thoại phê duyệt.',
-	'settings.automation.enableHooksName': 'Bật hook vòng đời',
-	'settings.automation.enableHooksDesc':
-		'Đăng ký nhận các sự kiện vault và chạy các tác vụ agent AI để phản hồi. Tắt theo mặc định — các sự kiện vault kích hoạt liên tục, và một hook có phạm vi rộng có thể nhanh chóng làm cạn kiệt hạn ngạch API.',
-	'settings.automation.manageHooksName': 'Quản lý hook vòng đời',
-	'settings.automation.manageHooksDesc':
-		'Tạo, chỉnh sửa, bật/tắt và xóa các hook. Mỗi hook sẽ kích hoạt khi một sự kiện vault phù hợp xảy ra và chạy dưới dạng một phiên agent không giao diện (headless).',
-	'settings.automation.openHookManagerButton': 'Mở trình quản lý hook',
-	'settings.automation.newHookButton': 'Hook mới',
-	'settings.debug.sectionTitle': 'Gỡ lỗi',
-	'settings.debug.sectionDesc': 'Các nút chuyển đổi chẩn đoán để khắc phục sự cố hoạt động của plugin.',
-	'settings.debug.debugModeName': 'Chế độ gỡ lỗi',
-	'settings.debug.debugModeDesc': 'Bật ghi nhật ký gỡ lỗi vào console. Hữu ích cho việc khắc phục sự cố.',
-	'settings.debug.showTokenUsageName': 'Hiển thị lượng sử dụng token',
-	'settings.debug.showTokenUsageDesc':
-		'Hiển thị lượng sử dụng token ước tính trong chế độ xem agent (cho mục đích gỡ lỗi).',
-	'settings.debug.stopOnToolErrorName': 'Dừng khi có lỗi công cụ',
-	'settings.debug.stopOnToolErrorDesc':
-		'Dừng thực thi agent khi một cuộc gọi công cụ thất bại. Nếu bị tắt, agent sẽ tiếp tục thực thi các công cụ tiếp theo.',
-	'settings.agentConfig.sectionTitle': 'Cấu hình agent',
-	'settings.agentConfig.sectionDesc':
-		'Tinh chỉnh cách agent giao tiếp với mô hình: các tham số thử lại/tạo, tóm tắt cuộc trò chuyện và bảo vệ vòng lặp.',
-	'settings.agentConfig.apiConfigurationHeading': 'Cấu hình API',
-	'settings.agentConfig.logToFileName': 'Ghi nhật ký vào file',
-	'settings.agentConfig.logToFileDesc':
-		'Ghi nhật ký vào một tệp trong thư mục trạng thái plugin. Lỗi và cảnh báo luôn được ghi lại; các mục gỡ lỗi yêu cầu chế độ gỡ lỗi. Các tệp nhật ký được tự động xoay vòng ở kích thước 1 MB.',
-	'settings.agentConfig.useInteractionsApiName': 'Sử dụng Interactions API',
-	'settings.agentConfig.useInteractionsApiDesc':
-		'Định tuyến các yêu cầu Gemini qua Interactions API mới hơn của Google thay vì API generateContent cũ. Đây là phương thức truyền tải mặc định. Hoạt động không lưu trạng thái (stateless) — lịch sử trò chuyện được phát lại ở mỗi lượt và không được lưu lại phía Google giữa các lượt. Tắt tùy chọn này để quay lại sử dụng generateContent nếu bạn gặp sự cố. Các mô hình chỉ hỗ trợ Interactions API (chẳng hạn như Gemini Omni) sẽ luôn sử dụng nó, bất kể cài đặt này.',
-	'settings.agentConfig.customEndpointName': 'Endpoint API tùy chỉnh',
-	'settings.agentConfig.customEndpointDesc':
-		'Ghi đè URL cơ sở mặc định của Google API (ví dụ: đối với proxy doanh nghiệp hoặc cổng cục bộ). Để trống để sử dụng endpoint chính thức.',
-	'settings.agentConfig.customEndpointInvalidNotice': 'Endpoint API tùy chỉnh không phải là một URL hợp lệ — đang xóa.',
-	'settings.agentConfig.maxRetriesName': 'Số lần thử lại tối đa',
-	'settings.agentConfig.maxRetriesDesc': 'Số lần thử lại tối đa khi một yêu cầu mô hình thất bại.',
-	'settings.agentConfig.maxRetriesPlaceholder': 'ví dụ: 3',
-	'settings.agentConfig.initialBackoffName': 'Thời gian chờ thử lại ban đầu (ms)',
-	'settings.agentConfig.initialBackoffDesc':
-		'Độ trễ ban đầu tính bằng mili giây trước lần thử lại đầu tiên. Các lần thử lại tiếp theo sẽ sử dụng thuật toán lùi số mũ (exponential backoff).',
-	'settings.agentConfig.initialBackoffPlaceholder': 'ví dụ: 1000',
-	'settings.agentConfig.contextManagementHeading': 'Quản lý ngữ cảnh',
-	'settings.agentConfig.compactionThresholdName': 'Ngưỡng nén ngữ cảnh',
-	'settings.agentConfig.compactionThresholdDesc':
-		'Tự động tóm tắt các lượt trò chuyện cũ hơn khi lượng sử dụng token vượt quá tỷ lệ phần trăm này của cửa sổ ngữ cảnh mô hình. Hiện tại: {percent}%',
-	'settings.agentConfig.loopDetectionHeading': 'Phát hiện vòng lặp công cụ',
-	'settings.agentConfig.loopDetectionName': 'Bật phát hiện vòng lặp',
-	'settings.agentConfig.loopDetectionDesc':
-		'Ngăn chặn AI gọi lặp đi lặp lại cùng một công cụ với các tham số giống hệt nhau.',
-	'settings.agentConfig.loopThresholdName': 'Ngưỡng lặp',
-	'settings.agentConfig.loopThresholdDesc':
-		'Số lần gọi công cụ giống hệt nhau trước khi coi đó là một vòng lặp (mặc định: 3).',
-	'settings.agentConfig.timeWindowName': 'Khung thời gian (giây)',
-	'settings.agentConfig.timeWindowDesc': 'Khung thời gian để kiểm tra các cuộc gọi lặp lại (mặc định: 30 giây).',
-	'settings.agentConfig.temperatureName': 'Nhiệt độ',
-	'settings.agentConfig.temperatureDescWithInfo':
-		'Kiểm soát tính ngẫu nhiên. Giá trị thấp hơn sẽ mang tính xác định cao hơn. {info}',
-	'settings.agentConfig.temperatureDescDefault':
-		'Kiểm soát tính ngẫu nhiên. Giá trị thấp hơn sẽ mang tính xác định cao hơn. (Mặc định: 0.7)',
-	'settings.agentConfig.temperatureSaveFailedNotice': 'Không thể lưu cài đặt nhiệt độ. Xem console để biết chi tiết.',
-	'settings.agentConfig.topPName': 'Top P',
-	'settings.agentConfig.topPDescWithInfo': 'Kiểm soát tính đa dạng. Giá trị thấp hơn sẽ tập trung hơn. {info}',
-	'settings.agentConfig.topPDescDefault': 'Kiểm soát tính đa dạng. Giá trị thấp hơn sẽ tập trung hơn. (Mặc định: 1)',
-	'settings.agentConfig.topPSaveFailedNotice': 'Không thể lưu cài đặt Top P. Xem console để biết chi tiết.',
-	'settings.mcp.sectionTitle': 'Máy chủ MCP',
-	'settings.mcp.sectionDesc':
-		'Kết nối các máy chủ Model Context Protocol bên ngoài để mở rộng agent với các công cụ bổ sung.',
-	'settings.mcp.loadErrorDesc': 'Lỗi khi tải cài đặt MCP: {error}',
-	'settings.mcp.enableName': 'Bật máy chủ MCP',
-	'settings.mcp.enableDesc':
-		'Kết nối với các máy chủ Model Context Protocol để mở rộng agent bằng các công cụ bên ngoài. Hỗ trợ máy chủ cục bộ (stdio) và từ xa (HTTP).',
-	'settings.mcp.noServers': 'Chưa có máy chủ MCP nào được cấu hình. Nhấp vào "Thêm máy chủ" để bắt đầu.',
-	'settings.mcp.httpUrl': 'HTTP: {url}',
-	'settings.mcp.authorized': 'Đã ủy quyền ✓',
-	'settings.mcp.editButton': 'Chỉnh sửa',
-	'settings.mcp.deleteButton': 'Xóa',
-	'settings.mcp.addServerButton': 'Thêm máy chủ',
-	'settings.mcp.duplicateServerName': 'Máy chủ có tên "{name}" đã tồn tại',
-	'settings.mcp.reconnectFailed': 'Không thể kết nối lại "{name}": {error}',
-	'settings.mcp.openEditorFailed': 'Không thể mở trình chỉnh sửa máy chủ: {error}',
-	'settings.mcp.savedButConnectFailed': 'Đã lưu máy chủ nhưng không thể kết nối: {error}',
-	'settings.mcp.openAddDialogFailed': 'Không thể mở hộp thoại thêm máy chủ: {error}',
-	'settings.rag.sectionTitle': 'Chỉ mục tìm kiếm vault',
-	'settings.rag.sectionDesc':
-		'Tìm kiếm ngữ nghĩa trên toàn bộ vault của bạn bằng Google File Search. Cung cấp phản hồi agent tăng cường truy xuất. Quyền riêng tư: các tệp được lập chỉ mục sẽ được tải lên Google Cloud.',
-	'settings.rag.privacyNotice':
-		'⚠️ Lưu ý quyền riêng tư: Bật tính năng này sẽ tải các tệp vault của bạn lên Google Cloud để tìm kiếm ngữ nghĩa. Các tệp được xử lý và lưu trữ bởi Google. Hãy cân nhắc loại trừ các thư mục chứa thông tin nhạy cảm.',
-	'settings.rag.enableName': 'Bật lập chỉ mục vault',
-	'settings.rag.enableDesc': 'Lập chỉ mục các tệp trong vault của bạn để tìm kiếm ngữ nghĩa bằng Google File Search.',
-	'settings.rag.openCleanupFailed': 'Không thể mở hộp thoại dọn dẹp: {error}',
-	'settings.rag.filesIndexed': 'Đã lập chỉ mục {count} tệp',
-	'settings.rag.notYetIndexed': 'Chưa được lập chỉ mục',
-	'settings.rag.indexStatusName': 'Trạng thái chỉ mục',
-	'settings.rag.reindexButton': 'Quét lại vault',
-	'settings.rag.indexingButton': 'Đang lập chỉ mục...',
-	'settings.rag.serviceNotInitialized': 'Dịch vụ lập chỉ mục RAG chưa được khởi tạo',
-	'settings.rag.indexResult': 'Hoàn tất quét lại: đã lập lại chỉ mục {indexed}, đã bỏ qua {skipped}, thất bại {failed}',
-	'settings.rag.indexingFailed': 'Lập chỉ mục thất bại: {error}',
-	'settings.rag.deleteIndexButton': 'Xóa chỉ mục',
-	'settings.rag.deletingButton': 'Đang xóa...',
-	'settings.rag.indexDeletedNotice': 'Đã xóa chỉ mục. Sử dụng "Quét lại vault" để xây dựng lại.',
-	'settings.rag.deleteIndexFailed': 'Không thể xóa chỉ mục: {error}',
-	'settings.rag.openDeleteConfirmFailed': 'Không thể mở xác nhận xóa: {error}',
-	'settings.rag.storeNameName': 'Tên chỉ mục tìm kiếm',
-	'settings.rag.storeNameDescAssigned':
-		'Mã định danh kho lưu trữ Google File Search, được chỉ định tự động. Xóa chỉ mục để bắt đầu lại với một chỉ mục mới.',
-	'settings.rag.storeNameDescPending': 'Được tự động gán bởi Google File Search khi quá trình lập chỉ mục bắt đầu.',
-	'settings.rag.copyButton': 'Sao chép',
-	'settings.rag.copyTooltip': 'Sao chép tên store vào khay nhớ tạm',
-	'settings.rag.storeNameCopiedNotice': 'Đã sao chép tên store vào khay nhớ tạm',
-	'settings.rag.autoSyncName': 'Tự động đồng bộ hóa thay đổi',
-	'settings.rag.autoSyncDesc': 'Tự động cập nhật chỉ mục khi các tệp được tạo, sửa đổi hoặc xóa.',
-	'settings.rag.includeAttachmentsName': 'Bao gồm tệp đính kèm',
-	'settings.rag.includeAttachmentsDesc':
-		'Lập chỉ mục các tệp PDF và các loại tệp được hỗ trợ khác ngoài các ghi chú markdown. Yêu cầu quét lại.',
-	'settings.rag.attachmentSettingChangedNotice':
-		'Cài đặt tệp đính kèm đã thay đổi. Quét lại vault để áp dụng các thay đổi.',
-	'settings.rag.excludeFoldersName': 'Loại trừ các thư mục',
-	'settings.rag.excludeFoldersDesc':
-		'Luôn bị loại trừ: {folders}. Thêm các thư mục bổ sung bên dưới (mỗi thư mục một dòng).',
-	'settings.rag.excludeFoldersPlaceholder': 'Các thư mục bổ sung cần loại trừ...',
-	'settings.tools.sectionTitle': 'Quyền hạn công cụ',
-	'settings.tools.sectionDesc': 'Kiểm soát công cụ agent nào cần xác nhận, chạy tự động hoặc bị chặn hoàn toàn.',
-	'settings.tools.noToolsName': 'Chưa đăng ký công cụ nào',
-	'settings.tools.noToolsDesc': 'Quyền của công cụ sẽ xuất hiện ở đây sau khi các công cụ được tải.',
-	'settings.tools.presetName': 'Thiết lập sẵn quyền',
-	'settings.tools.presetDesc': 'Chọn một thiết lập sẵn để xác định quyền mặc định cho tất cả các công cụ.',
-	'settings.tools.yoloConfirmFailed': 'Không thể mở xác nhận YOLO: {error}',
 	'explainPrompt.placeholder': 'Chọn một prompt để giải thích phần lựa chọn...',
 	'ragCleanup.title': 'Xóa chỉ mục vault?',
 	'ragCleanup.body': 'Chỉ mục vault của bạn được lưu trữ trên Google Cloud. Bạn có muốn xóa nó không?',
@@ -689,8 +429,6 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'agent.header.loading': 'Đang tải...',
 	'agent.header.loadingProjectTooltip': 'Đang tải dự án...',
 	'agent.header.tooltipModel': 'Mô hình: {value}',
-	'agent.header.tooltipTemperature': 'Nhiệt độ: {value}',
-	'agent.header.tooltipTopP': 'Top-P: {value}',
 	'agent.header.tooltipPrompt': 'Prompt: {value}',
 	'agent.header.promptBadgeFallback': 'Tùy chỉnh',
 	'agent.header.menuAria': 'Menu phiên',
@@ -808,10 +546,6 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'agent.sessionSettings.modelDesc': 'Chọn mô hình AI cho phiên này',
 	'agent.sessionSettings.useDefault': 'Sử dụng mặc định',
 	'agent.sessionSettings.resetToDefault': 'Đặt lại về mặc định',
-	'agent.sessionSettings.temperature': 'Nhiệt độ',
-	'agent.sessionSettings.temperatureDesc': 'Kiểm soát tính ngẫu nhiên (0 = xác định, 2 = rất sáng tạo)',
-	'agent.sessionSettings.topP': 'Top-P',
-	'agent.sessionSettings.topPDesc': 'Ngưỡng lấy mẫu hạt nhân (0 = chỉ token hàng đầu, 1 = tất cả token)',
 	'agent.sessionSettings.promptTemplate': 'Mẫu prompt',
 	'agent.sessionSettings.promptTemplateDesc': 'Chọn một mẫu prompt tùy chỉnh cho phiên này',
 	'agent.sessionSettings.useDefaultPrompt': 'Sử dụng prompt mặc định',
@@ -1031,14 +765,6 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'notice.rewrite.selectionDone': 'Đã viết lại văn bản thành công',
 	'notice.rewrite.rewritingFile': 'Đang viết lại toàn bộ tập tin...',
 	'notice.rewrite.fileDone': 'Đã viết lại tập tin thành công',
-	'validation.temperature.notANumber': 'Nhiệt độ {value} không phải là một số hợp lệ. Đã điều chỉnh thành {adjusted}.',
-	'validation.temperature.exceedsModelLimit':
-		'Nhiệt độ {value} vượt quá giới hạn {max} của {model}. Đã điều chỉnh thành {max}.',
-	'validation.temperature.outOfRange':
-		'Nhiệt độ {value} nằm ngoài phạm vi hợp lệ [{min}, {max}]. Đã điều chỉnh thành {adjusted}.',
-	'validation.topP.notANumber': 'Top P {value} không phải là một số hợp lệ. Đã điều chỉnh thành {adjusted}.',
-	'validation.topP.outOfRange':
-		'Top P {value} nằm ngoài phạm vi hợp lệ [{min}, {max}]. Đã điều chỉnh thành {adjusted}.',
 	'agent.planMode.toggleAria': 'Bật/tắt Chế độ Lập kế hoạch — xem lại kế hoạch trước khi agent thực thi',
 	'agent.planMode.label': 'Kế hoạch',
 	'agent.planMode.headerLabel': 'Agent (Kế hoạch)',

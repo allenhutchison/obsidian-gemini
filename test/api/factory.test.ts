@@ -1,5 +1,6 @@
 import { ModelClientFactory, ModelUseCase } from '../../src/api/factory';
-import { getDefaultModelForRole } from '../../src/models';
+import { FeatureUnavailableError } from '../../src/api/feature-errors';
+import type { FeatureRoutes } from '../../src/types/features';
 
 // --- Mocks ---
 
@@ -46,25 +47,30 @@ vi.mock('../../src/prompts', () => ({
 
 // --- Helpers ---
 
-function createMockPlugin(overrides?: Record<string, any>) {
+function routes(overrides: Partial<FeatureRoutes>): FeatureRoutes {
+	const base: FeatureRoutes = {
+		chat: { provider: 'gemini', model: '' },
+		summary: { provider: 'gemini', model: '' },
+		completions: { provider: 'gemini', model: '' },
+		rewrite: { provider: 'gemini', model: '' },
+		webSearch: { provider: 'gemini', model: '' },
+		deepResearch: { provider: 'gemini', model: '' },
+		rag: { provider: 'gemini', model: '' },
+		imageGen: { provider: 'gemini', model: '' },
+	};
+	return { ...base, ...overrides };
+}
+
+function createMockPlugin(overrides?: { features?: Partial<FeatureRoutes>; settings?: Record<string, any> }) {
 	return {
 		apiKey: 'test-api-key',
 		openaiApiKey: 'sk-test-key',
 		settings: {
-			provider: 'gemini',
-			chatModelName: 'gemini-2.0-flash',
-			summaryModelName: 'gemini-2.0-flash',
-			completionsModelName: 'gemini-2.0-flash-lite',
-			temperature: 1.0,
-			topP: 0.95,
-			maxRetries: 3,
-			initialBackoffDelay: 1000,
+			defaultProvider: 'gemini',
+			features: routes(overrides?.features ?? {}),
 			ollamaBaseUrl: 'http://localhost:11434',
 			openaiBaseUrl: 'https://api.openai.com/v1',
-			openaiModelName: 'gpt-5.6',
-			openaiSummaryModelName: 'gpt-5.6-terra',
-			openaiCompletionsModelName: 'gpt-5.6-luna',
-			...overrides,
+			...overrides?.settings,
 		},
 		logger: {
 			log: vi.fn(),
@@ -81,7 +87,7 @@ describe('ModelClientFactory', () => {
 	});
 
 	describe('createFromPlugin', () => {
-		it('should create a GeminiClient when provider is gemini', () => {
+		it('should create a GeminiClient when chat is routed to gemini', () => {
 			const plugin = createMockPlugin();
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
 
@@ -90,8 +96,8 @@ describe('ModelClientFactory', () => {
 			expect(MockRetryDecorator).toHaveBeenCalledTimes(1);
 		});
 
-		it('should create an OllamaClient when provider is ollama', () => {
-			const plugin = createMockPlugin({ provider: 'ollama' });
+		it('should create an OllamaClient when chat is routed to ollama', () => {
+			const plugin = createMockPlugin({ features: { chat: { provider: 'ollama', model: '' } } });
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
 
 			expect(MockOllamaClient).toHaveBeenCalledTimes(1);
@@ -99,12 +105,13 @@ describe('ModelClientFactory', () => {
 			expect(MockRetryDecorator).toHaveBeenCalledTimes(1);
 		});
 
-		it('should default to gemini when provider is undefined', () => {
-			const plugin = createMockPlugin({ provider: undefined });
-			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
+		// No silent fallback: a feature routed to 'none' throws rather than
+		// silently talking to Gemini.
+		it('throws FeatureUnavailableError when chat is routed to none', () => {
+			const plugin = createMockPlugin({ features: { chat: { provider: 'none', model: '' } } });
 
-			expect(MockGeminiClient).toHaveBeenCalledTimes(1);
-			expect(MockOllamaClient).not.toHaveBeenCalled();
+			expect(() => ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT)).toThrow(FeatureUnavailableError);
+			expect(MockGeminiClient).not.toHaveBeenCalled();
 		});
 
 		it('should pass GeminiPrompts to the client', () => {
@@ -116,46 +123,34 @@ describe('ModelClientFactory', () => {
 			expect(MockGeminiClient.mock.calls[0][1]).toBeDefined();
 		});
 
-		it('should pass retry config from settings', () => {
-			const plugin = createMockPlugin({ maxRetries: 5, initialBackoffDelay: 2000 });
+		it('wraps the client with a retry decorator using a fixed policy, independent of any settings', () => {
+			const plugin = createMockPlugin();
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
 
-			expect(MockRetryDecorator).toHaveBeenCalledWith(
-				expect.anything(),
-				{ maxRetries: 5, initialBackoffDelay: 2000 },
-				plugin.logger
-			);
-		});
-
-		it('should use default retry values when settings are undefined', () => {
-			const plugin = createMockPlugin({ maxRetries: undefined, initialBackoffDelay: undefined });
-			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
-
-			expect(MockRetryDecorator).toHaveBeenCalledWith(
-				expect.anything(),
-				{ maxRetries: 3, initialBackoffDelay: 1000 },
-				plugin.logger
-			);
+			expect(MockRetryDecorator).toHaveBeenCalledWith(expect.anything(), plugin.logger);
 		});
 
 		it('should apply overrides to Gemini config', () => {
 			const plugin = createMockPlugin();
-			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT, { temperature: 0.5 });
+			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT, { model: 'custom-model' });
 
 			const geminiConfig = MockGeminiClient.mock.calls[0][0];
-			expect(geminiConfig.temperature).toBe(0.5);
+			expect(geminiConfig.model).toBe('custom-model');
 		});
 
 		it('should apply overrides to Ollama config', () => {
-			const plugin = createMockPlugin({ provider: 'ollama' });
-			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT, { temperature: 0.3 });
+			const plugin = createMockPlugin({ features: { chat: { provider: 'ollama', model: '' } } });
+			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT, { model: 'custom-model' });
 
 			const ollamaConfig = MockOllamaClient.mock.calls[0][0];
-			expect(ollamaConfig.temperature).toBe(0.3);
+			expect(ollamaConfig.model).toBe('custom-model');
 		});
 
 		it('should use Ollama base URL from settings', () => {
-			const plugin = createMockPlugin({ provider: 'ollama', ollamaBaseUrl: 'http://remote:11434' });
+			const plugin = createMockPlugin({
+				features: { chat: { provider: 'ollama', model: '' } },
+				settings: { ollamaBaseUrl: 'http://remote:11434' },
+			});
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
 
 			const ollamaConfig = MockOllamaClient.mock.calls[0][0];
@@ -163,15 +158,18 @@ describe('ModelClientFactory', () => {
 		});
 
 		it('should default ollamaBaseUrl to localhost when empty', () => {
-			const plugin = createMockPlugin({ provider: 'ollama', ollamaBaseUrl: '' });
+			const plugin = createMockPlugin({
+				features: { chat: { provider: 'ollama', model: '' } },
+				settings: { ollamaBaseUrl: '' },
+			});
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
 
 			const ollamaConfig = MockOllamaClient.mock.calls[0][0];
 			expect(ollamaConfig.baseUrl).toBe('http://localhost:11434');
 		});
 
-		it('should create an OpenAIClient when provider is openai', () => {
-			const plugin = createMockPlugin({ provider: 'openai' });
+		it('should create an OpenAIClient when chat is routed to openai', () => {
+			const plugin = createMockPlugin({ features: { chat: { provider: 'openai', model: '' } } });
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
 
 			expect(MockOpenAIClient).toHaveBeenCalledTimes(1);
@@ -181,7 +179,10 @@ describe('ModelClientFactory', () => {
 		});
 
 		it('should use the resolved OpenAI API key and base URL from settings', () => {
-			const plugin = createMockPlugin({ provider: 'openai', openaiBaseUrl: 'http://localhost:1234/v1' });
+			const plugin = createMockPlugin({
+				features: { chat: { provider: 'openai', model: '' } },
+				settings: { openaiBaseUrl: 'http://localhost:1234/v1' },
+			});
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
 
 			const openaiConfig = MockOpenAIClient.mock.calls[0][0];
@@ -190,170 +191,86 @@ describe('ModelClientFactory', () => {
 		});
 
 		it('should default openaiBaseUrl to api.openai.com when empty', () => {
-			const plugin = createMockPlugin({ provider: 'openai', openaiBaseUrl: '' });
+			const plugin = createMockPlugin({
+				features: { chat: { provider: 'openai', model: '' } },
+				settings: { openaiBaseUrl: '' },
+			});
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
 
 			const openaiConfig = MockOpenAIClient.mock.calls[0][0];
 			expect(openaiConfig.baseUrl).toBe('https://api.openai.com/v1');
 		});
-
-		it('should apply overrides to OpenAI config', () => {
-			const plugin = createMockPlugin({ provider: 'openai' });
-			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT, { temperature: 0.3 });
-
-			const openaiConfig = MockOpenAIClient.mock.calls[0][0];
-			expect(openaiConfig.temperature).toBe(0.3);
-		});
 	});
 
-	describe('resolveModelName (via createFromPlugin)', () => {
-		it('should use chatModelName for CHAT use case', () => {
-			const plugin = createMockPlugin({ chatModelName: 'my-chat-model' });
+	describe('feature -> model resolution (via createFromPlugin)', () => {
+		it('should use the chat feature model for the CHAT use case', () => {
+			const plugin = createMockPlugin({ features: { chat: { provider: 'gemini', model: 'my-chat-model' } } });
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
 
 			const config = MockGeminiClient.mock.calls[0][0];
 			expect(config.model).toBe('my-chat-model');
 		});
 
-		it('should use summaryModelName for SUMMARY use case', () => {
-			const plugin = createMockPlugin({ summaryModelName: 'my-summary-model' });
+		it('should use the summary feature model for the SUMMARY use case', () => {
+			const plugin = createMockPlugin({ features: { summary: { provider: 'gemini', model: 'my-summary-model' } } });
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SUMMARY);
 
 			const config = MockGeminiClient.mock.calls[0][0];
 			expect(config.model).toBe('my-summary-model');
 		});
 
-		it('should use completionsModelName for COMPLETIONS use case', () => {
-			const plugin = createMockPlugin({ completionsModelName: 'my-completions-model' });
+		it('should use the completions feature model for the COMPLETIONS use case', () => {
+			const plugin = createMockPlugin({
+				features: { completions: { provider: 'gemini', model: 'my-completions-model' } },
+			});
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.COMPLETIONS);
 
 			const config = MockGeminiClient.mock.calls[0][0];
 			expect(config.model).toBe('my-completions-model');
 		});
 
-		it('should use chatModelName for REWRITE use case', () => {
-			const plugin = createMockPlugin({ chatModelName: 'my-chat-model' });
+		it('should use the rewrite feature model for the REWRITE use case', () => {
+			const plugin = createMockPlugin({ features: { rewrite: { provider: 'gemini', model: 'my-rewrite-model' } } });
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.REWRITE);
 
 			const config = MockGeminiClient.mock.calls[0][0];
-			expect(config.model).toBe('my-chat-model');
+			expect(config.model).toBe('my-rewrite-model');
 		});
 
-		it('should use chatModelName for SEARCH use case', () => {
-			const plugin = createMockPlugin({ chatModelName: 'my-chat-model' });
+		it('should use the chat feature model for the SEARCH use case (SEARCH bills to chat)', () => {
+			const plugin = createMockPlugin({ features: { chat: { provider: 'gemini', model: 'my-chat-model' } } });
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SEARCH);
 
 			const config = MockGeminiClient.mock.calls[0][0];
 			expect(config.model).toBe('my-chat-model');
 		});
 
-		it('should fall back to default when model name is empty', () => {
-			const plugin = createMockPlugin({ chatModelName: '' });
+		it('should fall back to a default when the stored model is empty', () => {
+			const plugin = createMockPlugin({ features: { chat: { provider: 'gemini', model: '' } } });
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
 
 			const config = MockGeminiClient.mock.calls[0][0];
-			// Should get a non-empty default from getDefaultModelForRole
 			expect(config.model).toBeTruthy();
 		});
 
-		describe('Ollama provider', () => {
-			// Ollama keeps a single model resident at a time, so every use case
-			// resolves to the one configured ollamaModelName — the Gemini
-			// chat/summary/completions settings are ignored under Ollama, and kept
-			// separate so switching providers preserves each choice. (#1077, #1125)
-			const useCases: ModelUseCase[] = [
-				ModelUseCase.CHAT,
-				ModelUseCase.SUMMARY,
-				ModelUseCase.COMPLETIONS,
-				ModelUseCase.REWRITE,
-				ModelUseCase.SEARCH,
-			];
-
-			it.each(useCases)('resolves %s to the single ollamaModelName', (useCase) => {
-				// The Gemini fields are set to divergent values but must be ignored.
-				const plugin = createMockPlugin({
-					provider: 'ollama',
-					ollamaModelName: 'ollama-chat',
-					chatModelName: 'gemini-chat',
-					summaryModelName: 'gemini-summary',
-					completionsModelName: 'gemini-completions',
-				});
-				ModelClientFactory.createFromPlugin(plugin, useCase);
-
-				expect(MockOllamaClient).toHaveBeenCalledTimes(1);
-				expect(MockGeminiClient).not.toHaveBeenCalled();
-				const config = MockOllamaClient.mock.calls[0][0];
-				expect(config.model).toBe('ollama-chat');
+		it('routes REWRITE and SEARCH independently of each other and of chat when each has its own route', () => {
+			const plugin = createMockPlugin({
+				features: {
+					chat: { provider: 'gemini', model: 'chat-model' },
+					rewrite: { provider: 'ollama', model: 'rewrite-model' },
+				},
 			});
 
-			it('falls back to the Ollama default for every use case when ollamaModelName is empty', () => {
-				// Even with a Gemini chat model configured, an empty ollamaModelName
-				// under Ollama resolves to the Ollama chat default — never a Gemini field.
-				const plugin = createMockPlugin({
-					provider: 'ollama',
-					ollamaModelName: '',
-					chatModelName: 'gemini-chat',
-					summaryModelName: 'gemini-summary',
-				});
-				ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SUMMARY);
+			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.REWRITE);
+			expect(MockOllamaClient.mock.calls[0][0].model).toBe('rewrite-model');
 
-				const config = MockOllamaClient.mock.calls[0][0];
-				// The default is resolved by the real getDefaultModelForRole (not mocked),
-				// so assert against it directly rather than a hard-coded string. In a unit
-				// context with no Ollama models loaded this is the empty-string sentinel,
-				// which is exactly the unconfigured-Ollama state the resolver passes through.
-				expect(config.model).toBe(getDefaultModelForRole('chat', 'ollama'));
-			});
-		});
-
-		describe('OpenAI provider', () => {
-			// Unlike Ollama, OpenAI has no single-resident-model constraint
-			// (perUseCaseModels), so each use case resolves to its own configured field.
-			it('resolves CHAT to openaiModelName', () => {
-				const plugin = createMockPlugin({ provider: 'openai', openaiModelName: 'openai-chat' });
-				ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
-
-				expect(MockOpenAIClient).toHaveBeenCalledTimes(1);
-				expect(MockGeminiClient).not.toHaveBeenCalled();
-				expect(MockOpenAIClient.mock.calls[0][0].model).toBe('openai-chat');
-			});
-
-			it('resolves SUMMARY to openaiSummaryModelName independently of the chat model', () => {
-				const plugin = createMockPlugin({
-					provider: 'openai',
-					openaiModelName: 'openai-chat',
-					openaiSummaryModelName: 'openai-summary',
-				});
-				ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SUMMARY);
-
-				expect(MockOpenAIClient.mock.calls[0][0].model).toBe('openai-summary');
-			});
-
-			it('resolves COMPLETIONS to openaiCompletionsModelName independently of the chat model', () => {
-				const plugin = createMockPlugin({
-					provider: 'openai',
-					openaiModelName: 'openai-chat',
-					openaiCompletionsModelName: 'openai-completions',
-				});
-				ModelClientFactory.createFromPlugin(plugin, ModelUseCase.COMPLETIONS);
-
-				expect(MockOpenAIClient.mock.calls[0][0].model).toBe('openai-completions');
-			});
-
-			it('resolves REWRITE and SEARCH to openaiModelName (no dedicated field)', () => {
-				const plugin = createMockPlugin({ provider: 'openai', openaiModelName: 'openai-chat' });
-
-				ModelClientFactory.createFromPlugin(plugin, ModelUseCase.REWRITE);
-				expect(MockOpenAIClient.mock.calls[0][0].model).toBe('openai-chat');
-
-				ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SEARCH);
-				expect(MockOpenAIClient.mock.calls[1][0].model).toBe('openai-chat');
-			});
+			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SEARCH);
+			expect(MockGeminiClient.mock.calls[0][0].model).toBe('chat-model');
 		});
 	});
 
 	describe('createChatModel', () => {
-		it('should create a chat model without session config', () => {
+		it('should create a chat model', () => {
 			const plugin = createMockPlugin();
 			ModelClientFactory.createChatModel(plugin);
 
@@ -361,111 +278,52 @@ describe('ModelClientFactory', () => {
 			expect(MockRetryDecorator).toHaveBeenCalledTimes(1);
 		});
 
-		it('should apply session temperature override', () => {
+		// The legacy second parameter (session temperature/topP) is dropped
+		// entirely as of the settings redesign, but the call must not throw when
+		// an unmigrated caller still passes one.
+		it('ignores a legacy second argument rather than throwing', () => {
 			const plugin = createMockPlugin();
-			ModelClientFactory.createChatModel(plugin, { temperature: 0.2 });
-
-			const config = MockGeminiClient.mock.calls[0][0];
-			expect(config.temperature).toBe(0.2);
-		});
-
-		it('should apply session topP override', () => {
-			const plugin = createMockPlugin();
-			ModelClientFactory.createChatModel(plugin, { topP: 0.5 });
-
-			const config = MockGeminiClient.mock.calls[0][0];
-			expect(config.topP).toBe(0.5);
-		});
-
-		it('should not override temperature when session config omits it', () => {
-			const plugin = createMockPlugin({ temperature: 0.8 });
-			ModelClientFactory.createChatModel(plugin, { topP: 0.5 });
-
-			const config = MockGeminiClient.mock.calls[0][0];
-			// Temperature should come from settings (0.8), not be overridden
-			expect(config.temperature).toBe(0.8);
-		});
-	});
-
-	describe('createCustom', () => {
-		it('should create a GeminiClient with provided config', () => {
-			const config = {
-				apiKey: 'custom-key',
-				model: 'custom-model',
-				temperature: 0.5,
-				topP: 0.9,
-			};
-			ModelClientFactory.createCustom(config);
-
-			expect(MockGeminiClient).toHaveBeenCalledWith(config, undefined, undefined);
-			expect(MockRetryDecorator).toHaveBeenCalledTimes(1);
-		});
-
-		it('should use default retry config when no plugin provided', () => {
-			const config = { apiKey: 'key', model: 'model', temperature: 1, topP: 1 };
-			ModelClientFactory.createCustom(config);
-
-			expect(MockRetryDecorator).toHaveBeenCalledWith(
-				expect.anything(),
-				{ maxRetries: 3, initialBackoffDelay: 1000 },
-				undefined
-			);
-		});
-
-		it('should use plugin retry config when plugin is provided', () => {
-			const plugin = createMockPlugin({ maxRetries: 10, initialBackoffDelay: 5000 });
-			const config = { apiKey: 'key', model: 'model', temperature: 1, topP: 1 };
-			ModelClientFactory.createCustom(config, undefined, plugin);
-
-			expect(MockRetryDecorator).toHaveBeenCalledWith(
-				expect.anything(),
-				{ maxRetries: 10, initialBackoffDelay: 5000 },
-				plugin.logger
-			);
+			expect(() => ModelClientFactory.createChatModel(plugin, { temperature: 0.2, topP: 0.5 })).not.toThrow();
+			expect(MockGeminiClient).toHaveBeenCalledTimes(1);
 		});
 	});
 
 	describe('convenience methods', () => {
-		it('createSummaryModel should use SUMMARY use case', () => {
-			const plugin = createMockPlugin({ summaryModelName: 'summary-model' });
+		it('createSummaryModel should use the summary feature route', () => {
+			const plugin = createMockPlugin({ features: { summary: { provider: 'gemini', model: 'summary-model' } } });
 			ModelClientFactory.createSummaryModel(plugin);
 
 			const config = MockGeminiClient.mock.calls[0][0];
 			expect(config.model).toBe('summary-model');
 		});
 
-		it('createCompletionsModel should use COMPLETIONS use case', () => {
-			const plugin = createMockPlugin({ completionsModelName: 'completions-model' });
+		it('createCompletionsModel should use the completions feature route', () => {
+			const plugin = createMockPlugin({
+				features: { completions: { provider: 'gemini', model: 'completions-model' } },
+			});
 			ModelClientFactory.createCompletionsModel(plugin);
 
 			const config = MockGeminiClient.mock.calls[0][0];
 			expect(config.model).toBe('completions-model');
 		});
 
-		it('createRewriteModel should use REWRITE use case', () => {
-			const plugin = createMockPlugin({ chatModelName: 'rewrite-model' });
+		it('createRewriteModel should use the rewrite feature route', () => {
+			const plugin = createMockPlugin({ features: { rewrite: { provider: 'gemini', model: 'rewrite-model' } } });
 			ModelClientFactory.createRewriteModel(plugin);
 
 			const config = MockGeminiClient.mock.calls[0][0];
 			expect(config.model).toBe('rewrite-model');
 		});
-
-		it('createSearchModel should use SEARCH use case', () => {
-			const plugin = createMockPlugin({ chatModelName: 'search-model' });
-			ModelClientFactory.createSearchModel(plugin);
-
-			const config = MockGeminiClient.mock.calls[0][0];
-			expect(config.model).toBe('search-model');
-		});
 	});
-	// Per-use-case provider selection (#704): one session can span providers.
-	describe('per-use-case provider overrides', () => {
-		it('builds an Ollama client for an overridden use case and Gemini for the rest', () => {
+
+	// Every feature is routed independently: one session can span providers.
+	describe('per-feature provider routing', () => {
+		it('builds an Ollama client for one feature and Gemini for the rest', () => {
 			const plugin = createMockPlugin({
-				provider: 'gemini',
-				providerOverrides: { summary: 'ollama' },
-				chatModelName: 'gemini-chat',
-				ollamaModelName: 'ollama-local',
+				features: {
+					chat: { provider: 'gemini', model: 'gemini-chat' },
+					summary: { provider: 'ollama', model: 'ollama-local' },
+				},
 			});
 
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SUMMARY);
@@ -477,61 +335,12 @@ describe('ModelClientFactory', () => {
 			expect(MockGeminiClient.mock.calls[0][0].model).toBe('gemini-chat');
 		});
 
-		it('builds a Gemini client for a use case overridden away from a local primary', () => {
+		it('builds an OpenAI client for a feature routed there while chat stays on Ollama', () => {
 			const plugin = createMockPlugin({
-				provider: 'ollama',
-				providerOverrides: { summary: 'gemini' },
-				summaryModelName: 'gemini-summary',
-				ollamaModelName: 'ollama-local',
-			});
-
-			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SUMMARY);
-			expect(MockGeminiClient).toHaveBeenCalledTimes(1);
-			expect(MockGeminiClient.mock.calls[0][0].model).toBe('gemini-summary');
-			expect(MockOllamaClient).not.toHaveBeenCalled();
-		});
-
-		// ModelUseCase.SEARCH is a thinking-level tier on the chat path, not the
-		// `webSearch` capability — it must follow chat's provider, and never be
-		// gated off just because the primary can't serve web search.
-		it('routes the SEARCH use case with chat, not with the webSearch capability', () => {
-			const plugin = createMockPlugin({ provider: 'ollama', ollamaModelName: 'ollama-local' });
-
-			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SEARCH);
-
-			expect(MockOllamaClient).toHaveBeenCalledTimes(1);
-			expect(MockGeminiClient).not.toHaveBeenCalled();
-			expect(MockOllamaClient.mock.calls[0][0].model).toBe('ollama-local');
-		});
-
-		it('inherits the Ollama chat model unless a per-use-case model is set', () => {
-			const plugin = createMockPlugin({
-				provider: 'ollama',
-				ollamaModelName: 'ollama-chat',
-				ollamaCompletionsModelName: '',
-			});
-
-			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.COMPLETIONS);
-			expect(MockOllamaClient.mock.calls[0][0].model).toBe('ollama-chat');
-		});
-
-		it('uses a per-use-case Ollama model when one is configured', () => {
-			const plugin = createMockPlugin({
-				provider: 'ollama',
-				ollamaModelName: 'ollama-chat',
-				ollamaCompletionsModelName: 'ollama-tiny',
-			});
-
-			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.COMPLETIONS);
-			expect(MockOllamaClient.mock.calls[0][0].model).toBe('ollama-tiny');
-		});
-
-		it('builds an OpenAI client for a use case overridden away from a local primary', () => {
-			const plugin = createMockPlugin({
-				provider: 'ollama',
-				providerOverrides: { summary: 'openai' },
-				openaiSummaryModelName: 'openai-summary',
-				ollamaModelName: 'ollama-local',
+				features: {
+					chat: { provider: 'ollama', model: 'ollama-local' },
+					summary: { provider: 'openai', model: 'openai-summary' },
+				},
 			});
 
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SUMMARY);
@@ -541,6 +350,24 @@ describe('ModelClientFactory', () => {
 
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
 			expect(MockOllamaClient).toHaveBeenCalledTimes(1);
+			expect(MockOllamaClient.mock.calls[0][0].model).toBe('ollama-local');
+		});
+
+		// ModelUseCase.SEARCH is a thinking-level tier on the chat path, not the
+		// `webSearch` feature — it must follow chat's provider, and never be
+		// gated off just because chat isn't routed to a web-search-capable provider.
+		it('routes the SEARCH use case with chat, not with the webSearch feature', () => {
+			const plugin = createMockPlugin({
+				features: {
+					chat: { provider: 'ollama', model: 'ollama-local' },
+					webSearch: { provider: 'none', model: '' },
+				},
+			});
+
+			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SEARCH);
+
+			expect(MockOllamaClient).toHaveBeenCalledTimes(1);
+			expect(MockGeminiClient).not.toHaveBeenCalled();
 			expect(MockOllamaClient.mock.calls[0][0].model).toBe('ollama-local');
 		});
 	});

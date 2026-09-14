@@ -4,15 +4,26 @@ import { ModelListProvider } from '../../src/services/model-list-provider';
 
 const mockedRequestUrl = requestUrl as unknown as Mock;
 
-const buildPlugin = (overrides: Partial<{ provider: string; providerOverrides: Record<string, string> }> = {}) =>
-	({
+/**
+ * Builds a minimal plugin fixture in the current `defaultProvider` + `features`
+ * shape. `provider` sets `defaultProvider`; `providerOverrides` routes the named
+ * features to a specific provider (mirroring the pre-redesign shorthand these
+ * tests used, translated to the dense `features` model).
+ */
+const buildPlugin = (overrides: Partial<{ provider: string; providerOverrides: Record<string, string> }> = {}) => {
+	const features: Record<string, { provider: string; model: string }> = {};
+	for (const [feature, provider] of Object.entries(overrides.providerOverrides ?? {})) {
+		features[feature] = { provider, model: '' };
+	}
+	return {
 		logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
 		settings: {
-			provider: 'gemini',
-			...overrides,
+			defaultProvider: overrides.provider ?? 'gemini',
+			features,
 		},
 		saveData: vi.fn().mockResolvedValue(undefined),
-	}) as any;
+	} as any;
+};
 
 describe('ModelListProvider.startRemoteFetch', () => {
 	let originalDescriptor: PropertyDescriptor | undefined;

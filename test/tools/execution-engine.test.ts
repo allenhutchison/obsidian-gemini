@@ -47,10 +47,7 @@ describe('ToolExecutionEngine - Confirmation Requirements', () => {
 	beforeEach(() => {
 		// Mock plugin
 		plugin = {
-			settings: {
-				loopDetectionThreshold: 3,
-				loopDetectionTimeWindowSeconds: 60,
-			},
+			settings: {},
 			app: {
 				vault: {
 					getAbstractFileByPath: vi.fn(),
@@ -226,10 +223,7 @@ describe('ToolExecutionEngine - Error Handling', () => {
 	beforeEach(() => {
 		// Mock plugin
 		plugin = {
-			settings: {
-				loopDetectionThreshold: 3,
-				loopDetectionTimeWindowSeconds: 60,
-			},
+			settings: {},
 			app: {
 				vault: {
 					getAbstractFileByPath: vi.fn(),
@@ -445,11 +439,7 @@ describe('ToolExecutionEngine - Loop Detection', () => {
 
 	beforeEach(() => {
 		plugin = {
-			settings: {
-				loopDetectionEnabled: true,
-				loopDetectionThreshold: 3,
-				loopDetectionTimeWindowSeconds: 60,
-			},
+			settings: {},
 			logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
 			agentEventBus: { emit: vi.fn().mockResolvedValue(undefined) },
 		};
@@ -506,32 +496,6 @@ describe('ToolExecutionEngine - Loop Detection', () => {
 			})
 		);
 	});
-
-	it('does not set loopDetected when detection is disabled', async () => {
-		plugin.settings.loopDetectionEnabled = false;
-
-		const context = {
-			plugin,
-			session: {
-				id: 'no-detection-session',
-				type: 'agent-session',
-				context: {
-					contextFiles: [],
-					contextDepth: 2,
-					enabledTools: [ToolCategory.READ_ONLY],
-					requireConfirmation: [],
-				},
-			},
-		} as any;
-
-		const call = { name: 'noop', arguments: {} };
-		for (let i = 0; i < 5; i++) {
-			const result = await engine.executeTool(call, context, denyProvider);
-			expect(result.success).toBe(true);
-			expect(result.loopDetected).toBeUndefined();
-		}
-		expect(plugin.agentEventBus.emit).not.toHaveBeenCalled();
-	});
 });
 
 describe('ToolExecutionEngine - executeToolCalls with stopOnToolError=false', () => {
@@ -561,8 +525,6 @@ describe('ToolExecutionEngine - executeToolCalls with stopOnToolError=false', ()
 		plugin = {
 			settings: {
 				stopOnToolError: false,
-				loopDetectionThreshold: 3,
-				loopDetectionTimeWindowSeconds: 60,
 			},
 			logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
 		};
@@ -623,8 +585,6 @@ describe('ToolExecutionEngine - diff/confirm hook dispatch', () => {
 	beforeEach(() => {
 		plugin = {
 			settings: {
-				loopDetectionThreshold: 3,
-				loopDetectionTimeWindowSeconds: 60,
 				historyFolder: 'gemini-scribe',
 			},
 			app: {
@@ -758,10 +718,7 @@ describe('ToolExecutionEngine - formatToolResult', () => {
 
 	beforeEach(() => {
 		plugin = {
-			settings: {
-				loopDetectionThreshold: 3,
-				loopDetectionTimeWindowSeconds: 60,
-			},
+			settings: {},
 			logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
 		};
 
@@ -810,10 +767,7 @@ describe('ToolExecutionEngine - getAvailableToolsDescription', () => {
 
 	beforeEach(() => {
 		plugin = {
-			settings: {
-				loopDetectionThreshold: 3,
-				loopDetectionTimeWindowSeconds: 60,
-			},
+			settings: {},
 			logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
 		};
 
@@ -907,11 +861,7 @@ describe('ToolExecutionEngine - Session state lifecycle (#1387)', () => {
 
 	beforeEach(() => {
 		plugin = {
-			settings: {
-				loopDetectionEnabled: true,
-				loopDetectionThreshold: 2,
-				loopDetectionTimeWindowSeconds: 60,
-			},
+			settings: {},
 			logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
 		};
 
@@ -941,7 +891,8 @@ describe('ToolExecutionEngine - Session state lifecycle (#1387)', () => {
 
 	const identicalCall = { name: 'noop', arguments: { a: 1 } };
 
-	it('flags a loop once identical calls reach the threshold', async () => {
+	it('flags a loop once identical calls reach the (fixed) threshold', async () => {
+		await engine.executeTool(identicalCall, sessionContext('flag-session'), denyProvider);
 		await engine.executeTool(identicalCall, sessionContext('flag-session'), denyProvider);
 		await engine.executeTool(identicalCall, sessionContext('flag-session'), denyProvider);
 		const flagged = await engine.executeTool(identicalCall, sessionContext('flag-session'), denyProvider);
@@ -951,6 +902,7 @@ describe('ToolExecutionEngine - Session state lifecycle (#1387)', () => {
 
 	it('clearLoopDetectorSession drops the recorded calls so detection restarts (#1387)', async () => {
 		const context = sessionContext('shrink-session');
+		await engine.executeTool(identicalCall, context, denyProvider);
 		await engine.executeTool(identicalCall, context, denyProvider);
 		await engine.executeTool(identicalCall, context, denyProvider);
 		engine.clearLoopDetectorSession('shrink-session');
@@ -979,11 +931,7 @@ describe('ToolExecutionEngine - Loop Detection Event Bus Emit Error', () => {
 
 	beforeEach(() => {
 		plugin = {
-			settings: {
-				loopDetectionEnabled: true,
-				loopDetectionThreshold: 3,
-				loopDetectionTimeWindowSeconds: 60,
-			},
+			settings: {},
 			logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
 			agentEventBus: {
 				emit: vi.fn().mockImplementation(() => {
@@ -1039,8 +987,6 @@ describe('ToolExecutionEngine - Confirmation Flow', () => {
 	beforeEach(() => {
 		plugin = {
 			settings: {
-				loopDetectionThreshold: 3,
-				loopDetectionTimeWindowSeconds: 60,
 				historyFolder: 'gemini-scribe',
 			},
 			app: {
@@ -1173,10 +1119,7 @@ describe('ToolExecutionEngine - Non-Error Thrown Value', () => {
 
 	beforeEach(() => {
 		plugin = {
-			settings: {
-				loopDetectionThreshold: 3,
-				loopDetectionTimeWindowSeconds: 60,
-			},
+			settings: {},
 			logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
 		};
 

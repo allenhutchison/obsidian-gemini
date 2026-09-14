@@ -59,8 +59,6 @@ function buildPlugin(overrides: any = {}) {
 
 	const settings = {
 		chatModelName: 'gemini-test',
-		temperature: 0.5,
-		topP: 0.9,
 		...overrides.settings,
 	};
 

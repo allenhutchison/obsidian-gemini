@@ -1,7 +1,7 @@
 import { requestUrl } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { GeminiModel } from '../models';
-import { isProviderActive } from '../api/provider-routing';
+import { isProviderActive } from '../api/feature-routing';
 
 import bundledModelData from '../data/models.json';
 

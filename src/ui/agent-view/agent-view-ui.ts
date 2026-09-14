@@ -236,11 +236,7 @@ export class AgentViewUI {
 
 		// Model config badge (if non-default settings)
 		if (currentSession?.modelConfig) {
-			const hasCustomSettings =
-				currentSession.modelConfig.model ||
-				currentSession.modelConfig.temperature !== undefined ||
-				currentSession.modelConfig.topP !== undefined ||
-				currentSession.modelConfig.promptTemplate;
+			const hasCustomSettings = currentSession.modelConfig.model || currentSession.modelConfig.promptTemplate;
 
 			if (hasCustomSettings) {
 				// The tooltip line and the badge label below show the same template
@@ -258,12 +254,6 @@ export class AgentViewUI {
 
 				if (currentSession.modelConfig.model) {
 					tooltipParts.push(t('agent.header.tooltipModel', { value: currentSession.modelConfig.model }));
-				}
-				if (currentSession.modelConfig.temperature !== undefined) {
-					tooltipParts.push(t('agent.header.tooltipTemperature', { value: currentSession.modelConfig.temperature }));
-				}
-				if (currentSession.modelConfig.topP !== undefined) {
-					tooltipParts.push(t('agent.header.tooltipTopP', { value: currentSession.modelConfig.topP }));
 				}
 				if (promptName) {
 					tooltipParts.push(t('agent.header.tooltipPrompt', { value: promptName }));

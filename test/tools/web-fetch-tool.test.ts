@@ -55,8 +55,9 @@ describe('WebFetchTool', () => {
 			plugin: {
 				apiKey: 'test-api-key',
 				settings: {
-					chatModelName: 'gemini-2.5-flash',
-					temperature: 0.7,
+					features: {
+						webSearch: { provider: 'gemini', model: 'gemini-2.5-flash' },
+					},
 				},
 				logger: {
 					log: vi.fn(),

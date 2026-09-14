@@ -4,8 +4,6 @@
  * parsed back from older/newer history files.
  */
 export interface ConversationEntryMetadata {
-	temperature?: number;
-	topP?: number;
 	customPrompt?: string;
 	/** Set on tool-activity entries parsed from session history. */
 	toolName?: string;

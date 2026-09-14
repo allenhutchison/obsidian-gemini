@@ -1,6 +1,6 @@
 import { ToolResult } from './types';
 import type { ObsidianGemini } from '../types/plugin';
-import { resolveGenerateContentModel } from '../models';
+import { geminiGroundingModel } from '../models';
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
 import { executeWithRetry } from '../utils/retry';
 import { getRawErrorMessage } from '../utils/error-utils';
@@ -38,6 +38,11 @@ export interface GroundingToolRequest {
 	errorPrefix: string;
 	/** Operation name used for retry/logging telemetry. */
 	operationName: string;
+	/**
+	 * Model to run the grounding call on. Defaults to `geminiGroundingModel(plugin.settings)`
+	 * (the Maps path) when omitted — Search passes its own via `featureModel(settings, 'webSearch')`.
+	 */
+	model?: string;
 }
 
 /**
@@ -63,12 +68,12 @@ export async function runGroundingTool(plugin: ObsidianGemini, req: GroundingToo
 		}
 
 		// Create a separate model instance with the requested grounding tool enabled.
-		// Grounding runs on generateContent, so an interactions-only chat model is
-		// swapped for the bundled default instead of hard-failing with a 400.
+		// Grounding runs on generateContent, so an interactions-only model is
+		// swapped for the bundled default instead of hard-failing with a 400
+		// (handled inside `geminiGroundingModel`/`resolveGenerateContentModel`).
 		const genAI = createGoogleGenAI(plugin);
-		const modelToUse = resolveGenerateContentModel(plugin.settings.chatModelName);
+		const modelToUse = req.model ?? geminiGroundingModel(plugin.settings);
 		const config = {
-			temperature: plugin.settings.temperature,
 			maxOutputTokens: 8192, // Default max tokens
 			tools: [req.groundingTool],
 		};

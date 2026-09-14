@@ -43,11 +43,7 @@ export class OllamaClient implements ModelApi {
 	private plugin?: ObsidianGemini;
 
 	constructor(config: OllamaClientConfig, prompts?: GeminiPrompts, plugin?: ObsidianGemini) {
-		this.config = {
-			temperature: 0.7,
-			topP: 1,
-			...config,
-		};
+		this.config = config;
 		this.plugin = plugin;
 		this.prompts = prompts || new GeminiPrompts(plugin);
 		this.client = new Ollama({ host: this.config.baseUrl });
@@ -71,7 +67,7 @@ export class OllamaClient implements ModelApi {
 					model,
 					prompt: request.prompt,
 					stream: false,
-					options: this.buildOptions(request),
+					options: this.buildOptions(),
 				});
 				const usageMetadata = this.toUsageMetadata(generateResponse.prompt_eval_count, generateResponse.eval_count);
 				return {
@@ -119,7 +115,7 @@ export class OllamaClient implements ModelApi {
 						model,
 						prompt: request.prompt,
 						stream: true,
-						options: this.buildOptions(request),
+						options: this.buildOptions(),
 					});
 					activeStream = stream;
 					// cancel() may have fired while the await above was outstanding —
@@ -211,12 +207,8 @@ export class OllamaClient implements ModelApi {
 		};
 	}
 
-	private buildOptions(request: BaseModelRequest | ExtendedModelRequest): Record<string, unknown> {
+	private buildOptions(): Record<string, unknown> {
 		const options: Record<string, unknown> = {};
-		const temperature = request.temperature ?? this.config.temperature;
-		const topP = request.topP ?? this.config.topP;
-		if (typeof temperature === 'number') options.temperature = temperature;
-		if (typeof topP === 'number') options.top_p = topP;
 		if (typeof this.config.maxOutputTokens === 'number') options.num_predict = this.config.maxOutputTokens;
 		return options;
 	}
@@ -279,7 +271,7 @@ export class OllamaClient implements ModelApi {
 			model,
 			messages,
 			stream,
-			options: this.buildOptions(request),
+			options: this.buildOptions(),
 			...(tools && tools.length ? { tools } : {}),
 		};
 	}

@@ -59,12 +59,6 @@ export interface SessionModelConfig {
 	/** Model to use (e.g., 'gemini-2.0-flash') */
 	model?: string;
 
-	/** Temperature setting (0-2) */
-	temperature?: number;
-
-	/** Top-P setting (0-1) */
-	topP?: number;
-
 	/** Path to custom prompt template */
 	promptTemplate?: string;
 }

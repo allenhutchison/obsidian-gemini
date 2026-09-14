@@ -5,6 +5,4 @@ export interface OpenAIClientConfig {
 	apiKey: string;
 	baseUrl: string;
 	model?: string;
-	temperature?: number;
-	topP?: number;
 }

@@ -1,4 +1,4 @@
-import { RetryDecorator, ApiRetryConfig } from '../../src/api/retry-decorator';
+import { RetryDecorator } from '../../src/api/retry-decorator';
 import { ModelApi, BaseModelRequest, ModelResponse } from '../../src/api/interfaces/model-api';
 import { Logger } from '../../src/utils/logger';
 
@@ -22,14 +22,6 @@ function createMockApi(responses: Array<ModelResponse | Error>): ModelApi {
 				cancel: vi.fn(),
 			};
 		}),
-	};
-}
-
-function createRetryConfig(overrides?: Partial<ApiRetryConfig>): ApiRetryConfig {
-	return {
-		maxRetries: 2,
-		initialBackoffDelay: 10, // Very short for tests
-		...overrides,
 	};
 }
 
@@ -74,7 +66,7 @@ describe('RetryDecorator', () => {
 		test('400 errors are not retried', async () => {
 			const error = Object.assign(new Error('Bad request'), { status: 400 });
 			const api = createMockApi([error]);
-			const decorator = new RetryDecorator(api, createRetryConfig());
+			const decorator = new RetryDecorator(api);
 
 			await expect(decorator.generateModelResponse(dummyRequest)).rejects.toThrow('Bad request');
 			expect(api.generateModelResponse).toHaveBeenCalledTimes(1);
@@ -83,7 +75,7 @@ describe('RetryDecorator', () => {
 		test('401 errors are not retried', async () => {
 			const error = Object.assign(new Error('Unauthorized'), { status: 401 });
 			const api = createMockApi([error]);
-			const decorator = new RetryDecorator(api, createRetryConfig());
+			const decorator = new RetryDecorator(api);
 
 			await expect(decorator.generateModelResponse(dummyRequest)).rejects.toThrow('Unauthorized');
 			expect(api.generateModelResponse).toHaveBeenCalledTimes(1);
@@ -92,7 +84,7 @@ describe('RetryDecorator', () => {
 		test('403 errors are not retried', async () => {
 			const error = Object.assign(new Error('Forbidden'), { status: 403 });
 			const api = createMockApi([error]);
-			const decorator = new RetryDecorator(api, createRetryConfig());
+			const decorator = new RetryDecorator(api);
 
 			await expect(decorator.generateModelResponse(dummyRequest)).rejects.toThrow('Forbidden');
 			expect(api.generateModelResponse).toHaveBeenCalledTimes(1);
@@ -101,7 +93,7 @@ describe('RetryDecorator', () => {
 		test('404 errors are not retried', async () => {
 			const error = Object.assign(new Error('Not found'), { status: 404 });
 			const api = createMockApi([error]);
-			const decorator = new RetryDecorator(api, createRetryConfig());
+			const decorator = new RetryDecorator(api);
 
 			await expect(decorator.generateModelResponse(dummyRequest)).rejects.toThrow('Not found');
 			expect(api.generateModelResponse).toHaveBeenCalledTimes(1);
@@ -118,7 +110,7 @@ describe('RetryDecorator', () => {
 				],
 			});
 			const api = createMockApi([error]);
-			const decorator = new RetryDecorator(api, createRetryConfig());
+			const decorator = new RetryDecorator(api);
 
 			await expect(decorator.generateModelResponse(dummyRequest)).rejects.toThrow('RESOURCE_EXHAUSTED');
 			expect(api.generateModelResponse).toHaveBeenCalledTimes(1);
@@ -129,11 +121,11 @@ describe('RetryDecorator', () => {
 		test('429 transient rate limit is retried and succeeds', async () => {
 			const error = Object.assign(new Error('Too many requests'), { status: 429 });
 			const api = createMockApi([error, successResponse]);
-			const decorator = new RetryDecorator(api, createRetryConfig());
+			const decorator = new RetryDecorator(api);
 
 			const promise = decorator.generateModelResponse(dummyRequest);
-			// Advance timers to allow retry sleep to resolve
-			await vi.advanceTimersByTimeAsync(100);
+			// Advance timers past the fixed ~1000ms (+jitter) backoff to allow the retry to fire.
+			await vi.advanceTimersByTimeAsync(1200);
 			const result = await promise;
 
 			expect(result).toEqual(successResponse);
@@ -143,10 +135,10 @@ describe('RetryDecorator', () => {
 		test('500 server error is retried and succeeds', async () => {
 			const error = Object.assign(new Error('Internal server error'), { status: 500 });
 			const api = createMockApi([error, successResponse]);
-			const decorator = new RetryDecorator(api, createRetryConfig());
+			const decorator = new RetryDecorator(api);
 
 			const promise = decorator.generateModelResponse(dummyRequest);
-			await vi.advanceTimersByTimeAsync(100);
+			await vi.advanceTimersByTimeAsync(1200);
 			const result = await promise;
 
 			expect(result).toEqual(successResponse);
@@ -166,7 +158,7 @@ describe('RetryDecorator', () => {
 				],
 			});
 			const api = createMockApi([error, successResponse]);
-			const decorator = new RetryDecorator(api, createRetryConfig());
+			const decorator = new RetryDecorator(api);
 
 			const promise = decorator.generateModelResponse(dummyRequest);
 
@@ -191,7 +183,7 @@ describe('RetryDecorator', () => {
 		test('non-retryable errors are not retried in streaming', async () => {
 			const error = Object.assign(new Error('Forbidden'), { status: 403 });
 			const api = createMockApi([error]);
-			const decorator = new RetryDecorator(api, createRetryConfig());
+			const decorator = new RetryDecorator(api);
 
 			const stream = decorator.generateStreamingResponse(dummyRequest, vi.fn());
 			await expect(stream.complete).rejects.toThrow('Forbidden');
@@ -200,10 +192,10 @@ describe('RetryDecorator', () => {
 		test('streaming retry succeeds after failure', async () => {
 			const error = Object.assign(new Error('Internal server error'), { status: 500 });
 			const api = createMockApi([error, successResponse]);
-			const decorator = new RetryDecorator(api, createRetryConfig());
+			const decorator = new RetryDecorator(api);
 
 			const stream = decorator.generateStreamingResponse(dummyRequest, vi.fn());
-			await vi.advanceTimersByTimeAsync(100);
+			await vi.advanceTimersByTimeAsync(1200);
 			const result = await stream.complete;
 
 			expect(result).toEqual(successResponse);
@@ -212,22 +204,22 @@ describe('RetryDecorator', () => {
 
 		test('streaming exhausts all retries', async () => {
 			const error = Object.assign(new Error('Internal server error'), { status: 500 });
-			// maxRetries=2 means 3 total attempts, all failing
-			const api = createMockApi([error, error, error]);
-			const decorator = new RetryDecorator(api, createRetryConfig());
+			// The retry count is fixed at 3 as of the settings redesign: 4 total attempts, all failing.
+			const api = createMockApi([error, error, error, error]);
+			const decorator = new RetryDecorator(api);
 
 			const stream = decorator.generateStreamingResponse(dummyRequest, vi.fn());
 			// Attach rejection handler BEFORE advancing timers to avoid unhandled rejection
 			const assertion = expect(stream.complete).rejects.toThrow('Internal server error');
-			await vi.advanceTimersByTimeAsync(1000);
+			await vi.runAllTimersAsync();
 			await assertion;
-			expect(api.generateStreamingResponse).toHaveBeenCalledTimes(3);
+			expect(api.generateStreamingResponse).toHaveBeenCalledTimes(4);
 		});
 
 		test('streaming API-provided delay capped at MAX_API_DELAY_MS (60000)', async () => {
 			const error = retryInfoError('120s');
 			const api = createMockApi([error, successResponse]);
-			const decorator = new RetryDecorator(api, createRetryConfig());
+			const decorator = new RetryDecorator(api);
 
 			const stream = decorator.generateStreamingResponse(dummyRequest, vi.fn());
 			const resolved = trackResolution(stream.complete);
@@ -244,13 +236,17 @@ describe('RetryDecorator', () => {
 	// The streaming and non-streaming arms share one retry policy. These pin the parts of that
 	// policy the streaming arm used to lack when it hand-rolled its own loop (#1337), so the two
 	// cannot drift apart again without a test failing.
+	//
+	// The retry policy itself (retry count, initial backoff) is fixed as of the settings
+	// redesign — no per-test override any more, so these exercise the fixed default directly
+	// rather than an injected config.
 	describe('streaming delay policy', () => {
 		test('streaming backoff carries jitter', async () => {
 			const error = Object.assign(new Error('Internal server error'), { status: 500 });
 			const api = createMockApi([error, successResponse]);
-			// 0.5 of the 10% jitter band on a 1000ms base => 1050ms, not the bare 1000ms.
+			// 0.5 of the 10% jitter band on the fixed 1000ms base => 1050ms, not the bare 1000ms.
 			const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5);
-			const decorator = new RetryDecorator(api, createRetryConfig({ initialBackoffDelay: 1000 }));
+			const decorator = new RetryDecorator(api);
 
 			const stream = decorator.generateStreamingResponse(dummyRequest, vi.fn());
 			const resolved = trackResolution(stream.complete);
@@ -263,28 +259,12 @@ describe('RetryDecorator', () => {
 			randomSpy.mockRestore();
 		});
 
-		test('streaming exponential backoff is capped at MAX_API_DELAY_MS (60000)', async () => {
-			const error = Object.assign(new Error('Internal server error'), { status: 500 });
-			const api = createMockApi([error, successResponse]);
-			// No API-provided delay, so this exercises the exponential arm, which used to be
-			// unbounded on the streaming path: 100000ms must be capped to 60000ms (+ <=10% jitter).
-			const decorator = new RetryDecorator(api, createRetryConfig({ initialBackoffDelay: 100000 }));
-
-			const stream = decorator.generateStreamingResponse(dummyRequest, vi.fn());
-			const resolved = trackResolution(stream.complete);
-
-			await vi.advanceTimersByTimeAsync(59000);
-			expect(resolved()).toBe(false);
-			await vi.advanceTimersByTimeAsync(8000);
-			await stream.complete;
-			expect(resolved()).toBe(true);
-		});
-
 		test('streaming honors an API-provided delay of 0s instead of falling back to backoff', async () => {
 			const error = retryInfoError('0s');
 			const api = createMockApi([error, successResponse]);
-			// A 0ms server instruction used to be discarded as falsy, silently backing off 5s.
-			const decorator = new RetryDecorator(api, createRetryConfig({ initialBackoffDelay: 5000 }));
+			// A 0ms server instruction used to be discarded as falsy, silently backing off to the
+			// (now-fixed) default delay instead.
+			const decorator = new RetryDecorator(api);
 
 			const stream = decorator.generateStreamingResponse(dummyRequest, vi.fn());
 			await vi.advanceTimersByTimeAsync(5);
@@ -307,7 +287,7 @@ describe('RetryDecorator', () => {
 					cancel: cancelFn,
 				})),
 			};
-			const decorator = new RetryDecorator(api, createRetryConfig());
+			const decorator = new RetryDecorator(api);
 
 			const stream = decorator.generateStreamingResponse(dummyRequest, vi.fn());
 			// Let the stream start
@@ -320,7 +300,7 @@ describe('RetryDecorator', () => {
 		test('cancel() before stream starts throws Stream was cancelled', async () => {
 			const error = Object.assign(new Error('Internal server error'), { status: 500 });
 			const api = createMockApi([error, successResponse]);
-			const decorator = new RetryDecorator(api, createRetryConfig());
+			const decorator = new RetryDecorator(api);
 
 			const stream = decorator.generateStreamingResponse(dummyRequest, vi.fn());
 			// Attach rejection handler BEFORE cancel/advance to avoid unhandled rejection
@@ -334,7 +314,7 @@ describe('RetryDecorator', () => {
 		test('cancel() during retry wait throws Stream was cancelled', async () => {
 			const error = Object.assign(new Error('Internal server error'), { status: 500 });
 			const api = createMockApi([error, successResponse]);
-			const decorator = new RetryDecorator(api, createRetryConfig({ initialBackoffDelay: 5000 }));
+			const decorator = new RetryDecorator(api);
 
 			const stream = decorator.generateStreamingResponse(dummyRequest, vi.fn());
 			// Attach rejection handler early to avoid unhandled rejection
@@ -345,7 +325,7 @@ describe('RetryDecorator', () => {
 			stream.cancel();
 			// …and the sleep must abort without its full duration elapsing:
 			// a 100ms slice re-checks the flag, so advancing one poll interval
-			// rejects. Advancing the full 5000ms backoff is NOT required.
+			// rejects. Advancing the full ~1000ms backoff is NOT required.
 			await vi.advanceTimersByTimeAsync(100);
 			await assertion;
 			// The second attempt (which the old behavior needed) never ran.
@@ -355,11 +335,11 @@ describe('RetryDecorator', () => {
 		test('cancel() during a long backoff rejects promptly, without waiting out the delay (#1448)', async () => {
 			const error = Object.assign(new Error('Internal server error'), { status: 500 });
 			const api = createMockApi([error, successResponse]);
-			const decorator = new RetryDecorator(api, createRetryConfig({ initialBackoffDelay: 30000 }));
+			const decorator = new RetryDecorator(api);
 
 			const stream = decorator.generateStreamingResponse(dummyRequest, vi.fn());
 			const assertion = expect(stream.complete).rejects.toThrow('Stream was cancelled');
-			await vi.advanceTimersByTimeAsync(100); // first attempt fails, backoff (5000ms) scheduled
+			await vi.advanceTimersByTimeAsync(100); // first attempt fails, backoff scheduled
 			stream.cancel();
 			// One abort-poll interval is enough — the sleep is cut short instead of
 			// running the full backoff.
@@ -375,7 +355,7 @@ describe('RetryDecorator', () => {
 				generateModelResponse: vi.fn(),
 				generateStreamingResponse: undefined,
 			};
-			const decorator = new RetryDecorator(api, createRetryConfig());
+			const decorator = new RetryDecorator(api);
 
 			expect(() => decorator.generateStreamingResponse(dummyRequest, vi.fn())).toThrow(
 				'Wrapped API does not support streaming'
@@ -384,18 +364,18 @@ describe('RetryDecorator', () => {
 	});
 
 	describe('non-streaming exhausts all retries', () => {
-		test('throws after maxRetries+1 attempts with retryable errors', async () => {
+		test('throws after all retries with retryable errors', async () => {
 			const error = Object.assign(new Error('Internal server error'), { status: 500 });
-			// maxRetries=2 means 3 total attempts
-			const api = createMockApi([error, error, error]);
-			const decorator = new RetryDecorator(api, createRetryConfig());
+			// The retry count is fixed at 3: 4 total attempts.
+			const api = createMockApi([error, error, error, error]);
+			const decorator = new RetryDecorator(api);
 
 			const promise = decorator.generateModelResponse(dummyRequest);
 			// Attach rejection handler BEFORE advancing timers
 			const assertion = expect(promise).rejects.toThrow('Internal server error');
 			await vi.runAllTimersAsync();
 			await assertion;
-			expect(api.generateModelResponse).toHaveBeenCalledTimes(3);
+			expect(api.generateModelResponse).toHaveBeenCalledTimes(4);
 		});
 	});
 
@@ -414,10 +394,10 @@ describe('RetryDecorator', () => {
 			const error = Object.assign(new Error('Internal server error'), { status: 500 });
 			const api = createMockApi([error, successResponse]);
 			const mockLogger = createMockLogger();
-			const decorator = new RetryDecorator(api, createRetryConfig(), mockLogger);
+			const decorator = new RetryDecorator(api, mockLogger);
 
 			const promise = decorator.generateModelResponse(dummyRequest);
-			await vi.advanceTimersByTimeAsync(100);
+			await vi.advanceTimersByTimeAsync(1200);
 			await promise;
 
 			expect(mockLogger.warn).toHaveBeenCalledTimes(1);
@@ -426,9 +406,9 @@ describe('RetryDecorator', () => {
 
 		test('error() called on final failure for non-streaming', async () => {
 			const error = Object.assign(new Error('Internal server error'), { status: 500 });
-			const api = createMockApi([error, error, error]);
+			const api = createMockApi([error, error, error, error]);
 			const mockLogger = createMockLogger();
-			const decorator = new RetryDecorator(api, createRetryConfig(), mockLogger);
+			const decorator = new RetryDecorator(api, mockLogger);
 
 			const promise = decorator.generateModelResponse(dummyRequest);
 			// Attach rejection handler BEFORE advancing timers
@@ -436,8 +416,8 @@ describe('RetryDecorator', () => {
 			await vi.runAllTimersAsync();
 			await assertion;
 
-			// warn() called for attempts 1 and 2, error() called on final failure
-			expect(mockLogger.warn).toHaveBeenCalledTimes(2);
+			// warn() called for the three retries, error() called on final failure
+			expect(mockLogger.warn).toHaveBeenCalledTimes(3);
 			expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('failed after'), expect.any(Error));
 		});
 
@@ -445,7 +425,7 @@ describe('RetryDecorator', () => {
 			const error = Object.assign(new Error('Forbidden'), { status: 403 });
 			const api = createMockApi([error]);
 			const mockLogger = createMockLogger();
-			const decorator = new RetryDecorator(api, createRetryConfig(), mockLogger);
+			const decorator = new RetryDecorator(api, mockLogger);
 
 			await expect(decorator.generateModelResponse(dummyRequest)).rejects.toThrow('Forbidden');
 

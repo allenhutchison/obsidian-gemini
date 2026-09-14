@@ -2,104 +2,265 @@
 
 This document provides a comprehensive reference for all Obsidian Gemini Scribe settings.
 
-The settings tab is organised into a permanently-open **General** section at the top — covering provider, API key, models, and the plugin state folder — followed by collapsible sections (▶ collapsed, ▼ expanded). Click any header to toggle it; expand/collapse state is remembered between sessions in the `expandedSettingsSections` setting. All collapsible sections start collapsed.
+The settings tab is built on Obsidian's declarative settings API (requires **Obsidian 1.13.1 or
+later**). It is a flat list of **13 top-level rows in 5 groups**; most rows open a sub-page with
+a back button rather than expanding in place — there are no collapsible `<details>` sections and
+nothing is hidden behind a "Show advanced settings" toggle. Every page (including sub-pages) is
+covered by Obsidian's native settings search.
 
-The order of sections is:
+Top-level rows, in order:
 
-1. **General** (always open) — provider, API key, models, plugin state folder, Show advanced settings toggle.
-2. **User experience** — your name, frontmatter key, streaming, diff view, session history toggle, tool execution logging.
-3. **Automation** — scheduled tasks, scheduler catch-up, and lifecycle hooks combined.
-4. **Vault search index** — semantic search over your vault using Google File Search.
-
-Advanced sections — Tool permissions, MCP servers, Agent config, Debug — are tagged with an **ADVANCED** pill and only appear after toggling **Show advanced settings** at the bottom of General. **Agent config** bundles three related sub-areas (API configuration, Context management, Tool loop detection) under one collapsible since they all tune how the agent talks to the model.
+| Row                                    | Type   | Group         |
+| -------------------------------------- | ------ | ------------- |
+| **Providers**                          | page   | _(ungrouped)_ |
+| **Features**                           | page   | _(ungrouped)_ |
+| Your name                              | text   | Chat          |
+| Keep session history                   | toggle | Chat          |
+| Review a diff before files are written | toggle | Chat          |
+| **Vault search index**                 | page   | Vault         |
+| Plugin folder                          | folder | Vault         |
+| **Scheduled tasks**                    | page   | Automation    |
+| **Lifecycle hooks**                    | page   | Automation    |
+| **MCP servers**                        | page   | Automation    |
+| **Tool permissions**                   | page   | _(ungrouped)_ |
+| **Advanced**                           | page   | _(ungrouped)_ |
+| Documentation                          | action | _(ungrouped)_ |
 
 ## Table of Contents
 
-The reference below groups settings by topic for lookup, which doesn't always map 1:1 to the UI section names. The annotation in parentheses tells you which UI section a topic appears under.
-
-- [Basic Settings](#basic-settings) (UI: _General_ — provider, API key, models, plugin state folder)
-- [Model Configuration](#model-configuration) (UI: _General_ — chat/summary/completion/image model selection)
-- [Custom Prompts](#custom-prompts) (prompt behavior is configured via prompt frontmatter; prompt selection happens in the session settings modal — no dedicated settings-UI section)
-- [UI Settings](#ui-settings) (UI: _User experience_ — streaming, tool execution logging, diff view, identity, frontmatter key, session history)
-- [Automation Settings](#automation-settings) (UI: _Automation_ — scheduled task catch-up, lifecycle hooks toggle)
-- [Context management](#context-management) (UI: _Agent config_ — advanced)
-- [Developer Settings](#developer-settings) (UI: split across _Agent config_, _Tool permissions_, _MCP servers_, _Debug_ — including token usage display)
+- [Providers](#providers)
+- [Features](#features)
+- [Chat group](#chat-group)
+- [Vault search index](#vault-search-index)
+- [Plugin folder](#plugin-folder)
+- [Automation](#automation)
+- [Tool permissions](#tool-permissions)
+- [Advanced](#advanced)
+- [Data model](#data-model)
 - [Session-Level Settings](#session-level-settings)
+- [Troubleshooting](#troubleshooting)
 
-UI sections without a dedicated topic in this reference: _Vault search index_ (covered in [Semantic Search](/guide/semantic-search)). The _Automation_ section's task and hook management UI is covered in the [Scheduled tasks](/guide/scheduled-tasks) and [Lifecycle Hooks](/guide/lifecycle-hooks) guides; the two persistent settings (`autoRunCatchUp`, `hooksEnabled`) are documented in [Automation Settings](#automation-settings) below.
+## Providers
 
-## Basic Settings
+The Providers page holds one **connection card** per account/endpoint: Gemini, Ollama, OpenAI,
+and a placeholder Anthropic card. **A card never assigns a provider to a feature** — that only
+happens on the [Features](#features) page. Each card's `displayValue` on the Providers list
+summarizes its connection state (Connected / Not set up / Unreachable).
 
-### Provider
+### Gemini card
 
-- **Setting**: `provider`
+- **API key** (`apiKeySecretName`) — String, SecretStorage key name (the key value itself is
+  never written to `data.json`). Get one at [Google AI Studio](https://aistudio.google.com/apikey).
+- **Custom endpoint** (`customBaseUrl`) — String, default `""` (empty, uses the official Google
+  endpoint). Overrides the Google API base URL for every Google GenAI SDK call site (chat,
+  streaming, image generation, web fetch, Google Search/Maps grounding, RAG indexing, deep
+  research, context management). Validated as a URL inline; an invalid value shows an error and
+  is not saved. Use this to route requests through a corporate proxy, local gateway, or regional
+  mirror. **Security note**: requests routed through a custom endpoint still include your Google
+  API key in the `x-goog-api-key` header.
+- **Available models** — read-only count + last-refresh time, with a **Refresh** button.
+  Gemini's model list is loaded from the bundled catalog and auto-refreshed from GitHub on
+  startup (cached 24h); click Refresh (or run **Gemini Scribe: Refresh model list**) to bypass
+  the cache immediately. See [Model Discovery](#model-discovery) below.
+- **Includes** — capability-driven, read-only: Google Maps grounding, Page fetch by URL. These
+  are provider-bound extras that ride on the Gemini connection rather than being routed features
+  in their own right — see [Provider-bound grounding](#provider-bound-grounding).
+- **Used by** — read-only list of the features currently routed to Gemini.
+
+### Ollama card
+
+- **Endpoint** (`ollamaBaseUrl`) — String, default `http://localhost:11434`. HTTP address of
+  your Ollama daemon. Validated as a URL.
+- **Available models** — count + **Refresh** button, re-querying `GET <ollamaBaseUrl>/api/tags`
+  for models pulled since the plugin loaded.
+- **Used by** — read-only list of the features currently routed to Ollama.
+
+### OpenAI card
+
+- **Sign in with your ChatGPT subscription** — disabled placeholder row for a future OAuth flow;
+  no implementation ships yet.
+- **Or use an API key** (`openaiApiKeySecretName`) — String, SecretStorage key name, default
+  `""`. Any placeholder value satisfies a compatible server that doesn't check one.
+- **Base URL** (`openaiBaseUrl`) — String, default `https://api.openai.com/v1`. Point this at an
+  OpenAI-compatible local server instead — LM Studio, MLX, Ollama's own OpenAI-compatible
+  endpoint, etc. — to keep requests on your machine.
+- **Available models** — count + **Refresh** button, re-querying `GET <openaiBaseUrl>/models`.
+- **Used by** — read-only list of the features currently routed to OpenAI.
+
+### Anthropic card
+
+A card-only placeholder. **Use an API key** (`anthropicApiKeySecretName`) lets an early adopter
+stage a key, but Anthropic is not yet an option on any Features row — there is no Anthropic
+client, and the card is not "routable." The card explains this with a note in place of an
+"Includes"/"Used by" line.
+
+### Default provider
+
+- **Setting**: `defaultProvider`
 - **Type**: `'gemini' | 'ollama' | 'openai'`
 - **Default**: `'gemini'`
-- **Description**: The **default** model backend, used by every feature without an explicit override (see [Per-feature provider](#per-feature-provider)). `gemini` calls the Google Cloud API; `ollama` calls a local Ollama daemon; `openai` calls the OpenAI Chat Completions API (or a compatible server at a custom base URL).
-- **Notes**: Changing the provider re-initialises the plugin. Model selections persist across the change — the Gemini fields (`chatModelName`, `summaryModelName`, `completionsModelName`, `imageModelName`), the Ollama fields (`ollamaModelName`, `ollamaSummaryModelName`, `ollamaCompletionsModelName`), and the OpenAI fields (`openaiModelName`, `openaiSummaryModelName`, `openaiCompletionsModelName`) are each stored separately, so returning to a provider restores the model you had there; a value is only reset if it's actually stale for its own provider (e.g. a deprecated Gemini model id), never merely because you switched providers. Cloud-only features (Google Search, URL Context, Deep Research, image generation, RAG indexing) are off when `ollama` or `openai` is the default — unless you route them to Gemini individually. See the [Ollama Setup Guide](/guide/ollama-setup) and [OpenAI Setup Guide](/guide/openai-setup) for details.
+- **Description**: The provider used by any feature you have not routed elsewhere. Changing it
+  re-points every feature that was on the _previous_ default and that the new default can serve;
+  features you explicitly set to Off, or that the new default cannot serve, are left alone —
+  never moved to a third provider.
 
-### Per-feature provider
+### Privacy note
 
-- **Setting**: `providerOverrides`
-- **Type**: `Partial<Record<'chat' | 'summary' | 'completions' | 'rewrite' | 'webSearch' | 'rag' | 'imageGen', 'gemini' | 'ollama' | 'openai'>>`
-- **Default**: `{}` (every feature uses [`provider`](#provider))
-- **Description**: Routes individual features to a provider other than the default. Each settings row lists only the providers that support that feature, so e.g. Image generation offers Gemini only, while Chat/Summaries/Completions/Rewrite offer all three. This is what enables a mixed setup — chat on a local Ollama or OpenAI-compatible model, web search and image generation on Gemini.
-- **Notes**:
-  - **A feature is never routed to the cloud on your behalf.** If the resolved provider can't serve a feature, that feature stays off; the plugin does not substitute a different one. Enabling a cloud feature is always an explicit choice.
-  - Choosing Gemini for a feature means that feature's requests — including note content — go to Google. Choosing OpenAI means they go to your configured OpenAI base URL. The settings UI names the affected features whenever this is the case.
-  - The API key field is shown whenever _any_ feature is routed to Gemini, not just when Gemini is the default; the OpenAI API key field works the same way for OpenAI.
-  - Changing any override re-initialises the plugin, since tool registration, RAG, and image generation all key off the resolved providers.
-  - Unknown keys or provider ids in a hand-edited `data.json` are dropped on load.
-- **Full capability matrix**: [Provider Capabilities](/reference/provider-capabilities)
+One note (replacing the four notice variants of earlier versions), composed from which features
+are actually routed to a non-local provider. See [Privacy semantics](/reference/provider-capabilities#privacy-semantics)
+for the full policy: **a feature is never routed to the cloud on your behalf** — if the provider
+serving a feature can't serve it, or isn't connected, that feature is off, never silently
+substituted.
 
-### Ollama base URL
+## Features
 
-- **Setting**: `ollamaBaseUrl`
-- **Type**: String
-- **Default**: `http://localhost:11434`
-- **Required when any feature uses `ollama`**: Yes
-- **Description**: HTTP endpoint of your Ollama daemon. Update if Ollama runs on a different host or port.
+One row per feature, each showing `<provider> · <model>` (or **Off**). Opening a row gives
+**exactly two controls**: a provider dropdown (listing only providers that support the feature,
+plus Off) and, for features with a model, a model dropdown filtered to that provider.
 
-### OpenAI base URL
+Rows, grouped:
 
-- **Setting**: `openaiBaseUrl`
-- **Type**: String
-- **Default**: `https://api.openai.com/v1`
-- **Required when any feature uses `openai`**: Yes (falls back to the default if cleared)
-- **Description**: Endpoint OpenAI Chat Completions requests are sent to. Point this at an OpenAI-compatible local server instead — LM Studio, MLX, Ollama's OpenAI-compatible endpoint, etc. — to keep requests on your machine. See the [OpenAI Setup Guide](/guide/openai-setup#using-an-openai-compatible-server).
+| Group            | Features                                           |
+| ---------------- | -------------------------------------------------- |
+| Text             | Chat and agent · Summaries · Completions · Rewrite |
+| Web and research | Web search · Deep research · Vault search index    |
+| Media            | Image generation                                   |
 
-### API Key
+- **Chat and agent** (`features.chat`) — interactive chat, agent sessions, scheduled tasks,
+  hooks. All three providers support it.
+- **Summaries** (`features.summary`) — the "Summarize active file" command and conversation
+  compaction. All three providers support it.
+- **Completions** (`features.completions`) — IDE-style inline suggestions. All three providers
+  support it.
+- **Rewrite** (`features.rewrite`) — rewriting selected text. Has its own model field (it no
+  longer silently borrows the chat model). All three providers support it.
+- **Web search** (`features.webSearch`) — Google Search grounding and the web-fetch (URL
+  context) tool ride together on this row. Gemini only today.
+- **Deep research** (`features.deepResearch`) — the Deep Research managed agent. Gemini only;
+  has no model field (the agent has no model parameter of its own) — the row shows a provider
+  dropdown and a note instead.
+- **Vault search index** (`features.rag`) — routes which provider's embeddings serve semantic
+  search. Gemini only (Google File Search); has no model field. The row also reads **Off** when
+  the [Vault search index](#vault-search-index) page's own "Index this vault" toggle is off,
+  even if a provider is routed.
+- **Image generation** (`features.imageGen`) — the `generate_image` tool and **Generate image**
+  command. Gemini only today.
 
-- **Type**: String
-- **Required**: Yes, whenever any feature is routed to `gemini` — including a single [per-feature override](#per-feature-provider) under an `ollama` or `openai` default. Not needed for an all-Ollama setup.
-- **Storage**: Stored securely using Obsidian's SecretStorage API (not saved in `data.json`)
-- **Description**: Your Google AI API key for accessing Gemini models
-- **How to obtain**: Visit [Google AI Studio](https://aistudio.google.com/apikey)
-- **Migration**: If upgrading from a previous version, your API key is automatically migrated from `data.json` to secure storage on first load
+**Google Maps grounding is not a routed feature.** It is provider-bound to Gemini and listed
+under the Gemini card's "Includes" line — see [Provider-bound grounding](#provider-bound-grounding).
 
-### OpenAI API key
+### Off, unsupported, and unconfigured
 
-- **Setting**: `openaiApiKeySecretName`
-- **Type**: String (SecretStorage key name; the key value itself is never in `data.json`)
-- **Default**: `""` (unset)
-- **Required**: Yes, whenever any feature is routed to `openai` — including a single per-feature override under a different default. For a local compatible server that doesn't validate keys, any placeholder value satisfies this requirement.
-- **Storage**: Stored securely using Obsidian's SecretStorage API, mirroring `apiKeySecretName` for Gemini
-- **How to obtain**: Visit [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+Every feature's provider dropdown offers **Off** (`'none'`) as an explicit option, including
+Chat. Three distinct non-serving states are surfaced differently on a row:
+
+| State        | Cause                                                                              | Row shows                                                  |
+| ------------ | ---------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Off          | You chose Off                                                                      | displayValue "Off" — **no** warning; being off is a choice |
+| Unsupported  | Provider doesn't support this feature (stale data, or a future version dropped it) | `status: warning`, "Choose a provider"                     |
+| Unconfigured | Provider supports it but isn't connected (no key, or an unreachable Ollama daemon) | `status: warning`, "`<provider>` · not connected"          |
+| OK           | Otherwise                                                                          | "`<provider>` · `<model>`"                                 |
+
+**No silent fallback**: a feature whose provider can't serve it, or isn't connected, is off — it
+is never re-routed to a different provider behind your back. This applies even to Chat: choosing
+Off for Chat means the agent view reports that no provider is configured, rather than the plugin
+quietly talking to Gemini.
+
+### Model options
+
+A feature's model dropdown always includes a leading **"Default for this provider"** option
+(stored as `''`, resolved at request time against the live model list). When the provider is
+Ollama and the feature isn't Chat, the leading option instead reads **"Same as chat model"** —
+Ollama keeps one model resident at a time, so non-chat features default to reusing whichever
+model chat already has loaded. If a stored model is no longer in the provider's live list (a
+retired or un-pulled model), it still appears as an option labelled "No longer available" with an
+inline error, so you can pick a replacement without losing sight of what was configured.
+
+### Model Discovery
+
+Model discovery is automatic — no user-configurable settings are required.
+
+- **Gemini** — models are loaded from the bundled list and auto-refreshed from GitHub on startup
+  (cached for 24h). Click **Refresh** on the Gemini provider card, or run the **Gemini Scribe:
+  Refresh model list** command, to fetch the latest list immediately.
+- **Ollama** — the model list is populated from `GET <ollamaBaseUrl>/api/tags`, listing whatever
+  you have pulled. Click **Refresh** on the Ollama card if a freshly pulled model doesn't appear.
+- **OpenAI** — the model list is populated from `GET <openaiBaseUrl>/models`, enriched with
+  curated metadata (context window, vision support) for current `api.openai.com` models;
+  unrecognized ids (typically from a compatible server) get conservative defaults. Click
+  **Refresh** on the OpenAI card if a model doesn't appear.
+
+When Google retires a model (the API starts returning 404 "no longer available"), it is removed
+from the catalog and any route or remembered model still pointing at it is migrated
+automatically on the next reload: to the retired model's designated successor when one exists,
+otherwise reset to "Default for this provider."
+
+### Provider-bound grounding
+
+Google Maps grounding and Gemini's URL-context surface are **provider-bound**, not routed
+features: the `google_maps` tool is registered whenever the Gemini provider is configured,
+regardless of which provider is currently serving any Features row. Its model follows the
+Web search row's model when Web search is on Gemini, otherwise it uses the bundled Gemini chat
+default.
+
+## Chat group
 
 ### Your name
 
 - **Setting**: `userName`
 - **Type**: String
 - **Default**: `"User"`
-- **Description**: Name used by the AI when addressing you in responses
+- **Description**: Name used by the AI when addressing you in responses.
 
-### Plugin state folder
+### Keep session history
+
+- **Setting**: `chatHistory`
+- **Type**: Boolean
+- **Default**: `false`
+- **Description**: Store agent session history as markdown files in your vault, under
+  `[Plugin folder]/Agent-Sessions/`, with auto-generated titles.
+
+### Review a diff before files are written
+
+- **Setting**: `alwaysShowDiffView`
+- **Type**: Boolean
+- **Default**: `false`
+- **Description**: Automatically open a diff view when the agent proposes file changes, instead
+  of requiring a button click.
+- **When off**: The confirmation card shows a summary and a "View changes" button. Click it to
+  open the diff view.
+- **When on**: The diff view opens automatically alongside the confirmation card.
+- **Note**: The diff view lets you edit the proposed content before approving. If you modify
+  content, the tool result reports `userEdited: true` so the agent knows.
+
+## Vault search index
+
+Semantic search over your vault using Google File Search (Gemini-only managed embeddings).
+Everything below the first row is hidden until indexing is turned on.
+
+- **Index this vault** (`ragIndexing.enabled`) — Boolean, default `false`. Turning this off with
+  an existing index prompts for confirmation before deleting the store.
+- **Status** — read-only file count, plus **Rescan** and **Delete index** buttons.
+- **Index name** (`ragIndexing.fileSearchStoreName`) — read-only text + copy button.
+- **Sync changes automatically** (`ragIndexing.autoSync`) — Boolean. Keep the index current as
+  you edit the vault.
+- **Include attachments** (`ragIndexing.includeAttachments`) — Boolean. Index non-markdown
+  attachments alongside notes.
+- **Exclude folders** (`ragIndexing.excludeFolders`) — `string[]`, entered one per line. The
+  plugin state folder and `.obsidian` are always excluded regardless of this list.
+
+See the [Semantic Search Guide](/guide/semantic-search) for a full walkthrough, and route the
+provider for this feature on the [Features](#features) page — Gemini only today.
+
+## Plugin folder
 
 - **Setting**: `historyFolder`
 - **Type**: String
 - **Default**: `gemini-scribe`
-- **Description**: Folder where plugin stores history, prompts, and sessions
-- **Notes**: The value is normalized on load and when saved (via `normalizePath` semantics) — a hand-typed trailing, leading, or duplicate slash is corrected automatically, so folder exclusion and subfolder paths never break on a malformed state-folder path.
+- **Description**: Folder where the plugin stores history, prompts, and sessions.
+- **Notes**: The value is normalized on load and when saved (via `normalizePath` semantics) — a
+  hand-typed trailing, leading, or duplicate slash is corrected automatically, so folder exclusion
+  and subfolder paths never break on a malformed path. Uses Obsidian's native folder suggester.
 - **Structure**:
   ```text
   gemini-scribe/
@@ -114,361 +275,65 @@ UI sections without a dedicated topic in this reference: _Vault search index_ (c
   └── debug.log.old     # Previous rotated log file
   ```
 
-### Enable session history
+## Automation
 
-- **Setting**: `chatHistory`
-- **Type**: Boolean
-- **Default**: `false`
-- **Description**: Store agent session history as markdown files in your vault
-- **Note**: Sessions are saved in the Agent-Sessions subfolder with auto-generated titles
+Each row below opens its own sub-page. Task/hook/server _management_ (creating, editing, running)
+is covered in the [Scheduled tasks](/guide/scheduled-tasks), [Lifecycle Hooks](/guide/lifecycle-hooks),
+and [MCP servers](/guide/mcp-servers) guides; this section covers the persistent settings each
+page carries alongside its entry points.
 
-### Summary frontmatter key
+### Scheduled tasks
 
-- **Setting**: `summaryFrontmatterKey`
-- **Type**: String
-- **Default**: `"summary"`
-- **Description**: Frontmatter key used when storing document summaries
+- **Open scheduler / New task** — action rows opening the scheduler management modal.
+- **Auto-run missed tasks on startup** (`autoRunCatchUp`) — Boolean, default `false`. When
+  enabled, tasks with `runIfMissed: true` that were missed while Obsidian was closed run silently
+  as background tasks on startup. When disabled, a "Missed scheduled runs" modal appears so you
+  can choose Run or Skip per task.
 
-## Model Configuration
+### Lifecycle hooks
 
-Each model picker is filtered to the models of the provider serving **its own** feature, so a chat-on-Ollama / summaries-on-Gemini setup offers the right models in each row. Every provider in use has its list loaded independently.
+- **Enable lifecycle hooks** (`hooksEnabled`) — Boolean, default `false`, and the page's first
+  row. Subscribes to vault events (file created/modified/deleted/renamed) and dispatches them to
+  hook definitions in `[Plugin folder]/Hooks/`. Off by default because vault events fire
+  continuously and an unintentionally-broad hook can drain API quota quickly.
+- **Open hook manager / New hook** — action rows, visible once hooks are enabled.
 
-- **Gemini** — models are loaded from the bundled list and auto-refreshed from GitHub on startup (cached for 24h). Click **Refresh model list** in Settings → General — or run the **Gemini Scribe: Refresh model list** command — to fetch the latest list immediately (bypasses the cache). `imageModelName` is Gemini-only.
-- **Ollama** — dropdowns are populated from `GET <ollamaBaseUrl>/api/tags`, listing whatever you have pulled. Click **Refresh Ollama model list** if a freshly pulled model doesn't appear. Ollama keeps only one model resident at a time, so its summary and completions pickers default to **Same as chat model** (`''`) — picking a distinct model there is supported but costs a model reload on every switch.
-- **OpenAI** — dropdowns are populated from `GET <openaiBaseUrl>/models`, enriched with curated metadata (context window, vision support) for current `api.openai.com` models; unrecognized ids (typically from a compatible server) get conservative defaults. Click **Refresh OpenAI model list** if a model doesn't appear. Unlike Ollama, OpenAI has no single-resident-model constraint, so chat, summary, and completions each default to their own model rather than inheriting the chat model.
+### MCP servers
 
-Because each provider uses its own settings fields, re-routing a feature between providers preserves every provider's choice — returning to a provider restores the exact model you had.
+A native list — one row per configured server (name, transport summary, live connection status),
+with an edit button per row and an **Add server** action opening the server modal. **There is no
+enable toggle**: an empty list means MCP is off; deleting the last server turns it off
+automatically.
 
-### Chat model
-
-- **Setting**: `chatModelName`
-- **Type**: String
-- **Default**: `gemini-flash-latest`
-- **Description**: Model used for agent chat conversations and the Rewrite text with AI command
-- **Available Models** (representative sample — the full list is auto-refreshed; see [Model Discovery](#model-discovery)):
-  - `gemini-flash-latest` - Gemini Flash Latest (fast and efficient, default for chat/summary/rewrite)
-  - `gemini-flash-lite-latest` - Gemini Flash Lite Latest (lightweight, default for completions)
-  - `gemini-2.5-flash` - Gemini 2.5 Flash
-  - `gemini-2.5-pro` - Gemini 2.5 Pro
-  - `gemini-3-flash-preview` - Gemini 3 Flash Preview
-  - `gemini-3.1-pro-preview` - Gemini 3.1 Pro Preview
-  - `gemini-3.5-flash` - Gemini 3.5 Flash
-- **Note**: The full model list is loaded from the bundled `models.json` and auto-refreshed from GitHub on startup (cached 24h). Click **Refresh model list** in Settings → General for an immediate refresh.
-
-### Summary model
-
-- **Setting**: `summaryModelName`
-- **Type**: String
-- **Default**: `gemini-flash-latest`
-- **Description**: Model used for document summarization
-- **Used by**: Summarize active file command, conversation compaction
-- **Note**: Used when summaries are served by Gemini. When they're served by Ollama, `ollamaSummaryModelName` applies instead and this value is left untouched.
-
-### Completions Model
-
-- **Setting**: `completionsModelName`
-- **Type**: String
-- **Default**: `gemini-flash-lite-latest`
-- **Description**: Model used for IDE-style auto-completions
-- **Note**: Completions must be enabled via command palette
-- **Note**: Used when completions are served by Gemini. When they're served by Ollama, `ollamaCompletionsModelName` applies instead and this value is left untouched.
-
-### Image model
-
-- **Setting**: `imageModelName`
-- **Type**: String
-- **Default**: `gemini-2.5-flash-image`
-- **Only shown when**: Image generation is routed to a provider that supports it (Gemini today)
-- **Description**: Model used for image generation via the `generate_image` tool and the **Generate image** command. Only models with image-generation capability appear in this dropdown.
-- **Note**: Interactions-only image models (e.g. `gemini-omni-flash-preview`) generate through the Interactions API instead of `generateContent`, regardless of the [Use Interactions API](#use-interactions-api) toggle.
-
-### Ollama model
-
-- **Setting**: `ollamaModelName`
-- **Type**: String
-- **Default**: `''` (backfilled to the first pulled model once the daemon's list loads)
-- **Only shown when**: Chat is served by `ollama`
-- **Description**: The local model used for chat and rewrite, and for any other Ollama-served feature left on **Same as chat model**. Stored separately from the Gemini `chatModelName` so re-routing preserves each provider's choice. Populated from `GET <ollamaBaseUrl>/api/tags`.
-
-### Ollama summary / completions models
-
-- **Settings**: `ollamaSummaryModelName`, `ollamaCompletionsModelName`
-- **Type**: String
-- **Default**: `''` — **Same as chat model**
-- **Only shown when**: That feature is served by `ollama`
-- **Description**: Optional per-feature Ollama models. Ollama keeps one model resident at a time, so the default inherits `ollamaModelName` and avoids a reload on every call; set one only when the swap is worth it (a small, fast completions model is the usual case). A value naming a model the daemon no longer serves is reset to `''` rather than to another model, so the feature falls back to the chat model instead of silently switching.
-
-### OpenAI chat / summary / completions models
-
-- **Settings**: `openaiModelName`, `openaiSummaryModelName`, `openaiCompletionsModelName`
-- **Type**: String
-- **Default**: `'gpt-5.6-sol'`, `'gpt-5.6-terra'`, `'gpt-5.6-luna'` respectively
-- **Only shown when**: That feature is served by `openai`
-- **Description**: The OpenAI model used for each use case. Unlike Ollama, OpenAI has no single-resident-model constraint, so each use case keeps its own model rather than defaulting to "inherit the chat model." Populated from `GET <openaiBaseUrl>/models`.
-
-## Custom Prompts
-
-Custom prompts allow you to create reusable AI instruction templates that modify how the AI behaves for specific sessions.
-
-### System Prompt Override
-
-A custom prompt replaces the default system instructions only when its frontmatter sets `override_system_prompt: true`. There is no global override toggle. Without that flag, the prompt adds instructions to the built-in system prompt.
-
-**Warning:** A full override removes built-in instructions and Obsidian-specific knowledge. See the [Custom Prompts Guide](/guide/custom-prompts#system-prompt-override) before enabling it.
-
-### Creating Custom Prompts
-
-1. Create a markdown file in `[Plugin state folder]/Prompts/`
-2. Write your custom instructions in the file
-3. Select it in the session settings modal (gear icon in the agent panel)
-
-See the [Custom Prompts Guide](/guide/custom-prompts) for detailed instructions.
-
-## UI Settings
-
-### Enable streaming
-
-- **Setting**: `streamingEnabled`
-- **Type**: Boolean
-- **Default**: `true`
-- **Description**: Enable streaming responses in the chat interface for a more interactive experience
-- **Scope**: Covers every model response in an agent turn — the first one and each follow-up the model
-  produces after running tools
-- **Note**: When disabled, full responses are displayed at once
-
-### Log Tool Execution to Session History
-
-- **Setting**: `logToolExecution`
-- **Type**: Boolean
-- **Default**: `true`
-- **Description**: Append a summary of each tool execution to the session history file for auditing
-- **Format**: Collapsible callout blocks showing tool name, key parameters, status, and duration
-- **Note**: Takes effect immediately when toggled — no plugin reload needed
-
-### Always Show Diff view for File Writes
-
-- **Setting**: `alwaysShowDiffView`
-- **Type**: Boolean
-- **Default**: `false`
-- **Description**: Automatically open a diff view when the agent proposes file changes, instead of requiring a button click
-- **When off**: The confirmation card shows a summary and a "View changes" button. Click it to open the diff view
-- **When on**: The diff view opens automatically alongside the confirmation card
-- **Note**: The diff view lets you edit the proposed content before approving. If you modify content, the tool result reports `userEdited: true` so the agent knows
-
-### Expanded Settings Sections
-
-- **Setting**: `expandedSettingsSections`
-- **Type**: `string[]`
+- **Setting**: `mcpServers`
+- **Type**: Array of server configurations
 - **Default**: `[]`
-- **Description**: Internal list of section ids that are currently expanded in the settings tab. Updated automatically when you toggle a section. Known ids: `ui`, `automation`, `rag`, `tool-permissions`, `mcp-servers`, `agent-config`, `debug`, `per-feature-provider`. (General itself is always open and has no id; its **Per-feature provider** sub-section is separately collapsible and tracked as `per-feature-provider`.)
-- **Note**: Edit `data.json` directly to pre-expand sections (for example, on a new install) or restore a custom layout after migrating vaults.
 
-## Automation Settings
+Each server configuration includes:
 
-These settings appear in the **Automation** section of the plugin settings (UI: _Automation_). Task and hook management controls (creating, editing, and running tasks/hooks) are covered in the [Scheduled tasks](/guide/scheduled-tasks) and [Lifecycle Hooks](/guide/lifecycle-hooks) guides.
+| Field           | Type     | Description                                                                                    |
+| --------------- | -------- | ---------------------------------------------------------------------------------------------- |
+| `name`          | String   | Unique server name                                                                             |
+| `transport`     | String   | `"stdio"` (local) or `"http"` (remote). Default: `"stdio"`                                     |
+| `command`       | String   | Command to spawn the server (stdio only)                                                       |
+| `args`          | String[] | Command arguments (stdio only)                                                                 |
+| `url`           | String   | Server URL (http only, e.g. `http://localhost:3000/mcp`)                                       |
+| `envSecretName` | String   | SecretStorage key for the server's env vars (stdio only; values are not stored in `data.json`) |
+| `enabled`       | Boolean  | Connect on plugin load                                                                         |
+| `trustedTools`  | String[] | Tools that skip confirmation                                                                   |
 
-### Auto-run missed scheduled tasks on startup
+Environment variable **values** are kept in Obsidian's SecretStorage (the OS keychain), not in
+`data.json`. The config only stores `envSecretName`, a pointer to the keychain entry.
 
-- **Setting**: `autoRunCatchUp`
-- **Type**: Boolean
-- **Default**: `false`
-- **Description**: When enabled, tasks with `runIfMissed: true` that were missed while Obsidian was closed are submitted silently as background tasks on startup, without showing the approval modal.
-- **When disabled**: The "Missed scheduled runs" modal appears on startup so you can choose Run or Skip per task. A red `!` badge on the status bar persists if the modal is dismissed without acting.
-- **See also**: [Catch-up Runs](/guide/scheduled-tasks#catch-up-runs)
+See the [MCP servers Guide](/guide/mcp-servers) for setup instructions.
 
-### Enable lifecycle hooks
+## Tool permissions
 
-- **Setting**: `hooksEnabled`
-- **Type**: Boolean
-- **Default**: `false`
-- **Description**: Subscribe to vault events (file created/modified/deleted/renamed) and dispatch them to hook definitions in `[state-folder]/Hooks/`. Each matching event fires a headless agent run with debounce, rate-limit, and loop-prevention guards.
-- **Why opt-in**: Vault events fire continuously; an unintentionally-broad hook can drain API quota quickly. The default is off so users opt in deliberately.
-- **See also**: [Lifecycle Hooks](/guide/lifecycle-hooks)
+Controls which agent tools execute automatically, which require user confirmation before each
+run, and which are blocked entirely. One searchable group with filter pills — All / Read / Write
+/ Destructive / External / MCP — over per-tool dropdown rows, fronted by a preset dropdown.
 
-## Context management
-
-Context management automatically monitors and controls conversation size to prevent exceeding model token limits.
-
-### Context Compaction Threshold
-
-- **Setting**: `contextCompactionThreshold`
-- **Type**: Number (percentage, 5-50)
-- **Default**: `20`
-- **Description**: Percentage of the model's input context window at which automatic compaction occurs
-- **How it works**: When conversation tokens exceed this percentage, older turns are summarized and replaced with a compact summary while preserving recent messages
-- **Hard ceiling**: Aggressive compaction triggers at 80% of the input limit to prevent API errors
-
-### Two-phase compaction
-
-When a session crosses the compaction threshold the plugin runs a cheaper pass before reaching for full summarization:
-
-1. **Phase 1 — tool-result truncation.** Walks history and replaces oversized (>4 KB) `functionResponse` payloads in older turns with a small `{ truncated: true, truncatedFrom: N, note: "..." }` marker. The most recent two tool-result turns are kept intact so the agent reasoning across recent tool calls still has the full text. This is purely structural — no LLM call, no extra tokens spent.
-2. **Re-evaluation.** If phase 1 freed enough room to put us back under the threshold (e.g., a single 600 KB `read_file` was responsible for most of the bloat), the request goes out with the truncated history and phase 2 is skipped entirely.
-3. **Phase 2 — summarization.** Only fires when truncation alone wasn't enough. Older turns are summarized via an LLM call into a single context-summary entry preserving recent messages.
-
-Below the threshold, neither phase fires — older history bytes are left untouched so Gemini's implicit prefix cache stays valid and subsequent turns keep their cached-token discount. Truncation breaks the cache from the modified point forward, so it's restricted to turns where we'd be paying that cost anyway (compaction would have run otherwise).
-
-Re-issuing a tool call brings the full output back if the agent needs it. The behavior is always-on and not currently exposed as a setting.
-
-Compaction isn't only checked before the initial request — `AgentLoop` re-checks after every tool batch, so a long tool chain (many iterations in a single turn) can be compacted mid-flight instead of only at the start of the next user turn. Mid-loop compaction never touches the current tool chain's own turns (the ones carrying the in-flight `functionCall`/`thoughtSignature` continuity) — only turns from before the chain started are eligible, so an in-progress multi-step tool sequence is never summarized out from under itself.
-
-## Developer Settings
-
-Advanced settings for developers and power users. Access by clicking "Show advanced settings" in the plugin settings.
-
-### Debug mode
-
-- **Setting**: `debugMode`
-- **Type**: Boolean
-- **Default**: `false`
-- **Description**: Enable detailed console logging for troubleshooting
-- **Use case**: Debugging API issues, tool execution problems, or unexpected behavior
-
-### Show Token Usage
-
-- **Setting**: `showTokenUsage`
-- **Type**: Boolean
-- **Default**: `false`
-- **Description**: Display estimated token count in the agent input area
-- **Display format**: `Tokens: ~N / M (X%)` showing total prompt tokens, model limit, and percentage used. When part of the prompt was served from Gemini's cache, an additional `· Y% cached` suffix appears; when the model reports its reasoning (thinking) token count for the last response, a `· Z reasoning` suffix appears. Both suffixes can appear together
-- **How it works**: Token counts update live after each API response, including during tool call chains. Gemini's implicit caching means repeated content (system prompt, tool definitions) is often served from cache — the cached percentage rewards stable prefixes (system prompt, pinned history). The reasoning count appears only for models that report thinking tokens (Gemini thinking models); reasoning tokens are output-side and included in the response's total, so they don't count against the context window the percentage measures
-- **Visual indicators**:
-  - Normal (muted text) — well under threshold
-  - Yellow — approaching compaction threshold (≥80% of threshold)
-  - Orange/red — at or above compaction threshold
-
-### Log to File
-
-- **Setting**: `fileLogging`
-- **Type**: Boolean
-- **Default**: `false`
-- **Description**: Write log entries to a file (`debug.log`) in the plugin state folder
-- **Behavior**:
-  - Errors and warnings are always written to the log file when enabled
-  - Debug-level entries (`log()`, `debug()`) are only written when Debug mode is also enabled
-  - Log files are automatically rotated at 1 MB (previous log kept as `debug.log.old`)
-  - Writes are batched and debounced to minimize I/O impact
-- **Use case**: Sharing diagnostic information in bug reports, or letting the agent self-diagnose issues via the bundled `gemini-scribe-help` skill (which exposes `debug.log` and `debug.log.old` as activatable resources only when this setting is on)
-- **Note**: Log files are stored in the plugin state folder and are automatically excluded from RAG indexing. The standard `read_file` tool blocks the state folder; the help skill is the supported path for the agent to read these logs.
-
-### API configuration
-
-#### Use Interactions API
-
-- **Setting**: `useInteractionsApi`
-- **Type**: Boolean
-- **Default**: `true`
-- **Only applies when**: Gemini serves at least one use case (the toggle is hidden when no feature is routed to Gemini — e.g. an all-Ollama or all-OpenAI setup — and shown whenever chat, summary, or any other feature is routed to Gemini)
-- **Description**: Routes Gemini requests through Google's GA [Interactions API](https://ai.google.dev/gemini-api/docs/interactions) (`interactions.create`) instead of the legacy `generateContent` API. This is now the default transport; existing installs are migrated to it automatically (a one-time flip you can reverse by turning the toggle off).
-- **Privacy**: Runs statelessly (`store: false`) — conversation history is replayed with each request, and the plugin does not persist Interactions state on Google's side between turns. (Requests are still sent to Google to generate each response, subject to Google's standard API data-handling terms.)
-- **Status**: Default-on. Responses stream incrementally (text, reasoning, and tool calls); turn it off to fall back to the legacy `generateContent` path if you hit issues.
-- **Scope**: Governs the conversational chat transport only. Image generation (the `generate_image` tool and **Generate image** command) always uses `generateContent` regardless of this setting — unless the selected image model is interactions-only (see below), in which case it uses the Interactions API.
-- **Interactions-only models**: Models flagged `interactionsOnly` in the model catalog (e.g. `gemini-omni-flash-preview`, an image-generation model) are only served by the Interactions API, so requests to them always route through it even when this toggle is off. Features that still run on `generateContent` (Google Search grounding, web fetch, RAG semantic search) substitute the default chat model if an interactions-only model ever ends up configured as the chat model.
-
-#### Custom API Endpoint
-
-- **Setting**: `customBaseUrl`
-- **Type**: String
-- **Default**: `""` (empty)
-- **Only applies when**: Gemini serves at least one use case (Ollama has its own `ollamaBaseUrl` setting and OpenAI has its own `openaiBaseUrl` setting; both ignore this value, and the field is hidden when no feature is routed to Gemini)
-- **Description**: Overrides the default Google API base URL for all SDK calls. Use this to route requests through a corporate proxy, local gateway, or regional mirror.
-- **Example**: `https://my-proxy.example.com`
-- **Scope**: Applies to every Google API call site in the plugin (chat, streaming, image generation, web fetch, Google Search/Maps grounding, RAG indexing, deep research, context management).
-- **Note**: Leave blank to use the official Google endpoint. Invalid URLs will show a warning and be cleared automatically.
-- **Security note**: Requests routed through this proxy will include your Google API key in the `x-goog-api-key` header.
-
-#### Maximum retries
-
-- **Setting**: `maxRetries`
-- **Type**: Number
-- **Default**: `3`
-- **Description**: Maximum number of retry attempts when a model request fails
-- **Note**: Uses exponential backoff between retries. Applies to streaming and non-streaming requests alike, which share one retry policy.
-
-#### Initial Backoff Delay
-
-- **Setting**: `initialBackoffDelay`
-- **Type**: Number (milliseconds)
-- **Default**: `1000`
-- **Description**: Initial delay before the first retry attempt
-- **Note**: Subsequent retries use exponential backoff (2x, 4x, 8x, etc.), plus up to 10% random jitter so that several clients retrying after the same rate limit don't do so in lockstep. Each wait is capped at 60 seconds, so a large initial delay cannot push a retry arbitrarily far out.
-- **Note**: When the API supplies its own retry delay (a `RetryInfo` hint on a 429), that value is used instead of the backoff — also capped at 60 seconds.
-
-### Model Parameters
-
-#### Temperature
-
-- **Setting**: `temperature`
-- **Type**: Number (0.0-2.0)
-- **Default**: `0.7`
-- **Description**: Controls response creativity and randomness
-  - **Lower (0.0-0.5)**: More focused, deterministic, consistent
-  - **Medium (0.5-1.0)**: Balanced creativity and coherence
-  - **Higher (1.0-2.0)**: More creative, varied, unpredictable
-- **Note**: Ranges automatically adjusted based on selected model's capabilities
-
-#### Top-P
-
-- **Setting**: `topP`
-- **Type**: Number (0.0-1.0)
-- **Default**: `1.0`
-- **Description**: Controls response diversity via nucleus sampling
-  - **Lower values (0.1-0.5)**: More focused on likely tokens
-  - **Higher values (0.5-1.0)**: More diverse vocabulary
-- **Note**: Works in conjunction with temperature
-
-### Model Discovery
-
-Model discovery is automatic — no user-configurable settings are required. On startup, the plugin fetches the latest available Gemini models from GitHub and falls back to the bundled list if the fetch fails. The remote list is cached in `data.json` under `remoteModelCache` for 24 hours; subsequent reloads within that window are no-ops.
-
-To pick up a newly-published model without waiting for the cache to expire, click **Refresh model list** in Settings → General, or run the **Gemini Scribe: Refresh model list** command (`gemini-scribe:refresh-model-list`). Both honor the same skip conditions as the auto-fetch — they no-op when no feature is routed to Gemini or the host reports offline, and surface the outcome via a `Notice`. When any feature uses Ollama, a separate **Refresh Ollama model list** row re-queries the daemon for newly pulled models; when any feature uses OpenAI, a **Refresh OpenAI model list** row re-queries `GET <openaiBaseUrl>/models`. In a mixed setup, only the rows for providers actually in use are shown.
-
-When Google retires a model (the API starts returning 404 "no longer available" — e.g. `gemini-3-pro-preview` in July 2026), it is removed from the catalog and any settings still pointing at it are migrated automatically on the next reload: to the retired model's designated successor when one exists (`gemini-3-pro-preview` → `gemini-3.1-pro-preview`), otherwise to the default model for that role.
-
-### Tool Execution
-
-#### Stop on Tool Error
-
-- **Setting**: `stopOnToolError`
-- **Type**: Boolean
-- **Default**: `true`
-- **Description**: Stop agent execution when a tool call fails
-- **When enabled**: Agent stops immediately if any tool fails
-- **When disabled**: Agent continues executing subsequent tools despite failures
-
-### Tool loop detection
-
-Prevents the AI agent from executing identical tools repeatedly, which can cause infinite loops.
-
-#### Enable Loop Detection
-
-- **Setting**: `loopDetectionEnabled`
-- **Type**: Boolean
-- **Default**: `true`
-- **Description**: Detect and prevent infinite tool execution loops
-
-#### Loop Threshold
-
-- **Setting**: `loopDetectionThreshold`
-- **Type**: Number
-- **Default**: `3`
-- **Range**: 2-10
-- **Description**: Number of identical tool calls before a loop is detected
-
-#### Time Window
-
-- **Setting**: `loopDetectionTimeWindowSeconds`
-- **Type**: Number (seconds)
-- **Default**: `30`
-- **Range**: 10-120
-- **Description**: Time window for detecting repeated calls
-- **Example**: If threshold is 3 and window is 30s, calling the same tool 3+ times within 30 seconds triggers detection
-
-### Tool permissions
-
-Controls which agent tools execute automatically, which require user confirmation before each run, and which are blocked entirely. Access via Settings → Gemini Scribe → Show advanced settings → Tool permissions.
-
-#### Permission Preset
+### Permission Preset
 
 - **Setting**: `toolPolicy.activePreset`
 - **Type**: String
@@ -483,60 +348,156 @@ Controls which agent tools execute automatically, which require user confirmatio
 | `yolo`      | YOLO mode          | Auto               | Auto               | Auto               | Auto               |
 | `custom`    | Custom             | Per-tool overrides | Per-tool overrides | Per-tool overrides | Per-tool overrides |
 
-- **YOLO mode warning**: Selecting YOLO mode requires explicit confirmation in a modal. All operations execute without prompts — use only in trusted, well-understood workflows.
-- **Custom preset**: Automatically activated when you override any individual tool's permission. Selecting a named preset resets all per-tool overrides.
+- **YOLO mode warning**: Selecting YOLO mode requires explicit confirmation in a modal. All
+  operations execute without prompts — use only in trusted, well-understood workflows.
+- **Custom preset**: Automatically activated when you override any individual tool's permission.
+  Selecting a named preset clears all per-tool overrides.
 
-#### Per-Tool Overrides
+### Search and filter
+
+- **Search box**: matches a tool's display name, its raw tool id, and its classification label
+  (Read/Write/Destructive/External).
+- **Filter pills**: All / Read / Write / Destructive / External / MCP. MCP matches tools named
+  `mcp__<server>__<tool>`. Pills are a transient view state — they are not persisted.
+
+### Per-Tool Overrides
 
 - **Setting**: `toolPolicy.toolPermissions`
 - **Type**: Object (tool name → permission)
 - **Default**: `{}` (empty — preset governs all tools)
-- **Description**: Each registered tool can be individually set to `deny` (blocked), `ask_user` (confirmation required), or `approve` (runs automatically) — these are the values persisted in `data.json` for this setting. Overrides take precedence over the active preset. Setting an override causes the preset to switch to `custom`. (This is distinct from the `toolPolicy` YAML block used by Projects, Scheduled Tasks, and Hooks, which uses the shorter `deny`/`ask`/`allow` aliases in frontmatter — see those guides.)
+- **Description**: Each registered tool can be individually set to `deny` (blocked), `ask_user`
+  (confirmation required), or `approve` (runs automatically) — these are the values persisted in
+  `data.json` for this setting. A row shows the tool's _effective_ permission (preset or
+  override). Overrides take precedence over the active preset; setting one switches the preset to
+  `custom`. (This is distinct from the `toolPolicy` YAML block used by Projects, Scheduled Tasks,
+  and Hooks, which uses the shorter `deny`/`ask`/`allow` aliases in frontmatter — see those
+  guides.)
 
-### MCP servers
+## Advanced
 
-MCP (Model Context Protocol) server support allows the agent to use tools from external MCP servers. Supports both local (stdio) and remote (HTTP) servers.
+_(unnamed group)_
 
-#### Enable MCP servers
+- **Context compaction threshold** (`contextCompactionThreshold`) — Number (percentage, 5-50),
+  default `20`. Percentage of the model's input context window at which automatic compaction
+  occurs. See [Context management](#context-management) below.
+- **Stop the agent when a tool fails** (`stopOnToolError`) — Boolean, default `true`. When
+  enabled, the agent stops immediately if any tool fails; when disabled, it continues executing
+  subsequent tools despite failures.
+- **Summary frontmatter key** (`summaryFrontmatterKey`) — String, default `"summary"`.
+  Frontmatter key used when storing document summaries.
+- **Record tool calls in session history** (`logToolExecution`) — Boolean, default `true`.
+  Appends a collapsible callout (tool name, key parameters, status, duration) to the session
+  history file for each tool execution, for auditing. Disabled (greyed out) when session history
+  itself is off.
 
-- **Setting**: `mcpEnabled`
-- **Type**: Boolean
-- **Default**: `false`
-- **Description**: Enable connections to MCP servers for external tool integration
+### Diagnostics
 
-#### Server List
+- **Debug mode** (`debugMode`) — Boolean, default `false`. Enables detailed console logging for
+  troubleshooting.
+- **Show token usage** (`showTokenUsage`) — Boolean, default `false`. Displays estimated token
+  count in the agent input area as `Tokens: ~N / M (X%)`, with `· Y% cached` and `· Z reasoning`
+  suffixes when applicable. Visual indicators: normal (well under threshold), yellow (≥80% of the
+  compaction threshold), orange/red (at or above it).
+- **Log API calls to a file** (`fileLogging`) — Boolean, default `false`. Writes log entries to
+  `debug.log` in the plugin folder. Errors and warnings are always written when enabled;
+  debug-level entries only when Debug mode is also on. Rotated at 1 MB (`debug.log.old` keeps the
+  previous file). Useful for bug reports, or for the agent to self-diagnose via the bundled
+  `gemini-scribe-help` skill, which exposes `debug.log`/`debug.log.old` as activatable resources
+  only when this setting is on.
 
-- **Setting**: `mcpServers`
-- **Type**: Array of server configurations
-- **Default**: `[]`
-- **Description**: List of MCP server configurations
+### Context management
 
-Each server configuration includes:
+Context management automatically monitors and controls conversation size to prevent exceeding
+model token limits.
 
-| Field           | Type     | Description                                                                                    |
-| --------------- | -------- | ---------------------------------------------------------------------------------------------- |
-| `name`          | String   | Unique server name                                                                             |
-| `transport`     | String   | Transport type: `"stdio"` (local) or `"http"` (remote). Default: `"stdio"`                     |
-| `command`       | String   | Command to spawn the server (stdio only)                                                       |
-| `args`          | String[] | Command arguments (stdio only)                                                                 |
-| `url`           | String   | Server URL (http only, e.g., `http://localhost:3000/mcp`)                                      |
-| `envSecretName` | String   | SecretStorage key for the server's env vars (stdio only; values are not stored in `data.json`) |
-| `enabled`       | Boolean  | Connect on plugin load                                                                         |
-| `trustedTools`  | String[] | Tools that skip confirmation                                                                   |
+**How it works**: When conversation tokens exceed the [context compaction threshold](#advanced),
+older turns are summarized and replaced with a compact summary while preserving recent messages.
+A hard ceiling triggers aggressive compaction at 80% of the input limit to prevent API errors.
 
-Environment variable **values** are kept in Obsidian's SecretStorage (the OS keychain), not in `data.json`. The config only stores `envSecretName`, a pointer to the keychain entry.
+**Two-phase compaction**: a cheaper pass runs first —
 
-See the [MCP servers Guide](/guide/mcp-servers) for setup instructions.
+1. **Phase 1 — tool-result truncation.** Walks history and replaces oversized (>4 KB)
+   `functionResponse` payloads in older turns with a small
+   `{ truncated: true, truncatedFrom: N, note: "..." }` marker. The most recent two tool-result
+   turns are kept intact. Purely structural — no LLM call, no extra tokens spent.
+2. **Re-evaluation.** If phase 1 freed enough room, the request goes out with the truncated
+   history and phase 2 is skipped entirely.
+3. **Phase 2 — summarization.** Only fires when truncation alone wasn't enough. Older turns are
+   summarized via an LLM call into a single context-summary entry, preserving recent messages.
+
+Below the threshold, neither phase fires, so Gemini's implicit prefix cache stays valid.
+Re-issuing a tool call brings the full output back if the agent needs it. This behaviour is
+always-on and not exposed as a setting beyond the threshold percentage.
+
+`AgentLoop` re-checks after every tool batch (not just before the initial request), so a long
+tool chain can be compacted mid-flight. Mid-loop compaction never touches the current tool
+chain's own turns — only turns from before the chain started are eligible, so an in-progress
+multi-step tool sequence is never summarized out from under itself.
+
+## Data model
+
+The settings redesign replaced the flat `provider` + `providerOverrides` + ten per-provider model
+fields with a single dense routing table.
+
+- **`features`** — `Record<FeatureId, { provider, model }>`, one entry per feature id (`chat`,
+  `summary`, `completions`, `rewrite`, `webSearch`, `deepResearch`, `rag`, `imageGen`). `provider`
+  is a real provider id or `'none'` ("off"); `model` is the stored model string, where `''` means
+  "use the provider's default for this feature." This is what the [Features](#features) page
+  reads and writes — see that section for the UI-facing view of the same data.
+- **`providerModelMemory`** — `Partial<Record<ModelProvider, Partial<Record<FeatureId, string>>>>`.
+  Remembers the last model you picked for each (provider, feature) pair, so re-routing a feature
+  away from a provider and back restores the model you had there. Never read when resolving a
+  request — only when a feature is re-pointed to a provider it was previously on.
+  `providerModelMemory` was called "per-provider model fields" pre-redesign.
+- **`settingsSchemaVersion`** — internal migration marker. `2` is current; `data.json` predating
+  this key is treated as version `1`.
+
+### Migration
+
+Upgrading from a pre-redesign `data.json` runs a one-time, one-way migration on load:
+
+- `provider` → `defaultProvider`; `providerOverrides.<useCase>` → the matching
+  `features.<feature>.provider` (the old `webSearch` use case covered search, maps, URL context,
+  _and_ deep research, so it seeds both `features.webSearch.provider` and
+  `features.deepResearch.provider`).
+- Any feature that had no explicit override and that the old primary provider **couldn't** serve
+  becomes `'none'` — never silently assigned to the new default. This reproduces exactly what the
+  pre-redesign settings resolved to; it does not turn on a feature that was off.
+- The ten per-provider model fields (`chatModelName`, `ollamaModelName`, `openaiModelName`, …)
+  are folded losslessly into `providerModelMemory`, then used to seed each feature's active
+  `model`.
+- MCP: if the old `mcpEnabled` toggle was not explicitly `true`, every server in `mcpServers` gets
+  `enabled: false` (an absent server config predating that toggle is treated as "was off," not
+  "was on").
+- All removed keys (see below) are deleted from `data.json` once the migration completes.
+
+The migration is one-way and runs automatically; there is no UI for it.
+
+### Removed settings
+
+The following settings no longer exist. Their behaviour is either always-on, fixed, or replaced
+by the data model above:
+
+| Removed                                                                                                                                                                                                                             | Replacement / new behaviour                                                                                                                                                                     |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `provider`, `providerOverrides`                                                                                                                                                                                                     | `defaultProvider`, `features.<feature>.provider`                                                                                                                                                |
+| `chatModelName`, `summaryModelName`, `completionsModelName`, `imageModelName`, `ollamaModelName`, `ollamaSummaryModelName`, `ollamaCompletionsModelName`, `openaiModelName`, `openaiSummaryModelName`, `openaiCompletionsModelName` | `features.<feature>.model` + `providerModelMemory`                                                                                                                                              |
+| `streamingEnabled`                                                                                                                                                                                                                  | Streaming is always on                                                                                                                                                                          |
+| `useInteractionsApi`, `useInteractionsApiMigrated`                                                                                                                                                                                  | Gemini always uses the Interactions API                                                                                                                                                         |
+| `temperature`, `topP`                                                                                                                                                                                                               | Removed everywhere — every request uses the provider SDK's own defaults. A session saved with a `temperature`/`top_p` frontmatter key keeps that key on disk, but it is never read or rewritten |
+| `maxRetries`, `initialBackoffDelay`                                                                                                                                                                                                 | Fixed: 3 retries, 1000ms initial backoff (same defaults as before, no longer configurable)                                                                                                      |
+| `loopDetectionEnabled`, `loopDetectionThreshold`, `loopDetectionTimeWindowSeconds`                                                                                                                                                  | Loop detection is always on, fixed at 3 identical calls within 30 seconds — see [Tool loop detection](/reference/loop-detection)                                                                |
+| `mcpEnabled`                                                                                                                                                                                                                        | An empty `mcpServers` list means MCP is off; no separate toggle                                                                                                                                 |
+| `expandedSettingsSections`                                                                                                                                                                                                          | No section-expand state to persist — sub-pages replace collapsible sections                                                                                                                     |
 
 ## Session-Level Settings
 
-Session settings override global defaults for specific agent sessions. Access via the settings icon in the session header.
+Session settings override global defaults for specific agent sessions. Access via the settings
+icon in the session header.
 
 ### Model Configuration
 
-- **Model**: Override the default chat model for this session
-- **Temperature**: Session-specific temperature setting
-- **Top-P**: Session-specific top-p setting
+- **Model**: Override the routed model for this session
 - **Custom Prompt**: Select a custom prompt template for this session
 
 ### Context Files
@@ -548,7 +509,8 @@ Session settings override global defaults for specific agent sessions. Access vi
 
 ### Permissions
 
-Session-level permissions allow bypassing confirmation dialogs for specific operations during the current session only.
+Session-level permissions allow bypassing confirmation dialogs for specific operations during the
+current session only.
 
 Available permission bypasses:
 
@@ -562,9 +524,8 @@ Available permission bypasses:
 ## Performance Considerations
 
 - **Model Selection**: Flash models (8B, standard) are faster but less capable than Pro models
-- **Temperature**: Higher values may require more processing time
 - **Model Discovery**: Minimal performance impact; runs in background
-- **Loop Detection**: Negligible overhead; recommended to keep enabled
+- **Loop Detection**: Negligible overhead; always on
 
 ## Security Best Practices
 
@@ -577,23 +538,33 @@ Available permission bypasses:
 
 ### Models not appearing
 
-1. Check API key is valid
-2. For Gemini: click **Refresh** in the **Refresh model list** row (Settings → General), or run the **Gemini Scribe: Refresh model list** command. The auto-fetch runs at most once every 24 hours, so a freshly published model won't appear until the cache expires unless you force a refresh.
-3. For Ollama: go to Settings → General and click **Refresh** in the **Refresh Ollama model list** row after pulling new models
-4. For OpenAI: go to Settings → General and click **Refresh** in the **Refresh OpenAI model list** row — useful after changing the base URL or loading a different model in a compatible server
-5. Check console for errors (with Debug mode enabled)
+1. Check the provider's card on the Providers page shows "Connected."
+2. For Gemini: click **Refresh** on the Gemini card, or run the **Gemini Scribe: Refresh model
+   list** command. The auto-fetch runs at most once every 24 hours, so a freshly published model
+   won't appear until the cache expires unless you force a refresh.
+3. For Ollama: click **Refresh** on the Ollama card after pulling new models.
+4. For OpenAI: click **Refresh** on the OpenAI card — useful after changing the base URL or
+   loading a different model in a compatible server.
+5. Check console for errors (with Debug mode enabled).
+
+### A feature shows a warning on the Features page
+
+1. Open the feature's row — the displayed reason is either "Choose a provider" (the routed
+   provider doesn't support this feature) or "not connected" (the provider supports it, but its
+   credential or endpoint isn't set up).
+2. Fix the underlying provider on the Providers page (add a key, fix the endpoint), or route the
+   feature to a different provider, or leave it Off.
 
 ### Tool execution issues
 
-1. Enable Debug mode and Log to File
-2. Check Loop Detection settings
-3. Review Stop on Tool Error setting
-4. Examine console logs or `debug.log` in the plugin state folder for specific errors
+1. Enable Debug mode and Log API calls to a file (Advanced → Diagnostics)
+2. Review "Stop the agent when a tool fails" (Advanced)
+3. Examine console logs or `debug.log` in the plugin folder for specific errors
 
 ### Chat history not saving
 
-1. Verify "Enable session history" is toggled on
-2. Check Plugin state folder path is valid
+1. Verify "Keep session history" is toggled on
+2. Check the Plugin folder path is valid
 3. Ensure you have write permissions to vault
 
 For more help, see the [Getting Started Guide](/guide/getting-started) or [open an issue](https://github.com/allenhutchison/obsidian-gemini/issues).

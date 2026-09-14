@@ -8,9 +8,14 @@ import { ScribeFile } from './files';
 import { GeminiHistory } from './history/history';
 import { GeminiCompletions } from './completions';
 import { Notice } from 'obsidian';
-import { getDefaultModelForRole, migrateOllamaModelSetting } from './models';
-import { migrateInteractionsApiDefault, normalizeStateFolderPath } from './utils/settings-migrations';
-import { isProviderActive, routingKey, sanitizeProviderOverrides } from './api/provider-routing';
+import { migrateToFeatureRouting, normalizeStateFolderPath } from './utils/settings-migrations';
+import {
+	featureProvider,
+	isProviderActive,
+	routingKey,
+	sanitizeFeatureRoutes,
+	sanitizeProviderModelMemory,
+} from './api/feature-routing';
 import { getCapabilities } from './api/providers/registry';
 import { ModelManager } from './services/model-manager';
 import { PromptManager, GeminiPrompts } from './prompts';
@@ -46,7 +51,7 @@ import { ScheduledTaskManager } from './services/scheduled-task-manager';
 import { HookManager } from './services/hook-manager';
 import { asRecord, getRawErrorMessage } from './utils/error-utils';
 import { t } from './i18n';
-import { apiKeySecretNameFor } from './ui/settings-helpers';
+import { apiKeySecretNameFor } from './api/provider-credentials';
 import { DEFAULT_OPENAI_BASE_URL } from './api/providers/openai/config';
 
 // Settings interfaces live in a leaf module so the rest of the codebase can
@@ -59,45 +64,34 @@ export type { ObsidianGeminiSettings, RagIndexingSettings } from './types/settin
 import type { ObsidianGemini as ObsidianGeminiApi } from './types/plugin';
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
-	provider: 'gemini',
-	providerOverrides: {},
+	defaultProvider: 'gemini',
+	// Every feature defaults to Gemini with '' ("use the provider's default
+	// model for this feature's role"), resolved at request time against the
+	// *live* model list rather than frozen here at module-load time.
+	features: {
+		chat: { provider: 'gemini', model: '' },
+		summary: { provider: 'gemini', model: '' },
+		completions: { provider: 'gemini', model: '' },
+		rewrite: { provider: 'gemini', model: '' },
+		webSearch: { provider: 'gemini', model: '' },
+		deepResearch: { provider: 'gemini', model: '' },
+		rag: { provider: 'gemini', model: '' },
+		imageGen: { provider: 'gemini', model: '' },
+	},
+	providerModelMemory: {},
 	ollamaBaseUrl: 'http://localhost:11434',
 	customBaseUrl: '',
 	apiKeySecretName: '',
-	chatModelName: getDefaultModelForRole('chat'),
-	summaryModelName: getDefaultModelForRole('summary'),
-	completionsModelName: getDefaultModelForRole('completions'),
-	imageModelName: getDefaultModelForRole('image'),
-	ollamaModelName: getDefaultModelForRole('chat', 'ollama'),
-	// Empty = inherit ollamaModelName, so Ollama keeps one resident model (#1077)
-	// unless the user deliberately splits them.
-	ollamaSummaryModelName: '',
-	ollamaCompletionsModelName: '',
 	openaiBaseUrl: DEFAULT_OPENAI_BASE_URL,
 	openaiApiKeySecretName: '',
-	// OpenAI has no single-resident-model constraint (perUseCaseModels), so each
-	// use case gets its own default rather than inheriting the chat model.
-	openaiModelName: 'gpt-5.6',
-	openaiSummaryModelName: 'gpt-5.6-terra',
-	openaiCompletionsModelName: 'gpt-5.6-luna',
+	anthropicApiKeySecretName: '',
 	summaryFrontmatterKey: 'summary',
 	userName: 'User',
 	chatHistory: false,
 	historyFolder: 'gemini-scribe',
 	debugMode: false,
 	fileLogging: false,
-	maxRetries: 3,
-	initialBackoffDelay: 1000,
-	streamingEnabled: true,
-	useInteractionsApi: true,
-	useInteractionsApiMigrated: true,
-	temperature: 0.7,
-	topP: 1,
 	stopOnToolError: true,
-	// Tool loop detection settings
-	loopDetectionEnabled: true,
-	loopDetectionThreshold: 3,
-	loopDetectionTimeWindowSeconds: 30,
 	// Tool policy settings
 	toolPolicy: { ...DEFAULT_TOOL_POLICY },
 	// Version tracking for update notifications
@@ -110,8 +104,6 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 		autoSync: true,
 		includeAttachments: false,
 	},
-	// MCP server settings
-	mcpEnabled: false,
 	mcpServers: [],
 	// Context management
 	contextCompactionThreshold: 20,
@@ -124,8 +116,8 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	autoRunCatchUp: false,
 	// Lifecycle hooks default off (opt-in)
 	hooksEnabled: false,
-	// All settings sections start collapsed
-	expandedSettingsSections: [],
+	// Settings-field shape version; keyed off by migrateToFeatureRouting.
+	settingsSchemaVersion: 2,
 };
 
 const MIGRATION_SECRET_NAME = 'gemini-scribe-api-key';
@@ -178,6 +170,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	public contextManager!: ContextManager;
 	public folderInitializer: FolderInitializer | null = null;
 	public modelManager!: ModelManager;
+	private settingTab!: ObsidianGeminiSettingTab;
 	public completions: GeminiCompletions | null = null;
 	public summarizer: GeminiSummary | null = null;
 	public projectManager!: ProjectManager;
@@ -201,10 +194,11 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	private previousOpenaiApiKey: string = '';
 	private previousRagEnabled: boolean = false;
 	/**
-	 * Serialized provider routing (primary + every use case's resolved provider).
-	 * Compared rather than `settings.provider` alone so that changing which
-	 * provider serves a single use case also triggers a re-init — tool
-	 * registration, RAG, and image generation all key off the resolved providers.
+	 * Serialized provider routing (default provider + every feature's resolved
+	 * provider). Compared rather than `settings.defaultProvider` alone so that
+	 * changing which provider serves a single feature also triggers a
+	 * re-init — tool registration, RAG, and image generation all key off the
+	 * resolved providers.
 	 */
 	private previousRoutingKey: string = '';
 	private previousOllamaBaseUrl: string = '';
@@ -230,7 +224,8 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		}
 
 		// Add settings tab early so users can configure API key even if plugin fails to fully initialize
-		this.addSettingTab(new ObsidianGeminiSettingTab(this.app, this));
+		this.settingTab = new ObsidianGeminiSettingTab(this.app, this);
+		this.addSettingTab(this.settingTab);
 
 		// Initialize lifecycle service
 		this.lifecycle = new LifecycleService(this);
@@ -248,6 +243,11 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 
 		// Always register UI components and commands
 		this.registerUIAndCommands();
+
+		// The declarative settings tab was evaluated before `lifecycle.setup()`
+		// created the model manager and registered tools; rebuild it so the
+		// provider cards and tool-permission rows reflect the loaded state.
+		this.settingTab.update();
 
 		this.app.workspace.onLayoutReady(() => this.lifecycle.onLayoutReady());
 	}
@@ -292,12 +292,17 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	 * Distinguishes between "never configured" and "storage retrieval failure".
 	 */
 	private getApiKeyErrorMessage(): string {
-		// The secret-name field is provider-specific — an OpenAI-primary install
+		// Chat is the feature that actually blocks plugin init, so the message
+		// should describe whatever provider is routed to serve it — not the
+		// (possibly unrelated) primary/default provider. A route of 'none' has
+		// no provider to describe, so fall back to the default in that case.
+		const provider = featureProvider(this.settings, 'chat') ?? this.settings.defaultProvider;
+		// The secret-name field is provider-specific — an OpenAI-routed install
 		// checks its own key, not Gemini's, so a missing OpenAI key surfaces the
 		// same kind of actionable notice a missing Gemini key would.
-		const apiKeySecretName = apiKeySecretNameFor(this.settings, this.settings.provider);
+		const apiKeySecretName = apiKeySecretNameFor(this.settings, provider);
 		return buildApiKeyErrorMessage({
-			provider: this.settings.provider,
+			provider,
 			lastInitError: this.lastInitError,
 			apiKeySecretName,
 			ollamaBaseUrl: this.settings.ollamaBaseUrl,
@@ -447,11 +452,23 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		const data = asRecord(rawData);
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
 
-		// Object.assign is shallow, so an install with no persisted overrides would
-		// alias DEFAULT_SETTINGS.providerOverrides and leak every later edit into
-		// the module-level default. sanitizeProviderOverrides always returns a
-		// fresh object, and drops anything a hand-edited data.json got wrong.
-		this.settings.providerOverrides = sanitizeProviderOverrides(this.settings.providerOverrides);
+		// One-time migration: fold the pre-settings-redesign `provider` +
+		// `providerOverrides` + per-provider model-name fields into the dense
+		// `features` / `providerModelMemory` model (settingsSchemaVersion 1 -> 2).
+		// Must run before the sanitizers below so they clean up what the
+		// migration produced rather than the (possibly aliased) default.
+		if (migrateToFeatureRouting(this.settings, data, this.logger)) {
+			await this.saveData(this.settings);
+			this.logger?.log('Migrated provider routing to the feature-routing model (settingsSchemaVersion 2)');
+		}
+
+		// Object.assign is shallow, so an install with no persisted features would
+		// alias DEFAULT_SETTINGS.features and leak every later edit into the
+		// module-level default. The sanitizers always return a fresh object, and
+		// drop anything a hand-edited data.json got wrong — never substituting a
+		// different provider for one that can't serve a feature.
+		this.settings.features = sanitizeFeatureRoutes(this.settings.features, this.settings.defaultProvider);
+		this.settings.providerModelMemory = sanitizeProviderModelMemory(this.settings.providerModelMemory);
 
 		// The state folder comes from a free-text field, so a hand-typed trailing
 		// (or duplicate/leading) slash can persist to data.json — and it silently
@@ -460,14 +477,6 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		if (normalizeStateFolderPath(this.settings)) {
 			await this.saveData(this.settings);
 			this.logger?.log('Normalized the state folder setting (historyFolder)');
-		}
-
-		// One-time migration: split the Ollama model out of the shared chatModelName
-		// field so switching providers no longer clobbers either choice. See
-		// migrateOllamaModelSetting for the full rationale.
-		if (migrateOllamaModelSetting(this.settings, data)) {
-			await this.saveData(this.settings);
-			this.logger?.log('Migrated Ollama model into its own setting (ollamaModelName)');
 		}
 
 		// One-time migration: move API key from data.json to secret storage
@@ -504,12 +513,6 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 			delete (this.settings as { modelDiscoveryCache?: unknown }).modelDiscoveryCache;
 			await this.saveData(this.settings);
 			this.logger?.log('Removed deprecated model discovery settings');
-		}
-
-		// One-time migration: default-on rollout for the Interactions API transport (#1017).
-		if (migrateInteractionsApiDefault(this.settings, data)) {
-			await this.saveData(this.settings);
-			this.logger?.log('Migrated useInteractionsApi to on (default-on rollout, #1017)');
 		}
 
 		// Note: Stale model reconciliation happens later in LifecycleService.syncModels(),
@@ -555,11 +558,14 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 			isProviderActive(this.settings, 'gemini') && this.previousCustomBaseUrl !== this.settings.customBaseUrl;
 		const openaiBaseUrlChanged =
 			isProviderActive(this.settings, 'openai') && this.previousOpenaiBaseUrl !== this.settings.openaiBaseUrl;
-		// A primary that needs no key (Ollama) can initialize on the provider
-		// switch alone; overrides pointing at a cloud provider degrade gracefully
-		// without one rather than blocking init.
-		const activePrimaryApiKey = this.settings.provider === 'openai' ? this.openaiApiKey : this.apiKey;
-		const hasCredentials = !getCapabilities(this.settings.provider).requiresApiKey || !!activePrimaryApiKey;
+		// A chat provider that needs no key (Ollama) can initialize on the
+		// provider switch alone; other features routed to a cloud provider
+		// degrade gracefully without one rather than blocking init. The
+		// credential that must exist for init is the one serving chat.
+		const chatProvider = this.settings.features.chat.provider;
+		const activeChatApiKey = chatProvider === 'openai' ? this.openaiApiKey : this.apiKey;
+		const hasCredentials =
+			!getCapabilities(chatProvider === 'none' ? null : chatProvider).requiresApiKey || !!activeChatApiKey;
 		const needsInit = !this.isGeminiInitialized && hasCredentials;
 
 		if (

@@ -23,16 +23,16 @@ gemini-scribe/Hooks/
 
 ## Enabling Hooks
 
-1. Open Settings → Gemini Scribe → Automation
-2. Toggle **Enable lifecycle hooks**
+1. Open Settings → Gemini Scribe → **Lifecycle hooks**
+2. Toggle **Enable lifecycle hooks** (the page's first row)
 
-When the toggle is on the plugin creates the `Hooks/` folder, subscribes to vault events, and starts dispatching matching events to your hook definitions.
+When the toggle is on the plugin creates the `Hooks/` folder, subscribes to vault events, and starts dispatching matching events to your hook definitions. The "Open hook manager" / "New hook" rows below it only appear once the toggle is on.
 
 ## Creating a Hook
 
 The fastest path is the **Hook Manager** modal. Two ways to open it:
 
-- Settings → Gemini Scribe → Automation → **Open hook manager**
+- Settings → Gemini Scribe → **Lifecycle hooks** → **Open hook manager**
 - Command palette → **Gemini Scribe: Open hook manager** (or **New lifecycle hook** to skip straight to the create form)
 
 The modal has a list view (toggle / edit / delete / reset on each row) and a create/edit form covering trigger, path glob, tool access, prompt, plus an Advanced section for debounce, cooldown, rate limit, model override, output path, and the desktop-only flag.

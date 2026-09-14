@@ -68,10 +68,9 @@ interface StreamingToolCallAccumulator {
 
 export class OpenAIClient implements ModelApi {
 	/**
-	 * GPT-5.6-family reasoning models reject any non-default `temperature`/
-	 * `top_p`, and `/v1/chat/completions` rejects function tools for them
-	 * unless `reasoning_effort` is 'none'. Matched by id (not base URL) so the
-	 * same handling applies when a proxy serves these models.
+	 * GPT-5.6-family reasoning models: `/v1/chat/completions` rejects function
+	 * tools for them unless `reasoning_effort` is 'none'. Matched by id (not
+	 * base URL) so the same handling applies when a proxy serves these models.
 	 */
 	private static readonly GPT56_MODEL_PATTERN = /^gpt-5\.6/;
 
@@ -81,11 +80,7 @@ export class OpenAIClient implements ModelApi {
 	private plugin?: ObsidianGemini;
 
 	constructor(config: OpenAIClientConfig, prompts?: GeminiPrompts, plugin?: ObsidianGemini) {
-		this.config = {
-			temperature: 0.7,
-			topP: 1,
-			...config,
-		};
+		this.config = config;
 		this.plugin = plugin;
 		this.prompts = prompts || new GeminiPrompts(plugin);
 		this.client = new OpenAI({
@@ -114,7 +109,6 @@ export class OpenAIClient implements ModelApi {
 					model,
 					messages: [{ role: 'user', content: request.prompt }],
 					stream: false,
-					...this.samplingParams(model, request),
 				});
 				return this.toModelResponse(completion);
 			}
@@ -124,7 +118,6 @@ export class OpenAIClient implements ModelApi {
 				model,
 				messages,
 				stream: false,
-				...this.samplingParams(model, request),
 				...this.toolParams(model, tools),
 			});
 			return this.toModelResponse(completion);
@@ -182,7 +175,6 @@ export class OpenAIClient implements ModelApi {
 							// Servers that ignore this option simply omit `usage` on chunks;
 							// toUsageMetadata() tolerates that by returning undefined.
 							stream_options: { include_usage: true },
-							...this.samplingParams(model, request),
 						},
 						{ signal: controller.signal }
 					);
@@ -194,7 +186,6 @@ export class OpenAIClient implements ModelApi {
 							messages,
 							stream: true,
 							stream_options: { include_usage: true },
-							...this.samplingParams(model, request),
 							...this.toolParams(model, tools),
 						},
 						{ signal: controller.signal }
@@ -272,24 +263,6 @@ export class OpenAIClient implements ModelApi {
 	/** Whether `model` is a GPT-5.6-family reasoning model. */
 	private isGpt56Model(model: string): boolean {
 		return OpenAIClient.GPT56_MODEL_PATTERN.test(model);
-	}
-
-	/**
-	 * Sampling params for a request. GPT-5.6 models accept only the default
-	 * temperature/top_p and 400 on anything else, so they're omitted entirely
-	 * rather than sent with the configured values.
-	 */
-	private samplingParams(
-		model: string,
-		request: BaseModelRequest | ExtendedModelRequest
-	): { temperature?: number; top_p?: number } {
-		if (this.isGpt56Model(model)) {
-			return {};
-		}
-		return {
-			temperature: request.temperature ?? this.config.temperature,
-			top_p: request.topP ?? this.config.topP,
-		};
 	}
 
 	/**

@@ -22,273 +22,9 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.recentSessions': 'Нещодавні сесії:',
 	'agent.empty.examplesHeader': 'Спробуйте ці приклади:',
 	'i18n.aiTranslatedNotice': 'Цей переклад інтерфейсу створено за допомогою ШІ. Будемо раді вашим PR з покращеннями.',
-	'settings.common.saveFailedNotice': 'Не вдалося зберегти налаштування: {error}',
-	'settings.common.advancedBadge': 'Розширені',
-	'settings.general.sectionTitle': 'Загальні',
-	'settings.general.sectionDesc':
-		'Налаштуйте постачальника, API-ключ та моделі, які використовує плагін. Необхідно для роботи плагіна.',
-	'settings.general.documentationName': 'Документація',
-	'settings.general.documentationDesc': 'Переглянути повну документацію та посібники до плагіна',
-	'settings.general.viewDocumentationButton': 'Переглянути документацію',
-	'settings.general.providerName': 'Провайдер',
-	'settings.general.providerDesc':
-		"Виберіть провайдера моделей. Gemini використовує Google Cloud API. Ollama запускає моделі локально на вашому комп'ютері; встановіть з https://ollama.com та завантажте модель за допомогою `ollama pull <name>`. OpenAI використовує ваш API-ключ OpenAI або будь-який сумісний з OpenAI сервер (LM Studio, MLX, ...) через власну базову URL-адресу.",
 	'settings.general.providerOptionGemini': 'Google Gemini (хмара)',
 	'settings.general.providerOptionOllama': 'Ollama (локально)',
 	'settings.general.providerOptionOpenai': 'OpenAI (хмара)',
-	'settings.general.ollamaBaseUrlName': 'Базова URL-адреса Ollama',
-	'settings.general.ollamaBaseUrlDesc':
-		'HTTP-ендпоінт вашого локального демона Ollama. За замовчуванням: http://localhost:11434.',
-	'settings.general.refreshModelListName': 'Оновити список моделей',
-	'settings.general.refreshOllamaModelListName': 'Оновити список моделей Ollama',
-	'settings.general.refreshModelListOllamaDesc': 'Повторно запитати у демона Ollama доступні моделі.',
-	'settings.general.openaiApiKeyName': 'API-ключ OpenAI',
-	'settings.general.openaiApiKeyDesc':
-		'Прив\'яжіть свій API-ключ OpenAI. Натисніть "Link...", і Obsidian запитає секретне ім\'я (це просто мітка — використовуйте будь-яку назву, наприклад "openai-api") та секретне значення (вставте сюди свій API-ключ). Отримайте ключ на https://platform.openai.com/api-keys. Не потрібно для сумісного з OpenAI локального сервера, який цього не вимагає.',
-	'settings.general.openaiBaseUrlName': 'Базова URL-адреса OpenAI',
-	'settings.general.openaiBaseUrlDesc':
-		"Кінцева точка Chat Completions. За замовчуванням використовується OpenAI API (api.openai.com). Вкажіть тут сумісний з OpenAI локальний сервер — наприклад, LM Studio або MLX — щоб запити залишалися на вашому комп'ютері.",
-	'settings.general.refreshOpenaiModelListName': 'Оновити список моделей OpenAI',
-	'settings.general.refreshModelListOpenaiDesc': 'Повторно опитати налаштовану кінцеву точку щодо доступних моделей.',
-	'settings.general.openaiModelsFoundSingular': 'Знайдено {count} модель OpenAI.',
-	'settings.general.openaiModelsFound': 'Знайдено {count} моделей OpenAI.',
-	'settings.general.openaiChatModelDesc':
-		'Модель, що використовується для сеансів чату з агентом та переписування виділеного тексту.',
-	'settings.general.refreshModelListGeminiDesc':
-		'Отримати найновіший список моделей Gemini з GitHub прямо зараз, минаючи 24-годинний кеш. Використовуйте це після публікації нової моделі.',
-	'settings.general.refreshButton': 'Оновити',
-	'settings.general.ollamaModelsFoundSingular': 'Знайдено {count} модель Ollama.',
-	'settings.general.ollamaModelsFound': 'Знайдено {count} моделей Ollama.',
-	'settings.general.refreshFailedNotice': 'Не вдалося оновити: {error}',
-	'settings.general.remoteModelNoticeName': 'Повідомлення про хмарну модель',
-	'settings.general.remoteModelNoticeDesc':
-		"{models} працює на {hosts}, а не на вашому комп'ютері. Запити — включаючи будь-який вміст нотаток, який вони надсилають — залишають ваш пристрій, навіть якщо вашим провайдером є Ollama. Виберіть локально завантажену модель, якщо вам потрібно, щоб усе залишалося локально.",
-	'settings.general.localOnlyNoticeName': 'Повідомлення про роботу лише локально',
-	'settings.general.localOnlyNoticeDesc':
-		"Усе працює на вашому комп'ютері. Google Search, URL Context (веб-запит), Deep Research, генерація зображень та пошуковий індекс сховища покладаються на хмарні сервіси Gemini й наразі вимкнені. Щоб увімкнути якусь із них, призначте їй провайдера у розділі «Провайдер для кожної функції» — тоді дані цієї функції надсилатимуться у хмару.",
-	'settings.general.perFeatureProviderTitle': 'Провайдер для кожної функції',
-	'settings.general.perFeatureProviderDesc':
-		'Виберіть іншого провайдера для окремих функцій. Усі функції, для яких залишено значення за замовчуванням, використовуватимуть провайдера, вибраного вище.',
-	'settings.general.useProviderDefault': 'За замовчуванням — {provider}',
-	'settings.general.useCaseUnavailableOption': 'Недоступно',
-	'settings.general.useCaseChatName': 'Чат та агент',
-	'settings.general.useCaseChatDesc': 'Інтерактивний чат, сесії агентів, заплановані завдання та хуки.',
-	'settings.general.useCaseSummaryName': 'Підсумки',
-	'settings.general.useCaseSummaryDesc': 'Команда «Summarize active file» та стиснення діалогу.',
-	'settings.general.useCaseCompletionsName': 'Автодоповнення',
-	'settings.general.useCaseCompletionsDesc': 'Вбудовані підказки в стилі IDE під час введення тексту.',
-	'settings.general.useCaseRewriteName': 'Переписування',
-	'settings.general.useCaseRewriteDesc': 'Переписування виділеного тексту. Використовує модель чату.',
-	'settings.general.useCaseWebSearchName': 'Веб та пошук',
-	'settings.general.useCaseWebSearchDesc':
-		'Інструменти Google Search, Google Maps, URL Context (веб-запит) та Deep Research.',
-	'settings.general.useCaseRagName': 'Пошуковий індекс сховища',
-	'settings.general.useCaseRagDesc':
-		'Семантичний пошук по вашому сховищу. Завантажує вміст нотаток до хмарного пошукового індексу.',
-	'settings.general.useCaseImageGenName': 'Генерація зображень',
-	'settings.general.useCaseImageGenDesc': 'Генерація зображень за текстовим запитом.',
-	'settings.general.missingKeyNoticeName': 'Потрібен API-ключ',
-	'settings.general.missingKeyNoticeDesc':
-		'Деякі функції налаштовані на використання {providers}, для яких потрібен API-ключ. Введіть його вище, інакше ці функції не працюватимуть під час використання.',
-	'settings.general.mixedProviderNoticeName': 'Деякі функції використовують іншого провайдера',
-	'settings.general.mixedProviderNoticeDesc':
-		'Ці функції не використовують вашого провайдера за замовчуванням: {features}. Їхні запити (включаючи будь-який вміст нотаток, який вони надсилають) спрямовуються до провайдера, якого ви для них вибрали.',
-	'settings.general.inheritOllamaChatModel': 'Так само, як модель чату',
-	'settings.general.ollamaSummaryModelDesc':
-		'Модель, що використовується для підсумків. Залиште «Так само, як модель чату», якщо вам не потрібна інша — Ollama тримає завантаженою лише одну модель одночасно, тому друга модель буде перезавантажуватися при кожному перемиканні.',
-	'settings.general.ollamaCompletionsModelDesc':
-		'Модель, що використовується для вбудованого автодоповнення. Залиште «Так само, як модель чату», якщо вам не потрібна інша — Ollama тримає завантаженою лише одну модель одночасно, тому друга модель буде перезавантажуватися при кожному перемиканні. Використання невеликої моделі тут може бути виправданим компромісом.',
-	'settings.general.apiKeyName': 'Ключ API',
-	'settings.general.apiKeyDesc':
-		"Прив'яжіть свій API-ключ Google Gemini. Натисніть «Link...», і Obsidian запитає секретне ім'я (це просто мітка — використовуйте будь-яку назву, наприклад «gemini-api») та секретне значення (вставте сюди свій API-ключ). Отримайте безкоштовний ключ на https://aistudio.google.com/apikey",
-	'settings.general.chatModelName': 'Модель чату',
-	'settings.general.chatModelDesc':
-		'Модель, що використовується для сесій чату з агентом, переписування виділеного тексту та інструментів веб-пошуку.',
-	'settings.general.summaryModelName': 'Модель резюмування',
-	'settings.general.summaryModelDesc':
-		'Модель, що використовується для команди «Підсумувати активний файл», яка додає резюме до frontmatter.',
-	'settings.general.completionModelName': 'Модель автодоповнення',
-	'settings.general.completionModelDesc':
-		'Модель, що використовується для вбудованого автодоповнення в стилі IDE під час введення тексту в нотатках.',
-	'settings.general.ollamaModelName': 'Модель Ollama',
-	'settings.general.ollamaModelDesc':
-		'Модель, що використовується для чату та переписування, а також для будь-яких інших функцій Ollama, для яких залишено значення «Так само, як модель чату».',
-	'settings.general.imageModelName': 'Модель зображень',
-	'settings.general.imageModelDesc': 'Модель, що використовується для генерації зображень.',
-	'settings.general.stateFolderName': 'Папка стану плагіну',
-	'settings.general.stateFolderDesc':
-		'Папка, в якій зберігаються дані плагіна. Сесії агентів зберігаються в Agent-Sessions/, власні підказки — в Prompts/, хуки — в Hooks/, стан запланованих завдань — в Scheduled-Tasks/.',
-	'settings.general.showAdvancedName': 'Показувати розширені налаштування',
-	'settings.general.showAdvancedDesc':
-		'Показувати розширені розділи (Конфігурація API, Дозволи інструментів, Виявлення циклів інструментів, Сервери MCP, Налагодження) для досвідчених користувачів.',
-	'settings.general.modelListUpdatedSingular': 'Список моделей оновлено: {count} модель.',
-	'settings.general.modelListUpdated': 'Список моделей оновлено: {count} моделей.',
-	'settings.general.refreshSkippedOffline': 'Пропущено: офлайн',
-	'settings.general.refreshSkippedNotGemini': 'Пропущено: жодна функція не налаштована на використання Gemini',
-	'settings.general.refreshModelListFailed': 'Не вдалося оновити список моделей: {error}',
-	'settings.ui.sectionTitle': 'Досвід користувача',
-	'settings.ui.sectionDesc':
-		'Потокове передавання, перегляд різниці (diff), наздоганяння планувальника та параметри персоналізації, які впливають на вашу взаємодію з плагіном.',
-	'settings.ui.userNameName': "Ваше ім'я",
-	'settings.ui.userNameDesc':
-		"Ваше ім'я, яке використовується в системних інструкціях, щоб ШІ міг звертатися до вас особисто в розмовах.",
-	'settings.ui.userNamePlaceholder': "Введіть ваше ім'я",
-	'settings.ui.summaryFrontmatterKeyName': 'Ключ frontmatter для резюме',
-	'settings.ui.summaryFrontmatterKeyDesc':
-		'Назва властивості frontmatter, де зберігаються резюме при використанні команди «Підсумувати активний файл».',
-	'settings.ui.enableStreamingName': 'Увімкнути потокову передачу',
-	'settings.ui.enableStreamingDesc':
-		'Передавати відповіді ШІ потоком слово за словом у міру їх генерації для більш інтерактивного спілкування.',
-	'settings.ui.alwaysShowDiffViewName': 'Завжди показувати порівняння змін для запису файлів',
-	'settings.ui.alwaysShowDiffViewDesc':
-		'Автоматично відкривати порівняння змін, коли агент пропонує зміни у файлах, замість того, щоб вимагати натискання кнопки.',
-	'settings.ui.sessionHistoryName': 'Увімкнути історію сесій',
-	'settings.ui.sessionHistoryDesc':
-		'Зберігати сесії чату агента як markdown-файли у вашому сховищі. Сесії зберігаються в Agent-Sessions/ з автозгенерованими назвами.',
-	'settings.ui.logToolExecutionName': 'Записувати виконання інструментів в історію сесій',
-	'settings.ui.logToolExecutionDesc':
-		'Додавати звіт про виконання кожного інструмента до файлу історії сесій для аудиту. Вимагає увімкненої історії сесій. Для застосування змін потрібно перезавантажити плагін.',
-	'settings.automation.sectionTitle': 'Автоматизація',
-	'settings.automation.sectionDesc':
-		'Запускати завдання AI-агента автоматично — за розкладом або у відповідь на події сховища (створення/зміна/видалення/перейменування файлу).',
-	'settings.automation.manageScheduledTasksName': 'Керування запланованими завданнями',
-	'settings.automation.manageScheduledTasksDesc':
-		'Створюйте, редагуйте, вмикайте/вимикайте та видаляйте заплановані AI-завдання. Завдання виконуються автоматично у фоновому режимі, поки Obsidian відкрито.',
-	'settings.automation.openSchedulerButton': 'Відкрити планувальник',
-	'settings.automation.newTaskButton': 'Нове завдання',
-	'settings.automation.autoRunCatchUpName': 'Автозапуск пропущених запланованих завдань під час запуску',
-	'settings.automation.autoRunCatchUpDesc':
-		'Якщо увімкнено, завдання, які були пропущені, поки Obsidian був закритий (і для яких встановлено «Запускати, якщо пропущено»), будуть автоматично запущені під час старту без показу модального вікна підтвердження.',
-	'settings.automation.enableHooksName': 'Увімкнути хуки життєвого циклу',
-	'settings.automation.enableHooksDesc':
-		'Підписка на події сховища та запуск завдань AI-агента у відповідь. Вимкнено за замовчуванням — події сховища відбуваються постійно, і хук із широкою областю дії може швидко вичерпати квоту API.',
-	'settings.automation.manageHooksName': 'Керування хуками життєвого циклу',
-	'settings.automation.manageHooksDesc':
-		'Створюйте, редагуйте, вмикайте/вимикайте та видаляйте хуки. Кожен хук спрацьовує, коли відбувається відповідна подія сховища, і запускається як фонова сесія агента.',
-	'settings.automation.openHookManagerButton': 'Відкрити менеджер хуків',
-	'settings.automation.newHookButton': 'Новий хук',
-	'settings.debug.sectionTitle': 'Налагодження',
-	'settings.debug.sectionDesc': 'Діагностичні перемикачі для усунення неполадок у роботі плагіна.',
-	'settings.debug.debugModeName': 'Режим налагодження',
-	'settings.debug.debugModeDesc': 'Увімкнути логування налагодження в консоль. Корисно для пошуку та усунення помилок.',
-	'settings.debug.showTokenUsageName': 'Показувати використання токенів',
-	'settings.debug.showTokenUsageDesc':
-		'Відображати приблизне використання токенів у вікні агента (для цілей налагодження).',
-	'settings.debug.stopOnToolErrorName': 'Зупиняти у разі помилки інструменту',
-	'settings.debug.stopOnToolErrorDesc':
-		'Зупиняти виконання агента, якщо виклик інструменту завершився помилкою. Якщо вимкнено, агент продовжить виконання наступних інструментів.',
-	'settings.agentConfig.sectionTitle': 'Конфігурація агента',
-	'settings.agentConfig.sectionDesc':
-		'Налаштуйте взаємодію агента з моделлю: параметри повторних спроб/генерації, підсумовування розмови та захист від зациклення.',
-	'settings.agentConfig.apiConfigurationHeading': 'Конфігурація API',
-	'settings.agentConfig.logToFileName': 'Записувати лог у файл',
-	'settings.agentConfig.logToFileDesc':
-		'Записувати лог-повідомлення у файл у папці стану плагіну. Помилки та попередження записуються завжди; для запису налагоджувальних повідомлень потрібен режим налагодження. Файли логів автоматично ротуються при досягненні 1 МБ.',
-	'settings.agentConfig.useInteractionsApiName': 'Використовувати Interactions API',
-	'settings.agentConfig.useInteractionsApiDesc':
-		'Маршрутизувати запити Gemini через новіший Interactions API від Google замість застарілого generateContent API. Це транспорт за замовчуванням. Працює без збереження стану — історія бесіди відтворюється під час кожного ходу і не зберігається на стороні Google між ними. Вимкніть цей параметр, щоб повернутися до generateContent у разі виникнення проблем. Моделі, які підтримують лише Interactions API (наприклад, Gemini Omni), завжди використовуватимуть його, незалежно від цього налаштування.',
-	'settings.agentConfig.customEndpointName': 'Власна кінцева точка API',
-	'settings.agentConfig.customEndpointDesc':
-		'Перевизначити стандартну базову URL-адресу Google API (наприклад, для корпоративного проксі або локального шлюзу). Залиште порожнім, щоб використовувати офіційну кінцеву точку.',
-	'settings.agentConfig.customEndpointInvalidNotice': 'Власна кінцева точка API не є дійсною URL-адресою — очищення.',
-	'settings.agentConfig.maxRetriesName': 'Максимальна кількість спроб',
-	'settings.agentConfig.maxRetriesDesc': 'Максимальна кількість повторних спроб у разі невдалого запиту до моделі.',
-	'settings.agentConfig.maxRetriesPlaceholder': 'наприклад, 3',
-	'settings.agentConfig.initialBackoffName': 'Початкова затримка повтору (мс)',
-	'settings.agentConfig.initialBackoffDesc':
-		'Початкова затримка в мілісекундах перед першою повторною спробою. Наступні спроби використовуватимуть експоненційне збільшення затримки.',
-	'settings.agentConfig.initialBackoffPlaceholder': 'наприклад, 1000',
-	'settings.agentConfig.contextManagementHeading': 'Управління контекстом',
-	'settings.agentConfig.compactionThresholdName': 'Поріг стиснення контексту',
-	'settings.agentConfig.compactionThresholdDesc':
-		'Автоматично підсумовувати старіші репліки розмови, коли використання токенів перевищує цей відсоток вікна контексту моделі. Поточний: {percent}%',
-	'settings.agentConfig.loopDetectionHeading': 'Виявлення циклів інструментів',
-	'settings.agentConfig.loopDetectionName': 'Увімкнути виявлення зациклення',
-	'settings.agentConfig.loopDetectionDesc':
-		'Запобігає повторному виклику ШІ одного й того самого інструменту з однаковими параметрами.',
-	'settings.agentConfig.loopThresholdName': 'Поріг циклу',
-	'settings.agentConfig.loopThresholdDesc':
-		'Кількість однакових викликів інструменту, перш ніж вважати це циклом (за замовчуванням: 3).',
-	'settings.agentConfig.timeWindowName': 'Часове вікно (секунди)',
-	'settings.agentConfig.timeWindowDesc': 'Часове вікно для перевірки повторних викликів (за замовчуванням: 30 секунд).',
-	'settings.agentConfig.temperatureName': 'Температура',
-	'settings.agentConfig.temperatureDescWithInfo':
-		'Контролює випадковість. Нижчі значення є більш детермінованими. {info}',
-	'settings.agentConfig.temperatureDescDefault':
-		'Контролює випадковість. Нижчі значення є більш детермінованими. (За замовчуванням: 0.7)',
-	'settings.agentConfig.temperatureSaveFailedNotice':
-		'Не вдалося зберегти налаштування температури. Дивіться консоль для деталей.',
-	'settings.agentConfig.topPName': 'Top P',
-	'settings.agentConfig.topPDescWithInfo': 'Контролює різноманітність. Нижчі значення є більш сфокусованими. {info}',
-	'settings.agentConfig.topPDescDefault':
-		'Контролює різноманітність. Нижчі значення є більш сфокусованими. (За замовчуванням: 1)',
-	'settings.agentConfig.topPSaveFailedNotice': 'Не вдалося зберегти налаштування Top P. Дивіться консоль для деталей.',
-	'settings.mcp.sectionTitle': 'Сервери MCP',
-	'settings.mcp.sectionDesc':
-		'Підключайте зовнішні сервери Model Context Protocol, щоб розширити можливості агента додатковими інструментами.',
-	'settings.mcp.loadErrorDesc': 'Помилка завантаження налаштувань MCP: {error}',
-	'settings.mcp.enableName': 'Увімкнути сервери MCP',
-	'settings.mcp.enableDesc':
-		'Підключення до серверів Model Context Protocol для розширення агента зовнішніми інструментами. Підтримуються локальні (stdio) та віддалені (HTTP) сервери.',
-	'settings.mcp.noServers': 'Немає налаштованих серверів MCP. Натиснуть «Додати сервер», щоб почати.',
-	'settings.mcp.httpUrl': 'HTTP: {url}',
-	'settings.mcp.authorized': 'Авторизовано ✓',
-	'settings.mcp.editButton': 'Редагувати',
-	'settings.mcp.deleteButton': 'Видалити',
-	'settings.mcp.addServerButton': 'Додати сервер',
-	'settings.mcp.duplicateServerName': 'Сервер із назвою "{name}" вже існує',
-	'settings.mcp.reconnectFailed': 'Не вдалося перепідключитися до "{name}": {error}',
-	'settings.mcp.openEditorFailed': 'Не вдалося відкрити редактор сервера: {error}',
-	'settings.mcp.savedButConnectFailed': 'Сервер збережено, але не вдалося підключитися: {error}',
-	'settings.mcp.openAddDialogFailed': 'Не вдалося відкрити діалогове вікно додавання сервера: {error}',
-	'settings.rag.sectionTitle': 'Пошуковий індекс сховища',
-	'settings.rag.sectionDesc':
-		'Семантичний пошук по вашому сховищу за допомогою Google File Search. Забезпечує відповіді агента з пошуком інформації. Конфіденційність: індексовані файли завантажуються в Google Cloud.',
-	'settings.rag.privacyNotice':
-		'⚠️ Примітка про конфіденційність: увімкнення цієї функції завантажує файли вашого сховища до Google Cloud для семантичного пошуку. Файли обробляються та зберігаються компанією Google. Рекомендуємо виключити папки з конфіденційною інформацією.',
-	'settings.rag.enableName': 'Увімкнути індексування сховища',
-	'settings.rag.enableDesc':
-		'Індексувати файли вашого сховища для семантичного пошуку за допомогою Google File Search.',
-	'settings.rag.openCleanupFailed': 'Не вдалося відкрити діалогове вікно очищення: {error}',
-	'settings.rag.filesIndexed': 'Індексовано {count} файлів',
-	'settings.rag.notYetIndexed': 'Ще не індексовано',
-	'settings.rag.indexStatusName': 'Статус індексу',
-	'settings.rag.reindexButton': 'Пересканувати сховище',
-	'settings.rag.indexingButton': 'Індексування...',
-	'settings.rag.serviceNotInitialized': 'Службу індексування RAG не ініціалізовано',
-	'settings.rag.indexResult':
-		'Пересканування завершено: {indexed} переіндексовано, {skipped} пропущено, {failed} не вдалося',
-	'settings.rag.indexingFailed': 'Помилка індексування: {error}',
-	'settings.rag.deleteIndexButton': 'Видалити індекс',
-	'settings.rag.deletingButton': 'Видалення...',
-	'settings.rag.indexDeletedNotice': 'Індекс видалено. Використовуйте "Пересканувати сховище" для відновлення.',
-	'settings.rag.deleteIndexFailed': 'Не вдалося видалити індекс: {error}',
-	'settings.rag.openDeleteConfirmFailed': 'Не вдалося відкрити підтвердження видалення: {error}',
-	'settings.rag.storeNameName': 'Назва пошукового індексу',
-	'settings.rag.storeNameDescAssigned':
-		'Ідентифікатор сховища Google File Search, призначений автоматично. Видаліть індекс, щоб створити новий.',
-	'settings.rag.storeNameDescPending': 'Призначається автоматично Google File Search після початку індексування.',
-	'settings.rag.copyButton': 'Копіювати',
-	'settings.rag.copyTooltip': 'Копіювати назву сховища в буфер обміну',
-	'settings.rag.storeNameCopiedNotice': 'Назву сховища скопійовано в буфер обміну',
-	'settings.rag.autoSyncName': 'Автосинхронізація змін',
-	'settings.rag.autoSyncDesc': 'Автоматично оновлювати індекс у разі створення, зміни або видалення файлів.',
-	'settings.rag.includeAttachmentsName': 'Включати вкладення',
-	'settings.rag.includeAttachmentsDesc':
-		'Індексувати PDF та інші підтримувані типи файлів на додачу до markdown-нотаток. Потребує пересканування.',
-	'settings.rag.attachmentSettingChangedNotice':
-		'Налаштування вкладень змінено. Перескануйте сховище, щоб застосувати зміни.',
-	'settings.rag.excludeFoldersName': 'Виключити папки',
-	'settings.rag.excludeFoldersDesc': 'Завжди виключені: {folders}. Додайте інші папки нижче (по одній на рядок).',
-	'settings.rag.excludeFoldersPlaceholder': 'Додаткові папки для виключення...',
-	'settings.tools.sectionTitle': 'Дозволи інструментів',
-	'settings.tools.sectionDesc':
-		'Керуйте тим, які інструменти агента потребують підтвердження, запускаються автоматично або повністю заблоковані.',
-	'settings.tools.noToolsName': 'Немає зареєстрованих інструментів',
-	'settings.tools.noToolsDesc': "Дозволи для інструментів з'являться тут після їх завантаження.",
-	'settings.tools.presetName': 'Пресет дозволів',
-	'settings.tools.presetDesc': 'Виберіть пресет, який визначає дозволи за замовчуванням для всіх інструментів.',
-	'settings.tools.yoloConfirmFailed': 'Не вдалося відкрити підтвердження YOLO: {error}',
 	'explainPrompt.placeholder': 'Виберіть запит для пояснення виділеного тексту...',
 	'ragCleanup.title': 'Видалити індекс сховища?',
 	'ragCleanup.body': 'Індекс вашого сховища зберігається в Google Cloud. Ви хочете видалити його?',
@@ -696,8 +432,6 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'agent.header.loading': 'Завантаження...',
 	'agent.header.loadingProjectTooltip': 'Завантаження проєкту...',
 	'agent.header.tooltipModel': 'Модель: {value}',
-	'agent.header.tooltipTemperature': 'Температура: {value}',
-	'agent.header.tooltipTopP': 'Top-P: {value}',
 	'agent.header.tooltipPrompt': 'Промпт: {value}',
 	'agent.header.promptBadgeFallback': 'Власний',
 	'agent.header.menuAria': 'Меню сесії',
@@ -813,10 +547,6 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'agent.sessionSettings.modelDesc': 'Виберіть модель ШІ для цієї сесії',
 	'agent.sessionSettings.useDefault': 'Використовувати за замовчуванням',
 	'agent.sessionSettings.resetToDefault': 'Скинути до стандартних',
-	'agent.sessionSettings.temperature': 'Температура',
-	'agent.sessionSettings.temperatureDesc': 'Керує випадковістю (0 = детермінована, 2 = дуже творча)',
-	'agent.sessionSettings.topP': 'Top-P',
-	'agent.sessionSettings.topPDesc': 'Поріг ядерної вибірки (0 = тільки найкращий токен, 1 = усі токени)',
 	'agent.sessionSettings.promptTemplate': 'Шаблон промпту',
 	'agent.sessionSettings.promptTemplateDesc': 'Виберіть користувацький шаблон промпту для цієї сесії',
 	'agent.sessionSettings.useDefaultPrompt': 'Використовувати промпт за замовчуванням',
@@ -1039,14 +769,6 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'notice.rewrite.selectionDone': 'Текст успішно переписано',
 	'notice.rewrite.rewritingFile': 'Переписування всього файлу...',
 	'notice.rewrite.fileDone': 'Файл успішно переписано',
-	'validation.temperature.notANumber': 'Температура {value} не є дійсним числом. Скориговано до {adjusted}.',
-	'validation.temperature.exceedsModelLimit':
-		'Температура {value} перевищує ліміт моделі {model}, який становить {max}. Скориговано до {max}.',
-	'validation.temperature.outOfRange':
-		'Температура {value} знаходиться поза межами допустимого діапазону [{min}, {max}]. Скориговано до {adjusted}.',
-	'validation.topP.notANumber': 'Top P {value} не є дійсним числом. Скориговано до {adjusted}.',
-	'validation.topP.outOfRange':
-		'Top P {value} знаходиться поза межами допустимого діапазону [{min}, {max}]. Скориговано до {adjusted}.',
 	'agent.planMode.toggleAria': 'Перемкнути режим планування — перегляд плану перед виконанням агентом',
 	'agent.planMode.label': 'План',
 	'agent.planMode.headerLabel': 'Агент (План)',

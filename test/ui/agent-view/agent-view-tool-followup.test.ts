@@ -8,7 +8,7 @@ const PER_TURN_CONTEXT = 'CONTEXT FILES: probe note content with unique facts';
 
 function makePlugin() {
 	return {
-		settings: { chatModelName: 'gemini-3-flash-preview', temperature: 0.7, topP: 0.95 },
+		settings: { chatModelName: 'gemini-3-flash-preview' },
 		toolRegistry: {
 			getEnabledTools: vi.fn().mockReturnValue([{ name: 'read_file' }]),
 			getAutoApprovedTools: vi.fn().mockReturnValue([{ name: 'read_file' }]),

@@ -2,6 +2,7 @@ import type { ObsidianGemini } from '../types/plugin';
 import { Notice, App, MarkdownView, Modal, Setting, TextAreaComponent, TFile, normalizePath } from 'obsidian';
 import { BaseModelRequest, GeminiClient, ModelClientFactory } from '../api';
 import { GeminiPrompts } from '../prompts';
+import { resolveFeatureModel } from '../models';
 import { getErrorMessage, getRawErrorMessageOr } from '../utils/error-utils';
 import { ensureParentFolderExists, validateGeneratedOutputPath } from '../utils/file-utils';
 import { t } from '../i18n';
@@ -17,8 +18,6 @@ export class ImageGeneration {
 		this.client = new GeminiClient(
 			{
 				apiKey: plugin.apiKey,
-				temperature: plugin.settings.temperature,
-				topP: plugin.settings.topP,
 			},
 			this.prompts,
 			plugin
@@ -63,7 +62,7 @@ export class ImageGeneration {
 		taskManager.submit('image-generation', label, async (isCancelled) => {
 			if (isCancelled()) return undefined;
 
-			const base64Data = await this.client.generateImage(prompt, this.plugin.settings.imageModelName);
+			const base64Data = await this.client.generateImage(prompt, resolveFeatureModel(this.plugin.settings, 'imageGen'));
 			if (isCancelled()) return undefined;
 
 			const imagePath = await this.saveImageToVault(base64Data, prompt);
@@ -87,7 +86,7 @@ export class ImageGeneration {
 	): Promise<void> {
 		try {
 			new Notice(t('notice.image.generating'));
-			const base64Data = await this.client.generateImage(prompt, this.plugin.settings.imageModelName);
+			const base64Data = await this.client.generateImage(prompt, resolveFeatureModel(this.plugin.settings, 'imageGen'));
 			const imagePath = await this.saveImageToVault(base64Data, prompt);
 			activeView.editor.replaceRange(`![[${imagePath}]]`, cursor);
 			new Notice(t('notice.image.inserted'));
@@ -156,7 +155,7 @@ export class ImageGeneration {
 	async generateImage(prompt: string, outputPath?: string): Promise<string> {
 		try {
 			// Generate the image
-			const base64Data = await this.client.generateImage(prompt, this.plugin.settings.imageModelName);
+			const base64Data = await this.client.generateImage(prompt, resolveFeatureModel(this.plugin.settings, 'imageGen'));
 
 			// Save the image to vault
 			return await this.saveImageToVault(base64Data, prompt, outputPath);

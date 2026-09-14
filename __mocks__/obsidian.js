@@ -225,10 +225,18 @@ export class PluginSettingTab {
 			createEl: vi.fn(),
 			createDiv: vi.fn(),
 		};
+		this.settingItems = [];
 	}
 
 	display() {}
 	hide() {}
+	// Real Obsidian implements these on the base `SettingTab` class (the
+	// setting-modal framework wires them up); the 1.13 declarative settings
+	// subclasses (src/ui/settings/index.ts) call `this.update()` /
+	// `this.refreshDomState()` without overriding them, so tests need a
+	// no-op fallback here rather than a "not a function" crash.
+	update() {}
+	refreshDomState() {}
 }
 
 export class SuggestModal extends Modal {

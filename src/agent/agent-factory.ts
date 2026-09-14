@@ -9,13 +9,19 @@ import { ChatSession } from '../types/agent';
  */
 export class AgentFactory {
 	/**
-	 * Create a model API for agent mode with session configuration
+	 * Create a model API for agent mode.
 	 *
 	 * @param plugin The plugin instance
-	 * @param session The current chat session
+	 * @param _session The current chat session. Unused: `session.modelConfig`
+	 *   no longer carries anything the client factory needs — the model
+	 *   override it used to carry (and, before the settings redesign,
+	 *   temperature/topP) is applied at request time by the caller (see
+	 *   `agent-view-send.ts` / `agent-view-tool-followup.ts`). Kept as a
+	 *   parameter so `AgentLoop`'s default `createModelApi` factory
+	 *   (`agent-loop.ts`), which always passes the session, keeps compiling.
 	 * @returns Configured ModelApi instance
 	 */
-	static createAgentModel(plugin: ObsidianGemini, session: ChatSession): ModelApi {
-		return ModelClientFactory.createChatModel(plugin, session.modelConfig);
+	static createAgentModel(plugin: ObsidianGemini, _session: ChatSession): ModelApi {
+		return ModelClientFactory.createChatModel(plugin);
 	}
 }
