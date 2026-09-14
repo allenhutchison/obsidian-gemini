@@ -585,6 +585,26 @@ describe('ContextManager', () => {
 			expect(() => ollamaCtx.updateUsageMetadata({ totalTokenCount: 100 }, 'llama3.2')).not.toThrow();
 			expect(() => ollamaCtx.updateUsageMetadata({ promptTokenCount: 100 })).not.toThrow();
 		});
+
+		// #1508 review: `this.ai` is constructed whenever Gemini serves *any*
+		// feature, so a naive "unknown model -> default to Gemini" fallback would
+		// send chat history to Gemini's countTokens even though chat itself is
+		// off. Chat routed to 'none' must estimate locally instead.
+		test('chat routed to none: estimates locally even when Gemini serves another feature', async () => {
+			const noneChatPlugin = {
+				...mockPlugin,
+				settings: routedSettings(mockPlugin.settings, { chat: 'none', rag: 'gemini' }),
+			};
+			const ctx = new ContextManager(noneChatPlugin, mockLogger);
+
+			const result = await ctx.countTokens('some-unrecognized-model', [
+				{ role: 'user', parts: [{ text: 'hello world' }] },
+			]);
+
+			expect(result).toBeGreaterThan(0);
+			expect(mockCountTokens).not.toHaveBeenCalled();
+			expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('countTokens (estimate)'));
+		});
 	});
 
 	describe('prepareHistory', () => {

@@ -118,9 +118,22 @@ export class ContextManager {
 	 * runs on the chat path — this matters when Ollama's daemon was unreachable
 	 * at startup, since its tags never made it into the list and treating its
 	 * models as Gemini would mean a 1M-token limit and a doomed countTokens call.
+	 *
+	 * Returns `null` when chat is routed to `'none'` and the model is otherwise
+	 * unrecognized — there is no active provider to attribute the model to.
+	 * Callers must not default this to Gemini: `this.ai` is constructed
+	 * whenever Gemini serves *any* feature, so defaulting here would send an
+	 * unrelated feature's history to Gemini's `countTokens` even though chat
+	 * itself isn't routed there.
 	 */
 	private providerForContextModel(modelName: string | null | undefined) {
-		return findModelProvider(modelName) ?? featureProvider(this.plugin.settings, 'chat') ?? 'gemini';
+		return findModelProvider(modelName) ?? featureProvider(this.plugin.settings, 'chat');
+	}
+
+	/** Whether `modelName` is served by a provider with a native token-counting endpoint. */
+	private hasNativeTokenCount(modelName: string | null | undefined): boolean {
+		const provider = this.providerForContextModel(modelName);
+		return provider !== null && getCapabilities(provider).nativeTokenCount;
 	}
 
 	/**
@@ -147,7 +160,7 @@ export class ContextManager {
 	updateUsageMetadata(metadata: UsageMetadata, modelName?: string): void {
 		if (!metadata) return;
 
-		if (modelName && !getCapabilities(this.providerForContextModel(modelName)).nativeTokenCount) {
+		if (modelName && !this.hasNativeTokenCount(modelName)) {
 			this.calibrateEstimatedRatio(modelName, metadata.promptTokenCount);
 		}
 
@@ -373,7 +386,7 @@ export class ContextManager {
 		// Sanitize contents to only include text-compatible parts
 		const sanitizedContents = this.sanitizeContentsForTokenCount(contents);
 
-		if (!getCapabilities(this.providerForContextModel(modelName)).nativeTokenCount || !this.ai) {
+		if (!this.hasNativeTokenCount(modelName) || !this.ai) {
 			const estimate = this.estimateTokensFromContents(modelName, sanitizedContents);
 			this.logger.log(`[ContextManager] countTokens (estimate): ${estimate}`);
 			return estimate;
@@ -434,7 +447,7 @@ export class ContextManager {
 		// the compaction path below, which only runs when over threshold) so
 		// calibrateEstimatedRatio() has something to calibrate against on ordinary
 		// turns too. The returned estimate itself isn't needed here.
-		if (!getCapabilities(this.providerForContextModel(modelName)).nativeTokenCount) {
+		if (!this.hasNativeTokenCount(modelName)) {
 			this.estimateTokensFromContents(modelName, this.sanitizeContentsForTokenCount(conversationHistory));
 		}
 
