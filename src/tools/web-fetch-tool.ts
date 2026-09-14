@@ -10,6 +10,26 @@ import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory'
 import { resolveGenerateContentModel } from '../models';
 import { featureModel } from '../api/feature-routing';
 import { getRawErrorMessageOr } from '../utils/error-utils';
+import type { GenerateContentResponse } from '@google/genai';
+
+/**
+ * Concatenate the text parts of a generateContent response.
+ *
+ * Both the URL-context path and the raw-HTML fallback accumulate the same way;
+ * only the request they made and the error they raise on an empty result differ,
+ * so those stay at the call sites.
+ */
+function collectResponseText(result: GenerateContentResponse): string {
+	let text = '';
+	if (result.candidates?.[0]?.content?.parts) {
+		for (const part of result.candidates[0].content.parts) {
+			if (part.text) {
+				text += part.text;
+			}
+		}
+	}
+	return text;
+}
 
 /**
  * Web fetch tool using Google's URL Context feature
@@ -101,14 +121,7 @@ export class WebFetchTool implements Tool {
 			plugin.logger.log('Web fetch - received result:', result);
 
 			// Extract text from response
-			let text = '';
-			if (result.candidates?.[0]?.content?.parts) {
-				for (const part of result.candidates[0].content.parts) {
-					if (part.text) {
-						text += part.text;
-					}
-				}
-			}
+			const text = collectResponseText(result);
 
 			if (!text) {
 				return {
@@ -271,14 +284,7 @@ export class WebFetchTool implements Tool {
 			);
 
 			// Extract text from response
-			let analysisText = '';
-			if (result.candidates?.[0]?.content?.parts) {
-				for (const part of result.candidates[0].content.parts) {
-					if (part.text) {
-						analysisText += part.text;
-					}
-				}
-			}
+			const analysisText = collectResponseText(result);
 
 			if (!analysisText) {
 				return {
