@@ -23,8 +23,6 @@ import {
 	invalidateModelCount,
 	type CardProviderId,
 } from './model-count-cache';
-export type { CardProviderId } from './model-count-cache';
-export { invalidateModelCount } from './model-count-cache';
 
 export type AuthRow =
 	| { kind: 'secret'; settingsKey: 'apiKeySecretName' | 'openaiApiKeySecretName' | 'anthropicApiKeySecretName' }
