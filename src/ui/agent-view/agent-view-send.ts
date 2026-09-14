@@ -20,6 +20,7 @@ import { AgentViewSession } from './agent-view-session';
 import { AgentViewShelf } from './agent-view-shelf';
 import type { ObsidianGemini } from '../../types/plugin';
 import { t } from '../../i18n';
+import { projectScopeStatement } from '../../tools/vault/utils';
 
 /**
  * Context interface for the send module.
@@ -39,6 +40,30 @@ export interface SendContext {
 	session: AgentViewSession;
 	displayMessage: (entry: GeminiConversationEntry) => Promise<void>;
 	updateTokenUsage: () => Promise<void>;
+}
+
+/**
+ * Load the project instructions for a session's linked project and fold in
+ * the discovery-scope statement (#1506). The scope rule rides the
+ * byte-stable `projectInstructions` PerTurnContext threading, so it reaches
+ * the model on every model call — initial, follow-up, and retry — without
+ * any new plumbing. A load error is swallowed (logged) so the system
+ * instruction stays renderable, matching the old inline behavior.
+ */
+export async function loadProjectInstructions(
+	plugin: ObsidianGemini,
+	projectPath: string | undefined
+): Promise<string | undefined> {
+	if (!projectPath || !plugin.projectManager) return undefined;
+	try {
+		const project = await plugin.projectManager.getProject(projectPath);
+		if (!project) return undefined;
+		const scopeStatement = projectScopeStatement(project.rootPath);
+		return project.instructions ? `${project.instructions}\n\n${scopeStatement}` : scopeStatement;
+	} catch (error) {
+		plugin.logger.error('Error loading project instructions:', error);
+		return undefined;
+	}
 }
 
 /**
@@ -374,21 +399,13 @@ export class AgentViewSend {
 					this.ctx.plugin.logger.error('Error loading custom prompt:', error);
 				}
 			}
+			// Load project instructions if session is linked to a project. The
+			// discovery-scope statement (#1506) is folded in so it rides the
+			// byte-stable `projectInstructions` PerTurnContext threading — the
+			// scope rule reaches the model on every model call for free.
+			const projectInstructions = await loadProjectInstructions(this.ctx.plugin, currentSession?.projectPath);
 
-			// Load project instructions if session is linked to a project
-			let projectInstructions: string | undefined;
-			if (currentSession?.projectPath && this.ctx.plugin.projectManager) {
-				try {
-					const project = await this.ctx.plugin.projectManager.getProject(currentSession.projectPath);
-					if (project?.instructions) {
-						projectInstructions = project.instructions;
-					}
-				} catch (error) {
-					this.ctx.plugin.logger.error('Error loading project instructions:', error);
-				}
-			}
-
-			// Build additional prompt instructions (not part of system prompt)
+			// Add context file note if shelf has text files
 			let additionalInstructions = '';
 
 			// Add context file note if shelf has text files

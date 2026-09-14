@@ -127,13 +127,13 @@ When you create a **new** agent session, the plugin inspects the session's initi
 
 ### What Changes When a Project is Active
 
-| Feature               | Behavior                                                                                                           |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| **System prompt**     | Project instructions are injected between the base prompt and tool instructions                                    |
-| **Tool discovery**    | `list_files`, `find_files_by_name`, `find_files_by_content`, and `vault_semantic_search` scope to the project root |
-| **Read/write access** | Unrestricted — the agent can still access files outside the project when you reference them                        |
-| **Skills**            | Only skills listed in the project's `skills` array are available (empty = all)                                     |
-| **Tool policy**       | The project's `toolPolicy` is layered on top of the global plugin tool policy                                      |
+| Feature               | Behavior                                                                                                                                                                                                               |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **System prompt**     | Project instructions are injected between the base prompt and tool instructions                                                                                                                                        |
+| **Tool discovery**    | `list_files`, `find_files_by_name`, `find_files_by_content`, and `vault_semantic_search` are hard-scoped to the project root — discovery inside the project, an out-of-project path argument is rejected with an error |
+| **Read/write access** | Unrestricted — the agent can still access files outside the project when you reference them                                                                                                                            |
+| **Skills**            | Only skills listed in the project's `skills` array are available (empty = all)                                                                                                                                         |
+| **Tool policy**       | The project's `toolPolicy` is layered on top of the global plugin tool policy                                                                                                                                          |
 
 ### Tool Policy Resolution Order
 

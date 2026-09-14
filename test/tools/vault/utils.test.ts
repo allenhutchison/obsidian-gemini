@@ -1,4 +1,10 @@
-import { isFileInAgentScope, resolvePathToFile, resolvePathToFileOrFolder } from '../../../src/tools/vault/utils';
+import {
+	isFileInAgentScope,
+	isPathInProjectScope,
+	projectScopeStatement,
+	resolvePathToFile,
+	resolvePathToFileOrFolder,
+} from '../../../src/tools/vault/utils';
 
 // Mock gemini-utils (needed by file-classification, imported by vault-tools)
 vi.mock('@allenhutchison/gemini-utils/mime', () => ({
@@ -260,6 +266,49 @@ describe('isFileInAgentScope', () => {
 		// Without the trailing-slash boundary, projectRoot "Foo" would spuriously
 		// match "Foobar/x.md" — this pins that it does not.
 		expect(isFileInAgentScope(makeFile('Foobar/x.md'), mockPlugin, 'Foo')).toBe(false);
+	});
+});
+
+describe('isPathInProjectScope', () => {
+	it('imposes no boundary when no project root is active', () => {
+		expect(isPathInProjectScope('anywhere/note.md', undefined)).toBe(true);
+		expect(isPathInProjectScope('', undefined)).toBe(true);
+		expect(isPathInProjectScope(undefined, undefined)).toBe(true);
+	});
+
+	it('treats an empty project root (vault-root project) as no boundary', () => {
+		// ProjectManager normalizes a vault-root project to rootPath '' — the
+		// falsy guard must keep that from filtering every path.
+		expect(isPathInProjectScope('notes/todo.md', '')).toBe(true);
+		expect(isPathInProjectScope(undefined, '')).toBe(true);
+	});
+
+	it('accepts paths inside the project root and the root itself', () => {
+		expect(isPathInProjectScope('Foo/note.md', 'Foo')).toBe(true);
+		expect(isPathInProjectScope('Foo', 'Foo')).toBe(true);
+		expect(isPathInProjectScope('Foo/sub/deep.md', 'Foo')).toBe(true);
+	});
+
+	it('rejects paths outside the project root, including the vault root', () => {
+		expect(isPathInProjectScope('Bar/note.md', 'Foo')).toBe(false);
+		expect(isPathInProjectScope('', 'Foo')).toBe(false);
+		expect(isPathInProjectScope(undefined, 'Foo')).toBe(false);
+	});
+
+	it('does not treat a sibling with a shared prefix as in-scope (boundary case)', () => {
+		expect(isPathInProjectScope('Foobar/x.md', 'Foo')).toBe(false);
+	});
+});
+
+describe('projectScopeStatement', () => {
+	it('states the root and the hard boundary for a foldered project', () => {
+		const statement = projectScopeStatement('projects/my-app');
+		expect(statement).toContain('`projects/my-app`');
+		expect(statement).toContain('rejected with an error');
+		expect(statement).toContain('`list_files`');
+		expect(statement).toContain('only operate inside this folder');
+		expect(statement).toContain('Read and write tools');
+		expect(statement).toContain('when the user explicitly references them');
 	});
 });
 

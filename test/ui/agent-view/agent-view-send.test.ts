@@ -1,6 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { Notice } from 'obsidian';
-import { AgentViewSend } from '../../../src/ui/agent-view/agent-view-send';
+import { AgentViewSend, loadProjectInstructions } from '../../../src/ui/agent-view/agent-view-send';
 import type { GeminiConversationEntry } from '../../../src/types/conversation';
 import type { InlineAttachment } from '../../../src/ui/agent-view/inline-attachment';
 
@@ -209,5 +209,96 @@ describe('AgentViewSend.persistAttachments', () => {
 		expect(result).toEqual([]);
 		expect(saveAttachmentToVault).not.toHaveBeenCalled();
 		expect(NoticeMock).not.toHaveBeenCalled();
+	});
+});
+
+// Unit coverage for the project-instruction assembly phase (#1506). The
+// discovery-scope statement is folded into `projectInstructions` so it rides
+// the byte-stable PerTurnContext threading to every model call in a turn.
+
+describe('loadProjectInstructions', () => {
+	function makePlugin(project?: { instructions?: string; rootPath?: string }, getProjectError?: Error) {
+		const getProject = vi.fn(async () => {
+			if (getProjectError) throw getProjectError;
+			return project;
+		});
+		const logger = { log: vi.fn(), debug: vi.fn(), error: vi.fn(), warn: vi.fn() };
+		const plugin = { projectManager: { getProject }, logger };
+		return { plugin, getProject, logger };
+	}
+
+	test('appends the scope statement with the project root to existing instructions', async () => {
+		const { plugin } = makePlugin({ instructions: 'Keep it terse.', rootPath: 'projects/my-app' });
+
+		const result = await loadProjectInstructions(
+			plugin as unknown as Parameters<typeof loadProjectInstructions>[0],
+			'projects/my-app.md'
+		);
+
+		expect(result).toContain('Keep it terse.');
+		expect(result).toContain('`projects/my-app`');
+		expect(result).toContain('rejected with an error');
+		// Instructions first, scope statement after, separated by a blank line.
+		expect(result?.indexOf('Keep it terse.')).toBeLessThan(result?.indexOf('`projects/my-app`') ?? Infinity);
+	});
+
+	test('returns the scope statement alone when the project has no instructions', async () => {
+		const { plugin } = makePlugin({ instructions: '', rootPath: 'projects/my-app' });
+
+		const result = await loadProjectInstructions(
+			plugin as unknown as Parameters<typeof loadProjectInstructions>[0],
+			'projects/my-app.md'
+		);
+
+		expect(result).toContain('`projects/my-app`');
+		expect(result).not.toContain('\n\n');
+	});
+
+	test('states discovery is vault-wide for a vault-root project', async () => {
+		const { plugin } = makePlugin({ rootPath: '' });
+
+		const result = await loadProjectInstructions(
+			plugin as unknown as Parameters<typeof loadProjectInstructions>[0],
+			'project.md'
+		);
+
+		expect(result).toContain('vault root');
+		expect(result).not.toContain('rejected');
+	});
+
+	test('returns undefined when the session has no linked project', async () => {
+		const { plugin } = makePlugin();
+
+		const result = await loadProjectInstructions(
+			plugin as unknown as Parameters<typeof loadProjectInstructions>[0],
+			undefined
+		);
+
+		expect(result).toBeUndefined();
+		expect(plugin.projectManager.getProject).not.toHaveBeenCalled();
+	});
+
+	test('returns undefined when the project file no longer exists', async () => {
+		const { plugin } = makePlugin(undefined);
+
+		const result = await loadProjectInstructions(
+			plugin as unknown as Parameters<typeof loadProjectInstructions>[0],
+			'projects/deleted.md'
+		);
+
+		expect(result).toBeUndefined();
+	});
+
+	test('logs and returns undefined when loading fails, keeping the prompt renderable', async () => {
+		const boom = new Error('read failed');
+		const { plugin, logger } = makePlugin(undefined, boom);
+
+		const result = await loadProjectInstructions(
+			plugin as unknown as Parameters<typeof loadProjectInstructions>[0],
+			'projects/my-app.md'
+		);
+
+		expect(result).toBeUndefined();
+		expect(logger.error).toHaveBeenCalledWith('Error loading project instructions:', boom);
 	});
 });

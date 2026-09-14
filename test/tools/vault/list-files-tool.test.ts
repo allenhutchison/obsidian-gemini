@@ -282,6 +282,81 @@ describe('ListFilesTool', () => {
 		expect(result.data?.count).toBe(1);
 	});
 
+	it('should reject an explicit out-of-project path with an error when a project is active', async () => {
+		// The old behavior: an explicit path silently overrode the project
+		// root, so `path: '/'` listed the whole vault (#1506).
+		const contextWithProject: ToolExecutionContext = {
+			...mockContext,
+			projectRootPath: 'projects/my-project',
+		};
+
+		const result = await tool.execute({ path: '/' }, contextWithProject);
+
+		expect(result.success).toBe(false);
+		expect(result.error).toContain('outside the active project root');
+		expect(result.error).toContain('projects/my-project');
+		// Never reached the vault.
+		expect(mockVault.getAbstractFileByPath).not.toHaveBeenCalled();
+	});
+
+	it('should reject an explicit out-of-project folder path when a project is active', async () => {
+		const contextWithProject: ToolExecutionContext = {
+			...mockContext,
+			projectRootPath: 'projects/my-project',
+		};
+
+		const result = await tool.execute({ path: 'other/folder' }, contextWithProject);
+
+		expect(result.success).toBe(false);
+		expect(result.error).toContain('outside the active project root');
+		expect(mockVault.getAbstractFileByPath).not.toHaveBeenCalled();
+	});
+
+	it('should list a folder inside the project root when a project is active', async () => {
+		const subFolder = new TFolder();
+		subFolder.path = 'projects/my-project/notes';
+		subFolder.name = 'notes';
+		subFolder.children = [mockFile];
+
+		mockVault.getAbstractFileByPath.mockImplementation((p: string) =>
+			p === 'projects/my-project/notes' ? subFolder : null
+		);
+
+		const contextWithProject: ToolExecutionContext = {
+			...mockContext,
+			projectRootPath: 'projects/my-project',
+		};
+
+		const result = await tool.execute({ path: 'projects/my-project/notes' }, contextWithProject);
+
+		expect(result.success).toBe(true);
+		expect(result.data?.path).toBe('projects/my-project/notes');
+		expect(result.data?.count).toBe(1);
+	});
+
+	it('should treat a sibling folder with a shared prefix as outside the project root', async () => {
+		// projectRoot "projects/my-project" must not match "projects/my-project-old".
+		const contextWithProject: ToolExecutionContext = {
+			...mockContext,
+			projectRootPath: 'projects/my-project',
+		};
+
+		const result = await tool.execute({ path: 'projects/my-project-old' }, contextWithProject);
+
+		expect(result.success).toBe(false);
+		expect(result.error).toContain('outside the active project root');
+	});
+
+	it('should not impose a project boundary when no project is active', async () => {
+		mockVault.getAbstractFileByPath.mockReturnValue(mockFolder);
+
+		const result = await tool.execute({ path: '/' }, mockContext);
+
+		// No projectRootPath: '/' resolves to the vault root as before.
+		expect(result.success).toBe(true);
+		expect(result.data?.path).toBe('');
+	});
+
 	it('should apply boundary-aware folder filter for recursive listing under a subfolder', async () => {
 		// Files inside the target folder and a sibling folder with a similar prefix
 		const insideFile = new TFile();
