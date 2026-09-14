@@ -4,7 +4,7 @@ import { ToolClassification } from '../types/tool-policy';
 import { getRawErrorMessage } from '../utils/error-utils';
 import { executeWithRetry } from '../utils/retry';
 import { resolveGenerateContentModel } from '../models';
-import { featureModel } from '../api/feature-routing';
+import { featureModel, featureProvider } from '../api/feature-routing';
 
 /**
  * Search result from RAG semantic search
@@ -204,17 +204,23 @@ export class RagSearchTool implements Tool {
 
 			// Perform search using generateContent with File Search tool. This
 			// synthesis call is a chat-tier call (RAG the feature has no model of
-			// its own — it's Google's managed File Search embeddings); an
-			// interactions-only chat model falls back to the bundled default
-			// since File Search runs on generateContent.
+			// its own — it's Google's managed File Search embeddings), but File
+			// Search itself is Gemini-only: the `ai` client here is always the
+			// Gemini SDK. Only borrow chat's model string when chat is actually
+			// routed to Gemini — otherwise (chat on another provider, or 'none')
+			// pass '' so resolveGenerateContentModel falls back to the bundled
+			// Gemini default rather than resolving some other provider's model
+			// name against the Gemini API.
 			//
 			// Wrapped in executeWithRetry like every other direct SDK call site
 			// (web-fetch, the grounding tools, the RAG vault scanner): a transient
 			// 429/5xx here otherwise fails the tool call outright.
+			const chatModelForRagSynthesis =
+				featureProvider(plugin.settings, 'chat') === 'gemini' ? featureModel(plugin.settings, 'chat') : '';
 			const response = await executeWithRetry(
 				() =>
 					ai.models.generateContent({
-						model: resolveGenerateContentModel(featureModel(plugin.settings, 'chat')),
+						model: resolveGenerateContentModel(chatModelForRagSynthesis),
 						contents: `Search for information about: ${params.query}\n\nProvide a summary of the most relevant findings from the indexed documents. Include specific file references when available.`,
 						config: {
 							tools: [

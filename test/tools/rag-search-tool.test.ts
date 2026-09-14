@@ -328,6 +328,26 @@ describe('RagSearchTool', () => {
 			});
 		});
 
+		it('falls back to the bundled Gemini default when chat is routed to a non-Gemini provider', async () => {
+			// File Search always runs on the Gemini SDK regardless of which
+			// provider serves chat; borrowing chat's *model string* when chat
+			// runs elsewhere (e.g. OpenAI's 'gpt-4o') would ask the Gemini API to
+			// resolve a model name it doesn't recognize.
+			const { resolveGenerateContentModel } = await import('../../src/models');
+			(mockContext.plugin as any).settings.features.chat = { provider: 'openai', model: 'gpt-4o' };
+
+			mockAi.models.generateContent.mockResolvedValue({
+				text: 'Search results',
+				candidates: [{ groundingMetadata: { groundingChunks: [] } }],
+			});
+
+			await tool.execute({ query: 'test' }, mockContext);
+
+			expect(mockAi.models.generateContent).toHaveBeenCalledWith(
+				expect.objectContaining({ model: resolveGenerateContentModel('') })
+			);
+		});
+
 		it('should route the search through executeWithRetry', async () => {
 			mockAi.models.generateContent.mockResolvedValue({
 				text: 'Search results',
