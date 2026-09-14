@@ -82,6 +82,9 @@
 			"typescript": "$typescript"
 		},
 		"protobufjs": "^7.6.5",
-		"ip-address": "^10.1.1"
+		"ip-address": "^10.1.1",
+		"vitepress": {
+			"vite": "^6.4.3"
+		}
 	}
 }
