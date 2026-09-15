@@ -34,6 +34,17 @@ export const PROVIDER_SHORT_LABEL_KEY: Record<ModelProvider, TranslationKey> = {
 	openai: 'settings.providers.shortLabel.openai',
 };
 
+/**
+ * Heading/label key per feature group. Lives here with the other label-key
+ * maps because both callers need the same one: the Features page's group
+ * headings and `topLevelFeaturesDisplay`'s "Text on Ollama" summary.
+ */
+export const FEATURE_GROUP_LABEL_KEY: Record<(typeof FEATURE_GROUPS)[number]['key'], TranslationKey> = {
+	text: 'settings.features.groupText',
+	web: 'settings.features.groupWeb',
+	media: 'settings.features.groupMedia',
+};
+
 export const FEATURE_LABEL_KEY: Record<FeatureId, TranslationKey> = {
 	chat: 'settings.features.label.chat',
 	summary: 'settings.features.label.summary',
@@ -189,14 +200,9 @@ export function topLevelFeaturesDisplay(ctx: SettingsContext): string {
 		);
 		if (providers.size !== 1) continue;
 		const [provider] = providers;
-		const groupLabelKey: Record<(typeof FEATURE_GROUPS)[number]['key'], TranslationKey> = {
-			text: 'settings.features.groupText',
-			web: 'settings.features.groupWeb',
-			media: 'settings.features.groupMedia',
-		};
 		parts.push(
 			t('settings.providers.groupOnProvider', {
-				group: t(groupLabelKey[group.key]),
+				group: t(FEATURE_GROUP_LABEL_KEY[group.key]),
 				provider: t(PROVIDER_SHORT_LABEL_KEY[provider]),
 			})
 		);

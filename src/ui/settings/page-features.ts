@@ -13,18 +13,13 @@ import { featureRoute } from '../../api/feature-routing';
 import { featureStatus } from '../../api/provider-status';
 import { PROVIDERS, providersSupporting } from '../../api/providers/registry';
 import {
+	FEATURE_GROUP_LABEL_KEY,
 	FEATURE_LABEL_KEY,
 	featureRowDisplay,
 	modelOptions,
 	isModelMissing,
 	topLevelFeaturesDisplay,
 } from './display-values';
-
-const GROUP_HEADING_KEY: Record<(typeof FEATURE_GROUPS)[number]['key'], TranslationKey> = {
-	text: 'settings.features.groupText',
-	web: 'settings.features.groupWeb',
-	media: 'settings.features.groupMedia',
-};
 
 const GROUP_DESC_KEY: Partial<Record<(typeof FEATURE_GROUPS)[number]['key'], TranslationKey>> = {
 	text: 'settings.features.groupTextDesc',
@@ -100,7 +95,7 @@ export function featuresPage(ctx: SettingsContext): SettingDefinitionPage {
 		groupItems.push(...group.features.map((f) => featurePage(ctx, f)));
 		return {
 			type: 'group' as const,
-			heading: t(GROUP_HEADING_KEY[group.key]),
+			heading: t(FEATURE_GROUP_LABEL_KEY[group.key]),
 			items: groupItems,
 		};
 	});
