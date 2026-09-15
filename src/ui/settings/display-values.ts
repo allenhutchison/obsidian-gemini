@@ -85,13 +85,9 @@ const CONNECTION_LABEL_KEY: Record<ProviderConnection, TranslationKey> = {
 };
 
 /**
- * Design-doc-published helper (§5.3/§5.6): translates a raw `ProviderConnection`
- * into its display label. `providerCardDisplay` is the only caller today;
- * exported for WP3/future pages that need the same label off a connection
- * value they already have (rather than a provider id).
- * @public
+ * Translates a raw `ProviderConnection` into its display label.
  */
-export function connectionLabel(connection: ProviderConnection): string {
+function connectionLabel(connection: ProviderConnection): string {
 	return t(CONNECTION_LABEL_KEY[connection]);
 }
 

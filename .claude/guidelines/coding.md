@@ -94,6 +94,24 @@ goal, it needs a real consumer that keeps it honest (a type-only test that impor
 symbol), plus a decision about what the published artifact actually is — not an entry-point
 declaration pointing at an untracked build output.
 
+**Nothing marks an export reachable except a real caller.** knip's CI-blocking report is the
+dead-code gate, and every exemption mechanism in it has the same failure mode: a declaration,
+rather than a caller, makes an export look live, so dead surface lands and stays green. Three
+mechanisms have been exploited in this repo:
+
+- **Entry-point declarations**: the `types`/`exports` barrel above (#1294/#1356).
+- **`test/**` imports**: a test-only caller is not a production caller (#1493).
+- **JSDoc tags**: `@public`/`@beta`/`@alias` make knip skip the reachability check outright
+  (`isAlwaysIgnored` short-circuits before any caller search — the `tags` config key cannot
+  counteract it) (#1522, #1525). This repo is never `npm publish`ed, so it has no legitimate
+  use for any of them; ESLint's `no-tags-as-reachability` rule (in `eslint.config.mjs`) fails
+  the diff that adds one.
+
+The general rule knip's CI workflow states as its escape hatch still holds, with the tag rule
+added: intentional surface knip can't see belongs in `knip.json` — but a knip.json `ignore` is
+itself a declaration, not a caller, so it needs the same justification written next to it. If
+knip reports an export, delete it or give it a caller; don't tag it or ignore it.
+
 ## Derive entity parameter types — don't re-list fields
 
 For a vault-backed entity managed through `FileBackedFeatureManager` (`Hook`, `ScheduledTask`, …),

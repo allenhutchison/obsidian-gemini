@@ -47,7 +47,6 @@ export const FEATURE_IDS: readonly FeatureId[] = [
 
 /**
  * Features grouped for the Features page.
- * @public
  */
 export const FEATURE_GROUPS: { key: 'text' | 'web' | 'media'; features: FeatureId[] }[] = [
 	{ key: 'text', features: ['chat', 'summary', 'completions', 'rewrite'] },
