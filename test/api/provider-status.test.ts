@@ -1,7 +1,7 @@
 /**
- * Tests for `providerConnection` / `featureStatus` / `featureDisplayValue` —
- * the `off` / `unsupported` / `unconfigured` / `ok` truth table that drives
- * warning rows on the Features settings page.
+ * Tests for `providerConnection` / `featureStatus` — the `off` /
+ * `unsupported` / `unconfigured` / `ok` truth table that drives warning rows
+ * on the Features settings page.
  */
 import { providerConnection, featureStatus } from '../../src/api/provider-status';
 import { DEFAULT_OPENAI_BASE_URL } from '../../src/api/providers/openai/config';
