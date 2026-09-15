@@ -147,22 +147,6 @@ export function providerForModel(modelValue: string | null | undefined): ModelPr
 }
 
 /**
- * The remote host serving a model, or `null` when it runs on this machine.
- *
- * Only Ollama Cloud entries carry a host today. An unknown model returns `null`
- * — a model missing from the list (daemon unreachable) can't be shown to be
- * remote, and the privacy notices that call this already caveat cloud routing
- * elsewhere.
- * @public
- */
-export function remoteHostForModel(modelValue: string | null | undefined): string | null {
-	if (!modelValue) return null;
-	const entry =
-		GEMINI_MODELS.find((m) => m.value === modelValue) ?? DEFAULT_GEMINI_MODELS.find((m) => m.value === modelValue);
-	return entry?.remoteHost ?? null;
-}
-
-/**
  * A model's own input token limit, or `null` when the list carries none.
  *
  * Providers whose windows differ per model (OpenAI: 922k on GPT-5.6 versus the

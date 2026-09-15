@@ -8,11 +8,10 @@
  */
 
 import type { ObsidianGemini } from '../types/plugin';
-import { PROVIDERS, providerSupports, type ModelProvider } from './providers/registry';
+import { providerSupports, type ModelProvider } from './providers/registry';
 import { apiKeySecretNameFor } from './provider-credentials';
 import { featureRoute } from './feature-routing';
 import type { FeatureId } from '../types/features';
-import { t, type TranslationKey } from '../i18n';
 import { DEFAULT_OPENAI_BASE_URL } from './providers/openai/config';
 
 export type ProviderConnection = 'connected' | 'needs-key' | 'unreachable' | 'unknown';
@@ -58,21 +57,4 @@ export function featureStatus(plugin: ObsidianGemini, f: FeatureId): FeatureStat
 	if (!providerSupports(route.provider, f)) return 'unsupported';
 	if (providerConnection(plugin, route.provider) !== 'connected') return 'unconfigured';
 	return 'ok';
-}
-
-/**
- * One-line human summary for a Features row / provider card.
- * @public
- */
-export function featureDisplayValue(plugin: ObsidianGemini, f: FeatureId): string {
-	const status = featureStatus(plugin, f);
-	const route = featureRoute(plugin.settings, f);
-	if (status === 'off') return t('settings.features.off');
-	if (status === 'unsupported') return t('settings.features.chooseProvider');
-	const providerLabel = t(PROVIDERS[route.provider as ModelProvider].labelKey as TranslationKey);
-	if (status === 'unconfigured') {
-		return `${providerLabel} · ${t('settings.features.notConnected')}`;
-	}
-	const modelLabel = route.model || t('settings.features.modelDefault');
-	return `${providerLabel} · ${modelLabel}`;
 }
