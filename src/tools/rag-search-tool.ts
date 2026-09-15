@@ -3,6 +3,7 @@ import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import { getRawErrorMessage } from '../utils/error-utils';
 import { executeWithRetry } from '../utils/retry';
+import { isPathInProjectScope } from './vault/utils';
 import { resolveGenerateContentModel } from '../models';
 import { featureModel, featureProvider } from '../api/feature-routing';
 
@@ -180,9 +181,21 @@ export class RagSearchTool implements Tool {
 			// Validate and clamp maxResults
 			const maxResults = Math.min(Math.max(params.maxResults || 5, 1), 20);
 
-			// Build metadata filter if folder or tags are specified
-			// Default to project root path when no explicit folder is provided
+			// Resolve the effective folder: explicit argument wins over the
+			// project-root default — but only inside the boundary. With a project
+			// active, an out-of-project folder is rejected with an error rather
+			// than silently searched (#1506); a falsy `projectRootPath` (no
+			// project, or vault-root project) disables the boundary.
 			const folder = params.folder || context.projectRootPath;
+			if (!isPathInProjectScope(folder, context.projectRootPath)) {
+				return {
+					success: false,
+					error:
+						`Cannot search folder '${folder}': it is outside the active project root ` +
+						`'${context.projectRootPath}'. Semantic search is scoped to the project root while a project is active; ` +
+						'omit the folder argument to search the project root, or pick a folder inside it.',
+				};
+			}
 			const metadataFilter = this.buildMetadataFilter(folder, params.tags);
 
 			// Reuse API client from RAG indexing service

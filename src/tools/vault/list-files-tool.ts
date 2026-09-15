@@ -4,7 +4,7 @@ import { ToolClassification } from '../../types/tool-policy';
 import { TFolder, normalizePath } from 'obsidian';
 import { isPathInFolder, shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
 import { getRawErrorMessageOr } from '../../utils/error-utils';
-import { toFileEntry } from './utils';
+import { toFileEntry, isPathInProjectScope } from './utils';
 
 /**
  * List files in a folder
@@ -51,6 +51,23 @@ export class ListFilesTool implements Tool {
 			const rawPath = params.path || context.projectRootPath || '';
 			const normalized = rawPath ? normalizePath(rawPath) : '';
 			const folderPath = normalized === '/' ? '' : normalized;
+
+			// Hard project boundary (#1506): with a project active, an explicit
+			// out-of-project path — including the vault-root shorthands `''` and
+			// `/` — is rejected with an error rather than silently listed. The
+			// empty-`params.path` fallback above already resolves to the project
+			// root, so it always passes this check. A falsy `projectRootPath`
+			// (no project, or vault-root project) disables the boundary.
+			if (!isPathInProjectScope(folderPath, context.projectRootPath)) {
+				return {
+					success: false,
+					error:
+						`Cannot list '${folderPath || '(vault root)'}': it is outside the active project root ` +
+						`'${context.projectRootPath}'. Discovery tools are scoped to the project root while a project is active; ` +
+						'list a folder inside it instead.',
+				};
+			}
+
 			const folder = folderPath ? plugin.app.vault.getAbstractFileByPath(folderPath) : null;
 
 			// Show the resolved path in errors — `params.path` may be empty when

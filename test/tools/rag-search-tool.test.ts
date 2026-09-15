@@ -454,7 +454,7 @@ describe('RagSearchTool', () => {
 					text: 'Search results',
 					candidates: [{ groundingMetadata: { groundingChunks: [] } }],
 				});
-				(mockContext as any).projectRootPath = 'projects/my-app';
+				mockContext.projectRootPath = 'projects/my-app';
 
 				await tool.execute({ query: 'test' }, mockContext);
 
@@ -474,14 +474,33 @@ describe('RagSearchTool', () => {
 				});
 			});
 
-			it('should use explicit folder over project root', async () => {
+			it('should reject an explicit out-of-project folder with an error when a project is active', async () => {
+				// The old behavior: an explicit folder silently overrode the
+				// project-root default (#1506). Now the resolved folder must stay
+				// inside the boundary, and the rejection must happen before any
+				// API call is attempted.
 				mockAi.models.generateContent.mockResolvedValue({
 					text: 'Search results',
 					candidates: [{ groundingMetadata: { groundingChunks: [] } }],
 				});
-				(mockContext as any).projectRootPath = 'projects/my-app';
+				mockContext.projectRootPath = 'projects/my-app';
 
-				await tool.execute({ query: 'test', folder: 'other/folder' }, mockContext);
+				const result = await tool.execute({ query: 'test', folder: 'other/folder' }, mockContext);
+
+				expect(result.success).toBe(false);
+				expect(result.error).toContain('outside the active project root');
+				expect(result.error).toContain('projects/my-app');
+				expect(mockAi.models.generateContent).not.toHaveBeenCalled();
+			});
+
+			it('should search a folder inside the project root when a project is active', async () => {
+				mockAi.models.generateContent.mockResolvedValue({
+					text: 'Search results',
+					candidates: [{ groundingMetadata: { groundingChunks: [] } }],
+				});
+				mockContext.projectRootPath = 'projects/my-app';
+
+				await tool.execute({ query: 'test', folder: 'projects/my-app/notes' }, mockContext);
 
 				expect(mockAi.models.generateContent).toHaveBeenCalledWith({
 					model: 'gemini-1.5-flash-002',
@@ -491,7 +510,7 @@ describe('RagSearchTool', () => {
 							{
 								fileSearch: {
 									fileSearchStoreNames: ['test-store'],
-									metadataFilter: 'folder="other/folder"',
+									metadataFilter: 'folder="projects/my-app/notes"',
 								},
 							},
 						],
@@ -504,7 +523,7 @@ describe('RagSearchTool', () => {
 					text: 'Search results',
 					candidates: [{ groundingMetadata: { groundingChunks: [] } }],
 				});
-				(mockContext as any).projectRootPath = 'projects/my-app';
+				mockContext.projectRootPath = 'projects/my-app';
 
 				await tool.execute({ query: 'test', tags: ['architecture'] }, mockContext);
 
@@ -522,6 +541,23 @@ describe('RagSearchTool', () => {
 						],
 					},
 				});
+			});
+
+			it('should reject a traversal folder that string-matches the project prefix', async () => {
+				// `projects/my-app/../private` passes a naive prefix test for
+				// `projects/my-app` but resolves outside the boundary — the gate
+				// must reject it before the RAG API call (#1520 review).
+				mockAi.models.generateContent.mockResolvedValue({
+					text: 'Search results',
+					candidates: [{ groundingMetadata: { groundingChunks: [] } }],
+				});
+				mockContext.projectRootPath = 'projects/my-app';
+
+				const result = await tool.execute({ query: 'test', folder: 'projects/my-app/../private' }, mockContext);
+
+				expect(result.success).toBe(false);
+				expect(result.error).toContain('outside the active project root');
+				expect(mockAi.models.generateContent).not.toHaveBeenCalled();
 			});
 		});
 

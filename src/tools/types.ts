@@ -58,7 +58,16 @@ export interface IToolHostView {
 export interface ToolExecutionContext {
 	session: ChatSession;
 	plugin: ObsidianGemini;
-	/** When set, discovery tools default their search scope to this directory */
+	/**
+	 * When set, the project boundary for discovery tools (#1506). All four
+	 * discovery tools (`list_files`, `find_files_by_name`,
+	 * `find_files_by_content`, `vault_semantic_search`) hard-scope to this
+	 * directory: an out-of-project path argument is rejected with an error
+	 * (the parameterized tools) or filtered out (the search tools), and the
+	 * parameterized tools fall back to this root when their path/folder
+	 * argument is omitted. An empty string (vault-root project) means no
+	 * boundary. Read/write tools are unrestricted.
+	 */
 	projectRootPath?: string;
 	/**
 	 * Side effects on the agent view that owns this session (shelf updates, header
