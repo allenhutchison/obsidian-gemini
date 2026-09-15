@@ -9,23 +9,33 @@ diff against. Breaking one of these is a correctness or architecture regression,
 src/main.ts → ModelClientFactory.createFromPlugin() → GeminiClient | OllamaClient | OpenAIClient → RetryDecorator → ModelApi
 ```
 
-- Each call resolves its provider **independently** via `resolveProviderOrDefault(settings, useCase)`
-  (`src/api/provider-routing.ts`), which consults `settings.providerOverrides[useCase]` before
-  falling back to the primary `settings.provider`. The factory (`src/api/factory.ts`) instantiates a
-  `GeminiClient`, `OllamaClient`, or `OpenAIClient` from the resolved provider, wrapped by
-  `RetryDecorator` (exponential backoff) for resilience.
-- **Routing never silently substitutes a different provider.** Capability-gated features resolve via
-  `resolveProvider`, and a `null` result means the feature stays **off** — substituting a cloud
-  provider for a local one (or vice versa) would send vault data somewhere the user never opted
-  into. `resolveProviderOrDefault` exists only for the use cases every provider supports (chat,
-  summary, completions, rewrite).
-- All provider implementations conform to the `ModelApi` interface; provider-specific code stays
-  encapsulated under `src/api/providers/{gemini,ollama,openai}/`. Don't leak provider specifics
-  upward: the capability matrix (which provider can serve which use case) lives in the leaf module
-  `src/api/providers/registry.ts`, and the routing helpers in the leaf module
-  `src/api/provider-routing.ts` — consume them instead of branching on provider name literals.
-- The factory serves distinct use cases (chat, summary, completions, rewrite, webSearch, rag,
-  imageGen) — keep them distinct.
+- Each call resolves its provider **independently** via `featureProvider(settings, featureId)` in the leaf module
+  `src/api/feature-routing.ts`, reading the route stored at `settings.features[featureId]` (`featureRoute`) — the
+  dense `features: Record<FeatureId, FeatureRoute>` table. `settings.defaultProvider` never serves a request: it
+  only **seeds** entries missing at settings load (`sanitizeFeatureRoutes`), and otherwise feeds display/re-init
+  helpers (`activeProviders`, `routingKey`). The factory
+  (`src/api/factory.ts`) instantiates a `GeminiClient`, `OllamaClient`, or `OpenAIClient` from the resolved provider,
+  wrapped by `RetryDecorator` (exponential backoff) for resilience.
+- **No silent provider substitution — unconditional.** A feature is served by exactly the provider stored in its
+  route, or it is **off**: `featureProvider` returns `null` both for a `'none'` route and for a stored provider
+  that can't serve the feature. `'none'` is the only legal repair value — `sanitizeFeatureRoutes` maps unknown
+  provider ids and unsupported pairings to `'none'`, never to a substitute. An unservable route throws
+  `FeatureUnavailableError` from the factory; the caller surfaces it as a Notice instead of re-routing the request.
+  Substituting a cloud provider for a capability a local one lacks would send vault data somewhere the user never
+  opted into.
+- All provider implementations conform to the `ModelApi` interface; provider-specific code stays encapsulated under
+  `src/api/providers/{gemini,ollama,openai}/`. Don't leak provider specifics upward: the capability matrix (which
+  provider can serve which feature) lives in the leaf module `src/api/providers/registry.ts`, and the routing
+  helpers in the leaf module `src/api/feature-routing.ts` — consume them instead of branching on provider name
+  literals. `feature-routing` stays a leaf: `models.ts` imports _it_ (for `resolveFeatureModel`), never the
+  reverse; `featureModel` returns the stored string verbatim — default-model resolution lives in `models.ts`.
+- Routing is total over every `FeatureId` in `FEATURE_IDS` (`src/types/features.ts`) — keep features distinct.
+  The factory serves the four use-case features via `FEATURE_FOR_USE_CASE` (`src/api/factory.ts`); the rest
+  (`webSearch`, `deepResearch`, `rag`, `imageGen`) resolve the same way at their own consumers (e.g. tool
+  registration gates in `src/tools/tool-registrar.ts`) via `featureProvider`/`featureRoute`.
+- `ModelUseCase.SEARCH` bills to `chat`, not the `webSearch` feature: it's a thinking-level tier for
+  query-understanding calls on the chat path, and routing it to `webSearch` would make a local-only install's chat
+  calls hunt for a provider serving web search and find none.
 
 ## Session-history parser invariant
 
