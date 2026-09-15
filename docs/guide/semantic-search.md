@@ -97,7 +97,7 @@ The agent has a `vault_semantic_search` tool with these parameters:
 - **folder** (optional) — Filter results to a specific folder path
 - **tags** (optional) — Filter results by Obsidian tags
 
-> **Project scoping:** When a session is linked to a project, searches are automatically limited to the project's root folder. You can override this by specifying a different `folder` value explicitly.
+> **Project scoping:** When a session is linked to a project, searches are automatically limited to the project's root folder. You can narrow further with an explicit `folder` value inside that root, but a folder outside the project is rejected with an error rather than searched.
 
 ### Example Interactions
 
