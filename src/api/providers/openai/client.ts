@@ -42,7 +42,8 @@ import {
 import { GeminiPrompts } from '../../../prompts';
 import type { ObsidianGemini } from '../../../types/plugin';
 import type { OpenAIClientConfig } from './config';
-import { getLegacyEntryText } from '../../../utils/history-normalize';
+import { walkHistoryEntry } from '../history-walk';
+import type { WalkedToolCall, WalkedToolResponse } from '../history-walk';
 
 type ChatMessage = OpenAI.ChatCompletionMessageParam;
 type ChatTool = OpenAI.ChatCompletionTool;
@@ -374,114 +375,92 @@ export class OpenAIClient implements ModelApi {
 		declaredCallIds: Set<string>,
 		nextSeq: () => number
 	): ChatMessage[] | null {
-		if (!entry || typeof entry !== 'object') return null;
-		const record = entry as Record<string, unknown>;
+		const walked = walkHistoryEntry(entry, 'OpenAI');
+		if (!walked) return null;
 
-		// Gemini Content shape: { role: 'user'|'model', parts: Part[] }
-		if ('role' in record && Array.isArray(record.parts)) {
-			const role = record.role === 'model' ? 'assistant' : record.role === 'system' ? 'system' : 'user';
-			const textChunks: string[] = [];
-			const imageParts: ImageContentPart[] = [];
-			const toolCallParts: { id: string; name: string; arguments: Record<string, unknown> }[] = [];
-			const toolResponseParts: { id: string; response: unknown }[] = [];
+		// Resolve one id per tool part, walking calls and responses **interleaved
+		// in source-part order**. The walker reports each part's index precisely
+		// so this pass can reproduce the original single-loop pairing: a response
+		// that precedes its own call within one Content must still mint its id
+		// first, exactly as it did when both branches lived in the same loop.
+		const resolvedCalls: { id: string; name: string; args: Record<string, unknown> }[] = [];
+		const resolvedResponses: { id: string; response: unknown }[] = [];
+		const toolParts: ({ kind: 'call'; call: WalkedToolCall } | { kind: 'response'; response: WalkedToolResponse })[] = [
+			...walked.toolCalls.map((call) => ({ kind: 'call' as const, call })),
+			...walked.toolResponses.map((response) => ({ kind: 'response' as const, response })),
+		].sort(
+			(a, b) =>
+				(a.kind === 'call' ? a.call.partIndex : a.response.partIndex) -
+				(b.kind === 'call' ? b.call.partIndex : b.response.partIndex)
+		);
 
-			for (const rawPart of record.parts) {
-				const part = rawPart as {
-					text?: unknown;
-					inlineData?: { mimeType?: string; data?: string };
-					functionCall?: { name: string; args?: Record<string, unknown>; id?: string };
-					functionResponse?: { name: string; response?: unknown; id?: string };
-				};
-				if (typeof part?.text === 'string') {
-					textChunks.push(part.text);
-				} else if (part?.inlineData?.mimeType?.startsWith('image/') && part.inlineData.data) {
-					imageParts.push(
-						this.toImageContentPart({ mimeType: part.inlineData.mimeType, base64: part.inlineData.data })
-					);
-				} else if (part?.inlineData?.mimeType) {
-					// Mirror buildChatRequest's current-turn handling so resumed sessions
-					// don't silently drop PDF/audio/video context the model never sees.
-					throw new Error(
-						`OpenAI only supports image attachments; conversation history contains ${part.inlineData.mimeType}. ` +
-							`Switch to the Gemini provider for PDF, audio, or video input.`
-					);
-				} else if (part?.functionCall) {
-					const name = part.functionCall.name;
-					const id = part.functionCall.id ?? `call_${name}_${nextSeq()}`;
-					const queue = pendingCallIds.get(name) ?? [];
-					queue.push(id);
-					pendingCallIds.set(name, queue);
-					toolCallParts.push({ id, name, arguments: part.functionCall.args || {} });
-				} else if (part?.functionResponse) {
-					const name = part.functionResponse.name;
-					const queue = pendingCallIds.get(name);
-					const id = part.functionResponse.id ?? queue?.shift() ?? `call_${name}_${nextSeq()}`;
-					toolResponseParts.push({ id, response: part.functionResponse.response });
-				}
+		for (const toolPart of toolParts) {
+			if (toolPart.kind === 'call') {
+				const { name, args, id: ownId } = toolPart.call;
+				const id = ownId ?? `call_${name}_${nextSeq()}`;
+				const queue = pendingCallIds.get(name) ?? [];
+				queue.push(id);
+				pendingCallIds.set(name, queue);
+				resolvedCalls.push({ id, name, args });
+			} else {
+				const { name, response, id: ownId } = toolPart.response;
+				const queue = pendingCallIds.get(name);
+				const id = ownId ?? queue?.shift() ?? `call_${name}_${nextSeq()}`;
+				resolvedResponses.push({ id, response });
 			}
-
-			const out: ChatMessage[] = [];
-
-			// Assistant turn first (text + tool calls together): the API requires
-			// the assistant message declaring `tool_calls` to precede the tool-role
-			// messages that answer it.
-			if (role === 'assistant' && (textChunks.length || toolCallParts.length)) {
-				const message: OpenAI.ChatCompletionAssistantMessageParam = {
-					role: 'assistant',
-					content: textChunks.join('\n').trim() || null,
-				};
-				if (toolCallParts.length) {
-					message.tool_calls = toolCallParts.map((tc) => {
-						declaredCallIds.add(tc.id);
-						return {
-							id: tc.id,
-							type: 'function' as const,
-							function: { name: tc.name, arguments: JSON.stringify(tc.arguments) },
-						};
-					});
-				}
-				out.push(message);
-			}
-
-			// Tool responses become tool-role messages. Don't coalesce `null` to
-			// `{}` — an explicit null response carries different meaning ("no
-			// result") than an empty object, and JSON.stringify(null) === "null"
-			// is the correct serialization to preserve that. Responses whose call
-			// was never declared (trimmed by compaction) are dropped — the API
-			// rejects a `tool` message with an unknown `tool_call_id`.
-			for (const tr of toolResponseParts) {
-				if (!declaredCallIds.has(tr.id)) {
-					this.plugin?.logger?.log('OpenAI history: dropping orphaned tool response', tr.id);
-					continue;
-				}
-				const responseText = typeof tr.response === 'string' ? tr.response : JSON.stringify(tr.response);
-				out.push({ role: 'tool', tool_call_id: tr.id, content: responseText });
-			}
-
-			if (role !== 'assistant' && (textChunks.length || imageParts.length)) {
-				const text = textChunks.join('\n\n').trim();
-				if (role === 'user' && imageParts.length) {
-					const content: (TextContentPart | ImageContentPart)[] = [];
-					if (text) content.push({ type: 'text', text });
-					content.push(...imageParts);
-					out.push({ role: 'user', content });
-				} else {
-					out.push({ role, content: text });
-				}
-			}
-
-			return out.length ? out : null;
 		}
 
-		// Internal shape: { role, text } or { role, message }
-		if ('role' in record) {
-			const text = getLegacyEntryText(record);
-			if (typeof text !== 'string' || !text.trim()) return null;
-			const role = record.role === 'model' || record.role === 'assistant' ? 'assistant' : 'user';
-			return [{ role, content: text }];
+		const out: ChatMessage[] = [];
+
+		// Assistant turn first (text + tool calls together): the API requires
+		// the assistant message declaring `tool_calls` to precede the tool-role
+		// messages that answer it.
+		if (walked.role === 'assistant' && (walked.hasText || resolvedCalls.length)) {
+			const message: OpenAI.ChatCompletionAssistantMessageParam = {
+				role: 'assistant',
+				content: walked.text || null,
+			};
+			if (resolvedCalls.length) {
+				message.tool_calls = resolvedCalls.map((tc) => {
+					declaredCallIds.add(tc.id);
+					return {
+						id: tc.id,
+						type: 'function' as const,
+						function: { name: tc.name, arguments: JSON.stringify(tc.args) },
+					};
+				});
+			}
+			out.push(message);
 		}
 
-		return null;
+		// Tool responses become tool-role messages. Don't coalesce `null` to
+		// `{}` — an explicit null response carries different meaning ("no
+		// result") than an empty object, and JSON.stringify(null) === "null"
+		// is the correct serialization to preserve that. Responses whose call
+		// was never declared (trimmed by compaction) are dropped — the API
+		// rejects a `tool` message with an unknown `tool_call_id`.
+		for (const tr of resolvedResponses) {
+			if (!declaredCallIds.has(tr.id)) {
+				this.plugin?.logger?.log('OpenAI history: dropping orphaned tool response', tr.id);
+				continue;
+			}
+			const responseText = typeof tr.response === 'string' ? tr.response : JSON.stringify(tr.response);
+			out.push({ role: 'tool', tool_call_id: tr.id, content: responseText });
+		}
+
+		if (walked.role !== 'assistant' && (walked.hasText || walked.images.length)) {
+			const text = walked.text;
+			if (walked.role === 'user' && walked.images.length) {
+				const content: (TextContentPart | ImageContentPart)[] = [];
+				if (text) content.push({ type: 'text', text });
+				content.push(...walked.images.map((image) => this.toImageContentPart(image)));
+				out.push({ role: 'user', content });
+			} else {
+				out.push({ role: walked.role, content: text });
+			}
+		}
+
+		return out.length ? out : null;
 	}
 
 	private toOpenAITools(tools: ToolDefinition[]): ChatTool[] {

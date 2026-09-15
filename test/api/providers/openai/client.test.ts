@@ -602,6 +602,76 @@ describe('OpenAIClient', () => {
 			const assistantMsg = msgs.find((m: any) => m.role === 'assistant' && m.content === 'response');
 			expect(assistantMsg).toBeDefined();
 		});
+
+		// The three assertions below pin the provider differences that the shared
+		// history walker must NOT erase (#1373). They are the adapter-level
+		// regression net for "observably identical per provider".
+
+		it('emits the assistant message BEFORE its tool responses (the inverse of Ollama)', async () => {
+			await client.generateModelResponse({
+				prompt: '',
+				userMessage: 'go',
+				kind: 'extended',
+				conversationHistory: [
+					{
+						role: 'model',
+						parts: [
+							{ functionCall: { name: 'read_file', args: {} } },
+							{ functionResponse: { name: 'read_file', response: { content: 'data' } } },
+						],
+					},
+				],
+			});
+
+			const msgs = openaiCalls.create.mock.calls[0][0].messages;
+			const assistantIdx = msgs.findIndex((m: any) => m.role === 'assistant' && m.tool_calls?.length);
+			const toolIdx = msgs.findIndex((m: any) => m.role === 'tool');
+			expect(assistantIdx).toBeGreaterThanOrEqual(0);
+			expect(toolIdx).toBeGreaterThanOrEqual(0);
+			expect(assistantIdx).toBeLessThan(toolIdx);
+		});
+
+		it("coalesces an empty assistant turn's content to null (Ollama leaves '')", async () => {
+			await client.generateModelResponse({
+				prompt: '',
+				userMessage: 'go',
+				kind: 'extended',
+				conversationHistory: [{ role: 'model', parts: [{ text: '   ' }] }],
+			});
+
+			const msgs = openaiCalls.create.mock.calls[0][0].messages;
+			const assistantMsg = msgs.find((m: any) => m.role === 'assistant');
+			expect(assistantMsg).toBeDefined();
+			expect(assistantMsg.content).toBeNull();
+		});
+
+		it('mints call ids in source-part order when a response precedes its own call', async () => {
+			// The id pass walks calls and responses interleaved by part index, so
+			// an out-of-order Content mints for the response first — exactly as
+			// the original single-loop implementation did.
+			await client.generateModelResponse({
+				prompt: '',
+				userMessage: 'go',
+				kind: 'extended',
+				conversationHistory: [
+					{
+						role: 'model',
+						parts: [
+							{ functionResponse: { name: 'read_file', response: { content: 'data' } } },
+							{ functionCall: { name: 'read_file', args: {} } },
+						],
+					},
+				],
+			});
+
+			const msgs = openaiCalls.create.mock.calls[0][0].messages;
+			const assistantMsg = msgs.find((m: any) => m.role === 'assistant' && m.tool_calls?.length);
+			// The response minted seq 0; the call that follows it minted seq 1.
+			expect(assistantMsg.tool_calls[0].id).toBe('call_read_file_1');
+			// That response's id was never declared, so it is dropped rather than
+			// emitted with an unknown tool_call_id.
+			expect(msgs.find((m: any) => m.role === 'tool')).toBeUndefined();
+		});
 	});
 
 	describe('toUsageMetadata()', () => {

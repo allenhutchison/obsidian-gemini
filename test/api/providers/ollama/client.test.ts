@@ -534,6 +534,48 @@ describe('OllamaClient', () => {
 			const assistantMsg = msgs.find((m: any) => m.role === 'assistant' && m.content === 'response');
 			expect(assistantMsg).toBeDefined();
 		});
+
+		// The two assertions below pin the provider differences that the shared
+		// history walker must NOT erase (#1373). They are the adapter-level
+		// regression net for "observably identical per provider".
+
+		it('emits tool responses BEFORE the assistant message (the inverse of OpenAI)', async () => {
+			await client.generateModelResponse({
+				prompt: '',
+				userMessage: 'go',
+				kind: 'extended',
+				conversationHistory: [
+					{
+						role: 'model',
+						parts: [
+							{ functionCall: { name: 'read_file', args: {} } },
+							{ functionResponse: { name: 'read_file', response: { content: 'data' } } },
+						],
+					},
+				],
+			});
+
+			const msgs = ollamaCalls.chat.mock.calls[0][0].messages;
+			const toolIdx = msgs.findIndex((m: any) => m.role === 'tool');
+			const assistantIdx = msgs.findIndex((m: any) => m.role === 'assistant' && m.tool_calls?.length);
+			expect(toolIdx).toBeGreaterThanOrEqual(0);
+			expect(assistantIdx).toBeGreaterThanOrEqual(0);
+			expect(toolIdx).toBeLessThan(assistantIdx);
+		});
+
+		it("leaves an empty assistant turn's content as '' (OpenAI coalesces to null)", async () => {
+			await client.generateModelResponse({
+				prompt: '',
+				userMessage: 'go',
+				kind: 'extended',
+				conversationHistory: [{ role: 'model', parts: [{ text: '   ' }] }],
+			});
+
+			const msgs = ollamaCalls.chat.mock.calls[0][0].messages;
+			const assistantMsg = msgs.find((m: any) => m.role === 'assistant');
+			expect(assistantMsg).toBeDefined();
+			expect(assistantMsg.content).toBe('');
+		});
 	});
 
 	describe('buildOptions() with maxOutputTokens', () => {

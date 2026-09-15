@@ -34,7 +34,7 @@ import {
 import { GeminiPrompts } from '../../../prompts';
 import type { ObsidianGemini } from '../../../types/plugin';
 import type { OllamaClientConfig } from './config';
-import { getLegacyEntryText } from '../../../utils/history-normalize';
+import { walkHistoryEntry } from '../history-walk';
 
 export class OllamaClient implements ModelApi {
 	private client: Ollama;
@@ -277,91 +277,42 @@ export class OllamaClient implements ModelApi {
 	}
 
 	private convertHistoryEntry(entry: unknown): Message[] | null {
-		if (!entry || typeof entry !== 'object') return null;
-		const record = entry as Record<string, unknown>;
+		const walked = walkHistoryEntry(entry, 'Ollama');
+		if (!walked) return null;
 
-		// Gemini Content shape: { role: 'user'|'model', parts: Part[] }
-		if ('role' in record && Array.isArray(record.parts)) {
-			const role = record.role === 'model' ? 'assistant' : record.role === 'system' ? 'system' : 'user';
-			const textChunks: string[] = [];
-			const images: string[] = [];
-			const toolCallParts: { name: string; arguments: Record<string, unknown> }[] = [];
-			const toolResponseParts: { name: string; response: unknown }[] = [];
-			for (const rawPart of record.parts) {
-				const part = rawPart as {
-					text?: unknown;
-					inlineData?: { mimeType?: string; data?: string };
-					functionCall?: { name: string; args?: Record<string, unknown> };
-					functionResponse?: { name: string; response?: unknown };
-				};
-				if (typeof part?.text === 'string') {
-					textChunks.push(part.text);
-				} else if (part?.inlineData?.mimeType?.startsWith('image/') && part.inlineData.data) {
-					images.push(part.inlineData.data);
-				} else if (part?.inlineData?.mimeType) {
-					// Mirror buildChatRequest's current-turn handling so resumed sessions
-					// don't silently drop PDF/audio/video context the model never sees.
-					throw new Error(
-						`Ollama only supports image attachments; conversation history contains ${part.inlineData.mimeType}. ` +
-							`Switch to the Gemini provider for PDF, audio, or video input.`
-					);
-				} else if (part?.functionCall) {
-					toolCallParts.push({
-						name: part.functionCall.name,
-						arguments: part.functionCall.args || {},
-					});
-				} else if (part?.functionResponse) {
-					toolResponseParts.push({
-						name: part.functionResponse.name,
-						response: part.functionResponse.response,
-					});
-				}
-			}
+		const out: Message[] = [];
 
-			const out: Message[] = [];
-
-			// Tool responses become tool-role messages. Don't coalesce `null` to
-			// `{}` — an explicit null response carries different meaning ("no
-			// result") than an empty object, and JSON.stringify(null) === "null"
-			// is the correct serialization to preserve that.
-			for (const tr of toolResponseParts) {
-				const responseText = typeof tr.response === 'string' ? tr.response : JSON.stringify(tr.response);
-				out.push({ role: 'tool', content: responseText, tool_name: tr.name });
-			}
-
-			// Assistant turn (text + tool calls together)
-			if (role === 'assistant' && (textChunks.length || toolCallParts.length)) {
-				const message: Message = {
-					role: 'assistant',
-					content: textChunks.join('\n').trim(),
-				};
-				if (toolCallParts.length) {
-					message.tool_calls = toolCallParts.map((tc) => ({
-						function: { name: tc.name, arguments: tc.arguments },
-					}));
-				}
-				out.push(message);
-			} else if (role !== 'assistant' && (textChunks.length || images.length)) {
-				const message: Message = {
-					role,
-					content: textChunks.join('\n\n').trim(),
-				};
-				if (images.length) message.images = images;
-				out.push(message);
-			}
-
-			return out.length ? out : null;
+		// Tool responses become tool-role messages. Don't coalesce `null` to
+		// `{}` — an explicit null response carries different meaning ("no
+		// result") than an empty object, and JSON.stringify(null) === "null"
+		// is the correct serialization to preserve that.
+		//
+		// Ordering note: these precede the assistant message, the opposite of
+		// OpenAIClient.convertHistoryEntry. That is not a contradiction — the
+		// Chat Completions API *requires* the `tool_calls`-declaring assistant
+		// message to come first, while Ollama imposes no such constraint, so
+		// this half of the pair is arbitrary rather than load-bearing.
+		for (const tr of walked.toolResponses) {
+			const responseText = typeof tr.response === 'string' ? tr.response : JSON.stringify(tr.response);
+			out.push({ role: 'tool', content: responseText, tool_name: tr.name });
 		}
 
-		// Internal shape: { role, text } or { role, message }
-		if ('role' in record) {
-			const text = getLegacyEntryText(record);
-			if (typeof text !== 'string' || !text.trim()) return null;
-			const role = record.role === 'model' || record.role === 'assistant' ? 'assistant' : 'user';
-			return [{ role, content: text }];
+		// Assistant turn (text + tool calls together)
+		if (walked.role === 'assistant' && (walked.hasText || walked.toolCalls.length)) {
+			const message: Message = { role: 'assistant', content: walked.text };
+			if (walked.toolCalls.length) {
+				message.tool_calls = walked.toolCalls.map((tc) => ({
+					function: { name: tc.name, arguments: tc.args },
+				}));
+			}
+			out.push(message);
+		} else if (walked.role !== 'assistant' && (walked.hasText || walked.images.length)) {
+			const message: Message = { role: walked.role, content: walked.text };
+			if (walked.images.length) message.images = walked.images.map((image) => image.base64);
+			out.push(message);
 		}
 
-		return null;
+		return out.length ? out : null;
 	}
 
 	private toOllamaTools(tools: ToolDefinition[]): Tool[] {
