@@ -357,6 +357,22 @@ describe('ListFilesTool', () => {
 		expect(result.data?.path).toBe('');
 	});
 
+	it('should reject a traversal path that string-matches the project prefix', async () => {
+		// `projects/my-project/../private` passes a naive prefix test for
+		// `projects/my-project` but resolves outside the boundary — the gate
+		// must reject it before any vault access.
+		const contextWithProject: ToolExecutionContext = {
+			...mockContext,
+			projectRootPath: 'projects/my-project',
+		};
+
+		const result = await tool.execute({ path: 'projects/my-project/../private' }, contextWithProject);
+
+		expect(result.success).toBe(false);
+		expect(result.error).toContain('outside the active project root');
+		expect(mockVault.getAbstractFileByPath).not.toHaveBeenCalled();
+	});
+
 	it('should apply boundary-aware folder filter for recursive listing under a subfolder', async () => {
 		// Files inside the target folder and a sibling folder with a similar prefix
 		const insideFile = new TFile();

@@ -298,6 +298,16 @@ describe('isPathInProjectScope', () => {
 	it('does not treat a sibling with a shared prefix as in-scope (boundary case)', () => {
 		expect(isPathInProjectScope('Foobar/x.md', 'Foo')).toBe(false);
 	});
+
+	it('rejects traversal segments regardless of where they land', () => {
+		// isPathInFolder is a plain prefix test, so `projects/app/../private`
+		// would pass a `projects/app` prefix even though it resolves outside
+		// the boundary — traversal segments are rejected outright (#1520
+		// review). Real folders never contain `..`.
+		expect(isPathInProjectScope('projects/app/../private', 'projects/app')).toBe(false);
+		expect(isPathInProjectScope('../outside', 'projects/app')).toBe(false);
+		expect(isPathInProjectScope('projects/app/../../elsewhere', 'projects/app')).toBe(false);
+	});
 });
 
 describe('projectScopeStatement', () => {

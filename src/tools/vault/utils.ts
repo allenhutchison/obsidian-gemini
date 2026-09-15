@@ -50,6 +50,14 @@ export function isFileInAgentScope(file: TFile, plugin: ObsidianGemini, projectR
 export function isPathInProjectScope(path: string | undefined, projectRoot: string | undefined): boolean {
 	if (!projectRoot) return true;
 	if (!path) return false;
+	// Reject `..` traversal segments before the prefix test. `isPathInFolder`
+	// is a plain string check, so `projects/app/../private` would pass a
+	// `projects/app` prefix even though it resolves outside the boundary;
+	// `normalizePath` collapses slashes but does not resolve `..` (see
+	// `validateGeneratedOutputPath`). Vault paths are canonical — a real
+	// folder never contains `..` — so a traversal segment is by definition
+	// not a path inside the project.
+	if (path.split('/').includes('..')) return false;
 	return isPathInFolder(path, projectRoot);
 }
 

@@ -542,6 +542,23 @@ describe('RagSearchTool', () => {
 					},
 				});
 			});
+
+			it('should reject a traversal folder that string-matches the project prefix', async () => {
+				// `projects/my-app/../private` passes a naive prefix test for
+				// `projects/my-app` but resolves outside the boundary — the gate
+				// must reject it before the RAG API call (#1520 review).
+				mockAi.models.generateContent.mockResolvedValue({
+					text: 'Search results',
+					candidates: [{ groundingMetadata: { groundingChunks: [] } }],
+				});
+				mockContext.projectRootPath = 'projects/my-app';
+
+				const result = await tool.execute({ query: 'test', folder: 'projects/my-app/../private' }, mockContext);
+
+				expect(result.success).toBe(false);
+				expect(result.error).toContain('outside the active project root');
+				expect(mockAi.models.generateContent).not.toHaveBeenCalled();
+			});
 		});
 
 		it('should handle API errors gracefully', async () => {
