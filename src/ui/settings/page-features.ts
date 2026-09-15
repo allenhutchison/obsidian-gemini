@@ -28,12 +28,9 @@ const GROUP_DESC_KEY: Partial<Record<(typeof FEATURE_GROUPS)[number]['key'], Tra
 
 /**
  * One feature's own sub-page: the provider dropdown, and (when it has a
- * model role) the model dropdown. Design-doc-published export (§5.3);
- * `featuresPage` is the only caller today, but it's the natural unit tests
- * or a future page would target directly.
- * @public
+ * model role) the model dropdown. Only caller is `featuresPage` below.
  */
-export function featurePage(ctx: SettingsContext, f: FeatureId): SettingDefinitionPage {
+function featurePage(ctx: SettingsContext, f: FeatureId): SettingDefinitionPage {
 	const items: SettingDefinitionItem[] = [
 		{
 			name: t('settings.features.provider'),

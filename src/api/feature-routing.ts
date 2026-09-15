@@ -30,8 +30,7 @@ import {
 } from '../types/features';
 
 export type { ModelProvider } from './providers/registry';
-/** @public */
-export type { FeatureId, FeatureRoute, FeatureRoutes, ProviderModelMemory, RoutedProvider } from '../types/features';
+export type { FeatureId, FeatureRoute, FeatureRoutes, ProviderModelMemory } from '../types/features';
 
 /** Provider assumed when settings are missing, partial, or unroutable. */
 const DEFAULT_PROVIDER: ModelProvider = 'gemini';
