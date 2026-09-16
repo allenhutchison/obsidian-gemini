@@ -34,7 +34,6 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'settings.main.groupVault': 'Vault',
 	'settings.main.groupAutomation': 'Otomatisasi',
 	'settings.main.providersName': 'Penyedia',
-	'settings.main.featuresName': 'Fitur',
 	'settings.main.yourNameName': 'Nama Anda',
 	'settings.main.yourNameDesc':
 		'Nama Anda yang digunakan dalam instruksi sistem agar AI dapat menyapa Anda secara pribadi dalam percakapan.',
@@ -55,7 +54,6 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'settings.main.advancedName': 'Lanjutan',
 	'settings.main.documentationName': 'Dokumentasi',
 	'settings.main.documentationDesc': 'Lihat dokumentasi dan panduan lengkap plugin',
-	'settings.main.viewDocumentationButton': 'Lihat dokumentasi',
 	'settings.features.pageName': 'Fitur',
 	'settings.features.groupText': 'Teks',
 	'settings.features.groupTextDesc': 'Obrolan dan agen, ringkasan, pelengkapan, dan penulisan ulang.',

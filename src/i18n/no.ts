@@ -35,7 +35,6 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'settings.main.groupVault': 'Hvelv',
 	'settings.main.groupAutomation': 'Automatisering',
 	'settings.main.providersName': 'Leverandører',
-	'settings.main.featuresName': 'Funksjoner',
 	'settings.main.yourNameName': 'Ditt navn',
 	'settings.main.yourNameDesc':
 		'Navnet ditt som brukes i systeminstruksjoner slik at AI-en kan henvende seg personlig til deg i samtaler.',
@@ -56,7 +55,6 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'settings.main.advancedName': 'Avansert',
 	'settings.main.documentationName': 'Dokumentasjon',
 	'settings.main.documentationDesc': 'Se den fullstendige dokumentasjonen og veiledningene for programtillegget',
-	'settings.main.viewDocumentationButton': 'Se dokumentasjon',
 	'settings.features.pageName': 'Funksjoner',
 	'settings.features.groupText': 'Tekst',
 	'settings.features.groupTextDesc': 'Chat og agent, sammendrag, fullføringer og omskriving.',

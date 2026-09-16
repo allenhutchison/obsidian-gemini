@@ -145,10 +145,6 @@ export const en = {
 		message: 'Providers',
 		context: 'Top-level settings row opening the Providers sub-page (connection cards for Gemini, Ollama, OpenAI).',
 	},
-	'settings.main.featuresName': {
-		message: 'Features',
-		context: 'Top-level settings row opening the Features sub-page (per-feature provider + model routing).',
-	},
 	'settings.main.yourNameName': {
 		message: 'Your name',
 		context: 'Settings field name for the user name input used to personalize AI responses.',
@@ -218,10 +214,6 @@ export const en = {
 	'settings.main.documentationDesc': {
 		message: 'View the complete plugin documentation and guides',
 		context: 'Settings field description for the documentation link row.',
-	},
-	'settings.main.viewDocumentationButton': {
-		message: 'View documentation',
-		context: 'Button label that opens the plugin documentation website in a browser.',
 	},
 	'settings.features.pageName': {
 		message: 'Features',
