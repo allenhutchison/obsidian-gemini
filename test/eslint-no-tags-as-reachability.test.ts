@@ -65,19 +65,25 @@ describe('local/no-tags-as-reachability', () => {
 	}
 
 	it('flags each tag in its own block comment', () => {
-		expect(messagesFor('/* @public */')).toEqual([expect.stringContaining("'@public'")]);
-		expect(messagesFor('/* @beta */')).toEqual([expect.stringContaining("'@beta'")]);
-		expect(messagesFor('/* @alias Foo */')).toEqual([expect.stringContaining("'@alias'")]);
-	});
+		// One lint call for all three tags — each `Linter.verify` runs the full
+		// type-aware config, which costs seconds in CI (this test timed out at
+		// 5s when each tag was linted separately).
+		const code = ['/* @public */', '/* @beta */', '/* @alias Foo */'].join('\n');
+		expect(messagesFor(code)).toEqual([
+			expect.stringContaining("'@public'"),
+			expect.stringContaining("'@beta'"),
+			expect.stringContaining("'@alias'"),
+		]);
+	}, 30_000);
 
 	it('ignores comments without any tag', () => {
 		expect(messagesFor('/* export the widget for the modal */')).toEqual([]);
-	});
+	}, 30_000);
 
 	it('flags a tagged export in realistic source', () => {
 		const code = ['/**', ' * Legacy entry point.', ' * @public', ' */', 'export function legacyEntry(): void {}'].join(
 			'\n'
 		);
 		expect(messagesFor(code)).toEqual([expect.stringContaining("'@public'")]);
-	});
+	}, 30_000);
 });
