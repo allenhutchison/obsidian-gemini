@@ -219,11 +219,6 @@ body.theme-dark {
 	box-shadow: var(--gs-shadow-md);
 }
 
-.gemini-ghost-text {
-	color: var(--gs-text-muted);
-	opacity: 0.5;
-}
-
 /* User message styling */
 .callout[data-callout='user'] {
 	--callout-color: 124, 77, 255;
@@ -251,53 +246,6 @@ body.theme-dark {
 .callout[data-callout='metadata'] td,
 .callout[data-callout='metadata'] th {
 	padding: 3px 8px;
-}
-
-/* Tool Execution Panel */
-.gemini-scribe-tool-panel {
-	background-color: var(--gs-surface-alt);
-	border: 1px solid var(--gs-border);
-	border-radius: 6px;
-	margin: 8px 0;
-	padding: 12px;
-}
-
-.gemini-scribe-tool-execution {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-}
-
-.gemini-scribe-tool-name {
-	font-weight: 600;
-	color: var(--text-accent);
-}
-
-.gemini-scribe-tool-params {
-	background-color: var(--gs-surface);
-	border: 1px solid var(--gs-border);
-	border-radius: 4px;
-	padding: 8px;
-}
-
-.gemini-scribe-tool-params pre {
-	margin: 0;
-	font-size: 12px;
-	color: var(--gs-text-muted);
-}
-
-.gemini-scribe-tool-result {
-	margin-top: 8px;
-}
-
-.gemini-scribe-tool-status {
-	font-weight: 500;
-}
-
-.gemini-scribe-tool-error {
-	color: var(--text-error);
-	font-size: 13px;
-	margin-top: 4px;
 }
 
 /* Agent View Styles */
@@ -3711,13 +3659,6 @@ body.theme-dark {
 	min-height: 200px;
 }
 
-/* ── Background Tasks Modal ────────────────────────────────────────────────── */
-
-.gemini-bg-tasks-modal .modal-content {
-	padding-right: 16px;
-}
-
-.gemini-bg-tasks-modal h3,
 .gemini-activity-modal h3 {
 	margin: 12px 0 6px;
 	font-size: var(--font-ui-small);
@@ -4263,14 +4204,6 @@ body.theme-dark {
 	margin-bottom: 8px;
 }
 
-.gemini-scheduler-tool-label {
-	display: flex;
-	align-items: center;
-	gap: 4px;
-	font-size: var(--font-ui-small);
-	cursor: pointer;
-}
-
 .gemini-scheduler-prompt {
 	width: 100%;
 	box-sizing: border-box;
@@ -4427,13 +4360,6 @@ body.theme-dark {
 	color: var(--gs-text);
 }
 
-/* ── #1167: classes replacing static inline style assignments ──────────────── */
-
-/* Shared utilities */
-.gemini-invisible {
-	visibility: hidden;
-}
-
 .gemini-input-wide {
 	width: 30ch;
 }
@@ -4482,12 +4408,6 @@ body.theme-dark {
 /* MCP server modal: discovered-tools description spacing */
 .gemini-discovered-tools-desc {
 	margin-bottom: 0.5em;
-}
-
-/* RAG settings: privacy notice emphasis */
-.gemini-rag-privacy-notice {
-	margin-bottom: 1em;
-	color: var(--text-warning);
 }
 
 /* Tool permissions page: filter pills above the searchable tool list
