@@ -3731,9 +3731,9 @@ export const en = {
 	},
 	'settings.providers.privacyNoticeDesc': {
 		message:
-			'Only the providers your features actually use ever receive your content. Ollama keeps requests on this machine, except for models marked "cloud", which it forwards to ollama.com. Gemini and OpenAI send the request to that company\'s servers.',
+			'Only the providers your features actually use ever receive your content. Ollama keeps requests on this machine, except for models marked "cloud", which it forwards to ollama.com. Gemini, OpenAI, and Anthropic send the request to that company\'s servers.',
 		context:
-			'The single privacy note on the Providers page, replacing four separate variants from the previous settings layout. "Ollama", "Gemini", and "OpenAI" are product names.',
+			'The single privacy note on the Providers page, replacing four separate variants from the previous settings layout. "Ollama", "Gemini", "OpenAI", and "Anthropic" are product names.',
 	},
 	'settings.providers.defaultMoved': {
 		message: '{count} features moved to the new default provider.',
