@@ -1,6 +1,7 @@
 import tsparser from '@typescript-eslint/parser';
 import { defineConfig } from 'eslint/config';
 import obsidianmd from 'eslint-plugin-obsidianmd';
+import { Linter } from 'eslint';
 
 // `eslint-plugin-obsidianmd@0.3.0`'s recommended preset bundles a large set of
 // strict `@typescript-eslint/*` rules (no-explicit-any, no-unsafe-*, etc.) in
@@ -109,6 +110,54 @@ const PATH_CONTAINMENT_RULE = {
 	],
 };
 
+// #1525: knip honours `@public` / `@beta` JSDoc tags as a built-in exemption — a tagged
+// export is reported as used without any reachability check (its `isAlwaysIgnored`
+// short-circuits before the caller search), so dead surface lands and stays green on the
+// CI-blocking `npm run knip` check. Three exemptions have already been abused this way:
+// the `types`/`exports` entry-point barrel (#1356/#1463), `test/**` imports (#1493), and
+// the `@public` tag itself (#1522: two exports with zero references). This repo ships
+// through the Obsidian registry and is never `npm publish`ed, so it has no public API and
+// no legitimate use for any of the tags. `no-restricted-syntax` cannot see comments
+// (they are not walked AST nodes), so this is a local rule over `sourceCode.getAllComments()`.
+// Knip's tag scanner only reads `/* */`-style comments (`comment.type === 'Block'`),
+// so the rule mirrors that exactly — `//`-line comments never exempt anything.
+const REACHABILITY_TAG_RULE = {
+	'no-tags-as-reachability': {
+		meta: {
+			type: 'problem',
+			docs: {
+				description:
+					'`@public`/`@beta`/`@alias` JSDoc tags silently exempt an export from the knip dead-code check (#1525)',
+			},
+			schema: [],
+			messages: {
+				noReachabilityTag:
+					"'{{tag}}' marks this export reachable to knip with no real caller. There is no public API in this repo: delete the tag, delete the export, or give it a caller — see 'There is no public API barrel' in .claude/guidelines/coding.md (#1525).",
+			},
+		},
+		create(context) {
+			const TAGS = ['@public', '@beta', '@alias'];
+			return {
+				Program() {
+					for (const comment of context.sourceCode.getAllComments()) {
+						if (comment.type !== 'Block') continue;
+						for (const tag of TAGS) {
+							if (comment.value.includes(tag)) {
+								context.report({
+									node: comment,
+									messageId: 'noReachabilityTag',
+									data: { tag },
+								});
+							}
+						}
+					}
+				},
+			};
+		},
+	},
+};
+const plugin_ = { rules: { 'no-tags-as-reachability': REACHABILITY_TAG_RULE['no-tags-as-reachability'] } };
+
 const NODE_GLOBALS = {
 	process: 'readonly',
 	Buffer: 'readonly',
@@ -171,17 +220,30 @@ export default defineConfig([
 				'@typescript-eslint/no-restricted-imports',
 				'@microsoft/sdl/no-document-write',
 				'no-eval',
+				// #1525: an inline disable would re-open the knip tag-exemption hole the
+				// rule exists to close — suppressible only via a config change, never a comment.
+				'local/no-tags-as-reachability',
 			],
 		},
 	},
 	{
+		files: ['test/eslint-no-tags-as-reachability.test.ts'],
+		rules: { 'local/no-tags-as-reachability': 'off' },
+	},
+	{
 		files: ['src/**/*.ts'],
+		plugins: { local: plugin_ },
 		languageOptions: {
 			parser: tsparser,
 			parserOptions: { project: './tsconfig.json' },
 			globals: NODE_GLOBALS,
 		},
-		rules: { ...SOFTENED_TS_RULES, ...PERVASIVE_OBSIDIANMD_RULES_TODO, ...PATH_CONTAINMENT_RULE },
+		rules: {
+			...SOFTENED_TS_RULES,
+			...PERVASIVE_OBSIDIANMD_RULES_TODO,
+			...PATH_CONTAINMENT_RULE,
+			'local/no-tags-as-reachability': 'error',
+		},
 	},
 	{
 		// `file-utils.ts` owns `isPathInFolder` and the write-path policy built on

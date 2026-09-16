@@ -85,12 +85,10 @@ export const PROVIDER_CARDS: ProviderCardSpec[] = [
  * row is disabled and its description says so. This is the seam a later
  * OAuth package plugs into; registering an entry here lights the row up with
  * no other change. Intentionally unread/unwritten outside this file today
- * (design doc §6.4) — exported so that later package can import it.
- * @public
+ * (design doc §6.4). File-local until a real writer lands — see #1524.
  */
-export type SubscriptionSignIn = (plugin: ObsidianGemini) => Promise<'signed-in' | 'cancelled'>;
-/** @public */
-export const SUBSCRIPTION_SIGN_IN: Partial<Record<CardProviderId, SubscriptionSignIn>> = {};
+type SubscriptionSignIn = (plugin: ObsidianGemini) => Promise<'signed-in' | 'cancelled'>;
+const SUBSCRIPTION_SIGN_IN: Partial<Record<CardProviderId, SubscriptionSignIn>> = {};
 
 /**
  * Moved from the deleted `src/ui/settings-general.ts` (settings redesign
