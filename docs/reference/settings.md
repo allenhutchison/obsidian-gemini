@@ -132,13 +132,13 @@ Rows, grouped:
 | Media            | Image generation                                   |
 
 - **Chat and agent** (`features.chat`) — interactive chat, agent sessions, scheduled tasks,
-  hooks. All three providers support it.
+  hooks. All four providers support it.
 - **Summaries** (`features.summary`) — the "Summarize active file" command and conversation
-  compaction. All three providers support it.
-- **Completions** (`features.completions`) — IDE-style inline suggestions. All three providers
+  compaction. All four providers support it.
+- **Completions** (`features.completions`) — IDE-style inline suggestions. All four providers
   support it.
 - **Rewrite** (`features.rewrite`) — rewriting selected text. Has its own model field (it no
-  longer silently borrows the chat model). All three providers support it.
+  longer silently borrows the chat model). All four providers support it.
 - **Web search** (`features.webSearch`) — Google Search grounding and the web-fetch (URL
   context) tool ride together on this row. Gemini only today.
 - **Deep research** (`features.deepResearch`) — the Deep Research managed agent. Gemini only;
