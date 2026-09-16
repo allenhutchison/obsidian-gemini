@@ -256,6 +256,11 @@ export const en = {
 		context:
 			'Model dropdown option meaning "use the provider\'s own default model for this feature" rather than a specific named model.',
 	},
+	'settings.features.modelDefaultNamed': {
+		message: 'Default ({model})',
+		context:
+			'Model dropdown option meaning "use the provider\'s own default model for this feature", naming that model. {model} is a model display name such as "Claude Opus 5" and stays untranslated.',
+	},
 	'settings.features.sameAsChat': {
 		message: 'Same as chat',
 		context:

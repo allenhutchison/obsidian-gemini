@@ -173,9 +173,13 @@ quietly talking to Gemini.
 
 ### Model options
 
-A feature's model dropdown always includes a leading **"Default for this provider"** option
-(stored as `''`, resolved at request time against the live model list). When the provider is
-Ollama and the feature isn't Chat, the leading option instead reads **"Same as chat model"** —
+A feature's model dropdown always includes a leading **Default** option, labelled with the model
+it currently resolves to — e.g. **"Default (Claude Opus 5)"** for Chat on Anthropic, or
+**"Default (Claude Haiku 4.5)"** for Completions. It is stored as `''` and resolved at request
+time against the live model list, so it follows the provider's role default if that changes.
+The Features row shows the same label. Until a provider's model list has loaded there is no
+model to name, and the option reads **"Default for this provider"**. When the provider is
+Ollama and the feature isn't Chat, the leading option instead reads **"Same as chat"** —
 Ollama keeps one model resident at a time, so non-chat features default to reusing whichever
 model chat already has loaded. If a stored model is no longer in the provider's live list (a
 retired or un-pulled model), it still appears as an option labelled "No longer available" with an
@@ -201,7 +205,7 @@ Model discovery is automatic — no user-configurable settings are required.
 When Google retires a model (the API starts returning 404 "no longer available"), it is removed
 from the catalog and any route or remembered model still pointing at it is migrated
 automatically on the next reload: to the retired model's designated successor when one exists,
-otherwise reset to "Default for this provider."
+otherwise reset to the provider's default.
 
 ### Provider-bound grounding
 

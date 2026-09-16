@@ -10,7 +10,7 @@ This uses API-key billing: you need an Anthropic API key. A Claude.ai subscripti
 2. **Open the Anthropic card** — Open Settings → Gemini Scribe → **Providers** and select the **Anthropic** card.
 3. **Enter your API key** — On the API key row, click "Link..." and paste your key. It's stored securely using Obsidian's SecretStorage, the same as the Gemini and OpenAI keys. The card shows **Connected** once a key is set.
 4. **Route features to it** — Open the **Features** page and set Chat and agent (and Summaries, Completions, or Rewrite if you want) to **Anthropic**. Set **Default provider** on the Providers page to Anthropic too if you want it to catch everything you haven't routed elsewhere.
-5. **Pick models** — Each routed feature has its own model dropdown on the Features page. Leave it on the default, or choose another Claude model. Click **Refresh** on the Anthropic card if the list looks stale.
+5. **Pick models** — Each routed feature has its own model dropdown on the Features page. Leave it on **Default** — the option names the model it resolves to, e.g. "Default (Claude Opus 5)" — or choose another Claude model. Click **Refresh** on the Anthropic card if the list looks stale.
 
 ## Models
 

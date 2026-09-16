@@ -15,8 +15,8 @@ import { t, type TranslationKey } from '../../i18n';
 import { featureRoute, activeProviders, featuresUsing } from '../../api/feature-routing';
 import { providerConnection, featureStatus, type ProviderConnection } from '../../api/provider-status';
 import { getCapabilities, type ModelProvider } from '../../api/providers/registry';
-import { GEMINI_MODELS } from '../../models';
-import { FEATURE_GROUPS, type FeatureId } from '../../types/features';
+import { GEMINI_MODELS, getDefaultModelForRole } from '../../models';
+import { FEATURE_GROUPS, FEATURE_MODEL_ROLE, type FeatureId } from '../../types/features';
 
 function sep(): string {
 	return t('settings.common.listSeparator');
@@ -24,14 +24,13 @@ function sep(): string {
 
 /**
  * Short provider names for row/chip copy ("Gemini", not "Google Gemini
- * (cloud)"). Covers only `ModelProvider` — the routable providers — since
- * this module never surfaces the card-only Anthropic placeholder;
- * `provider-cards.ts` keys its own `anthropic` short label directly.
+ * (cloud)"), for every `ModelProvider`.
  */
 export const PROVIDER_SHORT_LABEL_KEY: Record<ModelProvider, TranslationKey> = {
 	gemini: 'settings.providers.shortLabel.gemini',
 	ollama: 'settings.providers.shortLabel.ollama',
 	openai: 'settings.providers.shortLabel.openai',
+	anthropic: 'settings.providers.shortLabel.anthropic',
 };
 
 /**
@@ -96,20 +95,43 @@ export function providerCardDisplay(ctx: SettingsContext, p: ModelProvider): str
 	return connectionLabel(providerConnection(ctx.plugin, p));
 }
 
+/** The live list's label for a provider's model, or `undefined` when the list doesn't have it. */
+function listedModelLabel(provider: ModelProvider, model: string): string | undefined {
+	return GEMINI_MODELS.find((m) => m.value === model && (m.provider ?? 'gemini') === provider)?.label;
+}
+
+/**
+ * Label for a feature's empty model value: "Same as chat" on a provider that
+ * keeps one model resident, otherwise "Default (<model>)" naming the model
+ * the request would actually use — the same `getDefaultModelForRole` lookup
+ * `resolveFeatureModel` performs. Falls back to the unnamed "Default for this
+ * provider" while the provider's list hasn't loaded (no default to name yet).
+ */
+function defaultModelLabel(provider: ModelProvider, f: FeatureId): string {
+	if (!getCapabilities(provider).perUseCaseModels && f !== 'chat') return t('settings.features.sameAsChat');
+	const role = FEATURE_MODEL_ROLE[f];
+	let model = '';
+	if (role) {
+		try {
+			model = getDefaultModelForRole(role, provider);
+		} catch {
+			// An empty bundled Gemini list — nothing to name.
+		}
+	}
+	if (!model) return t('settings.features.modelDefault');
+	return t('settings.features.modelDefaultNamed', { model: listedModelLabel(provider, model) ?? model });
+}
+
 /** The model label shown for a feature row/page: the live list's label, or the appropriate "no model" copy. */
 function featureModelLabel(ctx: SettingsContext, f: FeatureId): string {
 	if (f === 'deepResearch') return t('settings.features.deepResearchAgent');
 	if (f === 'rag') return t('settings.features.fileSearch');
 	const route = featureRoute(ctx.plugin.settings, f);
 	const provider = route.provider === 'none' ? null : route.provider;
-	if (!route.model) {
-		const caps = provider ? getCapabilities(provider) : null;
-		return caps && !caps.perUseCaseModels && f !== 'chat'
-			? t('settings.features.sameAsChat')
-			: t('settings.features.modelDefault');
-	}
-	const entry = GEMINI_MODELS.find((m) => m.value === route.model && (m.provider ?? 'gemini') === provider);
-	if (entry) return entry.label;
+	if (!provider) return t('settings.features.modelDefault');
+	if (!route.model) return defaultModelLabel(provider, f);
+	const label = listedModelLabel(provider, route.model);
+	if (label) return label;
 	return `${route.model} (${t('settings.features.modelMissing')})`;
 }
 
@@ -138,8 +160,8 @@ export function featureRowDisplay(ctx: SettingsContext, f: FeatureId): string {
 }
 
 /**
- * Dropdown options for a feature's model control: a leading "Default for
- * this provider" / "Same as chat" entry, then every model the current
+ * Dropdown options for a feature's model control: a leading "Default
+ * (<model>)" / "Same as chat" entry, then every model the current
  * provider offers for this feature's role, plus the stored model itself
  * (labelled "No longer available") if it has fallen out of the live list.
  * `{}` when the feature is off (the model row is hidden in that state).
@@ -148,14 +170,11 @@ export function modelOptions(ctx: SettingsContext, f: FeatureId): Record<string,
 	const route = featureRoute(ctx.plugin.settings, f);
 	if (route.provider === 'none') return {};
 	const provider = route.provider;
-	const caps = getCapabilities(provider);
 	const wantsImage = f === 'imageGen';
 	const pool = GEMINI_MODELS.filter(
 		(m) => (m.provider ?? 'gemini') === provider && Boolean(m.supportsImageGeneration) === wantsImage
 	);
-	const defaultLabel =
-		!caps.perUseCaseModels && f !== 'chat' ? t('settings.features.sameAsChat') : t('settings.features.modelDefault');
-	const options: Record<string, string> = { '': defaultLabel };
+	const options: Record<string, string> = { '': defaultModelLabel(provider, f) };
 	for (const m of pool) {
 		options[m.value] = m.label;
 	}
