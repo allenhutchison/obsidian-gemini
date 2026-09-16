@@ -219,236 +219,6 @@ body.theme-dark {
 	box-shadow: var(--gs-shadow-md);
 }
 
-.gemini-scribe-chatbox {
-	display: flex;
-	flex-direction: column;
-	/* Messages flow vertically */
-	overflow-y: auto;
-	/* Add scrollbar if needed */
-	flex-grow: 1;
-	padding: var(--size-2-1);
-	background-color: var(--gs-surface);
-}
-
-.gemini-scribe-message-container {
-	margin-bottom: var(--size-2-2);
-	/* Space between messages */
-}
-
-.gemini-scribe-sender-indicator {
-	font-weight: bold;
-	margin-bottom: var(--size-1-2);
-	/* Space between indicator and message */
-	color: var(--gs-text-muted);
-	/* Use theme's muted text color */
-}
-
-.gemini-scribe-message {
-	user-select: text;
-	-webkit-user-select: text;
-	/* For older WebKit browsers */
-	-ms-user-select: text;
-	/* For older Internet Explorer */
-	padding: var(--size-2-1) var(--size-2-2);
-	/* Padding within message bubbles */
-	border-radius: var(--gs-radius-sm);
-	/* Rounded corners for the bubbles */
-	box-sizing: border-box;
-	color: var(--gs-text);
-	/* Use theme's normal text color */
-	width: 100%;
-}
-
-.gemini-scribe-message.user {
-	background-color: var(--gs-surface-alt);
-	/* Use theme's modifier background color */
-}
-
-.gemini-scribe-message.model {
-	background-color: var(--gs-surface-alt);
-	/* Use theme's primary background color */
-}
-
-.gemini-scribe-message.grounding {
-	background-color: var(--gs-surface-alt);
-	/* Use theme's primary background color */
-}
-
-.gemini-scribe-chatbox .gemini-scribe-message .gemini-scribe-copy-button {
-	background-color: var(--gs-accent);
-	border: none;
-	color: var(--gs-on-accent);
-	padding: var(--gs-space-2) var(--gs-space-3);
-	border-radius: var(--gs-radius-sm);
-	cursor: pointer;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.gemini-scribe-chatbox .gemini-scribe-message .gemini-scribe-copy-button::before {
-	content: attr(data-icon);
-	font-family: 'Lucide';
-	font-size: var(--font-size-m);
-	margin-right: var(--size-1-2);
-}
-
-.gemini-scribe-chatbox .gemini-scribe-message .gemini-scribe-copy-button:hover {
-	background-color: var(--gs-accent-hover);
-}
-
-/* Style the input area */
-.gemini-scribe-input-area {
-	display: flex;
-	align-items: flex-start;
-	/* Align items to top */
-	margin-top: var(--size-2-1);
-	/* Separate input area from chatbox */
-	margin-bottom: var(--size-2-1);
-	width: 100%;
-}
-
-.gemini-scribe-input-area .gemini-scribe-chat-input {
-	padding: var(--gs-space-2);
-	border: var(--border-width) solid var(--gs-border);
-	border-radius: var(--gs-radius-sm);
-	margin-right: var(--size-2-2);
-	flex-grow: 1;
-	background-color: var(--background-modifier-form-field);
-	width: 100%;
-	/* Ensure the input takes the full width of the container */
-	height: 50px;
-	/* Adjust the height as needed */
-	font-size: 16px;
-	/* Adjust the font size as needed */
-	resize: vertical;
-	/* Allow vertical resizing */
-	overflow: auto;
-	/* Ensure the text wraps inside the box */
-	white-space: pre-wrap;
-	/* Ensure the text wraps inside the box */
-}
-
-/* Optional: Style the placeholder text */
-.gemini-scribe-input-area .gemini-scribe-chat-input::placeholder {
-	color: var(--gs-text-muted);
-	/* Adjust the color as needed */
-	opacity: 1;
-	/* Ensure the placeholder text is fully opaque */
-}
-
-/* Create a container for send button and timer */
-.gemini-scribe-send-container .gemini-scribe-send-button:hover {
-	background-color: var(--gs-accent-hover);
-}
-
-/* Create a container for send button and timer */
-.gemini-scribe-send-container {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	margin-left: var(--size-2-2);
-}
-
-.gemini-scribe-send-button {
-	background-color: var(--gs-accent);
-	border: none;
-	color: var(--gs-on-accent);
-	padding: var(--gs-space-2) var(--gs-space-3);
-	border-radius: var(--gs-radius-sm);
-	cursor: pointer;
-}
-
-.gemini-scribe-send-container .gemini-scribe-send-button {
-	background-color: var(--gs-accent);
-	border: none;
-	color: var(--gs-on-accent);
-	padding: var(--gs-space-2) var(--gs-space-3);
-	border-radius: var(--gs-radius-sm);
-	cursor: pointer;
-}
-
-.gemini-scribe-send-container .gemini-scribe-send-button:hover {
-	background-color: var(--gs-accent-hover);
-}
-
-.gemini-scribe-options-area {
-	display: flex;
-	align-items: center;
-	padding: var(--size-2-1);
-	margin-bottom: var(--size-2-1);
-}
-
-.gemini-scribe-rewrite-checkbox {
-	margin-right: var(--size-2-2);
-}
-
-.gemini-scribe-rewrite-label {
-	color: var(--gs-text-muted);
-	display: flex;
-	align-items: center;
-	cursor: pointer;
-}
-
-.gemini-scribe-timer {
-	color: var(--gs-text-muted);
-	font-size: 0.9em;
-	font-family: var(--font-monospace);
-	margin-top: 5px;
-	min-width: 3.5em;
-	text-align: center;
-}
-
-.gemini-ghost-text {
-	color: var(--gs-text-muted);
-	opacity: 0.5;
-}
-
-.gemini-scribe-model-picker-area {
-	display: flex;
-	align-items: center;
-	margin-top: var(--size-2-1);
-	width: 100%;
-	/* Match the width of the input area */
-	padding: 0;
-	/* Remove padding to align with input area */
-	background-color: var(--gs-surface-alt);
-	border-radius: var(--gs-radius-sm);
-}
-
-.gemini-scribe-model-label {
-	color: var(--gs-text-muted);
-	margin-right: var(--size-2-2);
-	font-size: var(--font-ui-small);
-}
-
-.gemini-scribe-model-picker {
-	flex: 1;
-	padding: var(--gs-space-2) var(--gs-space-3);
-	min-height: 32px;
-	border: var(--border-width) solid var(--gs-border);
-	border-radius: var(--gs-radius-sm);
-	background-color: var(--background-modifier-form-field);
-	color: var(--gs-text);
-	font-size: var(--font-ui-small);
-	cursor: pointer;
-	appearance: none;
-	-webkit-appearance: none;
-	background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>');
-	background-repeat: no-repeat;
-	background-position: right var(--gs-space-2) center;
-	padding-right: calc(var(--gs-space-3) * 2 + 16px);
-}
-
-.gemini-scribe-model-picker:hover {
-	background-color: var(--background-modifier-form-field-highlighted);
-}
-
-.gemini-scribe-model-picker:focus {
-	outline: none;
-	box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
-}
-
 /* User message styling */
 .callout[data-callout='user'] {
 	--callout-color: 124, 77, 255;
@@ -478,496 +248,6 @@ body.theme-dark {
 	padding: 3px 8px;
 }
 
-/* Agent Mode Controls */
-.gemini-scribe-agent-controls {
-	background-color: var(--gs-surface-alt);
-	border: 1px solid var(--gs-border);
-	border-radius: 6px;
-	padding: 12px;
-	margin-bottom: 12px;
-}
-
-.gemini-scribe-control-row {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	margin-bottom: 8px;
-}
-
-.gemini-scribe-agent-toggle {
-	margin-left: auto;
-}
-
-.gemini-scribe-context-panel {
-	margin-top: 12px;
-	padding-top: 12px;
-	border-top: 1px solid var(--gs-border);
-}
-
-.gemini-scribe-context-header {
-	font-weight: 600;
-	margin-bottom: 8px;
-}
-
-.gemini-scribe-files-container {
-	min-height: 24px;
-	margin-bottom: 8px;
-}
-
-.gemini-scribe-context-file-item {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	background-color: var(--gs-surface);
-	border: 1px solid var(--gs-border);
-	border-radius: 4px;
-	padding: 4px 8px;
-	margin-bottom: 4px;
-	font-size: 13px;
-}
-
-.gemini-scribe-remove-file-btn {
-	background: none;
-	border: none;
-	color: var(--gs-text-muted);
-	cursor: pointer;
-	padding: 2px 4px;
-	border-radius: 2px;
-}
-
-.gemini-scribe-remove-file-btn:hover {
-	background-color: var(--gs-hover);
-	color: var(--text-error);
-}
-
-.gemini-scribe-add-files-btn {
-	background-color: var(--interactive-normal);
-	border: 1px solid var(--gs-border);
-	border-radius: 4px;
-	padding: 4px 8px;
-	font-size: 12px;
-	cursor: pointer;
-	color: var(--gs-text);
-}
-
-.gemini-scribe-add-files-btn:hover {
-	background-color: var(--interactive-hover);
-}
-
-.gemini-scribe-context-depth {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	margin-top: 8px;
-}
-
-.gemini-scribe-context-depth input[type='range'] {
-	flex: 1;
-	max-width: 100px;
-}
-
-.gemini-scribe-no-files {
-	color: var(--gs-text-muted);
-	font-style: italic;
-	font-size: 12px;
-}
-
-/* File Picker Modal */
-.gemini-context-file-picker .suggestion-content {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-}
-
-/* Tool Execution Panel */
-.gemini-scribe-tool-panel {
-	background-color: var(--gs-surface-alt);
-	border: 1px solid var(--gs-border);
-	border-radius: 6px;
-	margin: 8px 0;
-	padding: 12px;
-}
-
-.gemini-scribe-tool-execution {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-}
-
-.gemini-scribe-tool-name {
-	font-weight: 600;
-	color: var(--text-accent);
-}
-
-.gemini-scribe-tool-params {
-	background-color: var(--gs-surface);
-	border: 1px solid var(--gs-border);
-	border-radius: 4px;
-	padding: 8px;
-}
-
-.gemini-scribe-tool-params pre {
-	margin: 0;
-	font-size: 12px;
-	color: var(--gs-text-muted);
-}
-
-.gemini-scribe-tool-result {
-	margin-top: 8px;
-}
-
-.gemini-scribe-tool-status {
-	font-weight: 500;
-}
-
-.gemini-scribe-tool-error {
-	color: var(--text-error);
-	font-size: 13px;
-	margin-top: 4px;
-}
-
-/* Tool Confirmation Modal - Enhanced */
-/* Modal Header */
-.gemini-tool-modal-header {
-	display: flex;
-	align-items: flex-start;
-	gap: 16px;
-	margin-bottom: 24px;
-	padding-bottom: 20px;
-	border-bottom: 1px solid var(--gs-border);
-}
-
-.gemini-tool-modal-icon {
-	width: 48px;
-	height: 48px;
-	background: linear-gradient(135deg, var(--gs-accent), var(--gs-accent-hover));
-	border-radius: 12px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	flex-shrink: 0;
-}
-
-.gemini-tool-modal-icon svg {
-	width: 24px;
-	height: 24px;
-	color: var(--gs-on-accent);
-}
-
-.gemini-tool-modal-header-text {
-	flex: 1;
-}
-
-.gemini-tool-modal-header-text h2 {
-	margin: 0 0 4px 0;
-	font-size: 20px;
-	font-weight: 600;
-	color: var(--gs-text);
-}
-
-.gemini-tool-modal-subtitle {
-	margin: 0;
-	color: var(--gs-text-muted);
-	font-size: 14px;
-}
-
-/* Tool Card */
-.gemini-tool-card {
-	background: var(--gs-surface-alt);
-	border: 1px solid var(--gs-border);
-	border-radius: 8px;
-	padding: 16px;
-	margin-bottom: 20px;
-}
-
-.gemini-tool-card-header {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	margin-bottom: 12px;
-}
-
-.gemini-tool-name-badge {
-	background: var(--gs-surface);
-	border: 1px solid var(--gs-border);
-	border-radius: 6px;
-	padding: 6px 12px;
-	font-family: var(--font-monospace);
-	font-size: 14px;
-	font-weight: 500;
-}
-
-.gemini-tool-category-badge {
-	background: var(--gs-accent);
-	color: var(--gs-on-accent);
-	border-radius: 4px;
-	padding: 4px 8px;
-	font-size: 11px;
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
-}
-
-.gemini-tool-description p {
-	margin: 0;
-	color: var(--gs-text-muted);
-	font-size: 14px;
-	line-height: 1.5;
-}
-
-/* Parameters Section */
-.gemini-tool-params-section {
-	margin-bottom: 20px;
-}
-
-.gemini-tool-params-header {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	margin-bottom: 12px;
-}
-
-.gemini-tool-params-icon {
-	color: var(--gs-text-muted);
-	display: flex;
-	align-items: center;
-}
-
-.gemini-tool-params-icon svg {
-	width: var(--gs-icon-lg);
-	height: var(--gs-icon-lg);
-}
-
-.gemini-tool-params-title {
-	font-weight: 600;
-	font-size: 16px;
-	color: var(--gs-text);
-}
-
-.gemini-tool-params-container {
-	background: var(--gs-surface);
-	border: 1px solid var(--gs-border);
-	border-radius: 8px;
-	padding: 16px;
-	max-height: 300px;
-	overflow-y: auto;
-}
-
-.gemini-tool-param-row {
-	display: grid;
-	grid-template-columns: 120px 1fr;
-	gap: 16px;
-	align-items: start;
-	padding: 12px 0;
-	border-bottom: 1px solid var(--gs-border);
-}
-
-.gemini-tool-param-row:first-child {
-	padding-top: 0;
-}
-
-.gemini-tool-param-row:last-child {
-	padding-bottom: 0;
-	border-bottom: none;
-}
-
-.gemini-tool-param-key {
-	font-weight: 500;
-	color: var(--gs-text);
-	font-size: 14px;
-}
-
-.gemini-tool-param-value {
-	position: relative;
-}
-
-.gemini-tool-param-code,
-.gemini-tool-param-content code {
-	display: block;
-	background: var(--gs-surface-alt);
-	border: 1px solid var(--gs-border);
-	border-radius: 4px;
-	padding: 8px;
-	font-family: var(--font-monospace);
-	font-size: 12px;
-	line-height: 1.5;
-	white-space: pre-wrap;
-	word-break: break-all;
-	color: var(--gs-text-muted);
-}
-
-.gemini-tool-param-content {
-	position: relative;
-}
-
-.gemini-tool-param-collapsed code {
-	max-height: 60px;
-	overflow: hidden;
-	position: relative;
-}
-
-.gemini-tool-param-collapsed::after {
-	content: '';
-	position: absolute;
-	bottom: 0;
-	left: 0;
-	right: 0;
-	height: 20px;
-	background: linear-gradient(to bottom, transparent, var(--gs-surface-alt));
-	pointer-events: none;
-}
-
-.gemini-tool-expand-btn {
-	position: absolute;
-	top: 8px;
-	right: 8px;
-	width: 24px;
-	height: 24px;
-	padding: 0;
-	background: var(--gs-surface);
-	border: 1px solid var(--gs-border);
-	border-radius: 4px;
-	cursor: pointer;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	transition: all var(--gs-dur-fast) var(--gs-ease);
-}
-
-.gemini-tool-expand-btn:hover {
-	background: var(--gs-hover);
-}
-
-.gemini-tool-expand-btn svg {
-	width: var(--gs-icon-md);
-	height: var(--gs-icon-md);
-	color: var(--gs-text-muted);
-}
-
-/* Custom Message */
-.gemini-tool-custom-message {
-	display: flex;
-	gap: 12px;
-	background: linear-gradient(135deg, var(--gs-surface-alt), var(--gs-surface));
-	border: 1px solid var(--gs-border);
-	border-radius: 8px;
-	padding: 16px;
-	margin-bottom: 20px;
-}
-
-.gemini-tool-message-icon {
-	flex-shrink: 0;
-	width: 32px;
-	height: 32px;
-	background: var(--gs-accent);
-	border-radius: 50%;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.gemini-tool-message-icon svg {
-	width: var(--gs-icon-lg);
-	height: var(--gs-icon-lg);
-	color: var(--gs-on-accent);
-}
-
-.gemini-tool-message-content {
-	flex: 1;
-}
-
-.gemini-tool-message-content p {
-	margin: 0;
-	color: var(--gs-text);
-	font-size: 14px;
-	line-height: 1.5;
-}
-
-/* Allow without confirmation */
-.gemini-tool-allow-container {
-	margin-top: 20px;
-	padding: 16px;
-	background: var(--gs-surface-alt);
-	border-radius: 8px;
-	border: 1px solid var(--gs-border);
-}
-
-.gemini-tool-allow-label {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	cursor: pointer;
-	user-select: none;
-}
-
-.gemini-tool-allow-checkbox {
-	cursor: pointer;
-	width: 16px;
-	height: 16px;
-}
-
-.gemini-tool-allow-text {
-	font-size: 13px;
-	color: var(--gs-text-muted);
-	flex: 1;
-}
-
-/* Buttons */
-.gemini-tool-buttons {
-	display: flex;
-	gap: 12px;
-	justify-content: flex-end;
-	margin-top: 16px;
-	padding-top: 20px;
-	border-top: 1px solid var(--gs-border);
-}
-
-.gemini-tool-cancel-btn,
-.gemini-tool-confirm-btn {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding: 10px 20px;
-	border-radius: 6px;
-	font-size: 14px;
-	font-weight: 500;
-	cursor: pointer;
-	transition: all var(--gs-dur-fast) var(--gs-ease);
-}
-
-.gemini-tool-cancel-btn {
-	background: var(--gs-surface-alt);
-	border: 1px solid var(--gs-border);
-	color: var(--gs-text);
-}
-
-.gemini-tool-cancel-btn:hover {
-	background: var(--gs-hover);
-	border-color: var(--gs-border-strong);
-}
-
-.gemini-tool-confirm-btn {
-	background: var(--gs-accent);
-	border: none;
-	color: var(--gs-on-accent);
-}
-
-.gemini-tool-confirm-btn:hover {
-	background: var(--gs-accent-hover);
-	transform: translateY(-1px);
-	box-shadow: var(--gs-shadow-md);
-}
-
-.gemini-tool-btn-icon {
-	display: flex;
-	align-items: center;
-}
-
-.gemini-tool-btn-icon svg {
-	width: var(--gs-icon-md);
-	height: var(--gs-icon-md);
-}
-
 /* Agent View Styles */
 .gemini-agent-container {
 	display: flex;
@@ -982,13 +262,6 @@ body.theme-dark {
 	border-bottom: 1px solid var(--gs-border);
 	padding: var(--gs-space-3) var(--gs-space-4);
 	flex-shrink: 0;
-}
-
-.gemini-agent-title-section {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	margin-bottom: var(--size-2-2);
 }
 
 .gemini-agent-title {
@@ -1016,18 +289,6 @@ body.theme-dark {
 	padding: 2px 4px;
 	width: 100%;
 	max-width: 400px;
-}
-
-.gemini-agent-session-info {
-	display: flex;
-	gap: var(--gs-space-3);
-	font-size: var(--font-ui-small);
-	color: var(--gs-text-muted);
-}
-
-.gemini-agent-controls {
-	display: flex;
-	gap: var(--size-2-2);
 }
 
 .gemini-agent-btn {
@@ -1092,29 +353,6 @@ body.theme-dark {
 	align-items: center;
 	gap: var(--size-2-1);
 	flex-shrink: 0;
-}
-
-/* Toggle Button */
-.gemini-agent-toggle-btn {
-	background: none;
-	border: none;
-	cursor: pointer;
-	padding: var(--size-2-1);
-	border-radius: var(--gs-radius-sm);
-	color: var(--gs-text-muted);
-	display: flex;
-	align-items: center;
-	transition: all var(--gs-dur-fast) var(--gs-ease);
-}
-
-.gemini-agent-toggle-btn:hover {
-	background-color: var(--gs-hover);
-	color: var(--gs-text);
-}
-
-.gemini-agent-toggle-btn svg {
-	width: var(--gs-icon-sm);
-	height: var(--gs-icon-sm);
 }
 
 /* Title Container */
@@ -1190,50 +428,6 @@ body.theme-dark {
 .gemini-agent-btn-icon svg {
 	width: var(--gs-icon-md);
 	height: var(--gs-icon-md);
-}
-
-/* Small Buttons */
-.gemini-agent-btn-sm {
-	padding: var(--size-2-1) var(--size-2-2);
-	font-size: var(--font-ui-smaller);
-}
-
-.gemini-agent-active-badge {
-	background-color: var(--gs-accent);
-	color: var(--gs-on-accent);
-	font-size: var(--font-ui-smaller);
-	padding: 1px var(--size-2-2);
-	border-radius: var(--gs-radius-sm);
-	font-weight: 500;
-	margin-left: auto;
-}
-
-/* Depth Control */
-.gemini-agent-depth-control {
-	display: flex;
-	align-items: center;
-	gap: var(--gs-space-2);
-	padding-top: var(--gs-space-2);
-	border-top: 1px solid var(--gs-border);
-}
-
-.gemini-agent-depth-control label {
-	font-size: var(--font-ui-small);
-	color: var(--gs-text-muted);
-	font-weight: 500;
-}
-
-.gemini-agent-depth-control input[type='range'] {
-	flex: 1;
-	max-width: 150px;
-}
-
-.gemini-agent-depth-control span {
-	font-size: var(--font-ui-small);
-	color: var(--gs-text);
-	font-weight: 600;
-	min-width: 20px;
-	text-align: center;
 }
 
 /* Chat Container */
@@ -2223,27 +1417,6 @@ body.theme-dark {
 	box-shadow: var(--gs-shadow-sm);
 }
 
-/* ============================================================
-   Legacy Tool Message Styles (kept for backward compatibility)
-   ============================================================ */
-
-.gemini-agent-message-tool {
-	margin-bottom: var(--gs-space-2);
-}
-
-.gemini-agent-tool-message {
-	background-color: var(--gs-surface-alt);
-	border: 1px solid var(--gs-border);
-	border-radius: var(--gs-radius-md);
-	overflow: hidden;
-	transition: all var(--gs-dur) var(--gs-ease);
-}
-
-.gemini-agent-tool-message:hover {
-	border-color: var(--gs-border-strong);
-	box-shadow: var(--gs-shadow-sm);
-}
-
 .gemini-agent-tool-header {
 	display: flex;
 	align-items: center;
@@ -2258,27 +1431,6 @@ body.theme-dark {
 	background-color: var(--gs-hover);
 }
 
-.gemini-agent-tool-toggle {
-	background: none;
-	border: none;
-	padding: 0;
-	cursor: pointer;
-	color: var(--gs-text-muted);
-	display: flex;
-	align-items: center;
-	transition: color var(--gs-dur-fast) var(--gs-ease);
-}
-
-.gemini-agent-tool-toggle:hover {
-	color: var(--gs-text);
-}
-
-.gemini-agent-tool-toggle svg {
-	width: var(--gs-icon-md);
-	height: var(--gs-icon-md);
-	transition: transform var(--gs-dur) var(--gs-ease);
-}
-
 .gemini-agent-tool-icon {
 	display: flex;
 	align-items: center;
@@ -2290,23 +1442,11 @@ body.theme-dark {
 	height: var(--gs-icon-md);
 }
 
-.gemini-agent-tool-title {
-	flex: 1;
-	font-weight: 500;
-	color: var(--gs-text);
-}
-
 .gemini-agent-tool-status {
 	font-size: var(--font-ui-small);
 	padding: 2px 8px;
 	border-radius: var(--gs-radius-sm);
 	font-weight: 500;
-}
-
-.gemini-agent-tool-status-running {
-	background-color: var(--gs-info);
-	color: white;
-	animation: pulse 2s infinite;
 }
 
 .gemini-agent-tool-status-success {
@@ -2376,14 +1516,6 @@ body.theme-dark {
 	100% {
 		opacity: 1;
 	}
-}
-
-/* Tool details */
-.gemini-agent-tool-details {
-	border-top: 1px solid var(--gs-border);
-	padding: var(--gs-space-3);
-	background-color: var(--gs-surface);
-	animation: slideDown var(--gs-dur) var(--gs-ease);
 }
 
 @keyframes slideDown {
@@ -2535,16 +1667,6 @@ body.theme-dark {
 	margin: 0;
 }
 
-/* Expanded state */
-.gemini-agent-tool-expanded {
-	box-shadow: var(--gs-shadow-sm);
-}
-
-/* Completion animation */
-.gemini-agent-tool-completed {
-	animation: toolComplete var(--gs-dur-slow) var(--gs-ease);
-}
-
 @keyframes toolComplete {
 	0% {
 		transform: scale(1);
@@ -2613,50 +1735,6 @@ body.theme-dark {
 	align-items: center;
 	gap: 2px;
 	padding: var(--size-2-2) var(--gs-space-3);
-}
-
-.gemini-agent-thinking-container {
-	display: flex;
-	align-items: center;
-	gap: var(--gs-space-3);
-}
-
-.gemini-agent-thinking-text-container {
-	display: flex;
-	align-items: center;
-	gap: 2px;
-}
-
-.gemini-agent-thinking-text {
-	color: var(--gs-text-muted);
-	font-style: italic;
-}
-
-/* Thinking animation dots */
-.gemini-agent-thinking-dot {
-	display: inline-block;
-	width: 4px;
-	height: 4px;
-	border-radius: 50%;
-	background-color: var(--gs-text-muted);
-	animation: thinking-bounce 1.4s infinite ease-in-out both;
-}
-
-.gemini-agent-thinking-dot-1 {
-	animation-delay: -0.32s;
-}
-
-.gemini-agent-thinking-dot-2 {
-	animation-delay: -0.16s;
-}
-
-/* Timer display */
-.gemini-agent-timer {
-	color: var(--gs-text-muted);
-	font-size: 0.9em;
-	font-family: var(--font-monospace);
-	min-width: 3.5em;
-	text-align: right;
 }
 
 @keyframes thinking-bounce {
@@ -3250,23 +2328,6 @@ body.theme-dark {
 	line-height: 1.5;
 	padding-left: 16px;
 	border-left: 2px solid var(--gs-border);
-}
-
-/* Model Config Badge */
-.gemini-agent-model-badge {
-	background: var(--gs-accent);
-	color: var(--gs-on-accent);
-	padding: 3px 8px;
-	border-radius: 12px;
-	font-size: 11px;
-	font-weight: 500;
-	margin-left: 8px;
-	white-space: nowrap;
-	opacity: 0.9;
-}
-
-.gemini-agent-model-badge:hover {
-	opacity: 1;
 }
 
 /* Prompt Badge - More prominent for custom prompts */
@@ -4598,13 +3659,6 @@ body.theme-dark {
 	min-height: 200px;
 }
 
-/* ── Background Tasks Modal ────────────────────────────────────────────────── */
-
-.gemini-bg-tasks-modal .modal-content {
-	padding-right: 16px;
-}
-
-.gemini-bg-tasks-modal h3,
 .gemini-activity-modal h3 {
 	margin: 12px 0 6px;
 	font-size: var(--font-ui-small);
@@ -5150,14 +4204,6 @@ body.theme-dark {
 	margin-bottom: 8px;
 }
 
-.gemini-scheduler-tool-label {
-	display: flex;
-	align-items: center;
-	gap: 4px;
-	font-size: var(--font-ui-small);
-	cursor: pointer;
-}
-
 .gemini-scheduler-prompt {
 	width: 100%;
 	box-sizing: border-box;
@@ -5314,13 +4360,6 @@ body.theme-dark {
 	color: var(--gs-text);
 }
 
-/* ── #1167: classes replacing static inline style assignments ──────────────── */
-
-/* Shared utilities */
-.gemini-invisible {
-	visibility: hidden;
-}
-
 .gemini-input-wide {
 	width: 30ch;
 }
@@ -5369,12 +4408,6 @@ body.theme-dark {
 /* MCP server modal: discovered-tools description spacing */
 .gemini-discovered-tools-desc {
 	margin-bottom: 0.5em;
-}
-
-/* RAG settings: privacy notice emphasis */
-.gemini-rag-privacy-notice {
-	margin-bottom: 1em;
-	color: var(--text-warning);
 }
 
 /* Tool permissions page: filter pills above the searchable tool list
