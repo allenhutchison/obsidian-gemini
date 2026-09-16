@@ -316,13 +316,6 @@ body.theme-dark {
 	flex-shrink: 0;
 }
 
-.gemini-agent-title-section {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	margin-bottom: var(--size-2-2);
-}
-
 .gemini-agent-title {
 	margin: 0;
 	font-size: var(--font-size-h2);
@@ -348,18 +341,6 @@ body.theme-dark {
 	padding: 2px 4px;
 	width: 100%;
 	max-width: 400px;
-}
-
-.gemini-agent-session-info {
-	display: flex;
-	gap: var(--gs-space-3);
-	font-size: var(--font-ui-small);
-	color: var(--gs-text-muted);
-}
-
-.gemini-agent-controls {
-	display: flex;
-	gap: var(--size-2-2);
 }
 
 .gemini-agent-btn {
@@ -424,29 +405,6 @@ body.theme-dark {
 	align-items: center;
 	gap: var(--size-2-1);
 	flex-shrink: 0;
-}
-
-/* Toggle Button */
-.gemini-agent-toggle-btn {
-	background: none;
-	border: none;
-	cursor: pointer;
-	padding: var(--size-2-1);
-	border-radius: var(--gs-radius-sm);
-	color: var(--gs-text-muted);
-	display: flex;
-	align-items: center;
-	transition: all var(--gs-dur-fast) var(--gs-ease);
-}
-
-.gemini-agent-toggle-btn:hover {
-	background-color: var(--gs-hover);
-	color: var(--gs-text);
-}
-
-.gemini-agent-toggle-btn svg {
-	width: var(--gs-icon-sm);
-	height: var(--gs-icon-sm);
 }
 
 /* Title Container */
@@ -522,50 +480,6 @@ body.theme-dark {
 .gemini-agent-btn-icon svg {
 	width: var(--gs-icon-md);
 	height: var(--gs-icon-md);
-}
-
-/* Small Buttons */
-.gemini-agent-btn-sm {
-	padding: var(--size-2-1) var(--size-2-2);
-	font-size: var(--font-ui-smaller);
-}
-
-.gemini-agent-active-badge {
-	background-color: var(--gs-accent);
-	color: var(--gs-on-accent);
-	font-size: var(--font-ui-smaller);
-	padding: 1px var(--size-2-2);
-	border-radius: var(--gs-radius-sm);
-	font-weight: 500;
-	margin-left: auto;
-}
-
-/* Depth Control */
-.gemini-agent-depth-control {
-	display: flex;
-	align-items: center;
-	gap: var(--gs-space-2);
-	padding-top: var(--gs-space-2);
-	border-top: 1px solid var(--gs-border);
-}
-
-.gemini-agent-depth-control label {
-	font-size: var(--font-ui-small);
-	color: var(--gs-text-muted);
-	font-weight: 500;
-}
-
-.gemini-agent-depth-control input[type='range'] {
-	flex: 1;
-	max-width: 150px;
-}
-
-.gemini-agent-depth-control span {
-	font-size: var(--font-ui-small);
-	color: var(--gs-text);
-	font-weight: 600;
-	min-width: 20px;
-	text-align: center;
 }
 
 /* Chat Container */
@@ -1555,27 +1469,6 @@ body.theme-dark {
 	box-shadow: var(--gs-shadow-sm);
 }
 
-/* ============================================================
-   Legacy Tool Message Styles (kept for backward compatibility)
-   ============================================================ */
-
-.gemini-agent-message-tool {
-	margin-bottom: var(--gs-space-2);
-}
-
-.gemini-agent-tool-message {
-	background-color: var(--gs-surface-alt);
-	border: 1px solid var(--gs-border);
-	border-radius: var(--gs-radius-md);
-	overflow: hidden;
-	transition: all var(--gs-dur) var(--gs-ease);
-}
-
-.gemini-agent-tool-message:hover {
-	border-color: var(--gs-border-strong);
-	box-shadow: var(--gs-shadow-sm);
-}
-
 .gemini-agent-tool-header {
 	display: flex;
 	align-items: center;
@@ -1590,27 +1483,6 @@ body.theme-dark {
 	background-color: var(--gs-hover);
 }
 
-.gemini-agent-tool-toggle {
-	background: none;
-	border: none;
-	padding: 0;
-	cursor: pointer;
-	color: var(--gs-text-muted);
-	display: flex;
-	align-items: center;
-	transition: color var(--gs-dur-fast) var(--gs-ease);
-}
-
-.gemini-agent-tool-toggle:hover {
-	color: var(--gs-text);
-}
-
-.gemini-agent-tool-toggle svg {
-	width: var(--gs-icon-md);
-	height: var(--gs-icon-md);
-	transition: transform var(--gs-dur) var(--gs-ease);
-}
-
 .gemini-agent-tool-icon {
 	display: flex;
 	align-items: center;
@@ -1622,23 +1494,11 @@ body.theme-dark {
 	height: var(--gs-icon-md);
 }
 
-.gemini-agent-tool-title {
-	flex: 1;
-	font-weight: 500;
-	color: var(--gs-text);
-}
-
 .gemini-agent-tool-status {
 	font-size: var(--font-ui-small);
 	padding: 2px 8px;
 	border-radius: var(--gs-radius-sm);
 	font-weight: 500;
-}
-
-.gemini-agent-tool-status-running {
-	background-color: var(--gs-info);
-	color: white;
-	animation: pulse 2s infinite;
 }
 
 .gemini-agent-tool-status-success {
@@ -1708,14 +1568,6 @@ body.theme-dark {
 	100% {
 		opacity: 1;
 	}
-}
-
-/* Tool details */
-.gemini-agent-tool-details {
-	border-top: 1px solid var(--gs-border);
-	padding: var(--gs-space-3);
-	background-color: var(--gs-surface);
-	animation: slideDown var(--gs-dur) var(--gs-ease);
 }
 
 @keyframes slideDown {
@@ -1867,16 +1719,6 @@ body.theme-dark {
 	margin: 0;
 }
 
-/* Expanded state */
-.gemini-agent-tool-expanded {
-	box-shadow: var(--gs-shadow-sm);
-}
-
-/* Completion animation */
-.gemini-agent-tool-completed {
-	animation: toolComplete var(--gs-dur-slow) var(--gs-ease);
-}
-
 @keyframes toolComplete {
 	0% {
 		transform: scale(1);
@@ -1945,50 +1787,6 @@ body.theme-dark {
 	align-items: center;
 	gap: 2px;
 	padding: var(--size-2-2) var(--gs-space-3);
-}
-
-.gemini-agent-thinking-container {
-	display: flex;
-	align-items: center;
-	gap: var(--gs-space-3);
-}
-
-.gemini-agent-thinking-text-container {
-	display: flex;
-	align-items: center;
-	gap: 2px;
-}
-
-.gemini-agent-thinking-text {
-	color: var(--gs-text-muted);
-	font-style: italic;
-}
-
-/* Thinking animation dots */
-.gemini-agent-thinking-dot {
-	display: inline-block;
-	width: 4px;
-	height: 4px;
-	border-radius: 50%;
-	background-color: var(--gs-text-muted);
-	animation: thinking-bounce 1.4s infinite ease-in-out both;
-}
-
-.gemini-agent-thinking-dot-1 {
-	animation-delay: -0.32s;
-}
-
-.gemini-agent-thinking-dot-2 {
-	animation-delay: -0.16s;
-}
-
-/* Timer display */
-.gemini-agent-timer {
-	color: var(--gs-text-muted);
-	font-size: 0.9em;
-	font-family: var(--font-monospace);
-	min-width: 3.5em;
-	text-align: right;
 }
 
 @keyframes thinking-bounce {
@@ -2582,23 +2380,6 @@ body.theme-dark {
 	line-height: 1.5;
 	padding-left: 16px;
 	border-left: 2px solid var(--gs-border);
-}
-
-/* Model Config Badge */
-.gemini-agent-model-badge {
-	background: var(--gs-accent);
-	color: var(--gs-on-accent);
-	padding: 3px 8px;
-	border-radius: 12px;
-	font-size: 11px;
-	font-weight: 500;
-	margin-left: 8px;
-	white-space: nowrap;
-	opacity: 0.9;
-}
-
-.gemini-agent-model-badge:hover {
-	opacity: 1;
 }
 
 /* Prompt Badge - More prominent for custom prompts */
