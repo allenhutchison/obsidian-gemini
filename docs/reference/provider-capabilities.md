@@ -4,23 +4,23 @@ Gemini Scribe can run on the **Google Gemini (cloud)**, **Ollama** (models pulle
 
 ## Capability matrix
 
-| Feature                         | Gemini | Ollama                                                                              | OpenAI                                           | Anthropic                 |
-| ------------------------------- | :----: | ----------------------------------------------------------------------------------- | ------------------------------------------------ | ------------------------- |
-| Chat                            |   ✓    | ✓                                                                                   | ✓                                                | ✓                         |
-| Tool calling (agent mode)       |   ✓    | ✓ (model-dependent)                                                                 | ✓ (model-dependent on compatible servers)        | ✓                         |
-| Vision (image attachments)      |   ✓    | ✓ (model-dependent, auto-detected)                                                  | ✓ (model-dependent, auto-detected)               | ✓                         |
-| Scheduled tasks                 |   ✓    | ✓ (inherits the model's tool/vision limits)                                         | ✓ (inherits the model's tool/vision limits)      | ✓                         |
-| Summaries                       |   ✓    | ✓                                                                                   | ✓                                                | ✓                         |
-| Completions                     |   ✓    | ✓                                                                                   | ✓                                                | ✓                         |
-| Rewrite                         |   ✓    | ✓                                                                                   | ✓                                                | ✓                         |
-| RAG / Vault Semantic Search     |   ✓    | ✗ — tracked in [#705](https://github.com/allenhutchison/obsidian-gemini/issues/705) | ✗                                                | ✗                         |
-| Image generation                |   ✓    | ✗ — tracked in [#706](https://github.com/allenhutchison/obsidian-gemini/issues/706) | ✗                                                | ✗                         |
-| Google Search grounding         |   ✓    | ✗                                                                                   | ✗                                                | ✗                         |
-| Google Maps grounding           |   ✓    | ✗                                                                                   | ✗                                                | ✗                         |
-| URL Context (web fetch tool)    |   ✓    | ✗                                                                                   | ✗                                                | ✗                         |
-| Deep Research                   |   ✓    | ✗                                                                                   | ✗                                                | ✗                         |
-| PDF / audio / video attachments |   ✓    | ✗ (images only)                                                                     | ✗ (images only)                                  | PDF only (no audio/video) |
-| Custom base URL                 |   ✓    | ✗ (uses its own `ollamaBaseUrl` setting)                                            | ✓ (also targets OpenAI-compatible local servers) | ✗                         |
+| Feature                         | Gemini | Ollama                                                                              | OpenAI                                           | Anthropic                          |
+| ------------------------------- | :----: | ----------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------- |
+| Chat                            |   ✓    | ✓                                                                                   | ✓                                                | ✓                                  |
+| Tool calling (agent mode)       |   ✓    | ✓ (model-dependent)                                                                 | ✓ (model-dependent on compatible servers)        | ✓                                  |
+| Vision (image attachments)      |   ✓    | ✓ (model-dependent, auto-detected)                                                  | ✓ (model-dependent, auto-detected)               | ✓                                  |
+| Scheduled tasks                 |   ✓    | ✓ (inherits the model's tool/vision limits)                                         | ✓ (inherits the model's tool/vision limits)      | ✓                                  |
+| Summaries                       |   ✓    | ✓                                                                                   | ✓                                                | ✓                                  |
+| Completions                     |   ✓    | ✓                                                                                   | ✓                                                | ✓                                  |
+| Rewrite                         |   ✓    | ✓                                                                                   | ✓                                                | ✓                                  |
+| RAG / Vault Semantic Search     |   ✓    | ✗ — tracked in [#705](https://github.com/allenhutchison/obsidian-gemini/issues/705) | ✗                                                | ✗                                  |
+| Image generation                |   ✓    | ✗ — tracked in [#706](https://github.com/allenhutchison/obsidian-gemini/issues/706) | ✗                                                | ✗                                  |
+| Google Search grounding         |   ✓    | ✗                                                                                   | ✗                                                | ✗                                  |
+| Google Maps grounding           |   ✓    | ✗                                                                                   | ✗                                                | ✗                                  |
+| URL Context (web fetch tool)    |   ✓    | ✗                                                                                   | ✗                                                | ✗                                  |
+| Deep Research                   |   ✓    | ✗                                                                                   | ✗                                                | ✗                                  |
+| PDF / audio / video attachments |   ✓    | ✗ (images only)                                                                     | ✗ (images only)                                  | ✗ (images and PDF; no audio/video) |
+| Custom base URL                 |   ✓    | ✗ (uses its own `ollamaBaseUrl` setting)                                            | ✓ (also targets OpenAI-compatible local servers) | ✗                                  |
 
 OpenAI's row covers both the real `api.openai.com` endpoint (billed with your own OpenAI API key) and any OpenAI-compatible server reachable at a custom base URL — LM Studio, an MLX-served endpoint, Ollama's own OpenAI-compatible endpoint, and similar. See the [OpenAI Setup Guide](/guide/openai-setup) for both paths. This is API-key billing only — there is no "Sign in with ChatGPT" / ChatGPT-subscription auth.
 
