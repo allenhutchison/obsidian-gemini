@@ -220,8 +220,15 @@ export default defineConfig([
 				'@typescript-eslint/no-restricted-imports',
 				'@microsoft/sdl/no-document-write',
 				'no-eval',
+				// #1525: an inline disable would re-open the knip tag-exemption hole the
+				// rule exists to close — suppressible only via a config change, never a comment.
+				'local/no-tags-as-reachability',
 			],
 		},
+	},
+	{
+		files: ['test/eslint-no-tags-as-reachability.test.ts'],
+		rules: { 'local/no-tags-as-reachability': 'off' },
 	},
 	{
 		files: ['src/**/*.ts'],
