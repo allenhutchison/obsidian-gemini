@@ -199,7 +199,7 @@ describe('error-utils', () => {
 		describe('OpenAI SDK errors', () => {
 			// Mirrors the shape of `openai`'s APIError subclasses (status + type/code
 			// pulled from the response body) without importing the SDK — see
-			// isOpenAIApiError's own duck-typing rationale in error-utils.ts.
+			// isSdkApiError's own duck-typing rationale in error-utils.ts.
 			function fakeOpenAIError(status: number, message: string, extra: Record<string, unknown> = {}) {
 				const error = new Error(`${status} ${message}`) as Error & Record<string, unknown>;
 				Object.assign(error, { status, type: 'invalid_request_error', ...extra });
@@ -210,6 +210,13 @@ describe('error-utils', () => {
 				const error = fakeOpenAIError(401, 'Incorrect API key provided', { type: 'invalid_request_error' });
 				expect(getErrorMessage(error)).toBe(
 					'Invalid OpenAI API key. Please check the API key in Settings → Gemini Scribe.'
+				);
+			});
+
+			test('an Anthropic 401 (authentication_error) gets Anthropic-specific key guidance', () => {
+				const error = fakeOpenAIError(401, 'invalid x-api-key', { type: 'authentication_error' });
+				expect(getErrorMessage(error)).toBe(
+					'Invalid Anthropic API key. Please check the API key in Settings → Gemini Scribe.'
 				);
 			});
 

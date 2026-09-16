@@ -26,7 +26,8 @@ export function asRecord(value: unknown): Record<string, unknown> {
 }
 
 /**
- * Whether an error looks like it came from the `openai` SDK's `APIError`
+ * Whether an error looks like it came from the `openai` or `@anthropic-ai/sdk`
+ * SDK's `APIError`
  * hierarchy (`BadRequestError`, `AuthenticationError`, `NotFoundError`, ...):
  * a numeric `status` alongside a `type` or `code` string pulled from the
  * response body's `error.type`/`error.code` fields.
@@ -35,10 +36,20 @@ export function asRecord(value: unknown): Record<string, unknown> {
  * error classes, so this stays a provider-agnostic leaf utility with no SDK
  * import — and so a minifier renaming the SDK's class names can't break
  * detection. Gemini's `ApiError` only ever carries `status`, so it can't
- * false-positive here.
+ * false-positive here. The two SDKs share this shape; {@link isAnthropicAuthError}
+ * tells their 401s apart.
  */
-function isOpenAIApiError(error: Record<string, unknown>): boolean {
+function isSdkApiError(error: Record<string, unknown>): boolean {
 	return typeof error.status === 'number' && (typeof error.type === 'string' || typeof error.code === 'string');
+}
+
+/**
+ * An Anthropic 401: the API's `error.type` is `authentication_error`, which the
+ * SDK surfaces as `type`. OpenAI reports a bad key as `invalid_request_error`
+ * with code `invalid_api_key`, so the two never collide.
+ */
+function isAnthropicAuthError(error: Record<string, unknown>): boolean {
+	return error.type === 'authentication_error';
 }
 
 /**
@@ -213,29 +224,29 @@ export function getErrorMessage(error: unknown): string {
 		const message = error.message;
 		const messageLower = message.toLowerCase();
 
-		// OpenAI-shaped errors get provider-specific guidance for the two status
-		// codes generic wording serves poorly: 401 should point at the OpenAI key
-		// specifically, and 404 should mention the endpoint (since a custom base
+		// OpenAI/Anthropic SDK errors get provider-specific guidance for the two
+		// status codes generic wording serves poorly: 401 should point at that
+		// provider's key specifically, and 404 should mention the endpoint (since a custom base
 		// URL — LM Studio, MLX, ... — may simply not have the model). Checked
 		// before the generic message-substring checks below so this wins.
-		if (isOpenAIApiError(asRecord(error))) {
+		if (isSdkApiError(asRecord(error))) {
 			const statusCode = extractStatusCode(error);
 			if (statusCode === 401) {
-				return t('error.openaiInvalidKey');
+				return isAnthropicAuthError(asRecord(error)) ? t('error.anthropicInvalidKey') : t('error.openaiInvalidKey');
 			}
 			if (statusCode === 404) {
 				return t('error.modelNotOnEndpoint');
 			}
 		}
 
-		// The openai SDK's fetch-layer failures (unreachable custom base URL —
+		// The openai and Anthropic SDKs' fetch-layer failures (unreachable custom base URL —
 		// LM Studio/MLX not running, wrong port, DNS failure, ...) surface as
 		// `APIConnectionError`, whose own `.message` is the fixed, uninformative
 		// string "Connection error." — the actionable detail (ECONNREFUSED, etc.)
 		// lives on `.cause`, which callers don't reliably get to inspect. Matched
 		// on that exact message plus an absent status (real HTTP failures always
 		// carry one) rather than an SDK class import, for the same reason as
-		// `isOpenAIApiError` above.
+		// `isSdkApiError` above.
 		if (message === 'Connection error.' && extractStatusCode(error) === null) {
 			return t('error.serverUnreachable');
 		}

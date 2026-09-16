@@ -14,6 +14,8 @@ import { OllamaClient } from './providers/ollama/client';
 import type { OllamaClientConfig } from './providers/ollama/config';
 import { OpenAIClient } from './providers/openai/client';
 import { DEFAULT_OPENAI_BASE_URL, type OpenAIClientConfig } from './providers/openai/config';
+import { AnthropicClient } from './providers/anthropic/client';
+import type { AnthropicClientConfig } from './providers/anthropic/config';
 import { ModelApi } from './interfaces/model-api';
 import { GeminiPrompts } from '../prompts';
 import { RetryDecorator } from './retry-decorator';
@@ -65,7 +67,10 @@ export class ModelClientFactory {
 	static createFromPlugin(
 		plugin: ObsidianGemini,
 		useCase: ModelUseCase,
-		overrides?: Partial<GeminiClientConfig> & Partial<OllamaClientConfig> & Partial<OpenAIClientConfig>
+		overrides?: Partial<GeminiClientConfig> &
+			Partial<OllamaClientConfig> &
+			Partial<OpenAIClientConfig> &
+			Partial<AnthropicClientConfig>
 	): ModelApi {
 		const settings = plugin.settings;
 		const feature = FEATURE_FOR_USE_CASE[useCase];
@@ -98,6 +103,16 @@ export class ModelClientFactory {
 				...overrides,
 			};
 			const client = new OpenAIClient(config, prompts, plugin);
+			return new RetryDecorator(client, plugin.logger);
+		}
+
+		if (provider === 'anthropic') {
+			const config: AnthropicClientConfig = {
+				apiKey: plugin.anthropicApiKey,
+				model: modelName,
+				...overrides,
+			};
+			const client = new AnthropicClient(config, prompts, plugin);
 			return new RetryDecorator(client, plugin.logger);
 		}
 

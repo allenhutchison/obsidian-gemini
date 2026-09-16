@@ -26,7 +26,7 @@ import { t } from '../../i18n';
 import type { SettingWriter } from './writer-types';
 import { RAG_WRITERS } from './page-vault-index';
 import { TOOL_POLICY_WRITERS } from './page-tool-permissions';
-import { invalidateModelCount, type CardProviderId } from './model-count-cache';
+import { invalidateModelCount } from './model-count-cache';
 
 /** Read a dotted path out of the settings object. `undefined` when any segment is missing. */
 /**
@@ -184,12 +184,13 @@ const writeHistoryFolder: SettingWriter = async (plugin, _key, value) => {
 };
 
 /** Which provider card's model count needs invalidating when a given credential/base-URL path changes. */
-const CREDENTIAL_PATH_PROVIDER: Record<string, CardProviderId> = {
+const CREDENTIAL_PATH_PROVIDER: Record<string, ModelProvider> = {
 	apiKeySecretName: 'gemini',
 	customBaseUrl: 'gemini',
 	openaiApiKeySecretName: 'openai',
 	openaiBaseUrl: 'openai',
 	ollamaBaseUrl: 'ollama',
+	anthropicApiKeySecretName: 'anthropic',
 };
 
 /**
@@ -221,6 +222,7 @@ export const SETTING_WRITERS: Record<string, SettingWriter> = {
 	historyFolder: writeHistoryFolder,
 	apiKeySecretName: writeCredentialField,
 	openaiApiKeySecretName: writeCredentialField,
+	anthropicApiKeySecretName: writeCredentialField,
 	customBaseUrl: writeCredentialField,
 	ollamaBaseUrl: writeCredentialField,
 	openaiBaseUrl: writeCredentialField,

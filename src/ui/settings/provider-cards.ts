@@ -10,19 +10,13 @@ import { Notice, SecretComponent, type SettingDefinitionItem, type SettingDefini
 import type { ObsidianGemini } from '../../types/plugin';
 import { t, type TranslationKey } from '../../i18n';
 import { getErrorMessage } from '../../utils/error-utils';
-import { getCapabilities } from '../../api/providers/registry';
+import { getCapabilities, type ModelProvider } from '../../api/providers/registry';
 import { providerConnection } from '../../api/provider-status';
 import { featuresUsing } from '../../api/feature-routing';
 import type { SettingsContext } from './context';
 import { readSettingPath } from './paths';
 import { includesLine, usedByLine, providerCardDisplay } from './display-values';
-import {
-	modelCountCache,
-	modelCountGeneration,
-	bumpGeneration,
-	invalidateModelCount,
-	type CardProviderId,
-} from './model-count-cache';
+import { modelCountCache, modelCountGeneration, bumpGeneration, invalidateModelCount } from './model-count-cache';
 
 export type AuthRow =
 	| { kind: 'secret'; settingsKey: 'apiKeySecretName' | 'openaiApiKeySecretName' | 'anthropicApiKeySecretName' }
@@ -30,52 +24,38 @@ export type AuthRow =
 	| { kind: 'subscription'; provider: 'openai' };
 
 export interface ProviderCardSpec {
-	id: CardProviderId;
+	id: ModelProvider;
 	labelKey: TranslationKey;
-	/** `false` = card renders but the provider is not offered on any Features row. */
-	routable: boolean;
 	auth: AuthRow[];
-	/** Model refresh affordance + "N available" line. */
-	models: 'remote' | 'daemon' | 'list' | 'none';
-	/** Only for placeholder cards with no `ProviderDefinition` (Anthropic). */
-	placeholderDocsUrl?: string;
 }
 
 export const PROVIDER_CARDS: ProviderCardSpec[] = [
 	{
 		id: 'gemini',
 		labelKey: 'settings.providers.cardNameGemini',
-		routable: true,
 		auth: [
 			{ kind: 'secret', settingsKey: 'apiKeySecretName' },
 			{ kind: 'baseUrl', settingsKey: 'customBaseUrl', optional: true },
 		],
-		models: 'remote',
 	},
 	{
 		id: 'ollama',
 		labelKey: 'settings.providers.shortLabel.ollama',
-		routable: true,
 		auth: [{ kind: 'baseUrl', settingsKey: 'ollamaBaseUrl', optional: false }],
-		models: 'daemon',
 	},
 	{
 		id: 'openai',
 		labelKey: 'settings.providers.shortLabel.openai',
-		routable: true,
 		auth: [
 			{ kind: 'subscription', provider: 'openai' },
 			{ kind: 'secret', settingsKey: 'openaiApiKeySecretName' },
 			{ kind: 'baseUrl', settingsKey: 'openaiBaseUrl', optional: true },
 		],
-		models: 'list',
 	},
 	{
 		id: 'anthropic',
 		labelKey: 'settings.providers.shortLabel.anthropic',
-		routable: false,
 		auth: [{ kind: 'secret', settingsKey: 'anthropicApiKeySecretName' }],
-		models: 'none',
 	},
 ];
 
@@ -88,7 +68,7 @@ export const PROVIDER_CARDS: ProviderCardSpec[] = [
  * (design doc §6.4). File-local until a real writer lands — see #1524.
  */
 type SubscriptionSignIn = (plugin: ObsidianGemini) => Promise<'signed-in' | 'cancelled'>;
-const SUBSCRIPTION_SIGN_IN: Partial<Record<CardProviderId, SubscriptionSignIn>> = {};
+const SUBSCRIPTION_SIGN_IN: Partial<Record<ModelProvider, SubscriptionSignIn>> = {};
 
 /**
  * Moved from the deleted `src/ui/settings-general.ts` (settings redesign
@@ -133,12 +113,12 @@ export async function refreshGeminiModelList(
  * announced with a Notice, matching the Gemini card, so the click visibly
  * did something. Background probes on render stay silent.
  */
-function loadModelCount(ctx: SettingsContext, id: CardProviderId, userInitiated: boolean): void {
-	if (id === 'gemini' || id === 'anthropic') return; // Gemini's count comes from the sync remote-list cache; Anthropic has no client.
+function loadModelCount(ctx: SettingsContext, id: ModelProvider, userInitiated: boolean): void {
+	if (id === 'gemini') return; // Gemini's count comes from the sync remote-list cache.
 	const modelManager = ctx.plugin.modelManager as typeof ctx.plugin.modelManager | undefined;
 	if (!modelManager) return; // plugin still loading; the next render retries
 	const generation = bumpGeneration(id);
-	const service = id === 'ollama' ? modelManager.getOllamaModelsService() : modelManager.getOpenAIModelsService();
+	const service = modelManager.getProviderModelsService(id);
 	const spec = PROVIDER_CARDS.find((card) => card.id === id);
 	const providerLabel = spec ? t(spec.labelKey) : id;
 	service
@@ -173,7 +153,7 @@ function loadModelCount(ctx: SettingsContext, id: CardProviderId, userInitiated:
 }
 
 /** "N available" / "N pulled" line for a card's Models group. */
-function modelsSummary(ctx: SettingsContext, id: CardProviderId): string {
+function modelsSummary(ctx: SettingsContext, id: ModelProvider): string {
 	// `addSettingTab()` evaluates definitions during `onload()`, before
 	// `lifecycle.setup()` has created the model manager; report "loading"
 	// until it exists rather than crashing plugin load.
@@ -183,7 +163,6 @@ function modelsSummary(ctx: SettingsContext, id: CardProviderId): string {
 		const count = modelManager.getListProvider().getModels().length;
 		return t('settings.providers.modelsAvailable', { count });
 	}
-	if (id === 'anthropic') return t('settings.providers.modelsUnavailable');
 	const cached = modelCountCache.get(id);
 	if (cached === undefined) {
 		loadModelCount(ctx, id, false);
@@ -196,12 +175,11 @@ function modelsSummary(ctx: SettingsContext, id: CardProviderId): string {
 		: t('settings.providers.modelsPulled', { count: pulled });
 }
 
-function refreshModels(ctx: SettingsContext, id: CardProviderId): void {
+function refreshModels(ctx: SettingsContext, id: ModelProvider): void {
 	if (id === 'gemini') {
 		void refreshGeminiModelList(ctx.plugin, () => ctx.tab.update());
 		return;
 	}
-	if (id === 'anthropic') return;
 	loadModelCount(ctx, id, true);
 }
 
@@ -263,64 +241,46 @@ function authRows(ctx: SettingsContext, spec: ProviderCardSpec): SettingDefiniti
 /** Build the full navigable page for one provider card. */
 export function providerCardPage(ctx: SettingsContext, spec: ProviderCardSpec): SettingDefinitionPage {
 	const { id } = spec;
-	const isRealProvider = id !== 'anthropic';
-	const caps = isRealProvider ? getCapabilities(id) : null;
+	const caps = getCapabilities(id);
 
 	const items: SettingDefinitionItem[] = [...authRows(ctx, spec)];
 
-	if (spec.models !== 'none') {
-		items.push({
-			type: 'group',
-			heading: t('settings.providers.modelsHeading'),
-			items: [
-				{
-					name: t('settings.providers.modelsRowName'),
-					desc: modelsSummary(ctx, id),
-					render: (setting) => {
-						setting.addButton((button) =>
-							button.setButtonText(t('settings.providers.refreshButton')).onClick(() => refreshModels(ctx, id))
-						);
-					},
+	items.push({
+		type: 'group',
+		heading: t('settings.providers.modelsHeading'),
+		items: [
+			{
+				name: t('settings.providers.modelsRowName'),
+				desc: modelsSummary(ctx, id),
+				render: (setting) => {
+					setting.addButton((button) =>
+						button.setButtonText(t('settings.providers.refreshButton')).onClick(() => refreshModels(ctx, id))
+					);
 				},
-			],
-		});
-	}
+			},
+		],
+	});
 
-	if (isRealProvider && caps && (caps.maps || caps.webSearch)) {
+	if (caps.maps || caps.webSearch) {
 		items.push({
 			name: t('settings.providers.includesHeading'),
 			desc: includesLine(ctx, id),
 		});
 	}
 
-	if (isRealProvider) {
-		items.push({
-			name: t('settings.providers.usedByHeading'),
-			desc: usedByLine(ctx, id),
-		});
-	} else {
-		items.push({
-			name: t('settings.providers.notYetRoutableHeading'),
-			desc: t('settings.providers.anthropicPlaceholderDesc'),
-		});
-	}
+	items.push({
+		name: t('settings.providers.usedByHeading'),
+		desc: usedByLine(ctx, id),
+	});
 
 	return {
 		type: 'page',
 		name: t(spec.labelKey),
-		displayValue: () => (isRealProvider ? providerCardDisplay(ctx, id) : connectionLabelForPlaceholder(ctx)),
+		displayValue: () => providerCardDisplay(ctx, id),
 		status: () =>
-			isRealProvider &&
-			providerConnection(ctx.plugin, id) !== 'connected' &&
-			featuresUsing(ctx.plugin.settings, id).length > 0
+			providerConnection(ctx.plugin, id) !== 'connected' && featuresUsing(ctx.plugin.settings, id).length > 0
 				? 'warning'
 				: null,
 		items,
 	};
-}
-
-function connectionLabelForPlaceholder(ctx: SettingsContext): string {
-	return ctx.plugin.settings.anthropicApiKeySecretName
-		? t('settings.providers.statusConnected')
-		: t('settings.providers.statusNeedsKey');
 }

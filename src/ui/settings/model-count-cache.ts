@@ -12,11 +12,8 @@
 
 import type { ModelProvider } from '../../api/providers/registry';
 
-/** Every card the Providers page renders, including the routable `ModelProvider`s and the Anthropic placeholder. */
-export type CardProviderId = ModelProvider | 'anthropic';
-
 /** Best-effort cached model count per card, refreshed in the background. */
-export const modelCountCache = new Map<CardProviderId, { total: number; cloud: number }>();
+export const modelCountCache = new Map<ModelProvider, { total: number; cloud: number }>();
 
 /**
  * Per-card generation token. A probe in flight compares its captured
@@ -24,10 +21,10 @@ export const modelCountCache = new Map<CardProviderId, { total: number; cloud: n
  * probe started before a credential/base-URL change can't overwrite a fresher
  * one (or the cleared state from `invalidateModelCount`).
  */
-export const modelCountGeneration = new Map<CardProviderId, number>();
+export const modelCountGeneration = new Map<ModelProvider, number>();
 
 /** Bump a card's generation, invalidating any probe already in flight for it. */
-export function bumpGeneration(id: CardProviderId): number {
+export function bumpGeneration(id: ModelProvider): number {
 	const next = (modelCountGeneration.get(id) ?? 0) + 1;
 	modelCountGeneration.set(id, next);
 	return next;
@@ -39,7 +36,7 @@ export function bumpGeneration(id: CardProviderId): number {
  * a probe already in flight) was measured against the old value and no longer
  * reflects reality; the next render re-probes from scratch.
  */
-export function invalidateModelCount(id: CardProviderId): void {
+export function invalidateModelCount(id: ModelProvider): void {
 	modelCountCache.delete(id);
 	bumpGeneration(id);
 }

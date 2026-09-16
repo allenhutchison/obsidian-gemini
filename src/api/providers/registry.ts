@@ -23,7 +23,7 @@
  * `models.ts` re-exports it for backward compatibility, and `types/features.ts`
  * imports it directly for the same reason.
  */
-export type ModelProvider = 'gemini' | 'ollama' | 'openai';
+export type ModelProvider = 'gemini' | 'ollama' | 'openai' | 'anthropic';
 
 /**
  * Capability keys a provider is asked about — kept in lockstep with `FeatureId`
@@ -151,10 +151,32 @@ export const PROVIDERS: Record<ModelProvider, ProviderDefinition> = {
 			defaultInputTokenLimit: 128_000,
 		},
 	},
+	anthropic: {
+		id: 'anthropic',
+		labelKey: 'settings.general.providerOptionAnthropic',
+		docsUrl: 'https://allenhutchison.github.io/obsidian-gemini/guide/anthropic-setup.html',
+		capabilities: {
+			chat: true,
+			summary: true,
+			completions: true,
+			rewrite: true,
+			webSearch: false,
+			deepResearch: false,
+			rag: false,
+			imageGen: false,
+			maps: false,
+			nativeTokenCount: false,
+			customBaseUrl: false,
+			perUseCaseModels: true,
+			requiresApiKey: true,
+			/** Haiku 4.5's window; every other offered model reports its own (1M) via the model list. */
+			defaultInputTokenLimit: 200_000,
+		},
+	},
 };
 
 /** Every known provider id, in display order. */
-export const PROVIDER_IDS: readonly ModelProvider[] = ['gemini', 'ollama', 'openai'] as const;
+export const PROVIDER_IDS: readonly ModelProvider[] = ['gemini', 'ollama', 'openai', 'anthropic'] as const;
 
 /**
  * Capabilities for a provider, defaulting to Gemini for an unrecognized id

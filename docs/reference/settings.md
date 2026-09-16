@@ -43,7 +43,7 @@ Top-level rows, in order:
 ## Providers
 
 The Providers page holds one **connection card** per account/endpoint: Gemini, Ollama, OpenAI,
-and a placeholder Anthropic card. **A card never assigns a provider to a feature** — that only
+and Anthropic. **A card never assigns a provider to a feature** — that only
 happens on the [Features](#features) page. Each card's `displayValue` on the Providers list
 summarizes its connection state (Connected / Not set up / Unreachable).
 
@@ -89,15 +89,20 @@ summarizes its connection state (Connected / Not set up / Unreachable).
 
 ### Anthropic card
 
-A card-only placeholder. **Use an API key** (`anthropicApiKeySecretName`) lets an early adopter
-stage a key, but Anthropic is not yet an option on any Features row — there is no Anthropic
-client, and the card is not "routable." The card explains this with a note in place of an
-"Includes"/"Used by" line.
+- **API key** (`anthropicApiKeySecretName`) — String, SecretStorage key name, default `""`. Get
+  one at [platform.claude.com/settings/keys](https://platform.claude.com/settings/keys). There is
+  no base URL setting — requests always go to `api.anthropic.com`.
+- **Available models** — count + **Refresh** button. The curated Claude models, narrowed by
+  `GET https://api.anthropic.com/v1/models` to those the key can use (the full curated list is
+  shown without a key or when the endpoint is unreachable).
+- **Used by** — read-only list of the features currently routed to Anthropic.
+
+See the [Anthropic Setup Guide](/guide/anthropic-setup) for the model list and request behavior.
 
 ### Default provider
 
 - **Setting**: `defaultProvider`
-- **Type**: `'gemini' | 'ollama' | 'openai'`
+- **Type**: `'gemini' | 'ollama' | 'openai' | 'anthropic'`
 - **Default**: `'gemini'`
 - **Description**: The provider used by any feature you have not routed elsewhere. Changing it
   re-points every feature that was on the _previous_ default and that the new default can serve;
@@ -189,6 +194,9 @@ Model discovery is automatic — no user-configurable settings are required.
   curated metadata (context window, vision support) for current `api.openai.com` models;
   unrecognized ids (typically from a compatible server) get conservative defaults. Click
   **Refresh** on the OpenAI card if a model doesn't appear.
+- **Anthropic** — a curated list of Claude models, narrowed by `GET https://api.anthropic.com/v1/models`
+  to what your key can use, with display names and context windows from that response. Click
+  **Refresh** on the Anthropic card after your organization's model access changes.
 
 When Google retires a model (the API starts returning 404 "no longer available"), it is removed
 from the catalog and any route or remembered model still pointing at it is migrated
@@ -545,7 +553,9 @@ Available permission bypasses:
 3. For Ollama: click **Refresh** on the Ollama card after pulling new models.
 4. For OpenAI: click **Refresh** on the OpenAI card — useful after changing the base URL or
    loading a different model in a compatible server.
-5. Check console for errors (with Debug mode enabled).
+5. For Anthropic: click **Refresh** on the Anthropic card. Only curated Claude models are offered,
+   and only those your key's organization can access.
+6. Check console for errors (with Debug mode enabled).
 
 ### A feature shows a warning on the Features page
 

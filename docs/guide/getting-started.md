@@ -31,9 +31,9 @@ Welcome to Gemini Scribe, an Obsidian plugin that integrates Google's Gemini AI 
 
 **Requires Obsidian 1.13.1 or later** — the settings tab is built on Obsidian's declarative settings API.
 
-### Prefer running models locally, or already have an OpenAI key?
+### Prefer running models locally, or already have an OpenAI or Anthropic key?
 
-Gemini Scribe also supports [Ollama](https://ollama.com) as a provider so you can use local models such as Llama 3.2, Qwen 2.5, or Gemma 3 without an API key — see the [Ollama Setup Guide](/guide/ollama-setup). If you'd rather use your own OpenAI API key, or point the plugin at an OpenAI-compatible server such as LM Studio or MLX, add the OpenAI card on the **Providers** page — see the [OpenAI Setup Guide](/guide/openai-setup). Some Gemini-built-in features (Google Search, Google Maps, URL Context, Deep Research, image generation, RAG) have no equivalent on either provider, but each can be pointed at Gemini individually on the **Features** page while chat stays on your chosen provider.
+Gemini Scribe also supports [Ollama](https://ollama.com) as a provider so you can use local models such as Llama 3.2, Qwen 2.5, or Gemma 3 without an API key — see the [Ollama Setup Guide](/guide/ollama-setup). If you'd rather use your own OpenAI API key, or point the plugin at an OpenAI-compatible server such as LM Studio or MLX, add the OpenAI card on the **Providers** page — see the [OpenAI Setup Guide](/guide/openai-setup). To use Claude, add your Anthropic API key on the Anthropic card — see the [Anthropic Setup Guide](/guide/anthropic-setup). Some Gemini-built-in features (Google Search, Google Maps, URL Context, Deep Research, image generation, RAG) have no equivalent on these providers, but each can be pointed at Gemini individually on the **Features** page while chat stays on your chosen provider.
 
 ## Feature Overview
 

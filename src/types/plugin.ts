@@ -24,6 +24,8 @@ export interface ObsidianGemini extends Plugin {
 
 	/** Resolved OpenAI API key ('' when not configured), mirroring `apiKey`. */
 	readonly openaiApiKey: string;
+	/** Resolved Anthropic API key ('' when not configured), mirroring `apiKey`. */
+	readonly anthropicApiKey: string;
 
 	isGeminiInitialized: boolean;
 

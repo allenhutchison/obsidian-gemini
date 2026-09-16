@@ -146,6 +146,13 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		return this.app.secretStorage.getSecret(secretName) ?? '';
 	}
 
+	/** The configured Anthropic API key, mirroring `apiKey` above. */
+	get anthropicApiKey(): string {
+		const secretName = this.settings?.anthropicApiKeySecretName;
+		if (!secretName) return '';
+		return this.app.secretStorage.getSecret(secretName) ?? '';
+	}
+
 	// Public service properties — assigned by LifecycleService
 	public gfile!: ScribeFile;
 	public agentView!: AgentView;
@@ -192,6 +199,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	public isGeminiInitialized: boolean = false;
 	private previousApiKey: string = '';
 	private previousOpenaiApiKey: string = '';
+	private previousAnthropicApiKey: string = '';
 	private previousRagEnabled: boolean = false;
 	/**
 	 * Serialized provider routing (default provider + every feature's resolved
@@ -267,6 +275,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		this.lastInitError = null;
 		this.previousApiKey = this.apiKey;
 		this.previousOpenaiApiKey = this.openaiApiKey;
+		this.previousAnthropicApiKey = this.anthropicApiKey;
 		this.previousRagEnabled = this.settings.ragIndexing.enabled;
 		this.previousRoutingKey = routingKey(this.settings);
 		this.previousOllamaBaseUrl = this.settings.ollamaBaseUrl;
@@ -545,7 +554,10 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		await this.saveData(this.settings);
 
 		// Check if we need to re-initialize
-		const apiKeyChanged = this.previousApiKey !== this.apiKey || this.previousOpenaiApiKey !== this.openaiApiKey;
+		const apiKeyChanged =
+			this.previousApiKey !== this.apiKey ||
+			this.previousOpenaiApiKey !== this.openaiApiKey ||
+			this.previousAnthropicApiKey !== this.anthropicApiKey;
 		// Any change to *which provider serves which use case* re-inits: tool
 		// registration, RAG, and image generation are all keyed off the resolved
 		// providers, not just the primary.
@@ -563,7 +575,8 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		// degrade gracefully without one rather than blocking init. The
 		// credential that must exist for init is the one serving chat.
 		const chatProvider = this.settings.features.chat.provider;
-		const activeChatApiKey = chatProvider === 'openai' ? this.openaiApiKey : this.apiKey;
+		const activeChatApiKey =
+			chatProvider === 'openai' ? this.openaiApiKey : chatProvider === 'anthropic' ? this.anthropicApiKey : this.apiKey;
 		const hasCredentials =
 			!getCapabilities(chatProvider === 'none' ? null : chatProvider).requiresApiKey || !!activeChatApiKey;
 		const needsInit = !this.isGeminiInitialized && hasCredentials;

@@ -10,6 +10,7 @@
 import refAgentMode from '../../docs/guide/agent-mode.md';
 import refAgentSkills from '../../docs/guide/agent-skills.md';
 import refAiWriting from '../../docs/guide/ai-writing.md';
+import refAnthropicSetup from '../../docs/guide/anthropic-setup.md';
 import refBackgroundTasks from '../../docs/guide/background-tasks.md';
 import refCompletions from '../../docs/guide/completions.md';
 import refContextSystem from '../../docs/guide/context-system.md';
@@ -35,6 +36,7 @@ export const helpResources = new Map<string, string>([
 	['references/agent-mode.md', refAgentMode],
 	['references/agent-skills.md', refAgentSkills],
 	['references/ai-writing.md', refAiWriting],
+	['references/anthropic-setup.md', refAnthropicSetup],
 	['references/background-tasks.md', refBackgroundTasks],
 	['references/completions.md', refCompletions],
 	['references/context-system.md', refContextSystem],
@@ -62,6 +64,7 @@ export const helpReferencesTable = `| Reference | Topic |
 | \`references/agent-mode.md\` | Agent mode Guide |
 | \`references/agent-skills.md\` | Agent Skills |
 | \`references/ai-writing.md\` | Selection-Based AI Features Guide |
+| \`references/anthropic-setup.md\` | Anthropic (Claude) |
 | \`references/background-tasks.md\` | Background tasks |
 | \`references/completions.md\` | IDE-Style Completions Guide |
 | \`references/context-system.md\` | Context System Guide |

@@ -41,7 +41,7 @@ export function providerConnection(plugin: ObsidianGemini, p: ModelProvider): Pr
 		}
 		return apiKeySecretNameFor(settings, p) ? 'connected' : 'needs-key';
 	}
-	// gemini
+	// gemini, anthropic
 	return apiKeySecretNameFor(plugin.settings, p) ? 'connected' : 'needs-key';
 }
 

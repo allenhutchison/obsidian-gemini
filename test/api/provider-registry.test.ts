@@ -104,14 +104,14 @@ describe('capability matrix', () => {
 
 describe('lookup helpers', () => {
 	it('providersSupporting lists candidates in display order', () => {
-		expect(providersSupporting('chat')).toEqual(['gemini', 'ollama', 'openai']);
+		expect(providersSupporting('chat')).toEqual(['gemini', 'ollama', 'openai', 'anthropic']);
 		expect(providersSupporting('rag')).toEqual(['gemini']);
 		expect(providersSupporting('imageGen')).toEqual(['gemini']);
 		expect(providersSupporting('deepResearch')).toEqual(['gemini']);
 	});
 
 	it('providerSupports rejects unknown providers rather than throwing', () => {
-		expect(providerSupports('anthropic' as never, 'chat')).toBe(false);
+		expect(providerSupports('mistral' as never, 'chat')).toBe(false);
 		expect(providerSupports(null, 'chat')).toBe(false);
 		expect(providerSupports(undefined, 'chat')).toBe(false);
 	});
@@ -119,7 +119,7 @@ describe('lookup helpers', () => {
 	// A settings file written by a newer version and then downgraded shouldn't
 	// crash the plugin on load.
 	it('getCapabilities falls back to Gemini for an unknown provider', () => {
-		expect(getCapabilities('anthropic' as never)).toBe(PROVIDERS.gemini.capabilities);
+		expect(getCapabilities('mistral' as never)).toBe(PROVIDERS.gemini.capabilities);
 		expect(getCapabilities(undefined)).toBe(PROVIDERS.gemini.capabilities);
 	});
 

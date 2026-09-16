@@ -66,6 +66,7 @@
 	},
 	"dependencies": {
 		"@allenhutchison/gemini-utils": "^1.2.0",
+		"@anthropic-ai/sdk": "^0.126.0",
 		"@codemirror/merge": "^6.12.2",
 		"@types/turndown": "^5.0.6",
 		"ollama": "^0.6.3",

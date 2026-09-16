@@ -7,6 +7,7 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 > - **Google Gemini (cloud)** — requires a Gemini API key (free tier available at [Google AI Studio](https://aistudio.google.com/apikey)).
 > - **Ollama** — runs on your machine with no API key; install [Ollama](https://ollama.com), pull a model, and select it on the Ollama card. Ollama cloud models (marked "cloud" in the picker) are forwarded to ollama.com. See [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) for details.
 > - **OpenAI (cloud)** — requires your own OpenAI API key, or point it at an OpenAI-compatible server (LM Studio, MLX, ...) with any placeholder key. See [docs/guide/openai-setup.md](docs/guide/openai-setup.md) for details.
+> - **Anthropic (cloud)** — requires your own Anthropic API key; runs Claude models (Opus 5, Sonnet 5, Haiku 4.5, …) with adaptive thinking and image/PDF input. See [docs/guide/anthropic-setup.md](docs/guide/anthropic-setup.md) for details.
 >
 > Then route each feature to a provider on the **Features** page. See the [provider capability matrix](docs/reference/provider-capabilities.md) for what's supported on each.
 
@@ -83,7 +84,7 @@ _A large feature release — a full visual refresh plus smarter, more responsive
 - **Projects:** Create scoped agent profiles for different areas of your vault. A project bundles custom instructions, file scope, skill selection, and permission overrides into a single configuration. The agent auto-detects projects from your folder structure and applies project-specific behavior — including scoped file discovery, filtered skills, and per-tool permission overrides. See the [Projects guide](https://allenhutchison.github.io/obsidian-gemini/guide/projects) for details and the [blog post](https://allen.hutchison.org/2026/04/09/scoping-ai-context-with-projects-in-gemini-scribe/) for a walkthrough.
 - **Agent Skills:** Create, edit, and use extensible skill packages that give the agent specialized knowledge and workflows. Skills follow the [agentskills.io](https://agentskills.io) specification and are stored in your plugin state folder. The agent automatically discovers available skills and activates them on demand. Update existing skills via the `edit_skill` tool with diff review.
 - **Built-in Prompt templates:** The plugin uses carefully crafted Handlebars templates for system prompts, agent prompts, summarization prompts, selection rewrite prompts, and completion prompts. These ensure consistent and effective AI interaction.
-- **Data Privacy:** Requests for a feature go straight to whichever provider serves it — Google for Gemini, your Ollama server (local by default, but configurable to a remote host), or OpenAI (or a compatible server) for OpenAI — with no intermediate server unless you configure one yourself (e.g. a custom Gemini API endpoint). See [Provider Capabilities](docs/reference/provider-capabilities.md#privacy-semantics) for the full breakdown. Agent session history is stored locally in your Obsidian vault as markdown files.
+- **Data Privacy:** Requests for a feature go straight to whichever provider serves it — Google for Gemini, your Ollama server (local by default, but configurable to a remote host), OpenAI (or a compatible server) for OpenAI, or Anthropic for Claude — with no intermediate server unless you configure one yourself (e.g. a custom Gemini API endpoint). See [Provider Capabilities](docs/reference/provider-capabilities.md#privacy-semantics) for the full breakdown. Agent session history is stored locally in your Obsidian vault as markdown files.
 - **Robust Session Management:**
   - Persistent agent sessions that survive restarts
   - Session-specific permissions and settings
@@ -102,7 +103,7 @@ _A large feature release — a full visual refresh plus smarter, more responsive
 5. Manage sessions directly with command palette actions: "New agent session", "Browse agent sessions", "Link project to agent session", and "Agent session settings"
 6. Start using the AI agent to work with your vault!
 
-**Prefer running models locally, or already have an OpenAI key?** Gemini Scribe also supports [Ollama](https://ollama.com) — install Ollama, pull a model with `ollama pull llama3.2`, add the Ollama card in **Settings → Providers**, and route Chat to it on the **Features** page — and **OpenAI** — add the OpenAI card with your API key, and optionally point its base URL at an OpenAI-compatible server like LM Studio or MLX. A few Gemini-built-in features (Google Search, Google Maps, URL Context, Deep Research, image generation, RAG) have no equivalent on either provider — but you can point those individually at Gemini on the **Features** page while chat stays on your chosen provider. Nothing is sent to the cloud unless you route it there. See [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) and [docs/guide/openai-setup.md](docs/guide/openai-setup.md) for details.
+**Prefer running models locally, or already have an OpenAI or Anthropic key?** Gemini Scribe also supports [Ollama](https://ollama.com) — install Ollama, pull a model with `ollama pull llama3.2`, add the Ollama card in **Settings → Providers**, and route Chat to it on the **Features** page — and **OpenAI** — add the OpenAI card with your API key, and optionally point its base URL at an OpenAI-compatible server like LM Studio or MLX — and **Anthropic** — add your Anthropic API key on the Anthropic card to run Claude. A few Gemini-built-in features (Google Search, Google Maps, URL Context, Deep Research, image generation, RAG) have no equivalent on these providers — but you can point those individually at Gemini on the **Features** page while chat stays on your chosen provider. Nothing is sent to the cloud unless you route it there. See [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md), [docs/guide/openai-setup.md](docs/guide/openai-setup.md), and [docs/guide/anthropic-setup.md](docs/guide/anthropic-setup.md) for details.
 
 ## Installation
 
@@ -130,7 +131,7 @@ _A large feature release — a full visual refresh plus smarter, more responsive
 2.  **Configure Plugin Settings:**
     - Open Obsidian Settings.
     - Go to "Gemini Scribe" under "Community plugins".
-    - **Providers:** One connection card per account/endpoint. Add the Gemini card (paste your API key — stored securely via Obsidian's SecretStorage), the Ollama card (base URL, default `http://localhost:11434`), and/or the OpenAI card (API key or a compatible-server base URL). Each card shows its available models with a Refresh button, a read-only "Used by" line, and — for Gemini — an "Includes" line for provider-bound extras (Google Maps grounding, page fetch by URL). Set a **Default provider** for any feature you haven't routed elsewhere.
+    - **Providers:** One connection card per account/endpoint. Add the Gemini card (paste your API key — stored securely via Obsidian's SecretStorage), the Ollama card (base URL, default `http://localhost:11434`), the OpenAI card (API key or a compatible-server base URL), and/or the Anthropic card (API key). Each card shows its available models with a Refresh button, a read-only "Used by" line, and — for Gemini — an "Includes" line for provider-bound extras (Google Maps grounding, page fetch by URL). Set a **Default provider** for any feature you haven't routed elsewhere.
     - **Features:** Route each feature — Chat and agent, Summaries, Completions, Rewrite, Web search, Deep research, Vault search index, Image generation — to a provider and model. Each row shows "provider · model"; opening it gives exactly two controls (provider, then model filtered to that provider). A feature can be set to **Off**, and a feature routed to a provider that can't serve it (or isn't connected) shows a warning and stays off — the plugin never falls back to another provider on its own.
     - **Your name:** Enter your name, which the AI will use when addressing you.
     - **Keep session history:** Toggle whether to save agent session history.
@@ -224,11 +225,12 @@ For detailed guides on all features, visit the [Documentation Site](https://alle
 - [Lifecycle Hooks Guide](docs/guide/lifecycle-hooks.md) - Trigger AI runs from vault events
 - [Ollama Setup Guide](docs/guide/ollama-setup.md) - Run local models with Ollama
 - [OpenAI Setup Guide](docs/guide/openai-setup.md) - Use your OpenAI API key, or an OpenAI-compatible server
+- [Anthropic Setup Guide](docs/guide/anthropic-setup.md) - Use Claude models with your Anthropic API key
 
 **Configuration & Development:**
 
 - [Settings Reference](docs/reference/settings.md) - Complete settings documentation
-- [Provider Capabilities](docs/reference/provider-capabilities.md) - Gemini vs. Ollama vs. OpenAI feature matrix
+- [Provider Capabilities](docs/reference/provider-capabilities.md) - Gemini vs. Ollama vs. OpenAI vs. Anthropic feature matrix
 - [Tool Development Guide](docs/contributing/tool-development.md) - Create custom agent tools
 
 ### Chat Interface

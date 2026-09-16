@@ -276,8 +276,10 @@ describe('ModelManager', () => {
 			expect(models.some((m) => bundledValues.has(m.value))).toBe(false);
 		});
 
-		it('getOpenAIModelsService() returns the internal service instance', () => {
-			const service = openaiManager.getOpenAIModelsService();
+		it('getProviderModelsService() returns a distinct service per provider', () => {
+			const service = openaiManager.getProviderModelsService('openai');
+			expect(service).not.toBe(openaiManager.getProviderModelsService('anthropic'));
+			expect(service).toBe(openaiManager.getProviderModelsService('openai'));
 			expect(service).toBeDefined();
 			expect(typeof service.getModels).toBe('function');
 			expect(typeof service.invalidate).toBe('function');

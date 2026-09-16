@@ -102,9 +102,9 @@ export function getDefaultModelForRole(role: ModelRole, provider: ModelProvider 
 	}
 
 	// No models for this provider yet (e.g. Ollama before /api/tags returns, or
-	// OpenAI before /v1/models returns). Returning an empty string lets callers
+	// OpenAI/Anthropic before their /v1/models returns). Returning an empty string lets callers
 	// handle the unconfigured state rather than throwing at module load.
-	if (provider === 'ollama' || provider === 'openai') {
+	if (provider !== 'gemini') {
 		return '';
 	}
 
