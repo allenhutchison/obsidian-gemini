@@ -34,7 +34,6 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.main.groupVault': 'Хранилище',
 	'settings.main.groupAutomation': 'Автоматизация',
 	'settings.main.providersName': 'Провайдеры',
-	'settings.main.featuresName': 'Функции',
 	'settings.main.yourNameName': 'Ваше имя',
 	'settings.main.yourNameDesc':
 		'Ваше имя, используемое в системных инструкциях, чтобы ИИ мог обращаться к вам лично в беседах.',
@@ -55,7 +54,6 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.main.advancedName': 'Дополнительно',
 	'settings.main.documentationName': 'Документация',
 	'settings.main.documentationDesc': 'Просмотреть полную документацию и руководства по плагину',
-	'settings.main.viewDocumentationButton': 'Открыть документацию',
 	'settings.features.pageName': 'Функции',
 	'settings.features.groupText': 'Текст',
 	'settings.features.groupTextDesc': 'Чат и агент, сводки, автодополнение и переписывание.',

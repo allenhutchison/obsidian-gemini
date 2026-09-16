@@ -35,7 +35,6 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'settings.main.groupVault': 'Vault',
 	'settings.main.groupAutomation': 'Automazione',
 	'settings.main.providersName': 'Provider',
-	'settings.main.featuresName': 'Funzionalità',
 	'settings.main.yourNameName': 'Il tuo nome',
 	'settings.main.yourNameDesc':
 		"Il tuo nome usato nelle istruzioni di sistema per consentire all'IA di rivolgersi a te di persona nelle conversazioni.",
@@ -56,7 +55,6 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'settings.main.advancedName': 'Avanzate',
 	'settings.main.documentationName': 'Documentazione',
 	'settings.main.documentationDesc': 'Visualizza la documentazione completa e le guide del plugin',
-	'settings.main.viewDocumentationButton': 'Visualizza documentazione',
 	'settings.features.pageName': 'Funzionalità',
 	'settings.features.groupText': 'Testo',
 	'settings.features.groupTextDesc': 'Chat e agente, riassunti, completamenti e riscrittura.',

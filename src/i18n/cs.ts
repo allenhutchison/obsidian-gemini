@@ -34,7 +34,6 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.main.groupVault': 'Trezor',
 	'settings.main.groupAutomation': 'Automatizace',
 	'settings.main.providersName': 'Poskytovatelé',
-	'settings.main.featuresName': 'Funkce',
 	'settings.main.yourNameName': 'Vaše jméno',
 	'settings.main.yourNameDesc':
 		'Vaše jméno použité v systémových instrukcích, aby vás AI mohla v konverzacích oslovovat osobně.',
@@ -55,7 +54,6 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.main.advancedName': 'Pokročilé',
 	'settings.main.documentationName': 'Dokumentace',
 	'settings.main.documentationDesc': 'Zobrazit kompletní dokumentaci a návody k doplňku',
-	'settings.main.viewDocumentationButton': 'Zobrazit dokumentaci',
 	'settings.features.pageName': 'Funkce',
 	'settings.features.groupText': 'Text',
 	'settings.features.groupTextDesc': 'Chat a agent, shrnutí, doplňování a přepis.',

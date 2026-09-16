@@ -34,7 +34,6 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'settings.main.groupVault': 'Vault',
 	'settings.main.groupAutomation': 'Automatisering',
 	'settings.main.providersName': 'Udbydere',
-	'settings.main.featuresName': 'Funktioner',
 	'settings.main.yourNameName': 'Dit navn',
 	'settings.main.yourNameDesc':
 		"Dit navn brugt i systeminstruktioner, så AI'en kan henvende sig til dig personligt i samtaler.",
@@ -55,7 +54,6 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'settings.main.advancedName': 'Avanceret',
 	'settings.main.documentationName': 'Dokumentation',
 	'settings.main.documentationDesc': 'Se den fulde plugindokumentation og vejledninger',
-	'settings.main.viewDocumentationButton': 'Se dokumentation',
 	'settings.features.pageName': 'Funktioner',
 	'settings.features.groupText': 'Tekst',
 	'settings.features.groupTextDesc': 'Chat og agent, opsummeringer, fuldførelser og omskrivning.',

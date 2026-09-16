@@ -35,7 +35,6 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.main.groupVault': 'Kasa',
 	'settings.main.groupAutomation': 'Otomasyon',
 	'settings.main.providersName': 'Sağlayıcılar',
-	'settings.main.featuresName': 'Özellikler',
 	'settings.main.yourNameName': 'Adınız',
 	'settings.main.yourNameDesc':
 		'Yapay zekanın konuşmalarda size kişisel olarak hitap edebilmesi için sistem talimatlarında kullanılan adınız.',
@@ -56,7 +55,6 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.main.advancedName': 'Gelişmiş',
 	'settings.main.documentationName': 'Dokümantasyon',
 	'settings.main.documentationDesc': 'Eklenti dokümantasyonunun ve kılavuzlarının tamamını görüntüleyin',
-	'settings.main.viewDocumentationButton': 'Dokümantasyonu görüntüle',
 	'settings.features.pageName': 'Özellikler',
 	'settings.features.groupText': 'Metin',
 	'settings.features.groupTextDesc': 'Sohbet ve temsilci, özetler, tamamlamalar ve yeniden yazma.',

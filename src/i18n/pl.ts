@@ -35,7 +35,6 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'settings.main.groupVault': 'Vault',
 	'settings.main.groupAutomation': 'Automatyzacja',
 	'settings.main.providersName': 'Dostawcy',
-	'settings.main.featuresName': 'Funkcje',
 	'settings.main.yourNameName': 'Twoje imię',
 	'settings.main.yourNameDesc':
 		'Twoje imię używane w instrukcjach systemowych, aby AI mogło zwracać się do Ciebie bezpośrednio w rozmowach.',
@@ -56,7 +55,6 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'settings.main.advancedName': 'Zaawansowane',
 	'settings.main.documentationName': 'Dokumentacja',
 	'settings.main.documentationDesc': 'Zobacz pełną dokumentację i przewodniki po wtyczce',
-	'settings.main.viewDocumentationButton': 'Wyświetl dokumentację',
 	'settings.features.pageName': 'Funkcje',
 	'settings.features.groupText': 'Tekst',
 	'settings.features.groupTextDesc': 'Czat i agent, podsumowania, uzupełnianie i redagowanie tekstu.',

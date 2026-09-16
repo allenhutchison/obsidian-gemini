@@ -35,7 +35,6 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.main.groupVault': 'Vault',
 	'settings.main.groupAutomation': 'Tự động hóa',
 	'settings.main.providersName': 'Nhà cung cấp',
-	'settings.main.featuresName': 'Tính năng',
 	'settings.main.yourNameName': 'Tên của bạn',
 	'settings.main.yourNameDesc':
 		'Tên của bạn được sử dụng trong chỉ dẫn hệ thống để AI có thể xưng hô với bạn trong cuộc trò chuyện.',
@@ -56,7 +55,6 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.main.advancedName': 'Nâng cao',
 	'settings.main.documentationName': 'Tài liệu',
 	'settings.main.documentationDesc': 'Xem toàn bộ tài liệu và hướng dẫn về plugin',
-	'settings.main.viewDocumentationButton': 'Xem tài liệu',
 	'settings.features.pageName': 'Tính năng',
 	'settings.features.groupText': 'Văn bản',
 	'settings.features.groupTextDesc': 'Trò chuyện và agent, tóm tắt, hoàn thiện văn bản và viết lại.',

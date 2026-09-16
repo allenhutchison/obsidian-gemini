@@ -34,7 +34,6 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'settings.main.groupVault': 'Сховище',
 	'settings.main.groupAutomation': 'Автоматизація',
 	'settings.main.providersName': 'Провайдери',
-	'settings.main.featuresName': 'Функції',
 	'settings.main.yourNameName': "Ваше ім'я",
 	'settings.main.yourNameDesc':
 		"Ваше ім'я, яке використовуватиметься в системних інструкціях, щоб ШІ міг звертатися до вас особисто під час розмови.",
@@ -55,7 +54,6 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'settings.main.advancedName': 'Додатково',
 	'settings.main.documentationName': 'Документація',
 	'settings.main.documentationDesc': 'Переглянути повну документацію та посібники з плагіна',
-	'settings.main.viewDocumentationButton': 'Переглянути документацію',
 	'settings.features.pageName': 'Функції',
 	'settings.features.groupText': 'Текст',
 	'settings.features.groupTextDesc': 'Чат та агент, підсумки, автодоповнення та переписування.',
