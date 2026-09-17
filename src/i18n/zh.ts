@@ -25,6 +25,7 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionGemini': 'Google Gemini (云端)',
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (云端)',
+	'settings.general.providerOptionAnthropic': 'Anthropic (云端)',
 	'settings.general.modelListUpdated': '模型列表已更新：{count} 个模型。',
 	'settings.general.modelListUpdatedSingular': '模型列表已更新：{count} 个模型。',
 	'settings.general.refreshSkippedOffline': '已跳过：离线',
@@ -61,6 +62,7 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'settings.features.provider': '提供商',
 	'settings.features.model': '模型',
 	'settings.features.modelDefault': '此提供商的默认模型',
+	'settings.features.modelDefaultNamed': '默认 ({model})',
 	'settings.features.sameAsChat': '与聊天相同',
 	'settings.features.modelMissing': '不再可用',
 	'settings.features.off': '关闭',
@@ -504,6 +506,7 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'agent.progress.elapsedAria': '已用时间',
 	'agent.send.emptyResponse': '模型返回了空响应。这可能会发生在思考模型上。请尝试重新组织您的问题。',
 	'agent.send.cancelled': 'Agent 执行已取消',
+	'agent.loop.notice': '智能体正在重复调用相同的“{tool}” — 可能已卡住。',
 	'agent.planMode.approved': '已批准',
 	'agent.session.createFailed': '创建 Agent 会话失败',
 	'agent.session.loadFailed': '加载会话失败',
@@ -613,6 +616,8 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 		'未配置 Gemini API 密钥。请打开 设置 → Gemini Scribe 添加一个。可在 aistudio.google.com/apikey 获取免费密钥',
 	'notice.main.noApiKeyOpenai':
 		'未配置 OpenAI API 密钥。请打开 设置 → Gemini Scribe 进行添加。请在 platform.openai.com/api-keys 获取密钥',
+	'notice.main.noApiKeyAnthropic':
+		'未配置 Anthropic API 密钥。请打开 设置 → Gemini Scribe 进行添加。可在 platform.claude.com/settings/keys 获取密钥',
 	'notice.main.apiKeyRetrieveFailed':
 		'无法从安全存储中获取您的 API 密钥。请尝试在 设置 → Gemini Scribe → 服务商 → Google Gemini → API 密钥 中重新输入。',
 	'notice.main.initFailedConsole': 'Gemini Scribe 初始化失败: {error}。请检查控制台以获取详细信息。',
@@ -793,6 +798,7 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.proceedMessage': '继续执行已批准的计划。',
 	'error.unknown': '发生未知错误',
 	'error.openaiInvalidKey': '无效的 OpenAI API 密钥。请检查 设置 → Gemini Scribe 中的 API 密钥。',
+	'error.anthropicInvalidKey': 'Anthropic API 密钥无效。请在 设置 → Gemini Scribe 中检查 API 密钥。',
 	'error.modelNotOnEndpoint': '此端点上没有可用的模型。请检查您的模型设置或配置的基础 URL。',
 	'error.serverUnreachable':
 		'无法连接到模型服务器。如果您配置了自定义基础 URL（LM Studio、MLX 等），请确保服务器正在运行且设置中的基础 URL 正确。',
@@ -957,7 +963,7 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': '供未明确路由至其他服务商的任何功能使用。',
 	'settings.providers.privacyNoticeName': '隐私',
 	'settings.providers.privacyNoticeDesc':
-		'只有各功能实际使用的服务商才会接收您的内容。Ollama 将请求保留在本地设备上，但标记为“cloud”的模型除外（此类模型会转发至 ollama.com）。Gemini 和 OpenAI 则会将请求发送至各自公司的服务器。',
+		'只有各功能实际使用的提供商才会接收您的内容。Ollama 会将请求保留在本地设备上，但标记为“cloud”的模型除外（此类模型将被转发至 ollama.com）。Gemini、OpenAI 和 Anthropic 会将请求发送至各自公司的服务器。',
 	'settings.providers.defaultMoved': '{count} 项功能已迁移至新的默认服务商。',
 	'settings.providers.groupOnProvider': '{group}（{provider}）',
 	'settings.features.modelMissingHelp': '此服务商已不再提供 {model}。请选择其他模型。',

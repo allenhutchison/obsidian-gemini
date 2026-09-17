@@ -25,6 +25,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionGemini': 'Google Gemini (облако)',
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (облако)',
+	'settings.general.providerOptionAnthropic': 'Anthropic (облако)',
 	'settings.general.modelListUpdated': 'Список моделей обновлён: {count} моделей.',
 	'settings.general.modelListUpdatedSingular': 'Список моделей обновлён: {count} модель.',
 	'settings.general.refreshSkippedOffline': 'Пропущено: офлайн',
@@ -63,6 +64,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.features.provider': 'Провайдер',
 	'settings.features.model': 'Модель',
 	'settings.features.modelDefault': 'По умолчанию для этого провайдера',
+	'settings.features.modelDefaultNamed': 'По умолчанию ({model})',
 	'settings.features.sameAsChat': 'Как в чате',
 	'settings.features.modelMissing': 'Больше недоступно',
 	'settings.features.off': 'Отключено',
@@ -535,6 +537,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'agent.send.emptyResponse':
 		'Модель вернула пустой ответ. Это может происходить с рассуждающими моделями. Попробуйте переформулировать вопрос.',
 	'agent.send.cancelled': 'Выполнение агента отменено',
+	'agent.loop.notice': 'Агент повторяет один и тот же вызов "{tool}" — возможно, он завис.',
 	'agent.planMode.approved': 'Одобрено',
 	'agent.session.createFailed': 'Не удалось создать сессию агента',
 	'agent.session.loadFailed': 'Не удалось загрузить сессию',
@@ -646,6 +649,8 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 		'API-ключ Gemini не настроен. Откройте Настройки → Gemini Scribe, чтобы добавить его. Получите бесплатный ключ на aistudio.google.com/apikey',
 	'notice.main.noApiKeyOpenai':
 		'API-ключ OpenAI не настроен. Откройте Настройки → Gemini Scribe, чтобы добавить его. Получить ключ можно на platform.openai.com/api-keys',
+	'notice.main.noApiKeyAnthropic':
+		'API-ключ Anthropic не настроен. Откройте Настройки → Gemini Scribe, чтобы добавить его. Получите ключ на platform.claude.com/settings/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Не удалось получить ключ API из защищённого хранилища. Попробуйте ввести его заново в меню: Настройки → Gemini Scribe → Провайдеры → Google Gemini → Ключ API.',
 	'notice.main.initFailedConsole':
@@ -834,6 +839,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'error.unknown': 'Произошла неизвестная ошибка',
 	'error.openaiInvalidKey':
 		'Неверный API-ключ OpenAI. Пожалуйста, проверьте API-ключ в меню Настройки → Gemini Scribe.',
+	'error.anthropicInvalidKey': 'Неверный API-ключ Anthropic. Проверьте API-ключ в Настройки → Gemini Scribe.',
 	'error.modelNotOnEndpoint':
 		'Модель недоступна на этом эндпоинте. Пожалуйста, проверьте настройки модели или настроенный базовый URL.',
 	'error.serverUnreachable':
@@ -1019,7 +1025,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Используется для всех функций, которым явно не назначен другой провайдер.',
 	'settings.providers.privacyNoticeName': 'Конфиденциальность',
 	'settings.providers.privacyNoticeDesc':
-		'Ваш контент получают только те провайдеры, которые действительно используются вашими функциями. Ollama обрабатывает запросы локально на этом устройстве, за исключением моделей с отметкой «cloud», которые перенаправляются на ollama.com. Gemini и OpenAI отправляют запросы на серверы соответствующих компаний.',
+		'Ваш контент получают только те провайдеры, которые непосредственно используются вашими функциями. Ollama обрабатывает запросы локально на этом устройстве, кроме моделей с пометкой «cloud», перенаправляемых на ollama.com. Gemini, OpenAI и Anthropic отправляют запросы на серверы соответствующих компаний.',
 	'settings.providers.defaultMoved': 'Функций перенесено на нового провайдера по умолчанию: {count}.',
 	'settings.providers.groupOnProvider': '{group} на {provider}',
 	'settings.features.modelMissingHelp': '{model} больше недоступна у этого провайдера. Выберите другую.',

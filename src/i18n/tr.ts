@@ -26,6 +26,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionGemini': 'Google Gemini (bulut)',
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (bulut)',
+	'settings.general.providerOptionAnthropic': 'Anthropic (bulut)',
 	'settings.general.modelListUpdated': 'Model listesi güncellendi: {count} model.',
 	'settings.general.modelListUpdatedSingular': 'Model listesi güncellendi: {count} model.',
 	'settings.general.refreshSkippedOffline': 'Atlandı: çevrimdışı',
@@ -64,6 +65,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.features.provider': 'Sağlayıcı',
 	'settings.features.model': 'Model',
 	'settings.features.modelDefault': 'Bu sağlayıcı için varsayılan',
+	'settings.features.modelDefaultNamed': 'Varsayılan ({model})',
 	'settings.features.sameAsChat': 'Sohbet ile aynı',
 	'settings.features.modelMissing': 'Artık mevcut değil',
 	'settings.features.off': 'Kapalı',
@@ -534,6 +536,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'agent.send.emptyResponse':
 		'Model boş bir yanıt döndürdü. Bu durum düşünme modellerinde yaşanabilir. Sorunuzu farklı şekilde ifade etmeyi deneyin.',
 	'agent.send.cancelled': 'Temsilci yürütmesi iptal edildi',
+	'agent.loop.notice': 'Ajan aynı "{tool}" çağrısını tekrarlıyor — takılmış olabilir.',
 	'agent.planMode.approved': 'Onaylandı',
 	'agent.session.createFailed': 'Ajan oturumu oluşturulamadı',
 	'agent.session.loadFailed': 'Oturum yüklenemedi',
@@ -646,6 +649,8 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 		'Tanımlanmış Gemini API anahtarı yok. Eklemek için Ayarlar → Gemini Scribe bölümünü açın. aistudio.google.com/apikey adresinden ücretsiz bir anahtar alabilirsiniz.',
 	'notice.main.noApiKeyOpenai':
 		'Yapılandırılmış OpenAI API anahtarı yok. Eklemek için Ayarlar → Gemini Scribe menüsünü açın. platform.openai.com/api-keys adresinden bir anahtar edinin.',
+	'notice.main.noApiKeyAnthropic':
+		'Yapılandırılmış Anthropic API anahtarı yok. Eklemek için Ayarlar → Gemini Scribe bölümünü açın. platform.claude.com/settings/keys adresinden bir anahtar edinin.',
 	'notice.main.apiKeyRetrieveFailed':
 		'API anahtarınız güvenli depolamadan alınamadı. Ayarlar → Gemini Scribe → Sağlayıcılar → Google Gemini → API anahtarı bölümünden tekrar girmeyi deneyin.',
 	'notice.main.initFailedConsole': 'Gemini Scribe başlatılamadı: {error}. Detaylar için konsolu kontrol edin.',
@@ -832,6 +837,8 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'error.unknown': 'Bilinmeyen bir hata oluştu',
 	'error.openaiInvalidKey':
 		'Geçersiz OpenAI API anahtarı. Lütfen Ayarlar → Gemini Scribe altındaki API anahtarını kontrol edin.',
+	'error.anthropicInvalidKey':
+		'Geçersiz Anthropic API anahtarı. Lütfen Ayarlar → Gemini Scribe bölümündeki API anahtarını kontrol edin.',
 	'error.modelNotOnEndpoint':
 		"Model bu uç noktada mevcut değil. Lütfen model ayarlarınızı veya yapılandırılmış temel URL'yi kontrol edin.",
 	'error.serverUnreachable':
@@ -1015,7 +1022,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Başka bir yere yönlendirmediğiniz tüm özellikler tarafından kullanılır.',
 	'settings.providers.privacyNoticeName': 'Gizlilik',
 	'settings.providers.privacyNoticeDesc':
-		'İçeriğinizi yalnızca özelliklerinizin gerçekten kullandığı sağlayıcılar alır. Ollama, "bulut" olarak işaretlenen modeller hariç, istekleri bu makinede tutar; bulut modellerini ise ollama.com adresine iletir. Gemini ve OpenAI istekleri ilgili şirketin sunucularına gönderir.',
+		'Yalnızca özelliklerinizin fiilen kullandığı sağlayıcılar içeriğinizi alır. Ollama, ollama.com adresine ilettiği "bulut" olarak işaretlenmiş modeller haricinde istekleri bu makinede tutar. Gemini, OpenAI ve Anthropic ise istekleri ilgili şirketin sunucularına gönderir.',
 	'settings.providers.defaultMoved': '{count} özellik yeni varsayılan sağlayıcıya taşındı.',
 	'settings.providers.groupOnProvider': '{provider} üzerinde {group}',
 	'settings.features.modelMissingHelp': '{model} artık bu sağlayıcıda mevcut değil. Başka birini seçin.',

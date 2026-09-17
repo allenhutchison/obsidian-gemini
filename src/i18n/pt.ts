@@ -25,6 +25,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionGemini': 'Google Gemini (nuvem)',
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (nuvem)',
+	'settings.general.providerOptionAnthropic': 'Anthropic (nuvem)',
 	'settings.general.modelListUpdated': 'Lista de modelos atualizada: {count} modelos.',
 	'settings.general.modelListUpdatedSingular': 'Lista de modelos atualizada: {count} modelo.',
 	'settings.general.refreshSkippedOffline': 'Ignorado: offline',
@@ -63,6 +64,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'settings.features.provider': 'Fornecedor',
 	'settings.features.model': 'Modelo',
 	'settings.features.modelDefault': 'Predefinição deste fornecedor',
+	'settings.features.modelDefaultNamed': 'Predefinição ({model})',
 	'settings.features.sameAsChat': 'Igual ao chat',
 	'settings.features.modelMissing': 'Já não disponível',
 	'settings.features.off': 'Desativado',
@@ -532,6 +534,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'agent.send.emptyResponse':
 		'O modelo devolveu uma resposta vazia. Isto pode acontecer com modelos de raciocínio. Tente reformular a sua pergunta.',
 	'agent.send.cancelled': 'Execução do agente cancelada',
+	'agent.loop.notice': 'O agente está a repetir a mesma chamada "{tool}" — pode estar bloqueado.',
 	'agent.planMode.approved': 'Aprovado',
 	'agent.session.createFailed': 'Falha ao criar sessão do agente',
 	'agent.session.loadFailed': 'Falha ao carregar sessão',
@@ -644,6 +647,8 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 		'Nenhuma chave de API do Gemini configurada. Abra Definições → Gemini Scribe para adicionar uma. Obtenha uma chave gratuita em aistudio.google.com/apikey',
 	'notice.main.noApiKeyOpenai':
 		'Nenhuma chave de API da OpenAI configurada. Abra as Definições → Gemini Scribe para adicionar uma. Obtenha uma chave em platform.openai.com/api-keys',
+	'notice.main.noApiKeyAnthropic':
+		'Nenhuma chave de API da Anthropic configurada. Abra Definições → Gemini Scribe para adicionar uma. Obtenha uma chave em platform.claude.com/settings/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Não foi possível obter a sua chave de API do armazenamento seguro. Tente introduzi-la novamente em Definições → Gemini Scribe → Fornecedores → Google Gemini → Chave de API.',
 	'notice.main.initFailedConsole':
@@ -832,6 +837,8 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'error.unknown': 'Ocorreu um erro desconhecido',
 	'error.openaiInvalidKey':
 		'Chave de API da OpenAI inválida. Por favor, verifique a chave de API em Definições → Gemini Scribe.',
+	'error.anthropicInvalidKey':
+		'Chave de API da Anthropic inválida. Por favor, verifique a chave de API em Definições → Gemini Scribe.',
 	'error.modelNotOnEndpoint':
 		'Modelo não disponível neste endpoint. Por favor, verifique as definições do seu modelo ou o URL base configurado.',
 	'error.serverUnreachable':
@@ -1022,7 +1029,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 		'Utilizado por qualquer funcionalidade que não tenha sido encaminhada para outro local.',
 	'settings.providers.privacyNoticeName': 'Privacidade',
 	'settings.providers.privacyNoticeDesc':
-		'Apenas os fornecedores que as suas funcionalidades realmente utilizam recebem o seu conteúdo. O Ollama mantém os pedidos nesta máquina, exceto para modelos assinalados como "cloud", que são reencaminhados para ollama.com. O Gemini e a OpenAI enviam o pedido para os servidores dessas empresas.',
+		'Apenas os fornecedores que as suas funcionalidades realmente usam recebem o seu conteúdo. O Ollama mantém os pedidos nesta máquina, exceto para modelos assinalados como "nuvem", que reencaminha para ollama.com. O Gemini, a OpenAI e a Anthropic enviam o pedido para os servidores dessa empresa.',
 	'settings.providers.defaultMoved': '{count} funcionalidades movidas para o novo fornecedor predefinido.',
 	'settings.providers.groupOnProvider': '{group} em {provider}',
 	'settings.features.modelMissingHelp': '{model} já não se encontra disponível neste fornecedor. Escolha outro.',

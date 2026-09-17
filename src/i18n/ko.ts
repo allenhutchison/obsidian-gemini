@@ -25,6 +25,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionGemini': 'Google Gemini (클라우드)',
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (클라우드)',
+	'settings.general.providerOptionAnthropic': 'Anthropic (클라우드)',
 	'settings.general.modelListUpdated': '모델 목록 업데이트됨: {count}개 모델.',
 	'settings.general.modelListUpdatedSingular': '모델 목록 업데이트됨: {count}개 모델.',
 	'settings.general.refreshSkippedOffline': '건너뜀: 오프라인',
@@ -61,6 +62,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'settings.features.provider': '제공자',
 	'settings.features.model': '모델',
 	'settings.features.modelDefault': '이 제공자의 기본값',
+	'settings.features.modelDefaultNamed': '기본값 ({model})',
 	'settings.features.sameAsChat': '채팅과 동일',
 	'settings.features.modelMissing': '더 이상 사용할 수 없음',
 	'settings.features.off': '사용 안 함',
@@ -521,6 +523,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'agent.send.emptyResponse':
 		'모델이 빈 응답을 반환했습니다. 추론 모델에서 발생할 수 있는 현상입니다. 질문을 다르게 표현해 보세요.',
 	'agent.send.cancelled': '에이전트 실행이 취소되었습니다',
+	'agent.loop.notice': '에이전트가 동일한 "{tool}" 호출을 반복하고 있습니다. 무한 루프에 빠졌을 수 있습니다.',
 	'agent.planMode.approved': '승인됨',
 	'agent.session.createFailed': '에이전트 세션을 생성하지 못했습니다',
 	'agent.session.loadFailed': '세션을 불러오지 못했습니다',
@@ -632,6 +635,8 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 		'Gemini API 키가 설정되지 않았습니다. 설정 → Gemini Scribe에서 키를 추가하세요. aistudio.google.com/apikey 에서 무료 키를 받을 수 있습니다.',
 	'notice.main.noApiKeyOpenai':
 		'OpenAI API 키가 설정되지 않았습니다. 설정 → Gemini Scribe에서 키를 추가하세요. platform.openai.com/api-keys 에서 키를 발급받을 수 있습니다.',
+	'notice.main.noApiKeyAnthropic':
+		'Anthropic API 키가 설정되지 않았습니다. 설정 → Gemini Scribe에서 키를 추가하세요. 키는 platform.claude.com/settings/keys 에서 발급받을 수 있습니다.',
 	'notice.main.apiKeyRetrieveFailed':
 		'보안 저장소에서 API 키를 가져올 수 없습니다. 설정 → Gemini Scribe → 제공자 → Google Gemini → API 키에서 다시 입력해 보세요.',
 	'notice.main.initFailedConsole': 'Gemini Scribe 초기화 실패: {error}. 자세한 내용은 콘솔을 확인하세요.',
@@ -817,6 +822,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.proceedMessage': '승인된 계획을 진행합니다.',
 	'error.unknown': '알 수 없는 오류가 발생했습니다',
 	'error.openaiInvalidKey': '올바르지 않은 OpenAI API 키입니다. 설정 → Gemini Scribe에서 API 키를 확인해 주세요.',
+	'error.anthropicInvalidKey': '유효하지 않은 Anthropic API 키입니다. 설정 → Gemini Scribe에서 API 키를 확인해 주세요.',
 	'error.modelNotOnEndpoint':
 		'이 엔드포인트에서 모델을 사용할 수 없습니다. 모델 설정 또는 구성된 기본 URL을 확인해 주세요.',
 	'error.serverUnreachable':
@@ -988,7 +994,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': '다른 곳으로 라우팅하지 않은 모든 기능에 사용됩니다.',
 	'settings.providers.privacyNoticeName': '개인정보 보호',
 	'settings.providers.privacyNoticeDesc':
-		'기능에서 실제로 사용하는 제공자에게만 콘텐츠가 전송됩니다. Ollama는 "cloud"로 표시된 모델(ollama.com으로 전달됨)을 제외하고 요청을 로컬 컴퓨터에 유지합니다. Gemini 및 OpenAI는 해당 회사의 서버로 요청을 전송합니다.',
+		'실제로 기능에 사용하는 제공업체에만 콘텐츠가 전송됩니다. Ollama는 "cloud"로 표시된 모델(ollama.com으로 전송됨)을 제외하고 요청을 이 기기에만 보관합니다. Gemini, OpenAI, Anthropic은 각 회사의 서버로 요청을 전송합니다.',
 	'settings.providers.defaultMoved': '{count}개 기능이 새 기본 제공자로 이동되었습니다.',
 	'settings.providers.groupOnProvider': '{provider}의 {group}',
 	'settings.features.modelMissingHelp':
