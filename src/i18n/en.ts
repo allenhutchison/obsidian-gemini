@@ -1825,6 +1825,11 @@ export const en = {
 		message: 'Agent execution canceled',
 		context: 'Notice after the user clicks the stop button to cancel the running agent.',
 	},
+	'agent.loop.notice': {
+		message: 'The agent is repeating the same "{tool}" call — it may be stuck.',
+		context:
+			'Transient notice the first time the tool loop detector blocks a repeated identical tool call in a session. {tool} is the tool name (e.g. "read_file"); keep it untranslated.',
+	},
 	'agent.planMode.approved': {
 		message: 'Approved',
 		context: 'Non-interactive state badge shown on a plan message after the user approved the plan.',

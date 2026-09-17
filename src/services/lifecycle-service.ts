@@ -6,6 +6,7 @@ import { ContextTrackingSubscriber } from '../subscribers/context-tracking-subsc
 import { AccessedFilesSubscriber } from '../subscribers/accessed-files-subscriber';
 import { ToolExecutionLogger } from '../subscribers/tool-execution-logger';
 import { ProjectActivationSubscriber } from '../subscribers/project-activation-subscriber';
+import { LoopDetectionSubscriber } from '../subscribers/loop-detection-subscriber';
 import { ToolRegistrar } from './tool-registrar';
 import { GeminiPrompts, PromptManager } from '../prompts';
 import { ScribeFile } from '../files';
@@ -49,6 +50,7 @@ export class LifecycleService {
 	private contextTrackingSubscriber: ContextTrackingSubscriber | null = null;
 	private accessedFilesSubscriber: AccessedFilesSubscriber | null = null;
 	private projectActivationSubscriber: ProjectActivationSubscriber | null = null;
+	private loopDetectionSubscriber: LoopDetectionSubscriber | null = null;
 	private ragListenersRegistered = false;
 
 	constructor(plugin: ObsidianGemini) {
@@ -227,6 +229,7 @@ export class LifecycleService {
 		this.contextTrackingSubscriber?.destroy();
 		this.accessedFilesSubscriber?.destroy();
 		this.projectActivationSubscriber?.destroy();
+		this.loopDetectionSubscriber?.destroy();
 		plugin.agentEventBus?.removeAll();
 
 		// Disconnect MCP servers
@@ -400,6 +403,7 @@ export class LifecycleService {
 			this.contextTrackingSubscriber = new ContextTrackingSubscriber(plugin);
 			this.accessedFilesSubscriber = new AccessedFilesSubscriber(plugin);
 			this.projectActivationSubscriber = new ProjectActivationSubscriber(plugin);
+			this.loopDetectionSubscriber = new LoopDetectionSubscriber(plugin);
 		}
 
 		// Background task manager + status bar are created once and persist.

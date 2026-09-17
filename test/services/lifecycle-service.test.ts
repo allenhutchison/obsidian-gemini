@@ -174,6 +174,13 @@ vi.mock('../../src/subscribers/project-activation-subscriber', () => ({
 		};
 	}),
 }));
+vi.mock('../../src/subscribers/loop-detection-subscriber', () => ({
+	LoopDetectionSubscriber: vi.fn().mockImplementation(function () {
+		return {
+			destroy: vi.fn(),
+		};
+	}),
+}));
 vi.mock('../../src/services/project-manager', () => ({
 	ProjectManager: vi.fn().mockImplementation(function () {
 		return {
@@ -237,6 +244,7 @@ import { ScheduledTaskManager } from '../../src/services/scheduled-task-manager'
 import { HookManager } from '../../src/services/hook-manager';
 import { ToolRegistrar } from '../../src/services/tool-registrar';
 import { ProjectActivationSubscriber } from '../../src/subscribers/project-activation-subscriber';
+import { LoopDetectionSubscriber } from '../../src/subscribers/loop-detection-subscriber';
 // import { ModelManager } from '../../src/services/model-manager';
 import { ToolExecutionLogger } from '../../src/subscribers/tool-execution-logger';
 
@@ -397,6 +405,18 @@ describe('LifecycleService', () => {
 
 			expect(ProjectActivationSubscriber).toHaveBeenCalledTimes(1);
 			expect(ProjectActivationSubscriber).toHaveBeenCalledWith(mockPlugin);
+		});
+
+		it('should create LoopDetectionSubscriber with plugin once and survive re-setup', async () => {
+			await lifecycle.setup();
+
+			expect(LoopDetectionSubscriber).toHaveBeenCalledTimes(1);
+			expect(LoopDetectionSubscriber).toHaveBeenCalledWith(mockPlugin);
+
+			mockPlugin.isGeminiInitialized = true;
+			await lifecycle.setup();
+
+			expect(LoopDetectionSubscriber).toHaveBeenCalledTimes(1);
 		});
 
 		it('should create backgroundTaskManager and backgroundStatusBar on first setup', async () => {
@@ -587,6 +607,19 @@ describe('LifecycleService', () => {
 		it('should call destroy on ProjectActivationSubscriber', async () => {
 			await lifecycle.setup();
 			const instance = (ProjectActivationSubscriber as unknown as Mock).mock.results[0].value;
+
+			// Clear services that would interfere with onUnload
+			mockPlugin.mcpManager = null;
+			mockPlugin.ragIndexing = null;
+
+			await lifecycle.onUnload();
+
+			expect(instance.destroy).toHaveBeenCalled();
+		});
+
+		it('should call destroy on LoopDetectionSubscriber', async () => {
+			await lifecycle.setup();
+			const instance = (LoopDetectionSubscriber as unknown as Mock).mock.results[0].value;
 
 			// Clear services that would interfere with onUnload
 			mockPlugin.mcpManager = null;
