@@ -12,6 +12,14 @@ import { EAGER_SUBFOLDERS, LEGACY_SKILLS_SUBFOLDER, STATE_SUBFOLDERS, stateFolde
 export class FolderInitializer {
 	constructor(private plugin: ObsidianGemini) {}
 
+	/**
+	 * Create the plugin state root and every eagerly-created subfolder.
+	 *
+	 * The subfolder list is `EAGER_SUBFOLDERS` from `state-folder.ts`, not a local
+	 * copy — `Hooks/` and `History/` are absent from it by design (see that module).
+	 * Idempotent: `ensureFolderExists` no-ops when a folder already exists, so this
+	 * is safe to re-run whenever `settings.historyFolder` changes.
+	 */
 	async initializeAll(): Promise<void> {
 		const vault = this.plugin.app.vault;
 		const logger = this.plugin.logger;
