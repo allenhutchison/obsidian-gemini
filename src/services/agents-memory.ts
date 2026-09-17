@@ -1,7 +1,8 @@
-import { TFile, normalizePath } from 'obsidian';
+import { TFile } from 'obsidian';
 import Handlebars from 'handlebars';
 import type { ObsidianGemini } from '../types/plugin';
 import { getRawErrorMessageOr } from '../utils/error-utils';
+import { STATE_FILES, stateFolderPath } from './state-folder';
 
 export interface AgentsMemoryData {
 	vaultOverview?: string;
@@ -32,7 +33,7 @@ export class AgentsMemory {
 
 	constructor(plugin: ObsidianGemini, templateContent: string) {
 		this.plugin = plugin;
-		this.memoryFilePath = normalizePath(`${plugin.settings.historyFolder}/AGENTS.md`);
+		this.memoryFilePath = stateFolderPath(plugin.settings, STATE_FILES.agentsMemory);
 		this.template = Handlebars.compile(templateContent);
 	}
 

@@ -35,10 +35,10 @@ export type {
 	TaskState,
 } from './scheduled-tasks/types';
 export { computeNextRunAt } from './scheduled-tasks/schedule';
+import { STATE_SUBFOLDERS } from './state-folder';
 
 // ─── Folder / file layout ─────────────────────────────────────────────────────
 
-const SCHEDULED_TASKS_FOLDER = 'Scheduled-Tasks';
 const STATE_FILE = 'scheduled-tasks-state.json';
 
 /** Milliseconds between scheduler ticks (60 s). Same cadence as ChatTimer. */
@@ -91,7 +91,7 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 
 	constructor(plugin: ObsidianGemini) {
 		super(plugin, {
-			featureFolder: SCHEDULED_TASKS_FOLDER,
+			featureFolder: STATE_SUBFOLDERS.scheduledTasks,
 			stateFileName: STATE_FILE,
 			logPrefix: '[ScheduledTaskManager]',
 			featureNoun: 'task',
@@ -158,6 +158,10 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 		// changes (e.g. historyFolder rename) don't leave stale handlers active.
 		this.detachVaultListeners();
 
+		// Kept alongside FolderInitializer's own creation of these two folders: on a
+		// settings change, LifecycleService.setup() refreshes this manager *before*
+		// main.ts re-runs initializePluginFolders(), so a renamed historyFolder would
+		// otherwise have no Scheduled-Tasks folder for the duration of this call.
 		await ensureFolderExists(this.plugin.app.vault, this.scheduledTasksFolder, 'scheduled tasks', this.plugin.logger);
 		await ensureFolderExists(this.plugin.app.vault, this.runsFolder, 'scheduled task runs', this.plugin.logger);
 		await this.loadState(isCurrent);

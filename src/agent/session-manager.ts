@@ -1,4 +1,5 @@
-import { normalizePath, TFile, TFolder } from 'obsidian';
+import { TFile, TFolder } from 'obsidian';
+import { STATE_SUBFOLDERS, stateFolderPath } from '../services/state-folder';
 import {
 	ChatSession,
 	SessionMetadata,
@@ -48,10 +49,6 @@ function parseSessionToolPolicy(
 export class SessionManager {
 	private plugin: ObsidianGemini;
 	private activeSessions = new Map<string, ChatSession>();
-
-	// Folder paths for different session types
-	private readonly HISTORY_FOLDER = 'History';
-	private readonly AGENT_SESSIONS_FOLDER = 'Agent-Sessions';
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
@@ -501,14 +498,14 @@ export class SessionManager {
 	 * Get the history folder path within the plugin's state folder
 	 */
 	private getHistoryFolderPath(): string {
-		return normalizePath(`${this.plugin.settings.historyFolder}/${this.HISTORY_FOLDER}`);
+		return stateFolderPath(this.plugin.settings, STATE_SUBFOLDERS.history);
 	}
 
 	/**
 	 * Get the agent sessions folder path within the plugin's state folder
 	 */
 	private getAgentSessionsFolderPath(): string {
-		return normalizePath(`${this.plugin.settings.historyFolder}/${this.AGENT_SESSIONS_FOLDER}`);
+		return stateFolderPath(this.plugin.settings, STATE_SUBFOLDERS.agentSessions);
 	}
 
 	/**

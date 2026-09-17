@@ -7,6 +7,7 @@ import { formatLocalDate } from '../utils/format-utils';
 import { sanitizeFileName, ensureParentFolderExists } from '../utils/file-utils';
 import { t } from '../i18n';
 import { getRawErrorMessageOr } from '../utils/error-utils';
+import { STATE_SUBFOLDERS, stateFolderPath } from '../services/state-folder';
 
 /**
  * Deep Research Tool that conducts comprehensive research using Google's Deep Research API
@@ -114,7 +115,7 @@ export class DeepResearchTool implements Tool {
 				// Resolve the output path upfront so the agent knows where to read results.
 				// Falls back to [state-folder]/Background-Tasks/YYYY-MM-DD <topic>.md,
 				// which the deep-research validator now explicitly allows.
-				const backgroundTasksFolder = normalizePath(`${plugin.settings.historyFolder}/Background-Tasks`);
+				const backgroundTasksFolder = stateFolderPath(plugin.settings, STATE_SUBFOLDERS.backgroundTasks);
 				const resolvedOutputFile =
 					outputFile ??
 					normalizePath(`${backgroundTasksFolder}/${formatLocalDate()} ${sanitizeFileName(params.topic)}.md`);

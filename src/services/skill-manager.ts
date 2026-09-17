@@ -31,7 +31,7 @@ import type { SkillSummary } from './skill-types';
 /** Regex for validating skill names per the agentskills.io spec */
 const SKILL_NAME_REGEX = /^[a-z][a-z0-9-]*[a-z0-9]$|^[a-z]$/;
 const SKILL_NAME_MAX_LENGTH = 64;
-const SKILL_MD_FILENAME = 'SKILL.md';
+const SKILL_MD_FILENAME = SKILL_FILENAME;
 
 /**
  * The bundled help skill exposes the plugin's debug log files as virtual
@@ -40,7 +40,7 @@ const SKILL_MD_FILENAME = 'SKILL.md';
  * the standard read_file tool blocks.
  */
 const HELP_SKILL_NAME = 'gemini-scribe-help';
-const HELP_DEBUG_LOG_RESOURCES = ['debug.log', 'debug.log.old'] as const;
+const HELP_DEBUG_LOG_RESOURCES = [STATE_FILES.debugLog, STATE_FILES.oldDebugLog] as const;
 type HelpDebugLogResource = (typeof HELP_DEBUG_LOG_RESOURCES)[number];
 
 function isHelpDebugLogResource(path: string): path is HelpDebugLogResource {
@@ -53,6 +53,7 @@ function isHelpDebugLogResource(path: string): path is HelpDebugLogResource {
 // working unchanged.
 export { findFrontmatterEndOffset } from '../utils/frontmatter-offset';
 import { findFrontmatterEndOffset } from '../utils/frontmatter-offset';
+import { SKILL_FILENAME, STATE_FILES, STATE_SUBFOLDERS, stateFolderPath } from './state-folder';
 
 /**
  * Manages agent skills following the agentskills.io specification.
@@ -76,7 +77,7 @@ export class SkillManager {
 	 * Get the skills folder path within the plugin state folder
 	 */
 	getSkillsFolderPath(): string {
-		return normalizePath(`${this.plugin.settings.historyFolder}/Skills`);
+		return stateFolderPath(this.plugin.settings, STATE_SUBFOLDERS.skills);
 	}
 
 	/**
@@ -251,7 +252,7 @@ export class SkillManager {
 		if (!this.plugin.settings?.fileLogging) return null;
 		const adapter = this.plugin.app?.vault?.adapter;
 		if (!adapter) return null;
-		const path = normalizePath(`${this.plugin.settings.historyFolder}/${filename}`);
+		const path = stateFolderPath(this.plugin.settings, filename);
 		try {
 			if (!(await adapter.exists(path))) return null;
 			return await adapter.read(path);
@@ -301,7 +302,7 @@ export class SkillManager {
 		if (!adapter) return [];
 		const present: HelpDebugLogResource[] = [];
 		for (const name of HELP_DEBUG_LOG_RESOURCES) {
-			const path = normalizePath(`${this.plugin.settings.historyFolder}/${name}`);
+			const path = stateFolderPath(this.plugin.settings, name);
 			try {
 				if (await adapter.exists(path)) present.push(name);
 			} catch {

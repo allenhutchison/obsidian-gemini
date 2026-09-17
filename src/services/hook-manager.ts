@@ -22,10 +22,10 @@ import { extractMarkdownBody, migrateLegacyEnabledTools } from './feature-defini
 import { FileBackedFeatureManager } from './file-backed-feature-manager';
 import { FailurePauseTracker, MAX_CONSECUTIVE_FAILURES } from './failure-pause-tracker';
 import { matchesFrontmatterFilter, matchesGlob } from './hook-matcher';
+import { STATE_SUBFOLDERS } from './state-folder';
 
 // ─── Folder / file layout ─────────────────────────────────────────────────────
 
-const HOOKS_FOLDER = 'Hooks';
 const STATE_FILE = 'hooks-state.json';
 
 /** Hard loop ceiling: max fires per (hook, file) inside the loop window. */
@@ -100,7 +100,7 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 
 	constructor(plugin: ObsidianGemini) {
 		super(plugin, {
-			featureFolder: HOOKS_FOLDER,
+			featureFolder: STATE_SUBFOLDERS.hooks,
 			stateFileName: STATE_FILE,
 			logPrefix: '[HookManager]',
 			featureNoun: 'hook',

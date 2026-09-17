@@ -1,4 +1,4 @@
-import { TFile, TFolder, normalizePath } from 'obsidian';
+import { TFile, TFolder } from 'obsidian';
 import { ChatSession } from '../types/agent';
 import { ConversationEntryMetadata, GeminiConversationEntry } from '../types/conversation';
 import type { ObsidianGemini } from '../types/plugin';
@@ -7,6 +7,7 @@ import { formatLocalTimestamp } from '../utils/format-utils';
 import { serializeToolPolicy } from '../types/tool-policy';
 import * as Handlebars from 'handlebars';
 import historyEntryTemplate from '../history/templates/historyEntry.hbs';
+import { STATE_SUBFOLDERS, stateFolderPath } from '../services/state-folder';
 
 /**
  * Handles history for agent sessions stored in Agent-Sessions/ folder
@@ -423,6 +424,6 @@ export class SessionHistory {
 	 * Get the Agent-Sessions folder path
 	 */
 	private getAgentSessionsFolderPath(): string {
-		return normalizePath(`${this.plugin.settings.historyFolder}/Agent-Sessions`);
+		return stateFolderPath(this.plugin.settings, STATE_SUBFOLDERS.agentSessions);
 	}
 }

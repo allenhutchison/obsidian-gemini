@@ -14,6 +14,7 @@ import {
 } from '../../utils/file-classification';
 import { rasterizeSvg, SvgTooLargeError } from '../../utils/svg-rasterizer';
 import { resolvePathToFileOrFolder, toFileEntry } from './utils';
+import { STATE_SUBFOLDERS, stateFolderPath } from '../../services/state-folder';
 
 /**
  * Read file content or list folder contents
@@ -52,7 +53,7 @@ export class ReadFileTool implements Tool {
 			const normalizedPath = normalizePath(params.path);
 
 			// Allow reading agent session history files (needed by recall_sessions tool)
-			const agentSessionsFolder = normalizePath(`${plugin.settings.historyFolder}/Agent-Sessions`);
+			const agentSessionsFolder = stateFolderPath(plugin.settings, STATE_SUBFOLDERS.agentSessions);
 			const isAgentSessionPath = isPathInFolder(normalizedPath, agentSessionsFolder);
 			const isObsidianPath = isPathInFolder(normalizedPath, plugin.app.vault.configDir);
 
