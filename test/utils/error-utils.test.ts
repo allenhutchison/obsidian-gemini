@@ -1,6 +1,7 @@
 import { getLanguage } from 'obsidian';
 import { locales } from '../../src/i18n';
 import {
+	describeSdkApiError,
 	getErrorMessage,
 	getRawErrorMessage,
 	getRawErrorMessageOr,
@@ -620,6 +621,47 @@ describe('error-utils', () => {
 		test('handles non-Error values via String()', () => {
 			expect(isNotFoundError('plain 404 string')).toBe(true);
 			expect(isNotFoundError(null)).toBe(false);
+		});
+	});
+
+	describe('describeSdkApiError', () => {
+		test('formats an OpenAI APIError with its code and the server message from the body', () => {
+			const error = Object.assign(new Error('400 status code (no body)'), {
+				status: 400,
+				code: 'unsupported_value',
+				error: { message: "Unsupported value: 'temperature' does not support 0.7 with this model." },
+			});
+			expect(describeSdkApiError(error)).toBe(
+				"HTTP 400 [unsupported_value]: Unsupported value: 'temperature' does not support 0.7 with this model."
+			);
+		});
+
+		test('formats an Anthropic APIError with its type and falls back to the error message', () => {
+			const error = Object.assign(new Error('bad key'), { status: 401, type: 'authentication_error' });
+			expect(describeSdkApiError(error)).toBe('HTTP 401 [authentication_error]: bad key');
+		});
+
+		test('appends the request id when the SDK supplies one', () => {
+			const error = Object.assign(new Error('overloaded'), {
+				status: 529,
+				type: 'overloaded_error',
+				requestID: 'req_abc123',
+			});
+			expect(describeSdkApiError(error)).toBe('HTTP 529 [overloaded_error]: overloaded (request req_abc123)');
+		});
+
+		test('omits the tag when the error carries neither code nor type', () => {
+			expect(describeSdkApiError(Object.assign(new Error('boom'), { status: 500 }))).toBe('HTTP 500: boom');
+		});
+
+		test('falls back to "unknown error" for a non-Error value carrying a status', () => {
+			expect(describeSdkApiError({ status: 503, code: 'unavailable' })).toBe('HTTP 503 [unavailable]: unknown error');
+		});
+
+		test('returns the plain message for anything without a numeric status', () => {
+			expect(describeSdkApiError(new Error('network down'))).toBe('network down');
+			expect(describeSdkApiError('just a string')).toBe('just a string');
+			expect(describeSdkApiError(null)).toBe('null');
 		});
 	});
 

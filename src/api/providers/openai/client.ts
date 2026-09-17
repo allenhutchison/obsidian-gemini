@@ -44,6 +44,7 @@ import type { ObsidianGemini } from '../../../types/plugin';
 import type { OpenAIClientConfig } from './config';
 import { walkHistoryEntry } from '../history-walk';
 import type { WalkedToolCall, WalkedToolResponse } from '../history-walk';
+import { describeSdkApiError } from '../../../utils/error-utils';
 
 type ChatMessage = OpenAI.ChatCompletionMessageParam;
 type ChatTool = OpenAI.ChatCompletionTool;
@@ -123,7 +124,7 @@ export class OpenAIClient implements ModelApi {
 			});
 			return this.toModelResponse(completion);
 		} catch (error) {
-			this.plugin?.logger.error('[OpenAIClient] Error generating content:', this.describeError(error), error);
+			this.plugin?.logger.error('[OpenAIClient] Error generating content:', describeSdkApiError(error), error);
 			throw error;
 		}
 	}
@@ -223,7 +224,7 @@ export class OpenAIClient implements ModelApi {
 				if (cancelled) {
 					return buildResult();
 				}
-				this.plugin?.logger.error('[OpenAIClient] Streaming error:', this.describeError(error), error);
+				this.plugin?.logger.error('[OpenAIClient] Streaming error:', describeSdkApiError(error), error);
 				throw error;
 			}
 		})();
@@ -239,26 +240,6 @@ export class OpenAIClient implements ModelApi {
 				}
 			},
 		};
-	}
-
-	/**
-	 * Flattens an SDK `APIError` into a readable string. The console serializes
-	 * an APIError's nested `error` body as the useless `"error":"Object"`, which
-	 * hides the one field that identifies the failure — the server's message.
-	 * Matched structurally rather than with `instanceof OpenAI.APIError` so the
-	 * check doesn't depend on the error carrying that exact class identity.
-	 *
-	 * Log this *alongside* the original error, never instead of it: for anything
-	 * that isn't an API error (a `TypeError` out of `buildChatRequest`, say) the
-	 * string is just `error.message` and the stack trace is the useful part.
-	 */
-	private describeError(error: unknown): string {
-		const apiError = error as { status?: number; code?: string | null; error?: { message?: string } } | null;
-		if (apiError && typeof apiError === 'object' && typeof apiError.status === 'number') {
-			const detail = apiError.error?.message ?? (error instanceof Error ? error.message : undefined) ?? 'unknown error';
-			return `HTTP ${apiError.status}${apiError.code ? ` [${apiError.code}]` : ''}: ${detail}`;
-		}
-		return error instanceof Error ? error.message : String(error);
 	}
 
 	/** Whether `model` is a GPT-5.6-family reasoning model. */

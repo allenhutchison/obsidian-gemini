@@ -44,6 +44,37 @@ function isSdkApiError(error: Record<string, unknown>): boolean {
 }
 
 /**
+ * One-line description of an SDK `APIError` for a log line — the console
+ * otherwise serializes its nested body as `"error":"Object"`. Log it alongside
+ * the original error, never instead of it.
+ *
+ * Shared by `OpenAIClient` and `AnthropicClient`, which report the same shape
+ * under different field names: a numeric `status`, a machine-readable tag
+ * (`code` on OpenAI, `type` on Anthropic), and the server's own sentence
+ * either in the response body (`error.message`) or on the `Error` itself.
+ * Lives here, with {@link isSdkApiError}, so the two clients don't each carry
+ * their own copy of the format. Anything without a numeric `status` — a
+ * network failure, an abort, a plain `Error` — falls back to its own message.
+ *
+ * Output is provider text bound for logs, so it stays English (see the module
+ * comment above).
+ */
+export function describeSdkApiError(error: unknown): string {
+	const err = asRecord(error);
+	if (typeof err.status === 'number') {
+		const tag = typeof err.code === 'string' ? err.code : typeof err.type === 'string' ? err.type : null;
+		const bodyMessage = asRecord(err.error).message;
+		const detail =
+			(typeof bodyMessage === 'string' ? bodyMessage : undefined) ??
+			(error instanceof Error ? error.message : undefined) ??
+			'unknown error';
+		const requestId = typeof err.requestID === 'string' ? ` (request ${err.requestID})` : '';
+		return `HTTP ${err.status}${tag ? ` [${tag}]` : ''}: ${detail}${requestId}`;
+	}
+	return error instanceof Error ? error.message : String(error);
+}
+
+/**
  * An Anthropic 401: the API's `error.type` is `authentication_error`, which the
  * SDK surfaces as `type`. OpenAI reports a bad key as `invalid_request_error`
  * with code `invalid_api_key`, so the two never collide.
