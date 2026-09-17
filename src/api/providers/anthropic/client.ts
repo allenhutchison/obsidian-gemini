@@ -43,6 +43,7 @@ import type { AnthropicClientConfig } from './config';
 import { anthropicModelMetadata } from './model-catalog';
 import { decodeThinkingBlocks, encodeThinkingBlocks } from './thinking-replay';
 import { walkHistoryEntry } from '../history-walk';
+import { SIMPLE_TOOL_ID_PATTERN, ToolIdLedger } from '../tool-id-ledger';
 import { describeSdkApiError } from '../../../utils/error-utils';
 
 type MessageParam = Anthropic.Beta.BetaMessageParam;
@@ -56,9 +57,6 @@ const MAX_TOKENS_NON_STREAMING = 16_000;
 const MAX_TOKENS_STREAMING = 64_000;
 /** Beta that enables `fallbacks: 'default'` (route a refused request to a fallback model server-side). */
 const SERVER_SIDE_FALLBACK_BETA = 'server-side-fallback-2026-07-01';
-
-/** The API accepts tool-use ids matching this pattern only. */
-const TOOL_USE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
 export class AnthropicClient implements ModelApi {
 	private client: Anthropic;
@@ -197,9 +195,12 @@ export class AnthropicClient implements ModelApi {
 
 	private buildMessages(request: ExtendedModelRequest): MessageParam[] {
 		const messages: MessageParam[] = [];
-		const ids = new ToolUseIdLedger();
+		const ledger = new ToolIdLedger({
+			mint: (_name, seq) => `toolu_${seq}`,
+			isValidId: (id) => SIMPLE_TOOL_ID_PATTERN.test(id),
+		});
 		for (const entry of request.conversationHistory ?? []) {
-			const converted = this.convertHistoryEntry(entry, ids);
+			const converted = this.convertHistoryEntry(entry, ledger);
 			if (converted) messages.push(converted);
 		}
 
@@ -253,24 +254,25 @@ export class AnthropicClient implements ModelApi {
 	 * then attachments, then text. A `system` entry has no in-history
 	 * equivalent that every Claude model accepts, so it is sent as user text.
 	 */
-	private convertHistoryEntry(entry: unknown, ids: ToolUseIdLedger): MessageParam | null {
+	private convertHistoryEntry(entry: unknown, ledger: ToolIdLedger): MessageParam | null {
 		const walked = walkHistoryEntry(entry, 'Anthropic', { acceptsPdf: true });
 		if (!walked) return null;
 
+		const { calls, responses } = ledger.resolveEntry(walked.toolCalls, walked.toolResponses);
+
 		const content: ContentBlockParam[] = [];
 		if (walked.role === 'assistant') {
-			const thoughtSignature = walked.toolCalls.find((call) => call.thoughtSignature)?.thoughtSignature;
+			const thoughtSignature = calls.find((call) => call.thoughtSignature)?.thoughtSignature;
 			content.push(...decodeThinkingBlocks(thoughtSignature));
 			if (walked.text) content.push({ type: 'text', text: walked.text });
-			for (const call of walked.toolCalls) {
-				content.push({ type: 'tool_use', id: ids.declare(call.name, call.id), name: call.name, input: call.args });
+			for (const call of calls) {
+				content.push({ type: 'tool_use', id: call.id, name: call.name, input: call.args });
 			}
 			return content.length ? { role: 'assistant', content } : null;
 		}
 
-		for (const response of walked.toolResponses) {
-			const id = ids.answer(response.name, response.id);
-			if (!id) {
+		for (const response of responses) {
+			if (response.id === null) {
 				// Its tool_use was trimmed by history compaction; the API rejects a
 				// tool_result with no matching tool_use.
 				this.plugin?.logger?.log('Anthropic history: dropping orphaned tool result for', response.name);
@@ -279,7 +281,7 @@ export class AnthropicClient implements ModelApi {
 			const failed = !!response.response && (response.response as { success?: unknown }).success === false;
 			content.push({
 				type: 'tool_result',
-				tool_use_id: id,
+				tool_use_id: response.id,
 				content: typeof response.response === 'string' ? response.response : JSON.stringify(response.response),
 				...(failed && { is_error: true }),
 			});
@@ -354,38 +356,5 @@ export class AnthropicClient implements ModelApi {
 		}
 		this.plugin?.logger.warn('[AnthropicClient] Ignoring non-object tool input:', input);
 		return {};
-	}
-}
-
-/**
- * Pairs `tool_use` ids with the `tool_result`s that answer them across the
- * whole history — the Anthropic counterpart of OpenAIClient's call-id ledger.
- * A call keeps its own id when it has a valid one; otherwise an id is minted.
- * A result without its own id takes the oldest unanswered id for its tool name,
- * mirroring Gemini's positional pairing.
- */
-class ToolUseIdLedger {
-	private pending = new Map<string, string[]>();
-	private declared = new Set<string>();
-	private seq = 0;
-
-	declare(name: string, ownId: string | undefined): string {
-		const id = ownId && TOOL_USE_ID_PATTERN.test(ownId) ? ownId : `toolu_${this.seq++}`;
-		const queue = this.pending.get(name) ?? [];
-		queue.push(id);
-		this.pending.set(name, queue);
-		this.declared.add(id);
-		return id;
-	}
-
-	/** The id a result answers, or `null` when no declared call matches. */
-	answer(name: string, ownId: string | undefined): string | null {
-		const queue = this.pending.get(name);
-		if (ownId && this.declared.has(ownId)) {
-			const index = queue?.indexOf(ownId) ?? -1;
-			if (index >= 0) queue?.splice(index, 1);
-			return ownId;
-		}
-		return queue?.shift() ?? null;
 	}
 }

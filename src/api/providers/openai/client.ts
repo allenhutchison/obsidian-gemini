@@ -43,7 +43,8 @@ import { GeminiPrompts } from '../../../prompts';
 import type { ObsidianGemini } from '../../../types/plugin';
 import type { OpenAIClientConfig } from './config';
 import { walkHistoryEntry } from '../history-walk';
-import type { WalkedToolCall, WalkedToolResponse } from '../history-walk';
+import { SIMPLE_TOOL_ID_PATTERN, ToolIdLedger } from '../tool-id-ledger';
+import type { ResolvedToolCall } from '../tool-id-ledger';
 import { describeSdkApiError } from '../../../utils/error-utils';
 
 type ChatMessage = OpenAI.ChatCompletionMessageParam;
@@ -280,13 +281,14 @@ export class OpenAIClient implements ModelApi {
 		// Convert conversation history. Entries may be in Gemini Content shape
 		// (role + parts[]) or our internal {role, message|text} shape. We flatten
 		// function-call / function-response parts into OpenAI's `tool_calls` /
-		// tool-role messages. `pendingCallIds` pairs functionCall parts with their
-		// functionResponse parts across adjacent Contents — see convertHistoryEntry.
-		const pendingCallIds = new Map<string, string[]>();
-		const declaredCallIds = new Set<string>();
-		let toolCallSeq = 0;
+		// tool-role messages. `ledger` pairs functionCall parts with their
+		// functionResponse parts across adjacent Contents — see tool-id-ledger.ts.
+		const ledger = new ToolIdLedger({
+			mint: (name, seq) => `call_${name}_${seq}`,
+			isValidId: (id) => SIMPLE_TOOL_ID_PATTERN.test(id),
+		});
 		for (const entry of request.conversationHistory ?? []) {
-			const converted = this.convertHistoryEntry(entry, pendingCallIds, declaredCallIds, () => toolCallSeq++);
+			const converted = this.convertHistoryEntry(entry, ledger);
 			if (converted) messages.push(...converted);
 		}
 
@@ -337,59 +339,19 @@ export class OpenAIClient implements ModelApi {
 	 * Convert one history entry (Gemini `Content` shape or the legacy internal
 	 * `{role, text|message}` shape) into zero or more OpenAI chat messages.
 	 *
-	 * `pendingCallIds` is a FIFO queue per tool name, threaded across the whole
-	 * history by the caller: each `functionCall` part pushes the id it was
-	 * assigned (its own `id` field if present, else a synthesized
-	 * `call_<name>_<seq>`), and each `functionResponse` part without its own
-	 * `id` pops the oldest pending id for its name so `tool_call_id` on the
-	 * resulting `tool` message lines up with the `id` on the assistant message's
-	 * `tool_calls` entry — mirroring Gemini's positional call/response pairing.
-	 *
-	 * `declaredCallIds` records every id emitted on an assistant `tool_calls`
-	 * entry. A `tool` message whose id was never declared (its functionCall was
-	 * trimmed away by history compaction) is dropped rather than emitted — the
-	 * Chat Completions API rejects the whole request otherwise.
+	 * Id resolution and call/response pairing are delegated to the shared
+	 * `ToolIdLedger` (see `tool-id-ledger.ts`); only the emission —
+	 * `tool_call_id`, `tool_calls`, tool-role messages — is OpenAI-specific
+	 * here. This method keeps the provider-specific orphan-drop log line.
 	 */
-	private convertHistoryEntry(
-		entry: unknown,
-		pendingCallIds: Map<string, string[]>,
-		declaredCallIds: Set<string>,
-		nextSeq: () => number
-	): ChatMessage[] | null {
+	private convertHistoryEntry(entry: unknown, ledger: ToolIdLedger): ChatMessage[] | null {
 		const walked = walkHistoryEntry(entry, 'OpenAI');
 		if (!walked) return null;
 
-		// Resolve one id per tool part, walking calls and responses **interleaved
-		// in source-part order**. The walker reports each part's index precisely
-		// so this pass can reproduce the original single-loop pairing: a response
-		// that precedes its own call within one Content must still mint its id
-		// first, exactly as it did when both branches lived in the same loop.
-		const resolvedCalls: { id: string; name: string; args: Record<string, unknown> }[] = [];
-		const resolvedResponses: { id: string; response: unknown }[] = [];
-		const toolParts: ({ kind: 'call'; call: WalkedToolCall } | { kind: 'response'; response: WalkedToolResponse })[] = [
-			...walked.toolCalls.map((call) => ({ kind: 'call' as const, call })),
-			...walked.toolResponses.map((response) => ({ kind: 'response' as const, response })),
-		].sort(
-			(a, b) =>
-				(a.kind === 'call' ? a.call.partIndex : a.response.partIndex) -
-				(b.kind === 'call' ? b.call.partIndex : b.response.partIndex)
+		const { calls: resolvedCalls, responses: resolvedResponses } = ledger.resolveEntry(
+			walked.toolCalls,
+			walked.toolResponses
 		);
-
-		for (const toolPart of toolParts) {
-			if (toolPart.kind === 'call') {
-				const { name, args, id: ownId } = toolPart.call;
-				const id = ownId ?? `call_${name}_${nextSeq()}`;
-				const queue = pendingCallIds.get(name) ?? [];
-				queue.push(id);
-				pendingCallIds.set(name, queue);
-				resolvedCalls.push({ id, name, args });
-			} else {
-				const { name, response, id: ownId } = toolPart.response;
-				const queue = pendingCallIds.get(name);
-				const id = ownId ?? queue?.shift() ?? `call_${name}_${nextSeq()}`;
-				resolvedResponses.push({ id, response });
-			}
-		}
 
 		const out: ChatMessage[] = [];
 
@@ -402,14 +364,11 @@ export class OpenAIClient implements ModelApi {
 				content: walked.text || null,
 			};
 			if (resolvedCalls.length) {
-				message.tool_calls = resolvedCalls.map((tc) => {
-					declaredCallIds.add(tc.id);
-					return {
-						id: tc.id,
-						type: 'function' as const,
-						function: { name: tc.name, arguments: JSON.stringify(tc.args) },
-					};
-				});
+				message.tool_calls = resolvedCalls.map((tc: ResolvedToolCall) => ({
+					id: tc.id,
+					type: 'function' as const,
+					function: { name: tc.name, arguments: JSON.stringify(tc.args) },
+				}));
 			}
 			out.push(message);
 		}
@@ -421,8 +380,8 @@ export class OpenAIClient implements ModelApi {
 		// was never declared (trimmed by compaction) are dropped — the API
 		// rejects a `tool` message with an unknown `tool_call_id`.
 		for (const tr of resolvedResponses) {
-			if (!declaredCallIds.has(tr.id)) {
-				this.plugin?.logger?.log('OpenAI history: dropping orphaned tool response', tr.id);
+			if (tr.id === null) {
+				this.plugin?.logger?.log('OpenAI history: dropping orphaned tool response', tr.name);
 				continue;
 			}
 			const responseText = typeof tr.response === 'string' ? tr.response : JSON.stringify(tr.response);

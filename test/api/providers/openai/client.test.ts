@@ -645,10 +645,11 @@ describe('OpenAIClient', () => {
 			expect(assistantMsg.content).toBeNull();
 		});
 
-		it('mints call ids in source-part order when a response precedes its own call', async () => {
-			// The id pass walks calls and responses interleaved by part index, so
-			// an out-of-order Content mints for the response first — exactly as
-			// the original single-loop implementation did.
+		it('resolves an out-of-order Content by pairing FIFO-first, not by minting for the response', async () => {
+			// The ledger walks calls and responses interleaved by part index, but
+			// a response with no unanswered call of its name reports "no match"
+			// rather than minting an undeclared id — the id the call at index 1
+			// mints stays untouched, and the response is dropped as orphaned.
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'go',
@@ -666,10 +667,10 @@ describe('OpenAIClient', () => {
 
 			const msgs = openaiCalls.create.mock.calls[0][0].messages;
 			const assistantMsg = msgs.find((m: any) => m.role === 'assistant' && m.tool_calls?.length);
-			// The response minted seq 0; the call that follows it minted seq 1.
-			expect(assistantMsg.tool_calls[0].id).toBe('call_read_file_1');
-			// That response's id was never declared, so it is dropped rather than
-			// emitted with an unknown tool_call_id.
+			// No response consumed seq 0; the call minted it.
+			expect(assistantMsg.tool_calls[0].id).toBe('call_read_file_0');
+			// That response had no declared call to answer, so it is dropped
+			// rather than emitted with an unknown tool_call_id.
 			expect(msgs.find((m: any) => m.role === 'tool')).toBeUndefined();
 		});
 	});
