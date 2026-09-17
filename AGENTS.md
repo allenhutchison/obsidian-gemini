@@ -119,8 +119,9 @@ The plugin uses a factory pattern (`ModelClientFactory` in `src/api/factory.ts`)
      `rag-index-cache.json`, the two debug logs), and `stateFolderPath(settings, ...segments)`, which
      applies `normalizePath` once. Compose every state path through the helper; never write
      ``normalizePath(`${settings.historyFolder}/Prompts`)`` by hand. `FolderInitializer` creates
-     `EAGER_SUBFOLDERS`, derived from the same constants — `Hooks/` (gated on `hooksEnabled`) and
-     `History/` (read-only legacy) are deliberately created on demand instead, documented in the module.
+     `EAGER_SUBFOLDERS`, derived from the same constants — `Hooks/` is created on demand only when
+     `hooksEnabled` is on, and read-only legacy `History/` is never created by current code. Both
+     omissions are documented in the module.
      It is a leaf module, so any consumer can import it without a cycle.
 8. **System Folder Protection**: Always exclude system folders from file operations:
    - The plugin state folder (`settings.historyFolder`)
