@@ -25,6 +25,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionGemini': 'Google Gemini (cloud)',
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (cloud)',
+	'settings.general.providerOptionAnthropic': 'Anthropic (cloud)',
 	'settings.general.modelListUpdated': 'Modellijst bijgewerkt: {count} modellen.',
 	'settings.general.modelListUpdatedSingular': 'Modellijst bijgewerkt: {count} model.',
 	'settings.general.refreshSkippedOffline': 'Overgeslagen: offline',
@@ -63,6 +64,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'settings.features.provider': 'Provider',
 	'settings.features.model': 'Model',
 	'settings.features.modelDefault': 'Standaard voor deze provider',
+	'settings.features.modelDefaultNamed': 'Standaard ({model})',
 	'settings.features.sameAsChat': 'Hetzelfde als chat',
 	'settings.features.modelMissing': 'Niet meer beschikbaar',
 	'settings.features.off': 'Uit',
@@ -534,6 +536,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'agent.send.emptyResponse':
 		'Model gaf een leeg antwoord terug. Dit kan gebeuren bij denkmodellen. Probeer je vraag anders te formuleren.',
 	'agent.send.cancelled': 'Uitvoering van agent geannuleerd',
+	'agent.loop.notice': 'De agent herhaalt dezelfde "{tool}"-aanroep — mogelijk zit deze vast.',
 	'agent.planMode.approved': 'Goedgekeurd',
 	'agent.session.createFailed': 'Aanmaken van agentsessie mislukt',
 	'agent.session.loadFailed': 'Laden van sessie mislukt',
@@ -646,6 +649,8 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 		'Geen Gemini API-sleutel geconfigureerd. Open Instellingen → Gemini Scribe om er een toe te voegen. Vraag een gratis sleutel aan op aistudio.google.com/apikey',
 	'notice.main.noApiKeyOpenai':
 		'Geen OpenAI-API-sleutel geconfigureerd. Open Instellingen → Gemini Scribe om er een toe te voegen. Verkrijg een sleutel op platform.openai.com/api-keys',
+	'notice.main.noApiKeyAnthropic':
+		'Geen Anthropic API-sleutel geconfigureerd. Open Instellingen → Gemini Scribe om er een toe te voegen. Vraag een sleutel aan via platform.claude.com/settings/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Kon je API-sleutel niet ophalen uit de veilige opslag. Probeer deze opnieuw in te voeren via Instellingen → Gemini Scribe → Providers → Google Gemini → API-sleutel.',
 	'notice.main.initFailedConsole':
@@ -832,6 +837,8 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.proceedMessage': 'Ga verder met het goedgekeurde plan.',
 	'error.unknown': 'Er is een onbekende fout opgetreden',
 	'error.openaiInvalidKey': 'Ongeldige OpenAI API-sleutel. Controleer de API-sleutel in Instellingen → Gemini Scribe.',
+	'error.anthropicInvalidKey':
+		'Ongeldige Anthropic API-sleutel. Controleer de API-sleutel in Instellingen → Gemini Scribe.',
 	'error.modelNotOnEndpoint':
 		'Model niet beschikbaar op dit eindpunt. Controleer je modelinstellingen of de geconfigureerde basis-URL.',
 	'error.serverUnreachable':
@@ -1013,7 +1020,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Wordt gebruikt door elke functie die je niet elders hebt toegewezen.',
 	'settings.providers.privacyNoticeName': 'Privacy',
 	'settings.providers.privacyNoticeDesc':
-		'Alleen de providers die je functies daadwerkelijk gebruiken, ontvangen je inhoud. Ollama houdt verzoeken op deze machine, behalve voor modellen die zijn gemarkeerd als "cloud", welke worden doorgestuurd naar ollama.com. Gemini en OpenAI sturen het verzoek naar de servers van dat bedrijf.',
+		'Alleen de providers die daadwerkelijk door je functies worden gebruikt, ontvangen je inhoud. Ollama bewaart verzoeken op dit apparaat, behalve voor modellen gemarkeerd als "cloud", die worden doorgestuurd naar ollama.com. Gemini, OpenAI en Anthropic sturen het verzoek naar de servers van het desbetreffende bedrijf.',
 	'settings.providers.defaultMoved': '{count} functies verplaatst naar de nieuwe standaardprovider.',
 	'settings.providers.groupOnProvider': '{group} op {provider}',
 	'settings.features.modelMissingHelp': '{model} is niet langer beschikbaar bij deze provider. Kies een andere.',

@@ -25,6 +25,7 @@ export const ptBR: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionGemini': 'Google Gemini (nuvem)',
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (nuvem)',
+	'settings.general.providerOptionAnthropic': 'Anthropic (nuvem)',
 	'settings.general.modelListUpdated': 'Lista de modelos atualizada: {count} modelos.',
 	'settings.general.modelListUpdatedSingular': 'Lista de modelos atualizada: {count} modelo.',
 	'settings.general.refreshSkippedOffline': 'Ignorado: offline',
@@ -63,6 +64,7 @@ export const ptBR: Partial<Record<TranslationKey, string>> = {
 	'settings.features.provider': 'Provedor',
 	'settings.features.model': 'Modelo',
 	'settings.features.modelDefault': 'Padrão para este provedor',
+	'settings.features.modelDefaultNamed': 'Padrão ({model})',
 	'settings.features.sameAsChat': 'Igual ao chat',
 	'settings.features.modelMissing': 'Não está mais disponível',
 	'settings.features.off': 'Desativado',
@@ -529,6 +531,7 @@ export const ptBR: Partial<Record<TranslationKey, string>> = {
 	'agent.send.emptyResponse':
 		'O modelo retornou uma resposta vazia. Isso pode acontecer com modelos de raciocínio. Tente reformular sua pergunta.',
 	'agent.send.cancelled': 'Execução do agente cancelada',
+	'agent.loop.notice': 'O agente está repetindo a mesma chamada "{tool}" — ele pode estar travado.',
 	'agent.planMode.approved': 'Aprovado',
 	'agent.session.createFailed': 'Falha ao criar sessão do agente',
 	'agent.session.loadFailed': 'Falha ao carregar sessão',
@@ -640,6 +643,8 @@ export const ptBR: Partial<Record<TranslationKey, string>> = {
 		'Nenhuma chave de API do Gemini configurada. Abra Configurações → Gemini Scribe para adicionar uma. Obtenha uma chave gratuita em aistudio.google.com/apikey',
 	'notice.main.noApiKeyOpenai':
 		'Nenhuma chave de API da OpenAI configurada. Abra Configurações → Gemini Scribe para adicionar uma. Obtenha uma chave em platform.openai.com/api-keys',
+	'notice.main.noApiKeyAnthropic':
+		'Nenhuma chave de API da Anthropic configurada. Abra Configurações → Gemini Scribe para adicionar uma. Obtenha uma chave em platform.claude.com/settings/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Não foi possível recuperar sua chave de API do armazenamento seguro. Tente inseri-la novamente em Configurações → Gemini Scribe → Provedores → Google Gemini → Chave de API.',
 	'notice.main.initFailedConsole':
@@ -827,6 +832,8 @@ export const ptBR: Partial<Record<TranslationKey, string>> = {
 	'error.unknown': 'Ocorreu um erro desconhecido',
 	'error.openaiInvalidKey':
 		'Chave de API da OpenAI inválida. Verifique a chave de API em Configurações → Gemini Scribe.',
+	'error.anthropicInvalidKey':
+		'Chave de API da Anthropic inválida. Verifique a chave de API em Configurações → Gemini Scribe.',
 	'error.modelNotOnEndpoint':
 		'Modelo não disponível neste endpoint. Verifique as configurações do seu modelo ou a URL base configurada.',
 	'error.serverUnreachable':
@@ -1011,7 +1018,7 @@ export const ptBR: Partial<Record<TranslationKey, string>> = {
 		'Usado por qualquer recurso que você não tenha direcionado para outro lugar.',
 	'settings.providers.privacyNoticeName': 'Privacidade',
 	'settings.providers.privacyNoticeDesc':
-		'Apenas os provedores que seus recursos realmente utilizam recebem seu conteúdo. O Ollama mantém as requisições nesta máquina, exceto para modelos marcados como "nuvem", que são encaminhados para ollama.com. O Gemini e a OpenAI enviam as requisições para os servidores dessas empresas.',
+		'Apenas os provedores que seus recursos realmente utilizam recebem seu conteúdo. O Ollama mantém as requisições nesta máquina, exceto para modelos marcados como "cloud", que ele encaminha para ollama.com. Gemini, OpenAI e Anthropic enviam a requisição para os servidores da respectiva empresa.',
 	'settings.providers.defaultMoved': '{count} recursos movidos para o novo provedor padrão.',
 	'settings.providers.groupOnProvider': '{group} em {provider}',
 	'settings.features.modelMissingHelp': '{model} não está mais disponível neste provedor. Escolha outro.',

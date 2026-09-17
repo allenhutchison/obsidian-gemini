@@ -25,6 +25,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionGemini': 'Google Gemini (cloud)',
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (cloud)',
+	'settings.general.providerOptionAnthropic': 'Anthropic (cloud)',
 	'settings.general.modelListUpdated': 'Seznam modelů aktualizován: {count} modelů.',
 	'settings.general.modelListUpdatedSingular': 'Seznam modelů aktualizován: {count} model.',
 	'settings.general.refreshSkippedOffline': 'Přeskočeno: offline',
@@ -63,6 +64,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.features.provider': 'Poskytovatel',
 	'settings.features.model': 'Model',
 	'settings.features.modelDefault': 'Výchozí pro tohoto poskytovatele',
+	'settings.features.modelDefaultNamed': 'Výchozí ({model})',
 	'settings.features.sameAsChat': 'Stejný jako u chatu',
 	'settings.features.modelMissing': 'Již není k dispozici',
 	'settings.features.off': 'Vypnuto',
@@ -529,6 +531,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'agent.send.emptyResponse':
 		'Model vrátil prázdnou odpověď. To se může stát u přemýšlejících modelů. Zkuste přeformulovat svou otázku.',
 	'agent.send.cancelled': 'Spuštění agenta bylo zrušeno',
+	'agent.loop.notice': 'Agent opakuje stejné volání "{tool}" — možná se zasekl.',
 	'agent.planMode.approved': 'Schváleno',
 	'agent.session.createFailed': 'Nepodařilo se vytvořit relaci agenta',
 	'agent.session.loadFailed': 'Nepodařilo se načíst relaci',
@@ -640,6 +643,8 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 		'Není nakonfigurován žádný API klíč Gemini. Přidejte jej v Nastavení → Gemini Scribe. Bezplatný klíč získáte na adrese aistudio.google.com/apikey',
 	'notice.main.noApiKeyOpenai':
 		'Není nakonfigurován žádný API klíč OpenAI. Otevřete Nastavení → Gemini Scribe a přidejte jej. Klíč získáte na platform.openai.com/api-keys',
+	'notice.main.noApiKeyAnthropic':
+		'Není nakonfigurován žádný API klíč pro Anthropic. Přidejte jej v Nastavení → Gemini Scribe. Klíč získáte na platform.claude.com/settings/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Klíč API se nepodařilo načíst ze zabezpečeného úložiště. Zkuste jej zadat znovu v Nastavení → Gemini Scribe → Poskytovatelé → Google Gemini → Klíč API.',
 	'notice.main.initFailedConsole': 'Inicializace Gemini Scribe selhala: {error}. Podrobnosti naleznete v konzoli.',
@@ -827,6 +832,8 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.proceedMessage': 'Pokračovat se schváleným plánem.',
 	'error.unknown': 'Došlo k neznámé chybě',
 	'error.openaiInvalidKey': 'Neplatný API klíč OpenAI. Zkontrolujte prosím API klíč v Nastavení → Gemini Scribe.',
+	'error.anthropicInvalidKey':
+		'Neplatný API klíč pro Anthropic. Zkontrolujte prosím API klíč v Nastavení → Gemini Scribe.',
 	'error.modelNotOnEndpoint':
 		'Model není na tomto koncovém bodu k dispozici. Zkontrolujte prosím nastavení modelu nebo nakonfigurovanou základní URL.',
 	'error.serverUnreachable':
@@ -1010,7 +1017,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Použije se pro všechny funkce, které nejsou výslovně směrovány jinam.',
 	'settings.providers.privacyNoticeName': 'Soukromí',
 	'settings.providers.privacyNoticeDesc':
-		'Váš obsah obdrží pouze ti poskytovatelé, které vaše funkce skutečně využívají. Ollama uchovává požadavky na tomto počítači, s výjimkou modelů označených jako „cloud“, které přeposílá na ollama.com. Gemini a OpenAI odesílají požadavky na servery příslušné společnosti.',
+		'Váš obsah obdrží pouze ti poskytovatelé, které vaše funkce skutečně využívají. Ollama uchovává požadavky na tomto zařízení, s výjimkou modelů označených jako "cloud", které přeposílá na ollama.com. Gemini, OpenAI a Anthropic odesílají požadavky na servery dané společnosti.',
 	'settings.providers.defaultMoved': '{count} funkcí bylo přesunuto k novému výchozímu poskytovateli.',
 	'settings.providers.groupOnProvider': '{group} na {provider}',
 	'settings.features.modelMissingHelp': 'Model {model} již není u tohoto poskytovatele k dispozici. Zvolte jiný.',

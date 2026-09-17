@@ -25,6 +25,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionGemini': 'Google Gemini (хмара)',
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (хмара)',
+	'settings.general.providerOptionAnthropic': 'Anthropic (хмара)',
 	'settings.general.modelListUpdated': 'Список моделей оновлено: {count} моделей.',
 	'settings.general.modelListUpdatedSingular': 'Список моделей оновлено: {count} модель.',
 	'settings.general.refreshSkippedOffline': 'Пропущено: офлайн',
@@ -63,6 +64,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'settings.features.provider': 'Провайдер',
 	'settings.features.model': 'Модель',
 	'settings.features.modelDefault': 'За замовчуванням для цього провайдера',
+	'settings.features.modelDefaultNamed': 'За замовчуванням ({model})',
 	'settings.features.sameAsChat': 'Як у чаті',
 	'settings.features.modelMissing': 'Більше недоступна',
 	'settings.features.off': 'Вимкнено',
@@ -533,6 +535,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'agent.send.emptyResponse':
 		'Модель повернула порожню відповідь. Це може траплятися з моделями міркування. Спробуйте перефразувати ваше запитання.',
 	'agent.send.cancelled': 'Виконання агента скасовано',
+	'agent.loop.notice': 'Агент повторює той самий виклик "{tool}" — можливо, він застряг.',
 	'agent.planMode.approved': 'Затверджено',
 	'agent.session.createFailed': 'Не вдалося створити сесію агента',
 	'agent.session.loadFailed': 'Не вдалося завантажити сесію',
@@ -644,6 +647,8 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 		'Ключ API Gemini не налаштовано. Відкрийте Налаштування → Gemini Scribe, щоб додати його. Отримайте безкоштовний ключ на aistudio.google.com/apikey',
 	'notice.main.noApiKeyOpenai':
 		'API-ключ OpenAI не налаштовано. Перейдіть у Налаштування → Gemini Scribe, щоб додати його. Отримайте ключ на platform.openai.com/api-keys',
+	'notice.main.noApiKeyAnthropic':
+		'API-ключ Anthropic не налаштовано. Відкрийте Налаштування → Gemini Scribe, щоб додати його. Отримайте ключ на platform.claude.com/settings/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Не вдалося отримати ваш ключ API з безпечного сховища. Спробуйте ввести його знову в Налаштування → Gemini Scribe → Провайдери → Google Gemini → Ключ API.',
 	'notice.main.initFailedConsole':
@@ -832,6 +837,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'error.unknown': 'Виникла невідома помилка',
 	'error.openaiInvalidKey':
 		'Недійсний API-ключ OpenAI. Будь ласка, перевірте API-ключ у меню Налаштування → Gemini Scribe.',
+	'error.anthropicInvalidKey': 'Недійсний API-ключ Anthropic. Перевірте API-ключ у меню Налаштування → Gemini Scribe.',
 	'error.modelNotOnEndpoint':
 		'Модель недоступна на цій кінцевій точці. Будь ласка, перевірте налаштування моделі або налаштовану базову URL-адресу.',
 	'error.serverUnreachable':
@@ -1013,7 +1019,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Використовується для будь-якої функції, не призначеної іншому провайдеру.',
 	'settings.providers.privacyNoticeName': 'Конфіденційність',
 	'settings.providers.privacyNoticeDesc':
-		"Лише провайдери, які дійсно використовуються вашими функціями, отримують ваш вміст. Ollama зберігає запити на цьому комп'ютері, за винятком моделей із позначкою «хмарна», які пересилаються на ollama.com. Gemini та OpenAI надсилають запити на сервери відповідної компанії.",
+		'Лише постачальники, які дійсно використовуються вашими функціями, отримують ваш вміст. Ollama зберігає запити на цьому пристрої, за винятком моделей із позначкою "cloud", які надсилаються на ollama.com. Gemini, OpenAI та Anthropic надсилають запит на сервери відповідної компанії.',
 	'settings.providers.defaultMoved': '{count} функцій перенесено до нового провайдера за замовчуванням.',
 	'settings.providers.groupOnProvider': '{group} на {provider}',
 	'settings.features.modelMissingHelp': '{model} більше недоступна у цього провайдера. Виберіть іншу.',

@@ -25,6 +25,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionGemini': 'Google Gemini (cloud)',
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (cloud)',
+	'settings.general.providerOptionAnthropic': 'Anthropic (cloud)',
 	'settings.general.modelListUpdated': 'Daftar model diperbarui: {count} model.',
 	'settings.general.modelListUpdatedSingular': 'Daftar model diperbarui: {count} model.',
 	'settings.general.refreshSkippedOffline': 'Dilewati: offline',
@@ -63,6 +64,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'settings.features.provider': 'Penyedia',
 	'settings.features.model': 'Model',
 	'settings.features.modelDefault': 'Bawaan untuk penyedia ini',
+	'settings.features.modelDefaultNamed': 'Default ({model})',
 	'settings.features.sameAsChat': 'Sama seperti obrolan',
 	'settings.features.modelMissing': 'Tidak lagi tersedia',
 	'settings.features.off': 'Nonaktif',
@@ -527,6 +529,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'agent.send.emptyResponse':
 		'Model mengembalikan respons kosong. Ini mungkin terjadi pada model berpikir. Coba ubah kalimat pertanyaan Anda.',
 	'agent.send.cancelled': 'Eksekusi agen dibatalkan',
+	'agent.loop.notice': 'Agen mengulang pemanggilan "{tool}" yang sama — mungkin mengalami stuck.',
 	'agent.planMode.approved': 'Disetujui',
 	'agent.session.createFailed': 'Gagal membuat sesi agen',
 	'agent.session.loadFailed': 'Gagal memuat sesi',
@@ -639,6 +642,8 @@ export const id: Partial<Record<TranslationKey, string>> = {
 		'Kunci API Gemini belum dikonfigurasi. Buka Pengaturan → Gemini Scribe untuk menambahkannya. Dapatkan kunci gratis di aistudio.google.com/apikey',
 	'notice.main.noApiKeyOpenai':
 		'Kunci API OpenAI belum dikonfigurasi. Buka Pengaturan → Gemini Scribe untuk menambahkannya. Dapatkan kunci di platform.openai.com/api-keys',
+	'notice.main.noApiKeyAnthropic':
+		'Kunci API Anthropic belum dikonfigurasi. Buka Pengaturan → Gemini Scribe untuk menambahkannya. Dapatkan kunci di platform.claude.com/settings/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Tidak dapat mengambil kunci API Anda dari penyimpanan aman. Coba masukkan kembali di Pengaturan → Gemini Scribe → Penyedia → Google Gemini → Kunci API.',
 	'notice.main.initFailedConsole': 'Gemini Scribe gagal diinisialisasi: {error}. Periksa konsol untuk detailnya.',
@@ -824,6 +829,8 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.proceedMessage': 'Lanjutkan dengan rencana yang disetujui.',
 	'error.unknown': 'Terjadi kesalahan yang tidak diketahui',
 	'error.openaiInvalidKey': 'Kunci API OpenAI tidak valid. Silakan periksa kunci API di Pengaturan → Gemini Scribe.',
+	'error.anthropicInvalidKey':
+		'Kunci API Anthropic tidak valid. Silakan periksa kunci API di Pengaturan → Gemini Scribe.',
 	'error.modelNotOnEndpoint':
 		'Model tidak tersedia di endpoint ini. Silakan periksa pengaturan model Anda atau URL dasar yang dikonfigurasi.',
 	'error.serverUnreachable':
@@ -1002,7 +1009,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Digunakan oleh fitur apa pun yang belum Anda arahkan ke tempat lain.',
 	'settings.providers.privacyNoticeName': 'Privasi',
 	'settings.providers.privacyNoticeDesc':
-		'Hanya penyedia yang benar-benar digunakan oleh fitur Anda yang akan menerima konten Anda. Ollama menyimpan permintaan di perangkat ini, kecuali untuk model yang bertanda "cloud", yang diteruskannya ke ollama.com. Gemini dan OpenAI mengirimkan permintaan ke server perusahaan tersebut.',
+		'Hanya penyedia yang benar-benar digunakan oleh fitur Anda yang akan menerima konten Anda. Ollama menyimpan permintaan di perangkat ini, kecuali untuk model yang ditandai "cloud", yang diteruskan ke ollama.com. Gemini, OpenAI, dan Anthropic mengirimkan permintaan ke server perusahaan tersebut.',
 	'settings.providers.defaultMoved': '{count} fitur dipindahkan ke penyedia default yang baru.',
 	'settings.providers.groupOnProvider': '{group} di {provider}',
 	'settings.features.modelMissingHelp': '{model} tidak lagi tersedia dari penyedia ini. Pilih yang lain.',

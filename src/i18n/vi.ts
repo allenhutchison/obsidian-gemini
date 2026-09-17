@@ -26,6 +26,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionGemini': 'Google Gemini (đám mây)',
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (đám mây)',
+	'settings.general.providerOptionAnthropic': 'Anthropic (đám mây)',
 	'settings.general.modelListUpdated': 'Đã cập nhật danh sách mô hình: {count} mô hình.',
 	'settings.general.modelListUpdatedSingular': 'Đã cập nhật danh sách mô hình: {count} mô hình.',
 	'settings.general.refreshSkippedOffline': 'Đã bỏ qua: ngoại tuyến',
@@ -64,6 +65,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.features.provider': 'Nhà cung cấp',
 	'settings.features.model': 'Mô hình',
 	'settings.features.modelDefault': 'Mặc định cho nhà cung cấp này',
+	'settings.features.modelDefaultNamed': 'Mặc định ({model})',
 	'settings.features.sameAsChat': 'Giống như trò chuyện',
 	'settings.features.modelMissing': 'Không còn khả dụng',
 	'settings.features.off': 'Tắt',
@@ -531,6 +533,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'agent.send.emptyResponse':
 		'Mô hình đã trả về một phản hồi trống. Điều này có thể xảy ra với các mô hình suy nghĩ. Hãy thử diễn đạt lại câu hỏi của bạn.',
 	'agent.send.cancelled': 'Đã hủy thực thi Agent',
+	'agent.loop.notice': 'Agent đang lặp lại cùng một lệnh gọi "{tool}" — có thể đã bị kẹt.',
 	'agent.planMode.approved': 'Đã phê duyệt',
 	'agent.session.createFailed': 'Không thể tạo phiên Agent',
 	'agent.session.loadFailed': 'Không thể tải phiên',
@@ -642,6 +645,8 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 		'Chưa cấu hình API key cho Gemini. Mở Cài đặt → Gemini Scribe để thêm. Nhận key miễn phí tại aistudio.google.com/apikey',
 	'notice.main.noApiKeyOpenai':
 		'Chưa cấu hình API key OpenAI. Mở Cài đặt → Gemini Scribe để thêm. Lấy key tại platform.openai.com/api-keys',
+	'notice.main.noApiKeyAnthropic':
+		'Chưa cấu hình khóa API Anthropic. Mở Cài đặt → Gemini Scribe để thêm. Lấy khóa tại platform.claude.com/settings/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Không thể lấy khóa API từ bộ lưu trữ an toàn. Hãy thử nhập lại trong Cài đặt → Gemini Scribe → Nhà cung cấp → Google Gemini → Khóa API.',
 	'notice.main.initFailedConsole': 'Gemini Scribe không thể khởi tạo: {error}. Kiểm tra console để biết thêm chi tiết.',
@@ -827,6 +832,8 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.proceedMessage': 'Tiếp tục với kế hoạch đã được phê duyệt.',
 	'error.unknown': 'Đã xảy ra lỗi không xác định',
 	'error.openaiInvalidKey': 'API key OpenAI không hợp lệ. Vui lòng kiểm tra API key trong Cài đặt → Gemini Scribe.',
+	'error.anthropicInvalidKey':
+		'Khóa API Anthropic không hợp lệ. Vui lòng kiểm tra khóa API trong Cài đặt → Gemini Scribe.',
 	'error.modelNotOnEndpoint':
 		'Mô hình không khả dụng trên endpoint này. Vui lòng kiểm tra cài đặt mô hình hoặc URL cơ sở đã cấu hình.',
 	'error.serverUnreachable':
@@ -1008,7 +1015,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Được dùng bởi bất kỳ tính năng nào chưa được định tuyến đến nơi khác.',
 	'settings.providers.privacyNoticeName': 'Quyền riêng tư',
 	'settings.providers.privacyNoticeDesc':
-		'Chỉ những nhà cung cấp mà các tính năng của bạn thực sự dùng mới nhận được nội dung của bạn. Ollama giữ các yêu cầu trên máy này, ngoại trừ các mô hình được đánh dấu "đám mây" sẽ được chuyển tiếp đến ollama.com. Gemini và OpenAI sẽ gửi yêu cầu đến máy chủ của công ty tương ứng.',
+		'Chỉ những nhà cung cấp mà các tính năng của bạn thực sự sử dụng mới nhận được nội dung của bạn. Ollama giữ các yêu cầu trên máy này, ngoại trừ các mô hình được đánh dấu "cloud" sẽ được chuyển tiếp đến ollama.com. Gemini, OpenAI và Anthropic sẽ gửi yêu cầu đến máy chủ của các công ty đó.',
 	'settings.providers.defaultMoved': 'Đã chuyển {count} tính năng sang nhà cung cấp mặc định mới.',
 	'settings.providers.groupOnProvider': '{group} trên {provider}',
 	'settings.features.modelMissingHelp': '{model} không còn khả dụng từ nhà cung cấp này. Hãy chọn mô hình khác.',

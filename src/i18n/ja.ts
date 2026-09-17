@@ -26,6 +26,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionGemini': 'Google Gemini (クラウド)',
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (クラウド)',
+	'settings.general.providerOptionAnthropic': 'Anthropic (クラウド)',
 	'settings.general.modelListUpdated': 'モデルリストを更新しました: {count}個のモデル。',
 	'settings.general.modelListUpdatedSingular': 'モデルリストを更新しました: {count}個のモデル。',
 	'settings.general.refreshSkippedOffline': 'スキップ: オフライン',
@@ -63,6 +64,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.features.provider': 'プロバイダー',
 	'settings.features.model': 'モデル',
 	'settings.features.modelDefault': 'このプロバイダーのデフォルト',
+	'settings.features.modelDefaultNamed': 'デフォルト ({model})',
 	'settings.features.sameAsChat': 'チャットと同じ',
 	'settings.features.modelMissing': '利用不可',
 	'settings.features.off': 'オフ',
@@ -531,6 +533,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'agent.send.emptyResponse':
 		'モデルが空のレスポンスを返しました。これは思考モデルで発生する可能性があります。質問の表現を変えてみてください。',
 	'agent.send.cancelled': 'エージェントの実行がキャンセルされました',
+	'agent.loop.notice': 'エージェントが同じ「{tool}」の呼び出しを繰り返しています。スタックしている可能性があります。',
 	'agent.planMode.approved': '承認済み',
 	'agent.session.createFailed': 'エージェントセッションの作成に失敗しました',
 	'agent.session.loadFailed': 'セッションの読み込みに失敗しました',
@@ -643,6 +646,8 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 		'Gemini APIキーが設定されていません。設定 → Gemini Scribe を開いて追加してください。無料のキーは aistudio.google.com/apikey で取得できます。',
 	'notice.main.noApiKeyOpenai':
 		'OpenAI APIキーが設定されていません。「設定」→「Gemini Scribe」を開いて追加してください。キーは platform.openai.com/api-keys で取得できます。',
+	'notice.main.noApiKeyAnthropic':
+		'Anthropic APIキーが設定されていません。設定 → Gemini Scribe を開いて追加してください。キーは platform.claude.com/settings/keys で取得できます。',
 	'notice.main.apiKeyRetrieveFailed':
 		'安全なストレージからAPIキーを取得できませんでした。設定 → Gemini Scribe → プロバイダー → Google Gemini → APIキー で再入力してください。',
 	'notice.main.initFailedConsole': 'Gemini Scribeの初期化に失敗しました: {error}。詳細はコンソールを確認してください。',
@@ -828,6 +833,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.proceedMessage': '承認された計画を進めてください。',
 	'error.unknown': '不明なエラーが発生しました',
 	'error.openaiInvalidKey': '無効なOpenAI APIキーです。設定 → Gemini Scribe でAPIキーを確認してください。',
+	'error.anthropicInvalidKey': '無効なAnthropic APIキーです。設定 → Gemini Scribe でAPIキーを確認してください。',
 	'error.modelNotOnEndpoint':
 		'このエンドポイントではモデルを利用できません。モデルの設定または設定されたベースURLを確認してください。',
 	'error.serverUnreachable':
@@ -1005,7 +1011,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': '個別に割り当てられていないすべての機能で使用されます。',
 	'settings.providers.privacyNoticeName': 'プライバシー',
 	'settings.providers.privacyNoticeDesc':
-		'機能が実際に使用しているプロバイダーにのみ、コンテンツが送信されます。Ollamaはリクエストをこのマシン内で処理しますが、「cloud」とマークされたモデルはollama.comに転送されます。GeminiとOpenAIは各社のサーバーにリクエストを送信します。',
+		'コンテンツは、機能で実際に使用されているプロバイダーにのみ送信されます。Ollamaはリクエストをこのマシン内に保持しますが、「クラウド」とマークされたモデルは ollama.com に転送されます。Gemini、OpenAI、Anthropicは各社のサーバーにリクエストを送信します。',
 	'settings.providers.defaultMoved': '{count}件の機能が新しいデフォルトのプロバイダーに移行しました。',
 	'settings.providers.groupOnProvider': '{group} ({provider})',
 	'settings.features.modelMissingHelp':

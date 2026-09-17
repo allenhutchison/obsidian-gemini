@@ -26,6 +26,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionGemini': 'Google Gemini (chmura)',
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (chmura)',
+	'settings.general.providerOptionAnthropic': 'Anthropic (chmura)',
 	'settings.general.modelListUpdated': 'Zaktualizowano listę modeli: {count} modeli.',
 	'settings.general.modelListUpdatedSingular': 'Zaktualizowano listę modeli: {count} model.',
 	'settings.general.refreshSkippedOffline': 'Pominięto: brak połączenia',
@@ -64,6 +65,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'settings.features.provider': 'Dostawca',
 	'settings.features.model': 'Model',
 	'settings.features.modelDefault': 'Domyślny dla tego dostawcy',
+	'settings.features.modelDefaultNamed': 'Domyślny ({model})',
 	'settings.features.sameAsChat': 'Taki sam jak dla czatu',
 	'settings.features.modelMissing': 'Już niedostępny',
 	'settings.features.off': 'Wył.',
@@ -532,6 +534,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'agent.send.emptyResponse':
 		'Model zwrócił pustą odpowiedź. Może się to zdarzyć w przypadku modeli myślących. Spróbuj sformułować pytanie inaczej.',
 	'agent.send.cancelled': 'Anulowano wykonywanie agenta',
+	'agent.loop.notice': 'Agent powtarza to samo wywołanie „{tool}” — mógł się zawiesić.',
 	'agent.planMode.approved': 'Zatwierdzono',
 	'agent.session.createFailed': 'Nie udało się utworzyć sesji agenta',
 	'agent.session.loadFailed': 'Nie udało się wczytać sesji',
@@ -644,6 +647,8 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 		'Brak skonfigurowanego klucza API Gemini. Otwórz Ustawienia → Gemini Scribe, aby go dodać. Pobierz bezpłatny klucz na stronie aistudio.google.com/apikey',
 	'notice.main.noApiKeyOpenai':
 		'Brak skonfigurowanego klucza API OpenAI. Otwórz Ustawienia → Gemini Scribe, aby go dodać. Pobierz klucz na platform.openai.com/api-keys',
+	'notice.main.noApiKeyAnthropic':
+		'Brak skonfigurowanego klucza API Anthropic. Otwórz Ustawienia → Gemini Scribe, aby go dodać. Pobierz klucz na platform.claude.com/settings/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Nie udało się pobrać klucza API z bezpiecznego magazynu. Spróbuj wprowadzić go ponownie w Ustawienia → Gemini Scribe → Dostawcy → Google Gemini → Klucz API.',
 	'notice.main.initFailedConsole':
@@ -834,6 +839,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.proceedMessage': 'Kontynuuj zgodnie z zatwierdzonym planem.',
 	'error.unknown': 'Wystąpił nieznany błąd',
 	'error.openaiInvalidKey': 'Nieprawidłowy klucz API OpenAI. Sprawdź klucz API w Ustawienia → Gemini Scribe.',
+	'error.anthropicInvalidKey': 'Nieprawidłowy klucz API Anthropic. Sprawdź klucz API w Ustawienia → Gemini Scribe.',
 	'error.modelNotOnEndpoint':
 		'Model niedostępny w tym punkcie końcowym. Sprawdź ustawienia modelu lub skonfigurowany bazowy adres URL.',
 	'error.serverUnreachable':
@@ -1014,7 +1020,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Używany przez każdą funkcję, która nie została przypisana gdzie indziej.',
 	'settings.providers.privacyNoticeName': 'Prywatność',
 	'settings.providers.privacyNoticeDesc':
-		'Tylko dostawcy rzeczywiście używani przez Twoje funkcje otrzymują Twoje treści. Ollama przetwarza zapytania na tym urządzeniu, z wyjątkiem modeli oznaczonych jako „chmura”, które przekazuje do ollama.com. Gemini i OpenAI wysyłają zapytania na serwery swoich firm.',
+		'Tylko dostawcy rzeczywiście używani przez Twoje funkcje otrzymują Twoje treści. Ollama przetwarza żądania lokalnie na tym urządzeniu, z wyjątkiem modeli oznaczonych jako „cloud”, które przekazuje do ollama.com. Gemini, OpenAI i Anthropic wysyłają żądania na serwery tych firm.',
 	'settings.providers.defaultMoved': '{count} funkcji przeniesiono do nowego domyślnego dostawcy.',
 	'settings.providers.groupOnProvider': '{group} w {provider}',
 	'settings.features.modelMissingHelp': '{model} nie jest już dostępny u tego dostawcy. Wybierz inny.',

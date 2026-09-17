@@ -27,6 +27,7 @@ export const es: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionGemini': 'Google Gemini (nube)',
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (nube)',
+	'settings.general.providerOptionAnthropic': 'Anthropic (nube)',
 	'settings.general.modelListUpdated': 'Lista de modelos actualizada: {count} modelos.',
 	'settings.general.modelListUpdatedSingular': 'Lista de modelos actualizada: {count} modelo.',
 	'settings.general.refreshSkippedOffline': 'Omitido: sin conexión',
@@ -65,6 +66,7 @@ export const es: Partial<Record<TranslationKey, string>> = {
 	'settings.features.provider': 'Proveedor',
 	'settings.features.model': 'Modelo',
 	'settings.features.modelDefault': 'Predeterminado para este proveedor',
+	'settings.features.modelDefaultNamed': 'Predeterminado ({model})',
 	'settings.features.sameAsChat': 'Igual que el chat',
 	'settings.features.modelMissing': 'Ya no está disponible',
 	'settings.features.off': 'Desactivado',
@@ -536,6 +538,7 @@ export const es: Partial<Record<TranslationKey, string>> = {
 	'agent.send.emptyResponse':
 		'El modelo devolvió una respuesta vacía. Esto puede ocurrir con modelos de pensamiento. Intenta reformular tu pregunta.',
 	'agent.send.cancelled': 'Ejecución del agente cancelada',
+	'agent.loop.notice': 'El agente está repitiendo la misma llamada a "{tool}" — puede que esté atascado.',
 	'agent.planMode.approved': 'Aprobado',
 	'agent.session.createFailed': 'Error al crear la sesión del agente',
 	'agent.session.loadFailed': 'Error al cargar la sesión',
@@ -648,6 +651,8 @@ export const es: Partial<Record<TranslationKey, string>> = {
 		'No se ha configurado ninguna clave API de Gemini. Abre Ajustes → Gemini Scribe para añadir una. Consigue una clave gratuita en aistudio.google.com/apikey',
 	'notice.main.noApiKeyOpenai':
 		'No se ha configurado ninguna clave de API de OpenAI. Abre Configuración → Gemini Scribe para añadir una. Obtén una clave en platform.openai.com/api-keys',
+	'notice.main.noApiKeyAnthropic':
+		'No se ha configurado ninguna clave de API de Anthropic. Abre Ajustes → Gemini Scribe para añadir una. Obtén una clave en platform.claude.com/settings/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'No se pudo recuperar la clave de API del almacenamiento seguro. Intenta introducirla de nuevo en Ajustes → Gemini Scribe → Proveedores → Google Gemini → Clave de API.',
 	'notice.main.initFailedConsole': 'Error al inicializar Gemini Scribe: {error}. Revisa la consola para más detalles.',
@@ -837,6 +842,8 @@ export const es: Partial<Record<TranslationKey, string>> = {
 	'error.unknown': 'Ocurrió un error desconocido',
 	'error.openaiInvalidKey':
 		'Clave API de OpenAI no válida. Por favor, comprueba la clave API en Configuración → Gemini Scribe.',
+	'error.anthropicInvalidKey':
+		'Clave de API de Anthropic no válida. Comprueba la clave de API en Ajustes → Gemini Scribe.',
 	'error.modelNotOnEndpoint':
 		'Modelo no disponible en este endpoint. Por favor, comprueba la configuración de tu modelo o la URL base configurada.',
 	'error.serverUnreachable':
@@ -1029,7 +1036,7 @@ export const es: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Usado por cualquier función que no hayas enrutado a otra parte.',
 	'settings.providers.privacyNoticeName': 'Privacidad',
 	'settings.providers.privacyNoticeDesc':
-		'Solo los proveedores que realmente usan tus funciones reciben tu contenido. Ollama mantiene las solicitudes en esta máquina, excepto los modelos marcados como "nube", que reenvía a ollama.com. Gemini y OpenAI envían la solicitud a los servidores de esa empresa.',
+		'Solo los proveedores que utilicen tus funciones recibirán tu contenido. Ollama mantiene las solicitudes en este equipo, excepto para los modelos marcados como "cloud", que reenvía a ollama.com. Gemini, OpenAI y Anthropic envían la solicitud a los servidores de cada empresa.',
 	'settings.providers.defaultMoved': '{count} funciones se han movido al nuevo proveedor predeterminado.',
 	'settings.providers.groupOnProvider': '{group} en {provider}',
 	'settings.features.modelMissingHelp': '{model} ya no está disponible en este proveedor. Elige otro.',

@@ -27,6 +27,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionGemini': 'Google Gemini (cloud)',
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (cloud)',
+	'settings.general.providerOptionAnthropic': 'Anthropic (cloud)',
 	'settings.general.modelListUpdated': 'Liste des modèles mise à jour : {count} modèles.',
 	'settings.general.modelListUpdatedSingular': 'Liste des modèles mise à jour : {count} modèle.',
 	'settings.general.refreshSkippedOffline': 'Ignoré : hors ligne',
@@ -65,6 +66,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'settings.features.provider': 'Fournisseur',
 	'settings.features.model': 'Modèle',
 	'settings.features.modelDefault': 'Par défaut pour ce fournisseur',
+	'settings.features.modelDefaultNamed': 'Par défaut ({model})',
 	'settings.features.sameAsChat': 'Identique au chat',
 	'settings.features.modelMissing': 'Plus disponible',
 	'settings.features.off': 'Désactivé',
@@ -539,6 +541,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'agent.send.emptyResponse':
 		'Le modèle a renvoyé une réponse vide. Cela peut se produire avec les modèles de réflexion. Essayez de reformuler votre question.',
 	'agent.send.cancelled': "Exécution de l'agent annulée",
+	'agent.loop.notice': 'L\'agent répète le même appel à "{tool}" — il est peut-être bloqué.',
 	'agent.planMode.approved': 'Approuvé',
 	'agent.session.createFailed': "Échec de la création de la session de l'agent",
 	'agent.session.loadFailed': 'Échec du chargement de la session',
@@ -650,6 +653,8 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 		"Aucune clé d'API Gemini configurée. Ouvrez les Paramètres → Gemini Scribe pour en ajouter une. Obtenez une clé gratuite sur aistudio.google.com/apikey",
 	'notice.main.noApiKeyOpenai':
 		"Aucune clé d'API OpenAI configurée. Ouvrez Paramètres → Gemini Scribe pour en ajouter une. Obtenez une clé sur platform.openai.com/api-keys",
+	'notice.main.noApiKeyAnthropic':
+		"Aucune clé d'API Anthropic configurée. Ouvrez Paramètres → Gemini Scribe pour en ajouter une. Obtenez une clé sur platform.claude.com/settings/keys",
 	'notice.main.apiKeyRetrieveFailed':
 		"Impossible de récupérer votre clé d'API depuis le stockage sécurisé. Réessayez de la saisir dans Paramètres → Gemini Scribe → Fournisseurs → Google Gemini → Clé d'API.",
 	'notice.main.initFailedConsole':
@@ -842,6 +847,8 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.proceedMessage': 'Poursuivre avec le plan approuvé.',
 	'error.unknown': 'Une erreur inconnue est survenue',
 	'error.openaiInvalidKey': 'Clé API OpenAI non valide. Veuillez vérifier la clé API dans Paramètres → Gemini Scribe.',
+	'error.anthropicInvalidKey':
+		"Clé d'API Anthropic non valide. Veuillez vérifier la clé d'API dans Paramètres → Gemini Scribe.",
 	'error.modelNotOnEndpoint':
 		"Modèle non disponible sur ce point de terminaison. Veuillez vérifier vos paramètres de modèle ou l'URL de base configurée.",
 	'error.serverUnreachable':
@@ -1032,7 +1039,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': "Utilisé par toute fonctionnalité qui n'est pas redirigée ailleurs.",
 	'settings.providers.privacyNoticeName': 'Confidentialité',
 	'settings.providers.privacyNoticeDesc':
-		"Seuls les fournisseurs que vos fonctionnalités utilisent réellement reçoivent votre contenu. Ollama conserve les requêtes sur cette machine, sauf pour les modèles marqués « cloud », qu'il transfère à ollama.com. Gemini et OpenAI envoient la requête aux serveurs de l'entreprise concernée.",
+		"Seuls les fournisseurs réellement utilisés par vos fonctionnalités reçoivent votre contenu. Ollama conserve les requêtes sur cette machine, à l'exception des modèles marqués \"cloud\", qu'il transmet à ollama.com. Gemini, OpenAI et Anthropic envoient la requête aux serveurs de l'entreprise concernée.",
 	'settings.providers.defaultMoved': '{count} fonctionnalités déplacées vers le nouveau fournisseur par défaut.',
 	'settings.providers.groupOnProvider': '{group} sur {provider}',
 	'settings.features.modelMissingHelp':

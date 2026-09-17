@@ -26,6 +26,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionGemini': 'Google Gemini (sky)',
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (sky)',
+	'settings.general.providerOptionAnthropic': 'Anthropic (sky)',
 	'settings.general.modelListUpdated': 'Modelliste oppdatert: {count} modeller.',
 	'settings.general.modelListUpdatedSingular': 'Modelliste oppdatert: {count} modell.',
 	'settings.general.refreshSkippedOffline': 'Hoppet over: frakoblet',
@@ -64,6 +65,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'settings.features.provider': 'Leverandør',
 	'settings.features.model': 'Modell',
 	'settings.features.modelDefault': 'Standard for denne leverandøren',
+	'settings.features.modelDefaultNamed': 'Standard ({model})',
 	'settings.features.sameAsChat': 'Samme som chat',
 	'settings.features.modelMissing': 'Ikke lenger tilgjengelig',
 	'settings.features.off': 'Av',
@@ -528,6 +530,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'agent.send.emptyResponse':
 		'Modellen returnerte et tomt svar. Dette kan skje med tenkende modeller. Prøv å omformulere spørsmålet ditt.',
 	'agent.send.cancelled': 'Agentkjøring avbrutt',
+	'agent.loop.notice': 'Agenten gjentar det samme «{tool}»-kallet — den kan ha hengt seg opp.',
 	'agent.planMode.approved': 'Godkjent',
 	'agent.session.createFailed': 'Kunne ikke opprette agent-sesjon',
 	'agent.session.loadFailed': 'Kunne ikke laste sesjon',
@@ -640,6 +643,8 @@ export const no: Partial<Record<TranslationKey, string>> = {
 		'Ingen Gemini API-nøkkel er konfigurert. Åpne Innstillinger → Gemini Scribe for å legge til en. Få en gratis nøkkel på aistudio.google.com/apikey',
 	'notice.main.noApiKeyOpenai':
 		'Ingen OpenAI API-nøkkel er konfigurert. Åpne Innstillinger → Gemini Scribe for å legge til en. Hent en nøkkel på platform.openai.com/api-keys',
+	'notice.main.noApiKeyAnthropic':
+		'Ingen Anthropic-API-nøkkel er konfigurert. Åpne Innstillinger → Gemini Scribe for å legge til en. Få en nøkkel på platform.claude.com/settings/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Kunne ikke hente API-nøkkelen din fra sikker lagring. Prøv å skrive den inn på nytt under Innstillinger → Gemini Scribe → Tilbydere → Google Gemini → API-nøkkel.',
 	'notice.main.initFailedConsole': 'Gemini Scribe kunne ikke initialiseres: {error}. Sjekk konsollen for detaljer.',
@@ -825,6 +830,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.proceedMessage': 'Fortsett med den godkjente planen.',
 	'error.unknown': 'En ukjent feil oppstod',
 	'error.openaiInvalidKey': 'Ugyldig OpenAI API-nøkkel. Vennligst sjekk API-nøkkelen i Innstillinger → Gemini Scribe.',
+	'error.anthropicInvalidKey': 'Ugyldig Anthropic-API-nøkkel. Kontroller API-nøkkelen i Innstillinger → Gemini Scribe.',
 	'error.modelNotOnEndpoint':
 		'Modellen er ikke tilgjengelig på dette endepunktet. Vennligst sjekk modellinnstillingene eller den konfigurerte base-URL-en.',
 	'error.serverUnreachable':
@@ -1007,7 +1013,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Brukes av funksjoner du ikke har rutet andre steder.',
 	'settings.providers.privacyNoticeName': 'Personvern',
 	'settings.providers.privacyNoticeDesc':
-		'Bare leverandørene funksjonene dine faktisk bruker, mottar innholdet ditt. Ollama beholder forespørsler på denne maskinen, bortsett fra modeller merket med «sky», som videresendes til ollama.com. Gemini og OpenAI sender forespørselen til det aktuelle selskapets servere.',
+		'Kun leverandørene funksjonene dine faktisk bruker, mottar innholdet ditt. Ollama beholder forespørsler på denne maskinen, bortsett fra modeller merket «sky», som videresendes til ollama.com. Gemini, OpenAI og Anthropic sender forespørselen til det aktuelle selskapets servere.',
 	'settings.providers.defaultMoved': '{count} funksjoner ble flyttet til den nye standardleverandøren.',
 	'settings.providers.groupOnProvider': '{group} på {provider}',
 	'settings.features.modelMissingHelp': '{model} er ikke lenger tilgjengelig fra denne leverandøren. Velg en annen.',
