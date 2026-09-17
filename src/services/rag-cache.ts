@@ -1,8 +1,9 @@
-import { TFile, normalizePath } from 'obsidian';
+import { TFile } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { CACHE_VERSION, CACHE_SAVE_INTERVAL } from './rag-types';
 import type { RagIndexCache } from './rag-types';
 import { asRecord, getRawErrorMessage } from '../utils/error-utils';
+import { STATE_FILES, stateFolderPath } from './state-folder';
 
 /**
  * Manages the local cache of indexed files for the RAG indexing service.
@@ -37,7 +38,7 @@ export class RagCache {
 	 * Get the path to the index cache file
 	 */
 	get cachePath(): string {
-		return normalizePath(`${this.plugin.settings.historyFolder}/rag-index-cache.json`);
+		return stateFolderPath(this.plugin.settings, STATE_FILES.ragIndexCache);
 	}
 
 	/**

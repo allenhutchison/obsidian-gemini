@@ -1,7 +1,8 @@
-import { TFolder, normalizePath } from 'obsidian';
+import { TFolder } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { ensureFolderExists } from '../utils/file-utils';
 import { getRawErrorMessage } from '../utils/error-utils';
+import { EAGER_SUBFOLDERS, LEGACY_SKILLS_SUBFOLDER, STATE_SUBFOLDERS, stateFolderPath } from './state-folder';
 
 /**
  * Centralizes creation of all plugin state folders.
@@ -9,16 +10,6 @@ import { getRawErrorMessage } from '../utils/error-utils';
  * After this runs, all services can assume their folders exist.
  */
 export class FolderInitializer {
-	// Subfolder names relative to the plugin state root
-	private static readonly SUBFOLDERS = [
-		'Agent-Sessions',
-		'Background-Tasks',
-		'Prompts',
-		'Skills',
-		'Scheduled-Tasks',
-		'Scheduled-Tasks/Runs',
-	];
-
 	constructor(private plugin: ObsidianGemini) {}
 
 	async initializeAll(): Promise<void> {
@@ -30,11 +21,11 @@ export class FolderInitializer {
 		await ensureFolderExists(vault, root, 'plugin state', logger);
 
 		// One-time migration: rename skills → Skills on case-sensitive filesystems
-		await this.migrateSkillsFolder(root);
+		await this.migrateSkillsFolder();
 
-		// Create all subfolders
-		for (const subfolder of FolderInitializer.SUBFOLDERS) {
-			await ensureFolderExists(vault, normalizePath(`${root}/${subfolder}`), subfolder, logger);
+		// Create all eagerly-created subfolders (the layout's own list — see state-folder.ts)
+		for (const subfolder of EAGER_SUBFOLDERS) {
+			await ensureFolderExists(vault, stateFolderPath(this.plugin.settings, subfolder), subfolder, logger);
 		}
 	}
 
@@ -42,10 +33,10 @@ export class FolderInitializer {
 	 * Migrate the old lowercase 'skills' directory to 'Skills'.
 	 * On case-sensitive filesystems (Linux), both can exist independently.
 	 */
-	private async migrateSkillsFolder(root: string): Promise<void> {
+	private async migrateSkillsFolder(): Promise<void> {
 		const vault = this.plugin.app.vault;
-		const oldPath = normalizePath(`${root}/skills`);
-		const newPath = normalizePath(`${root}/Skills`);
+		const oldPath = stateFolderPath(this.plugin.settings, LEGACY_SKILLS_SUBFOLDER);
+		const newPath = stateFolderPath(this.plugin.settings, STATE_SUBFOLDERS.skills);
 
 		const oldFolder = vault.getAbstractFileByPath(oldPath);
 		const newFolder = vault.getAbstractFileByPath(newPath);

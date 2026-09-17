@@ -2,6 +2,7 @@ import { normalizePath, type TFile } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { JsonSidecarStateStore, purgeOrphanState } from './feature-definition';
 import { isPathInFolder } from '../utils/file-utils';
+import { RUNS_SUBFOLDER, stateFolderPath } from './state-folder';
 
 /**
  * Minimal shape every file-backed feature definition shares: a `slug` (its
@@ -29,7 +30,6 @@ export interface FileBackedFeatureManagerConfig {
 }
 
 /** Subfolder (inside the feature folder) that holds per-run output. */
-const RUNS_SUBFOLDER = 'Runs';
 
 /**
  * Shared scaffold for the markdown-defined feature managers — `HookManager`
@@ -76,7 +76,7 @@ export abstract class FileBackedFeatureManager<TDef extends FileBackedDefinition
 
 	/** Absolute path of the feature folder inside the plugin state folder. */
 	get featureFolderPath(): string {
-		return normalizePath(`${this.plugin.settings.historyFolder}/${this.featureConfig.featureFolder}`);
+		return stateFolderPath(this.plugin.settings, this.featureConfig.featureFolder);
 	}
 
 	/** Absolute path of the per-run output subfolder. */

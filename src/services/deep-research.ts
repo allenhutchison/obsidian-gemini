@@ -9,6 +9,7 @@ import type { Interaction, InteractionOutput } from '@allenhutchison/gemini-util
 import { proxyFetch } from '../utils/proxy-fetch';
 import { executeWithRetry, RetryConfig, DEFAULT_RETRY_CONFIG } from '../utils/retry';
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
+import { STATE_SUBFOLDERS } from './state-folder';
 
 /**
  * Research scope options
@@ -353,7 +354,7 @@ export class DeepResearchService {
 		return validateGeneratedOutputPath(rawFilePath, {
 			configDir,
 			historyFolder,
-			allowedSubfolder: 'Background-Tasks',
+			allowedSubfolder: STATE_SUBFOLDERS.backgroundTasks,
 			messages: {
 				'missing-filename': (path) => `Cannot write report to a folder path: "${path}". Please include a filename.`,
 				'vault-escape': (path) =>

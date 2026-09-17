@@ -6,6 +6,7 @@ import { resolveFeatureModel } from '../models';
 import { getErrorMessage, getRawErrorMessageOr } from '../utils/error-utils';
 import { ensureParentFolderExists, validateGeneratedOutputPath } from '../utils/file-utils';
 import { t } from '../i18n';
+import { STATE_SUBFOLDERS, stateFolderPath } from './state-folder';
 
 export class ImageGeneration {
 	private plugin: ObsidianGemini;
@@ -224,7 +225,7 @@ export class ImageGeneration {
 	 */
 	async resolveDefaultOutputPath(prompt: string): Promise<string> {
 		const filename = this.buildDefaultFilename(prompt);
-		const backgroundTasksFolder = normalizePath(`${this.plugin.settings.historyFolder}/Background-Tasks`);
+		const backgroundTasksFolder = stateFolderPath(this.plugin.settings, STATE_SUBFOLDERS.backgroundTasks);
 		return normalizePath(`${backgroundTasksFolder}/${filename}`);
 	}
 
@@ -263,7 +264,7 @@ export class ImageGeneration {
 		return validateGeneratedOutputPath(outputPath, {
 			configDir: this.plugin.app.vault.configDir,
 			historyFolder: this.plugin.settings.historyFolder,
-			allowedSubfolder: 'Background-Tasks',
+			allowedSubfolder: STATE_SUBFOLDERS.backgroundTasks,
 			// Always ensure the file ends with .png — the code always writes PNG
 			// bytes. The helper applies this before the state-folder check so the
 			// validated path matches what will actually be written (e.g. a bare

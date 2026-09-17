@@ -1,6 +1,7 @@
-import { TFile, normalizePath } from 'obsidian';
+import { TFile } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { getRawErrorMessageOr } from '../utils/error-utils';
+import { STATE_FILES, stateFolderPath } from './state-folder';
 
 /**
  * Represents an example prompt shown in the Agent Panel UI
@@ -29,7 +30,7 @@ export class ExamplePromptsManager {
 	 * @returns The normalized path to the prompts file
 	 */
 	getPromptsFilePath(): string {
-		return normalizePath(`${this.plugin.settings.historyFolder}/example-prompts.json`);
+		return stateFolderPath(this.plugin.settings, STATE_FILES.examplePrompts);
 	}
 
 	/**

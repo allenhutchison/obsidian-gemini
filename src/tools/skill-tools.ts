@@ -6,6 +6,7 @@ import { truncateForPreview } from '../utils/format-utils';
 import { t } from '../i18n';
 import { normalizePath } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
+import { SKILL_FILENAME, STATE_SUBFOLDERS, stateFolderPath } from '../services/state-folder';
 
 /**
  * Build the SKILL.md file path for a skill name, matching SkillManager's layout
@@ -16,7 +17,7 @@ function skillFilePath(plugin: ObsidianGemini, skillName: string): string {
 	if (plugin.skillManager) {
 		return normalizePath(`${plugin.skillManager.getSkillsFolderPath()}/${skillName}/SKILL.md`);
 	}
-	return normalizePath(`${plugin.settings.historyFolder}/Skills/${skillName}/SKILL.md`);
+	return stateFolderPath(plugin.settings, STATE_SUBFOLDERS.skills, skillName, SKILL_FILENAME);
 }
 
 /**

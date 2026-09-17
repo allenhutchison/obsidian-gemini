@@ -3,6 +3,7 @@ import { ChatSession } from '../../types/agent';
 import type { ObsidianGemini } from '../../types/plugin';
 import { isPathInFolder } from '../../utils/file-utils';
 import { t } from '../../i18n';
+import { STATE_SUBFOLDERS, stateFolderPath } from '../../services/state-folder';
 
 /** Filter value representing all sessions regardless of project. */
 const FILTER_ALL = 'all';
@@ -111,7 +112,7 @@ export class SessionListModal extends Modal {
 			this.sessions = [];
 
 			// Get all files in the Agent-Sessions folder
-			const sessionFolder = `${this.plugin.settings.historyFolder}/Agent-Sessions`;
+			const sessionFolder = stateFolderPath(this.plugin.settings, STATE_SUBFOLDERS.agentSessions);
 
 			// Get all markdown files in the session folder. Root-anchored via the
 			// shared helper (#1402); the entries are files, so its `path === folder`

@@ -5,6 +5,7 @@ import { BundledPromptRegistry } from './bundled-prompts';
 import { t } from '../i18n';
 import { asRecord } from '../utils/error-utils';
 import { isPathInFolder } from '../utils/file-utils';
+import { STATE_SUBFOLDERS, stateFolderPath } from '../services/state-folder';
 
 export class PromptManager {
 	constructor(
@@ -14,7 +15,7 @@ export class PromptManager {
 
 	// Get the prompts directory path
 	getPromptsDirectory(): string {
-		return normalizePath(`${this.plugin.settings.historyFolder}/Prompts`);
+		return stateFolderPath(this.plugin.settings, STATE_SUBFOLDERS.prompts);
 	}
 
 	// Load a prompt from file

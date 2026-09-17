@@ -3,6 +3,7 @@ import { ChatSession, SessionModelConfig } from '../../types/agent';
 import { GeminiModel } from '../../models';
 import type { ObsidianGemini } from '../../types/plugin';
 import { t } from '../../i18n';
+import { STATE_SUBFOLDERS, stateFolderPath } from '../../services/state-folder';
 
 export class SessionSettingsModal extends Modal {
 	private plugin: ObsidianGemini;
@@ -97,7 +98,7 @@ export class SessionSettingsModal extends Modal {
 				dropdown.addOption('__default__', t('agent.sessionSettings.useDefaultPrompt'));
 
 				// Get prompt files
-				const promptsFolder = `${this.plugin.settings.historyFolder}/Prompts`;
+				const promptsFolder = stateFolderPath(this.plugin.settings, STATE_SUBFOLDERS.prompts);
 				const folder = this.plugin.app.vault.getAbstractFileByPath(promptsFolder);
 
 				if (folder && folder instanceof TFolder) {

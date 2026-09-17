@@ -1,6 +1,6 @@
-import { normalizePath } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { formatLocalTimestamp } from './format-utils';
+import { STATE_FILES, stateFolderPath } from '../services/state-folder';
 
 /**
  * Writes log entries to a file in the plugin state folder.
@@ -19,19 +19,17 @@ export class FileLogWriter {
 
 	private static readonly FLUSH_INTERVAL_MS = 1000;
 	private static readonly MAX_FILE_SIZE = 1_048_576; // 1MB
-	private static readonly LOG_FILENAME = 'debug.log';
-	private static readonly OLD_LOG_FILENAME = 'debug.log.old';
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 	}
 
 	private get logPath(): string {
-		return normalizePath(`${this.plugin.settings.historyFolder}/${FileLogWriter.LOG_FILENAME}`);
+		return stateFolderPath(this.plugin.settings, STATE_FILES.debugLog);
 	}
 
 	private get oldLogPath(): string {
-		return normalizePath(`${this.plugin.settings.historyFolder}/${FileLogWriter.OLD_LOG_FILENAME}`);
+		return stateFolderPath(this.plugin.settings, STATE_FILES.oldDebugLog);
 	}
 
 	/**

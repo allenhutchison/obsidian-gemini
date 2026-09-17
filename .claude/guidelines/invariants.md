@@ -89,6 +89,20 @@ otherwise).
   `gemini-scribe`): `History/` (legacy v3.x), `Prompts/`, `Agent-Sessions/`, `Skills/`,
   `Scheduled-Tasks/`, `Background-Tasks/`, `Hooks/`, with automatic migration from the old flat
   layout. Always exclude the state folder **and** `.obsidian` from vault file operations.
+- **`src/services/state-folder.ts` is the single source of truth for that layout** (#1382): the
+  subfolder names (`STATE_SUBFOLDERS`), root-level state file names (`STATE_FILES`), and the
+  `stateFolderPath(settings, ...segments)` helper that applies `normalizePath` exactly once. It is a
+  leaf module (imports only `normalizePath` and a type), so every consumer can import it without a
+  cycle. **Never hand-build a state path** with ``normalizePath(`${settings.historyFolder}/X`)`` —
+  that duplication is what let two UI call sites silently drop `normalizePath`.
+  `FolderInitializer` creates `EAGER_SUBFOLDERS`, **derived** from `STATE_SUBFOLDERS` rather than a
+  hand-written twin. Two folders are deliberately not eager, and the module says so in one place:
+  `Hooks/` (created by `HookManager.initialize`, gated on `settings.hooksEnabled`, so hooks-off
+  vaults get no empty folder) and `History/` (read-only v3.x legacy, never created).
+  `ScheduledTaskManager.initialize` still creates `Scheduled-Tasks/` + `Runs/` alongside
+  `FolderInitializer` **on purpose**: on a settings change `LifecycleService.setup()` refreshes the
+  manager _before_ `main.ts` re-runs `initializePluginFolders()`, so a renamed `historyFolder` would
+  otherwise have no folder for the duration of that call.
 
 ## Tool execution ordering
 
