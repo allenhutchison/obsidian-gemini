@@ -163,6 +163,16 @@ population site in the same change. Otherwise the field stays reader-less, and w
 a modal, a handler — can be left unreachable with every check still green (#1301's orphaned
 170-line modal).
 
+**Event-bus caveat — a public runtime bus has readers a source scan cannot enumerate.** The same
+rule applied to `AgentEventMap` (event names are string keys, invisible to knip and the
+typechecker) produced a false "dead wiring" scan in #1500: `turnError` has no `on()` anywhere in
+`src/`, but the eval harness subscribes to the same bus at runtime from outside the tree
+(`evals/lib/collector.mjs`, `evals/lib/turn-waiter.mjs` — terminal-event detection and scoring
+depend on it). "No `.on()` in `src/`" is therefore **not** proof an event is unread; before
+deleting an event or an emit, check `evals/` and any external consumer. The `toolLoopDetected`
+half of #1500 was a genuine zero-reader case and got a subscriber; `turnError` was load-bearing
+out of tree.
+
 ## Platform guards
 
 Desktop-only APIs (Electron, MCP, Node.js) must be guarded with Obsidian's `Platform` checks

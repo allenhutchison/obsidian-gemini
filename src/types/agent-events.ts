@@ -58,6 +58,8 @@ export interface AgentEventMap {
 	 * logger.warn already emitted by the engine.
 	 */
 	toolLoopDetected: Readonly<{
+		/** Session whose tool call was blocked — subscribers key per-session state on it. */
+		sessionId: string;
 		toolName: string;
 		args: Record<string, unknown>;
 		identicalCallCount: number;

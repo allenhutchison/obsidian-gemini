@@ -490,6 +490,7 @@ describe('ToolExecutionEngine - Loop Detection', () => {
 		expect(plugin.agentEventBus.emit).toHaveBeenCalledWith(
 			'toolLoopDetected',
 			expect.objectContaining({
+				sessionId: 'loop-session',
 				toolName: 'noop',
 				args: {},
 				identicalCallCount: 3,

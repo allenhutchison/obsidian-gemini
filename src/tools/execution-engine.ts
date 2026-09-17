@@ -68,6 +68,7 @@ export class ToolExecutionEngine {
 			// Emit is fire-and-forget; a throwing subscriber must not block the block.
 			try {
 				void this.plugin.agentEventBus?.emit('toolLoopDetected', {
+					sessionId: context.session.id,
 					toolName: toolCall.name,
 					args: toolCall.arguments || {},
 					identicalCallCount: loopInfo.identicalCallCount,
