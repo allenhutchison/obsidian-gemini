@@ -25,6 +25,7 @@ function routes(overrides: Partial<FeatureRoutes>): FeatureRoutes {
 function makePlugin(opts: {
 	apiKeySecretName?: string;
 	openaiApiKeySecretName?: string;
+	anthropicApiKeySecretName?: string;
 	openaiBaseUrl?: string;
 	features: FeatureRoutes;
 }): ObsidianGemini {
@@ -32,6 +33,7 @@ function makePlugin(opts: {
 		settings: {
 			apiKeySecretName: opts.apiKeySecretName ?? '',
 			openaiApiKeySecretName: opts.openaiApiKeySecretName ?? '',
+			anthropicApiKeySecretName: opts.anthropicApiKeySecretName ?? '',
 			openaiBaseUrl: opts.openaiBaseUrl ?? DEFAULT_OPENAI_BASE_URL,
 			features: opts.features,
 		},
@@ -59,6 +61,15 @@ describe('providerConnection', () => {
 		expect(
 			providerConnection(makePlugin({ openaiBaseUrl: 'http://localhost:1234/v1', features: routes({}) }), 'openai')
 		).toBe('unknown');
+	});
+
+	it('anthropic: needs-key until its own secret is configured', () => {
+		expect(providerConnection(makePlugin({ apiKeySecretName: 'k', features: routes({}) }), 'anthropic')).toBe(
+			'needs-key'
+		);
+		expect(providerConnection(makePlugin({ anthropicApiKeySecretName: 'k', features: routes({}) }), 'anthropic')).toBe(
+			'connected'
+		);
 	});
 
 	it('ollama: unknown before any probe, then follows the models service probe result', () => {

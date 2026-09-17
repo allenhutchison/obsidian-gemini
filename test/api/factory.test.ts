@@ -4,26 +4,41 @@ import type { FeatureRoutes } from '../../src/types/features';
 
 // --- Mocks ---
 
-const { MockGeminiClient, MockOllamaClient, MockOpenAIClient, MockRetryDecorator, MockGeminiPrompts } = vi.hoisted(
-	() => {
-		const MockGeminiClient = vi.fn().mockImplementation(function () {
-			return { generateModelResponse: vi.fn() };
-		});
-		const MockOllamaClient = vi.fn().mockImplementation(function () {
-			return { generateModelResponse: vi.fn() };
-		});
-		const MockOpenAIClient = vi.fn().mockImplementation(function () {
-			return { generateModelResponse: vi.fn() };
-		});
-		const MockRetryDecorator = vi.fn().mockImplementation(function (_client: any) {
-			return { _wrappedClient: _client };
-		});
-		const MockGeminiPrompts = vi.fn().mockImplementation(function () {
-			return {};
-		});
-		return { MockGeminiClient, MockOllamaClient, MockOpenAIClient, MockRetryDecorator, MockGeminiPrompts };
-	}
-);
+const {
+	MockGeminiClient,
+	MockOllamaClient,
+	MockOpenAIClient,
+	MockAnthropicClient,
+	MockRetryDecorator,
+	MockGeminiPrompts,
+} = vi.hoisted(() => {
+	const MockGeminiClient = vi.fn().mockImplementation(function () {
+		return { generateModelResponse: vi.fn() };
+	});
+	const MockOllamaClient = vi.fn().mockImplementation(function () {
+		return { generateModelResponse: vi.fn() };
+	});
+	const MockOpenAIClient = vi.fn().mockImplementation(function () {
+		return { generateModelResponse: vi.fn() };
+	});
+	const MockAnthropicClient = vi.fn().mockImplementation(function () {
+		return { generateModelResponse: vi.fn() };
+	});
+	const MockRetryDecorator = vi.fn().mockImplementation(function (_client: any) {
+		return { _wrappedClient: _client };
+	});
+	const MockGeminiPrompts = vi.fn().mockImplementation(function () {
+		return {};
+	});
+	return {
+		MockGeminiClient,
+		MockOllamaClient,
+		MockOpenAIClient,
+		MockAnthropicClient,
+		MockRetryDecorator,
+		MockGeminiPrompts,
+	};
+});
 
 vi.mock('../../src/api/providers/gemini/client', () => ({
 	GeminiClient: MockGeminiClient,
@@ -35,6 +50,10 @@ vi.mock('../../src/api/providers/ollama/client', () => ({
 
 vi.mock('../../src/api/providers/openai/client', () => ({
 	OpenAIClient: MockOpenAIClient,
+}));
+
+vi.mock('../../src/api/providers/anthropic/client', () => ({
+	AnthropicClient: MockAnthropicClient,
 }));
 
 vi.mock('../../src/api/retry-decorator', () => ({
@@ -65,6 +84,7 @@ function createMockPlugin(overrides?: { features?: Partial<FeatureRoutes>; setti
 	return {
 		apiKey: 'test-api-key',
 		openaiApiKey: 'sk-test-key',
+		anthropicApiKey: 'sk-ant-test-key',
 		settings: {
 			defaultProvider: 'gemini',
 			features: routes(overrides?.features ?? {}),
@@ -199,6 +219,18 @@ describe('ModelClientFactory', () => {
 
 			const openaiConfig = MockOpenAIClient.mock.calls[0][0];
 			expect(openaiConfig.baseUrl).toBe('https://api.openai.com/v1');
+		});
+	});
+
+	describe('anthropic routing', () => {
+		it('creates an AnthropicClient with the Anthropic key and the feature model', () => {
+			const plugin = createMockPlugin({ features: { summary: { provider: 'anthropic', model: 'claude-sonnet-5' } } });
+			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SUMMARY);
+
+			expect(MockAnthropicClient).toHaveBeenCalledTimes(1);
+			expect(MockGeminiClient).not.toHaveBeenCalled();
+			expect(MockRetryDecorator).toHaveBeenCalledTimes(1);
+			expect(MockAnthropicClient.mock.calls[0][0]).toEqual({ apiKey: 'sk-ant-test-key', model: 'claude-sonnet-5' });
 		});
 	});
 

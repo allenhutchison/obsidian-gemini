@@ -43,7 +43,7 @@ Top-level rows, in order:
 ## Providers
 
 The Providers page holds one **connection card** per account/endpoint: Gemini, Ollama, OpenAI,
-and a placeholder Anthropic card. **A card never assigns a provider to a feature** — that only
+and Anthropic. **A card never assigns a provider to a feature** — that only
 happens on the [Features](#features) page. Each card's `displayValue` on the Providers list
 summarizes its connection state (Connected / Not set up / Unreachable).
 
@@ -89,15 +89,20 @@ summarizes its connection state (Connected / Not set up / Unreachable).
 
 ### Anthropic card
 
-A card-only placeholder. **Use an API key** (`anthropicApiKeySecretName`) lets an early adopter
-stage a key, but Anthropic is not yet an option on any Features row — there is no Anthropic
-client, and the card is not "routable." The card explains this with a note in place of an
-"Includes"/"Used by" line.
+- **API key** (`anthropicApiKeySecretName`) — String, SecretStorage key name, default `""`. Get
+  one at [platform.claude.com/settings/keys](https://platform.claude.com/settings/keys). There is
+  no base URL setting — requests always go to `api.anthropic.com`.
+- **Available models** — count + **Refresh** button. The curated Claude models, narrowed by
+  `GET https://api.anthropic.com/v1/models` to those the key can use (the full curated list is
+  shown without a key or when the endpoint is unreachable).
+- **Used by** — read-only list of the features currently routed to Anthropic.
+
+See the [Anthropic Setup Guide](/guide/anthropic-setup) for the model list and request behavior.
 
 ### Default provider
 
 - **Setting**: `defaultProvider`
-- **Type**: `'gemini' | 'ollama' | 'openai'`
+- **Type**: `'gemini' | 'ollama' | 'openai' | 'anthropic'`
 - **Default**: `'gemini'`
 - **Description**: The provider used by any feature you have not routed elsewhere. Changing it
   re-points every feature that was on the _previous_ default and that the new default can serve;
@@ -127,13 +132,13 @@ Rows, grouped:
 | Media            | Image generation                                   |
 
 - **Chat and agent** (`features.chat`) — interactive chat, agent sessions, scheduled tasks,
-  hooks. All three providers support it.
+  hooks. All four providers support it.
 - **Summaries** (`features.summary`) — the "Summarize active file" command and conversation
-  compaction. All three providers support it.
-- **Completions** (`features.completions`) — IDE-style inline suggestions. All three providers
+  compaction. All four providers support it.
+- **Completions** (`features.completions`) — IDE-style inline suggestions. All four providers
   support it.
 - **Rewrite** (`features.rewrite`) — rewriting selected text. Has its own model field (it no
-  longer silently borrows the chat model). All three providers support it.
+  longer silently borrows the chat model). All four providers support it.
 - **Web search** (`features.webSearch`) — Google Search grounding and the web-fetch (URL
   context) tool ride together on this row. Gemini only today.
 - **Deep research** (`features.deepResearch`) — the Deep Research managed agent. Gemini only;
@@ -168,9 +173,13 @@ quietly talking to Gemini.
 
 ### Model options
 
-A feature's model dropdown always includes a leading **"Default for this provider"** option
-(stored as `''`, resolved at request time against the live model list). When the provider is
-Ollama and the feature isn't Chat, the leading option instead reads **"Same as chat model"** —
+A feature's model dropdown always includes a leading **Default** option, labelled with the model
+it currently resolves to — e.g. **"Default (Claude Opus 5)"** for Chat on Anthropic, or
+**"Default (Claude Haiku 4.5)"** for Completions. It is stored as `''` and resolved at request
+time against the live model list, so it follows the provider's role default if that changes.
+The Features row shows the same label. Until a provider's model list has loaded there is no
+model to name, and the option reads **"Default for this provider"**. When the provider is
+Ollama and the feature isn't Chat, the leading option instead reads **"Same as chat"** —
 Ollama keeps one model resident at a time, so non-chat features default to reusing whichever
 model chat already has loaded. If a stored model is no longer in the provider's live list (a
 retired or un-pulled model), it still appears as an option labelled "No longer available" with an
@@ -189,11 +198,14 @@ Model discovery is automatic — no user-configurable settings are required.
   curated metadata (context window, vision support) for current `api.openai.com` models;
   unrecognized ids (typically from a compatible server) get conservative defaults. Click
   **Refresh** on the OpenAI card if a model doesn't appear.
+- **Anthropic** — a curated list of Claude models, narrowed by `GET https://api.anthropic.com/v1/models`
+  to what your key can use, with display names and context windows from that response. Click
+  **Refresh** on the Anthropic card after your organization's model access changes.
 
 When Google retires a model (the API starts returning 404 "no longer available"), it is removed
 from the catalog and any route or remembered model still pointing at it is migrated
 automatically on the next reload: to the retired model's designated successor when one exists,
-otherwise reset to "Default for this provider."
+otherwise reset to the provider's default.
 
 ### Provider-bound grounding
 
@@ -545,7 +557,9 @@ Available permission bypasses:
 3. For Ollama: click **Refresh** on the Ollama card after pulling new models.
 4. For OpenAI: click **Refresh** on the OpenAI card — useful after changing the base URL or
    loading a different model in a compatible server.
-5. Check console for errors (with Debug mode enabled).
+5. For Anthropic: click **Refresh** on the Anthropic card. Only curated Claude models are offered,
+   and only those your key's organization can access.
+6. Check console for errors (with Debug mode enabled).
 
 ### A feature shows a warning on the Features page
 

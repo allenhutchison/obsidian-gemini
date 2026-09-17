@@ -65,10 +65,13 @@ export function buildPlugin(settingsOverrides: Partial<ObsidianGeminiSettings> =
 	const listProvider = { getModels: vi.fn(() => geminiModels), getTextModels: vi.fn(() => geminiModels) };
 	const ollamaModelsService = { getModels: vi.fn(async () => []), invalidate: vi.fn() };
 	const openaiModelsService = { getModels: vi.fn(async () => []), invalidate: vi.fn() };
+	const anthropicModelsService = { getModels: vi.fn(async () => []), invalidate: vi.fn() };
 	const modelManager = {
 		getListProvider: vi.fn(() => listProvider),
 		getOllamaModelsService: vi.fn(() => ollamaModelsService),
-		getOpenAIModelsService: vi.fn(() => openaiModelsService),
+		getProviderModelsService: vi.fn((provider: string) =>
+			provider === 'ollama' ? ollamaModelsService : provider === 'openai' ? openaiModelsService : anthropicModelsService
+		),
 		refreshRemoteModels: vi.fn(async () => ({ fetched: true, modelCount: geminiModels.length })),
 	};
 	const toolRegistry = {
@@ -89,6 +92,7 @@ export function buildPlugin(settingsOverrides: Partial<ObsidianGeminiSettings> =
 		settings,
 		apiKey: settings.apiKeySecretName ? 'secret' : '',
 		openaiApiKey: settings.openaiApiKeySecretName ? 'secret' : '',
+		anthropicApiKey: settings.anthropicApiKeySecretName ? 'secret' : '',
 		logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
 		saveSettings: vi.fn(async () => {}),
 		getModelManager: vi.fn(() => modelManager),

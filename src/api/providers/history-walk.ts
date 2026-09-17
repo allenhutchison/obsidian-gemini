@@ -1,7 +1,7 @@
 /**
  * Provider-agnostic decoding of a single conversation-history entry.
  *
- * Both the Ollama and OpenAI clients receive history in the same two shapes —
+ * The Ollama, OpenAI, and Anthropic clients all receive history in the same two shapes —
  * a Gemini `Content` (`{ role, parts: Part[] }`) or the plugin's legacy
  * internal `{ role, text | message }` entry — and both have to answer the same
  * questions about it before they can emit anything: which role is this, what
@@ -32,6 +32,12 @@ export interface WalkedToolCall {
 	 * history and belongs to the provider that needs ids (OpenAI).
 	 */
 	id?: string;
+	/**
+	 * The part's sibling `thoughtSignature` verbatim — an opaque replay token
+	 * that only the provider which minted it can read (Anthropic carries its
+	 * thinking blocks here; see `anthropic/thinking-replay.ts`).
+	 */
+	thoughtSignature?: string;
 	/** Index of the source part within the entry's `parts` array. */
 	partIndex: number;
 }
@@ -64,6 +70,8 @@ export interface WalkedEntry {
 	 */
 	hasText: boolean;
 	images: InlineDataPart[];
+	/** PDF attachments — always empty unless the caller passed `acceptsPdf`. */
+	documents: InlineDataPart[];
 	toolCalls: WalkedToolCall[];
 	toolResponses: WalkedToolResponse[];
 }
@@ -78,11 +86,17 @@ export interface WalkedEntry {
  * drops, say, an assistant turn carrying only images.
  *
  * @param providerName Display name used in the unsupported-attachment error
- *   ("Ollama", "OpenAI"), so the two clients cannot drift that sentence apart.
- * @throws When a part carries a non-image `inlineData` attachment, which
- *   neither provider can represent.
+ *   ("Ollama", "OpenAI", "Anthropic"), so the clients cannot drift that sentence apart.
+ * @param options.acceptsPdf Collect `application/pdf` attachments into
+ *   `documents` instead of throwing (Anthropic reads PDFs natively).
+ * @throws When a part carries an `inlineData` attachment the provider can't
+ *   represent (anything but images, plus PDFs when `acceptsPdf` is set).
  */
-export function walkHistoryEntry(entry: unknown, providerName: string): WalkedEntry | null {
+export function walkHistoryEntry(
+	entry: unknown,
+	providerName: string,
+	options: { acceptsPdf?: boolean } = {}
+): WalkedEntry | null {
 	if (!entry || typeof entry !== 'object') return null;
 	const record = entry as Record<string, unknown>;
 
@@ -91,6 +105,7 @@ export function walkHistoryEntry(entry: unknown, providerName: string): WalkedEn
 		const role = record.role === 'model' ? 'assistant' : record.role === 'system' ? 'system' : 'user';
 		const textChunks: string[] = [];
 		const images: InlineDataPart[] = [];
+		const documents: InlineDataPart[] = [];
 		const toolCalls: WalkedToolCall[] = [];
 		const toolResponses: WalkedToolResponse[] = [];
 
@@ -100,23 +115,30 @@ export function walkHistoryEntry(entry: unknown, providerName: string): WalkedEn
 				inlineData?: { mimeType?: string; data?: string };
 				functionCall?: { name: string; args?: Record<string, unknown>; id?: string };
 				functionResponse?: { name: string; response?: unknown; id?: string };
+				thoughtSignature?: unknown;
 			};
 			if (typeof part?.text === 'string') {
 				textChunks.push(part.text);
 			} else if (part?.inlineData?.mimeType?.startsWith('image/') && part.inlineData.data) {
 				images.push({ mimeType: part.inlineData.mimeType, base64: part.inlineData.data });
+			} else if (options.acceptsPdf && part?.inlineData?.mimeType === 'application/pdf' && part.inlineData.data) {
+				documents.push({ mimeType: part.inlineData.mimeType, base64: part.inlineData.data });
 			} else if (part?.inlineData?.mimeType) {
 				// Mirror buildChatRequest's current-turn handling so resumed sessions
 				// don't silently drop PDF/audio/video context the model never sees.
 				throw new Error(
-					`${providerName} only supports image attachments; conversation history contains ${part.inlineData.mimeType}. ` +
-						`Switch to the Gemini provider for PDF, audio, or video input.`
+					options.acceptsPdf
+						? `${providerName} only supports image and PDF attachments; conversation history contains ${part.inlineData.mimeType}. ` +
+								`Switch to the Gemini provider for audio or video input.`
+						: `${providerName} only supports image attachments; conversation history contains ${part.inlineData.mimeType}. ` +
+								`Switch to the Gemini provider for PDF, audio, or video input.`
 				);
 			} else if (part?.functionCall) {
 				toolCalls.push({
 					name: part.functionCall.name,
 					args: part.functionCall.args || {},
 					id: part.functionCall.id,
+					...(typeof part.thoughtSignature === 'string' && { thoughtSignature: part.thoughtSignature }),
 					partIndex,
 				});
 			} else if (part?.functionResponse) {
@@ -129,13 +151,15 @@ export function walkHistoryEntry(entry: unknown, providerName: string): WalkedEn
 			}
 		}
 
-		if (!textChunks.length && !images.length && !toolCalls.length && !toolResponses.length) return null;
+		if (!textChunks.length && !images.length && !documents.length && !toolCalls.length && !toolResponses.length)
+			return null;
 
 		return {
 			role,
 			text: textChunks.join(role === 'assistant' ? '\n' : '\n\n').trim(),
 			hasText: textChunks.length > 0,
 			images,
+			documents,
 			toolCalls,
 			toolResponses,
 		};
@@ -148,7 +172,7 @@ export function walkHistoryEntry(entry: unknown, providerName: string): WalkedEn
 		const role = record.role === 'model' || record.role === 'assistant' ? 'assistant' : 'user';
 		// Deliberately un-trimmed: the legacy tail has always emitted the stored
 		// text verbatim, and only the blank check above trims.
-		return { role, text, hasText: true, images: [], toolCalls: [], toolResponses: [] };
+		return { role, text, hasText: true, images: [], documents: [], toolCalls: [], toolResponses: [] };
 	}
 
 	return null;

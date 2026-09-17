@@ -75,9 +75,9 @@ If the Gemma model you want is served through the Gemini API (ai.google.dev) it 
 
 ### Can I use non-Gemini providers like OpenAI, Anthropic, or Mistral?
 
-**OpenAI is supported** as a provider — see the question below for setup, including using your own API key or an OpenAI-compatible local server. Ollama is also supported for local models — see [Can I use a local LLM via Ollama or llama.cpp?](#can-i-use-a-local-llm-via-ollama-or-llama-cpp) below.
+**OpenAI is supported** as a provider — see the question below for setup, including using your own API key or an OpenAI-compatible local server. **Anthropic (Claude) is supported** too — add your Anthropic API key on the Anthropic card and route features to it; see the [Anthropic Setup guide](./anthropic-setup.md). Ollama is also supported for local models — see [Can I use a local LLM via Ollama or llama.cpp?](#can-i-use-a-local-llm-via-ollama-or-llama-cpp) below.
 
-Anthropic and Mistral are not supported directly — Anthropic has a card-only placeholder on the Providers page (so you can stage an API key ahead of time), but it isn't yet offered on any Features row. A handful of Gemini-specific features — Google Search grounding, URL Context, and the File Search API used for semantic vault search — remain tightly coupled to the `@google/genai` SDK and are Gemini-only regardless of which provider serves chat; the Features page lets you mix, e.g. chat on OpenAI with those features still on Gemini. ([#588](https://github.com/allenhutchison/obsidian-gemini/issues/588), [#1237](https://github.com/allenhutchison/obsidian-gemini/issues/1237))
+Mistral is not supported directly. A handful of Gemini-specific features — Google Search grounding, URL Context, and the File Search API used for semantic vault search — remain tightly coupled to the `@google/genai` SDK and are Gemini-only regardless of which provider serves chat; the Features page lets you mix, e.g. chat on OpenAI or Claude with those features still on Gemini. ([#588](https://github.com/allenhutchison/obsidian-gemini/issues/588), [#1237](https://github.com/allenhutchison/obsidian-gemini/issues/1237))
 
 ### Can I point the plugin at Vertex AI for privacy or compliance reasons?
 

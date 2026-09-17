@@ -106,6 +106,10 @@ export const en = {
 		context:
 			'Dropdown option label for the OpenAI cloud provider (also used for OpenAI-compatible local servers via a custom base URL). "OpenAI" is a product name.',
 	},
+	'settings.general.providerOptionAnthropic': {
+		message: 'Anthropic (cloud)',
+		context: 'Dropdown option label for the Anthropic (Claude) cloud provider. "Anthropic" is a product name.',
+	},
 	'settings.general.modelListUpdated': {
 		message: 'Model list updated: {count} models.',
 		context: 'Notice after a successful Gemini model list refresh. {count} is the number of models (0 or 2+).',
@@ -251,6 +255,11 @@ export const en = {
 		message: 'Default for this provider',
 		context:
 			'Model dropdown option meaning "use the provider\'s own default model for this feature" rather than a specific named model.',
+	},
+	'settings.features.modelDefaultNamed': {
+		message: 'Default ({model})',
+		context:
+			'Model dropdown option meaning "use the provider\'s own default model for this feature", naming that model. {model} is a model display name such as "Claude Opus 5" and stays untranslated.',
 	},
 	'settings.features.sameAsChat': {
 		message: 'Same as chat',
@@ -2256,6 +2265,12 @@ export const en = {
 			'No OpenAI API key configured. Open Settings → Gemini Scribe to add one. Get a key at platform.openai.com/api-keys',
 		context: 'Error notice when the user has not configured an OpenAI API key yet (OpenAI is the primary provider).',
 	},
+	'notice.main.noApiKeyAnthropic': {
+		message:
+			'No Anthropic API key configured. Open Settings → Gemini Scribe to add one. Get a key at platform.claude.com/settings/keys',
+		context:
+			'Error notice when the user has not configured an Anthropic API key yet (Anthropic serves chat). "Gemini Scribe" is the plugin name and stays untranslated.',
+	},
 	'notice.main.apiKeyRetrieveFailed': {
 		message:
 			'Could not retrieve your API key from secure storage. Try re-entering it in Settings → Gemini Scribe → Providers → Google Gemini → API key.',
@@ -3027,6 +3042,11 @@ export const en = {
 		context:
 			'HTTP 401 from an OpenAI-compatible provider. "Gemini Scribe" is the plugin name and stays untranslated; "Settings" is Obsidian\'s settings window.',
 	},
+	'error.anthropicInvalidKey': {
+		message: 'Invalid Anthropic API key. Please check the API key in Settings → Gemini Scribe.',
+		context:
+			'HTTP 401 from the Anthropic API. "Gemini Scribe" is the plugin name and stays untranslated; "Settings" is Obsidian\'s settings window.',
+	},
 	'error.modelNotOnEndpoint': {
 		message: 'Model not available on this endpoint. Please check your model settings or the configured base URL.',
 		context:
@@ -3574,7 +3594,7 @@ export const en = {
 	'settings.providers.shortLabel.anthropic': {
 		message: 'Anthropic',
 		context:
-			'Short provider name for the card-only Anthropic placeholder (not yet a usable provider). "Anthropic" is a product name.',
+			'Short provider name for Anthropic (Claude), used on its provider card and in routing rows. "Anthropic" is a product name.',
 	},
 	'settings.providers.cardNameGemini': {
 		message: 'Google Gemini',
@@ -3656,10 +3676,6 @@ export const en = {
 		message: 'Loading…',
 		context: "Placeholder shown for a provider card's model count while the first fetch is in flight.",
 	},
-	'settings.providers.modelsUnavailable': {
-		message: 'Not applicable',
-		context: 'Model-count summary for the Anthropic placeholder card, which has no model list.',
-	},
 	'settings.providers.includesHeading': {
 		message: 'Includes',
 		context:
@@ -3684,15 +3700,6 @@ export const en = {
 	'settings.providers.usedByNone': {
 		message: 'Nothing yet',
 		context: 'Value shown under a provider card\'s "Used by" row when no feature currently routes to this provider.',
-	},
-	'settings.providers.notYetRoutableHeading': {
-		message: 'Not yet available',
-		context: 'Row name on the Anthropic placeholder card explaining it cannot serve any feature yet.',
-	},
-	'settings.providers.anthropicPlaceholderDesc': {
-		message:
-			'Anthropic support is staged but not yet connected to any feature. Save your key now to be ready when it opens up.',
-		context: 'Row description on the Anthropic placeholder card. "Anthropic" is a product name.',
 	},
 	'settings.providers.statusConnected': {
 		message: 'Connected',
@@ -3724,9 +3731,9 @@ export const en = {
 	},
 	'settings.providers.privacyNoticeDesc': {
 		message:
-			'Only the providers your features actually use ever receive your content. Ollama keeps requests on this machine, except for models marked "cloud", which it forwards to ollama.com. Gemini and OpenAI send the request to that company\'s servers.',
+			'Only the providers your features actually use ever receive your content. Ollama keeps requests on this machine, except for models marked "cloud", which it forwards to ollama.com. Gemini, OpenAI, and Anthropic send the request to that company\'s servers.',
 		context:
-			'The single privacy note on the Providers page, replacing four separate variants from the previous settings layout. "Ollama", "Gemini", and "OpenAI" are product names.',
+			'The single privacy note on the Providers page, replacing four separate variants from the previous settings layout. "Ollama", "Gemini", "OpenAI", and "Anthropic" are product names.',
 	},
 	'settings.providers.defaultMoved': {
 		message: '{count} features moved to the new default provider.',

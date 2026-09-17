@@ -35,6 +35,7 @@ export default defineConfig({
 						{ text: 'Introduction', link: '/guide/getting-started' },
 						{ text: 'Ollama (Local Models)', link: '/guide/ollama-setup' },
 						{ text: 'OpenAI', link: '/guide/openai-setup' },
+						{ text: 'Anthropic (Claude)', link: '/guide/anthropic-setup' },
 						{ text: 'FAQ', link: '/guide/faq' },
 					],
 				},

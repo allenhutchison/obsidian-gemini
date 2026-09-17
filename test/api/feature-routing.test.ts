@@ -158,7 +158,7 @@ describe('sanitizeFeatureRoutes', () => {
 	});
 
 	it('maps an unknown provider id to "none"', () => {
-		const result = sanitizeFeatureRoutes({ chat: { provider: 'anthropic', model: '' } }, 'gemini');
+		const result = sanitizeFeatureRoutes({ chat: { provider: 'mistral', model: '' } }, 'gemini');
 		expect(result.chat.provider).toBe('none');
 	});
 
@@ -187,7 +187,7 @@ describe('sanitizeProviderModelMemory', () => {
 	it('drops unknown providers, unknown features, and non-string values', () => {
 		const result = sanitizeProviderModelMemory({
 			gemini: { chat: 'gemini-3-pro', bogusFeature: 'x' },
-			anthropic: { chat: 'claude' },
+			mistral: { chat: 'mistral-large' },
 			ollama: { summary: 42 },
 		});
 		expect(result).toEqual({ gemini: { chat: 'gemini-3-pro' } });

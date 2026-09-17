@@ -6,6 +6,7 @@ import type { ObsidianGeminiSettings } from '../types/settings';
 import { ModelListProvider, RefreshResult } from './model-list-provider';
 import { OllamaModelsService } from './ollama-models-service';
 import { OpenAIModelsService } from './openai-models-service';
+import { AnthropicModelsService } from './anthropic-models-service';
 
 export interface ModelUpdateOptions {
 	forceRefresh?: boolean;
@@ -22,6 +23,7 @@ export class ModelManager {
 	private listProvider: ModelListProvider;
 	private ollamaModelsService: OllamaModelsService;
 	private openaiModelsService: OpenAIModelsService;
+	private anthropicModelsService: AnthropicModelsService;
 	private static staticModels: GeminiModel[] = [...DEFAULT_GEMINI_MODELS];
 
 	constructor(plugin: ObsidianGemini) {
@@ -29,6 +31,7 @@ export class ModelManager {
 		this.listProvider = new ModelListProvider(plugin);
 		this.ollamaModelsService = new OllamaModelsService(plugin);
 		this.openaiModelsService = new OpenAIModelsService(plugin);
+		this.anthropicModelsService = new AnthropicModelsService(plugin);
 	}
 
 	/**
@@ -41,13 +44,10 @@ export class ModelManager {
 	 */
 	async getAvailableModels(options: ModelUpdateOptions = {}, provider?: ModelProvider): Promise<GeminiModel[]> {
 		const target = provider ?? featureProvider(this.plugin.settings, 'chat') ?? 'gemini';
-		if (target === 'ollama') {
-			return this.ollamaModelsService.getModels(options.forceRefresh);
+		if (target === 'gemini') {
+			return this.listProvider.getTextModels();
 		}
-		if (target === 'openai') {
-			return this.openaiModelsService.getModels(options.forceRefresh);
-		}
-		return this.listProvider.getTextModels();
+		return this.getProviderModelsService(target).getModels(options.forceRefresh);
 	}
 
 	/**
@@ -73,18 +73,12 @@ export class ModelManager {
 		if (providers.includes('gemini')) {
 			models.push(...this.listProvider.getModels());
 		}
-		if (providers.includes('ollama')) {
+		for (const provider of providers) {
+			if (provider === 'gemini') continue;
 			try {
-				models.push(...(await this.ollamaModelsService.getModels(forceRefresh)));
+				models.push(...(await this.getProviderModelsService(provider).getModels(forceRefresh)));
 			} catch (error) {
-				this.plugin.logger.warn('[ModelManager] Could not load Ollama models:', error);
-			}
-		}
-		if (providers.includes('openai')) {
-			try {
-				models.push(...(await this.openaiModelsService.getModels(forceRefresh)));
-			} catch (error) {
-				this.plugin.logger.warn('[ModelManager] Could not load OpenAI models:', error);
+				this.plugin.logger.warn(`[ModelManager] Could not load ${provider} models:`, error);
 			}
 		}
 		return models;
@@ -98,10 +92,15 @@ export class ModelManager {
 	}
 
 	/**
-	 * Get the OpenAI models service for direct interaction (e.g. cache refresh).
+	 * The model-list service for a provider whose list is fetched on demand
+	 * (everything but Gemini, whose list comes from `getListProvider()`).
 	 */
-	getOpenAIModelsService(): OpenAIModelsService {
-		return this.openaiModelsService;
+	getProviderModelsService(
+		provider: Exclude<ModelProvider, 'gemini'>
+	): OllamaModelsService | OpenAIModelsService | AnthropicModelsService {
+		if (provider === 'ollama') return this.ollamaModelsService;
+		if (provider === 'openai') return this.openaiModelsService;
+		return this.anthropicModelsService;
 	}
 
 	/**

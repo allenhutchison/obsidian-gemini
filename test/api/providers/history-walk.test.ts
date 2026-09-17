@@ -91,6 +91,37 @@ describe('walkHistoryEntry', () => {
 			).toThrow(/OpenAI only supports image attachments; conversation history contains audio\/mp3/);
 		});
 
+		it('collects PDFs into documents only when the caller accepts them', () => {
+			const entry = {
+				role: 'user',
+				parts: [
+					{ inlineData: { mimeType: 'application/pdf', data: 'PDF' } },
+					{ inlineData: { mimeType: 'image/png', data: 'IMG' } },
+				],
+			};
+			const walked = walkHistoryEntry(entry, 'Anthropic', { acceptsPdf: true });
+			expect(walked?.documents).toEqual([{ mimeType: 'application/pdf', base64: 'PDF' }]);
+			expect(walked?.images).toEqual([{ mimeType: 'image/png', base64: 'IMG' }]);
+
+			expect(() =>
+				walkHistoryEntry({ role: 'user', parts: [{ inlineData: { mimeType: 'video/mp4', data: 'x' } }] }, 'Anthropic', {
+					acceptsPdf: true,
+				})
+			).toThrow(/Anthropic only supports image and PDF attachments; conversation history contains video\/mp4/);
+		});
+
+		it("surfaces a functionCall part's sibling thoughtSignature", () => {
+			const walked = walkHistoryEntry(
+				{
+					role: 'model',
+					parts: [{ functionCall: { name: 'a' }, thoughtSignature: 'sig' }, { functionCall: { name: 'b' } }],
+				},
+				'Anthropic'
+			);
+			expect(walked?.toolCalls[0].thoughtSignature).toBe('sig');
+			expect(walked?.toolCalls[1]).not.toHaveProperty('thoughtSignature');
+		});
+
 		it('collects functionCall and functionResponse parts with their source index', () => {
 			const walked = walkHistoryEntry(
 				{
@@ -150,6 +181,7 @@ describe('walkHistoryEntry', () => {
 				text: 'hey',
 				hasText: true,
 				images: [],
+				documents: [],
 				toolCalls: [],
 				toolResponses: [],
 			});

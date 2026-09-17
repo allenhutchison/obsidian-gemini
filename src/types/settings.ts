@@ -47,12 +47,7 @@ export interface ObsidianGeminiSettings {
 	openaiBaseUrl: string;
 	/** SecretStorage key holding the OpenAI API key, mirroring `apiKeySecretName`. */
 	openaiApiKeySecretName: string;
-	/**
-	 * SecretStorage key holding an Anthropic API key. Staged ahead of a working
-	 * Anthropic client: the settings UI's Anthropic provider card is a
-	 * card-only placeholder (`routable: false`, `'anthropic'` is not part of
-	 * `ModelProvider`), so nothing reads this yet.
-	 */
+	/** SecretStorage key holding the Anthropic API key, mirroring `apiKeySecretName`. */
 	anthropicApiKeySecretName: string;
 	summaryFrontmatterKey: string;
 	userName: string;
