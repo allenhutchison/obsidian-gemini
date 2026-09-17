@@ -43,6 +43,7 @@ import type { AnthropicClientConfig } from './config';
 import { anthropicModelMetadata } from './model-catalog';
 import { decodeThinkingBlocks, encodeThinkingBlocks } from './thinking-replay';
 import { walkHistoryEntry } from '../history-walk';
+import { describeSdkApiError } from '../../../utils/error-utils';
 
 type MessageParam = Anthropic.Beta.BetaMessageParam;
 type ContentBlockParam = Anthropic.Beta.BetaContentBlockParam;
@@ -89,7 +90,7 @@ export class AnthropicClient implements ModelApi {
 			const message = await this.client.beta.messages.create({ ...params, stream: false });
 			return this.toModelResponse(message);
 		} catch (error) {
-			this.plugin?.logger.error('[AnthropicClient] Error generating content:', this.describeError(error), error);
+			this.plugin?.logger.error('[AnthropicClient] Error generating content:', describeSdkApiError(error), error);
 			throw error;
 		}
 	}
@@ -141,7 +142,7 @@ export class AnthropicClient implements ModelApi {
 				if (cancelled) {
 					return partialResult();
 				}
-				this.plugin?.logger.error('[AnthropicClient] Streaming error:', this.describeError(error), error);
+				this.plugin?.logger.error('[AnthropicClient] Streaming error:', describeSdkApiError(error), error);
 				throw error;
 			}
 		})();
@@ -157,22 +158,6 @@ export class AnthropicClient implements ModelApi {
 				}
 			},
 		};
-	}
-
-	/**
-	 * Flattens an SDK `APIError` into a readable string — the console otherwise
-	 * serializes its nested body as `"error":"Object"`. Log it alongside the
-	 * original error, never instead of it.
-	 */
-	private describeError(error: unknown): string {
-		const apiError = error as { status?: number; type?: string | null; requestID?: string | null } | null;
-		if (apiError && typeof apiError === 'object' && typeof apiError.status === 'number') {
-			const detail = error instanceof Error ? error.message : 'unknown error';
-			const type = apiError.type ? ` [${apiError.type}]` : '';
-			const requestId = apiError.requestID ? ` (request ${apiError.requestID})` : '';
-			return `HTTP ${apiError.status}${type}: ${detail}${requestId}`;
-		}
-		return error instanceof Error ? error.message : String(error);
 	}
 
 	/** Request body shared by the streaming and non-streaming paths. */
