@@ -1,4 +1,5 @@
 import ObsidianGemini, { ObsidianGeminiSettings } from '../src/main';
+import { routingKey } from '../src/api/feature-routing';
 import { FEATURE_IDS } from '../src/types/features';
 import type { App, PluginManifest } from 'obsidian';
 
@@ -118,6 +119,154 @@ describe('ObsidianGeminiSettings', () => {
 			const message = (plugin as unknown as { getApiKeyErrorMessage(): string }).getApiKeyErrorMessage();
 
 			expect(message).toContain('OpenAI');
+		});
+	});
+
+	describe('saveSettings – historyFolder change triggers manager refresh (#1551)', () => {
+		/**
+		 * A plugin wired for `saveSettings()` with layout NOT ready, so every
+		 * layout-gated block is skipped and the test observes only the re-init
+		 * decision: whether `lifecycle.setup()` runs for a given snapshot delta.
+		 */
+		function makeSaveablePlugin(settingsOverrides: Partial<ObsidianGeminiSettings> = {}) {
+			const secrets = new Map<string, string>([['gemini-key', 'test-key']]);
+			const app = {
+				workspace: { layoutReady: false, onLayoutReady: vi.fn() },
+				secretStorage: {
+					getSecret: (id: string) => secrets.get(id) ?? null,
+					setSecret: vi.fn(),
+					listSecrets: vi.fn(() => [...secrets.keys()]),
+				},
+			};
+			const plugin = new ObsidianGemini(app as unknown as App, {} as PluginManifest);
+			(plugin as unknown as { logger: unknown }).logger = {
+				log: vi.fn(),
+				debug: vi.fn(),
+				warn: vi.fn(),
+				error: vi.fn(),
+			};
+			plugin.settings = {
+				defaultProvider: 'gemini',
+				apiKeySecretName: 'gemini-key',
+				historyFolder: 'gemini-scribe',
+				// The base-URL defaults from DEFAULT_SETTINGS: without them the
+				// customBaseUrlChanged comparison sees undefined and fires a phantom
+				// provider change on the first save.
+				ollamaBaseUrl: 'http://localhost:11434',
+				customBaseUrl: '',
+				openaiBaseUrl: 'https://api.openai.com/v1',
+				fileLogging: false,
+				logToolExecution: false,
+				hooksEnabled: false,
+				ragIndexing: {
+					enabled: false,
+					fileSearchStoreName: null,
+					excludeFolders: [],
+					autoSync: true,
+					includeAttachments: false,
+				},
+				features: {
+					chat: { provider: 'gemini', model: '' },
+					summary: { provider: 'gemini', model: '' },
+					completions: { provider: 'gemini', model: '' },
+					rewrite: { provider: 'gemini', model: '' },
+					webSearch: { provider: 'gemini', model: '' },
+					deepResearch: { provider: 'gemini', model: '' },
+					rag: { provider: 'gemini', model: '' },
+					imageGen: { provider: 'gemini', model: '' },
+				},
+				...settingsOverrides,
+			} as ObsidianGeminiSettings;
+			const setup = vi.fn().mockResolvedValue(undefined);
+			(plugin as unknown as { lifecycle: unknown }).lifecycle = {
+				setup,
+				syncToolExecutionLogger: vi.fn(),
+			};
+			plugin.saveData = vi.fn().mockResolvedValue(undefined);
+			return { plugin, setup };
+		}
+
+		/**
+		 * Initialize the plugin's snapshot baseline the way a real successful
+		 * init does: via markInitialized(), so every `previous*` field matches
+		 * the current settings and only the delta under test can trigger a
+		 * re-init.
+		 */
+		function initBaseline(plugin: ObsidianGemini): void {
+			const internal = plugin as unknown as { markInitialized(): void };
+			internal.markInitialized();
+		}
+
+		it('re-runs setup when historyFolder changes, refreshing the managers', async () => {
+			const { plugin, setup } = makeSaveablePlugin();
+			initBaseline(plugin);
+			setup.mockClear();
+
+			plugin.settings.historyFolder = 'renamed-folder';
+			await plugin.saveSettings();
+
+			expect(setup).toHaveBeenCalledTimes(1);
+			// The snapshot advanced, so a second save with no further change is a no-op.
+			await plugin.saveSettings();
+			expect(setup).toHaveBeenCalledTimes(1);
+		});
+
+		it('does not re-run setup when historyFolder is unchanged', async () => {
+			const { plugin, setup } = makeSaveablePlugin();
+			initBaseline(plugin);
+			setup.mockClear();
+
+			await plugin.saveSettings();
+
+			expect(setup).not.toHaveBeenCalled();
+		});
+
+		it('re-runs setup on an uninitialized-but-credentialed save (needsInit baseline)', async () => {
+			const { plugin, setup } = makeSaveablePlugin();
+			const internal = plugin as unknown as { isGeminiInitialized: boolean; previousHistoryFolder: string };
+			internal.isGeminiInitialized = false;
+			internal.previousHistoryFolder = plugin.settings.historyFolder;
+
+			await plugin.saveSettings();
+
+			expect(setup).toHaveBeenCalledTimes(1);
+			// markInitialized snapshots the folder, so the rename detector starts
+			// from the right baseline after recovery.
+			expect(internal.previousHistoryFolder).toBe('gemini-scribe');
+		});
+
+		it('does not treat a folder delta as a rename before a successful init (#1553 review)', async () => {
+			// No credentials: needsInit is false, so nothing else may trigger setup.
+			const { plugin, setup } = makeSaveablePlugin({ apiKeySecretName: '' });
+			const internal = plugin as unknown as {
+				isGeminiInitialized: boolean;
+				previousHistoryFolder: string;
+				previousRoutingKey: string;
+			};
+			// Never initialized: previousHistoryFolder is still ''. Without the
+			// gate, the ''-vs-'gemini-scribe' delta would be true on every save
+			// of any setting, re-running a setup that already failed for lack of
+			// credentials. previousRoutingKey is pinned to the current routing so
+			// the pre-existing phantom-provider-change condition (an
+			// uninitialized plugin snapshots nothing) doesn't fire first and mask
+			// the gate under test.
+			internal.isGeminiInitialized = false;
+			internal.previousHistoryFolder = '';
+			internal.previousRoutingKey = routingKey(plugin.settings);
+
+			await plugin.saveSettings();
+
+			expect(setup).not.toHaveBeenCalled();
+		});
+
+		it('advances the historyFolder snapshot when setup succeeds on a rename', async () => {
+			const { plugin } = makeSaveablePlugin();
+			initBaseline(plugin);
+			plugin.settings.historyFolder = 'renamed-folder';
+
+			await plugin.saveSettings();
+
+			expect((plugin as unknown as { previousHistoryFolder: string }).previousHistoryFolder).toBe('renamed-folder');
 		});
 	});
 });
