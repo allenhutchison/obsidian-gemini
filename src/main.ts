@@ -277,12 +277,21 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	 *
 	 * `workspace.onLayoutReady` fires immediately when layout is already ready,
 	 * so re-invoking after recovery is safe; the flag only guards against
-	 * registering twice while layout is still pending.
+	 * registering twice while layout is still pending. If the deferred run
+	 * rejects, the flag resets so a later settings save can retry it — the
+	 * workspace does not await the callback, so the rejection is handled here.
+	 * `isGeminiInitialized` is deliberately untouched: setup() succeeded, and
+	 * a deferred-phase failure must not flip the plugin's initialized state.
 	 */
 	private registerLayoutReadyHook(): void {
 		if (this.layoutReadyHookRegistered || !this.isGeminiInitialized) return;
 		this.layoutReadyHookRegistered = true;
-		this.app.workspace.onLayoutReady(() => this.lifecycle.onLayoutReady());
+		this.app.workspace.onLayoutReady(() => {
+			this.lifecycle.onLayoutReady().catch((error) => {
+				this.logger.error('Deferred initialization failed; it will retry on the next settings save:', error);
+				this.layoutReadyHookRegistered = false;
+			});
+		});
 	}
 
 	/**
