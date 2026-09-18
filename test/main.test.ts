@@ -137,7 +137,9 @@ describe('ObsidianGeminiSettings', () => {
 				workspace: { layoutReady: false, onLayoutReady: vi.fn() },
 				secretStorage: {
 					getSecret: (id: string) => secrets.get(id) ?? null,
-					setSecret: vi.fn(),
+					setSecret: (id: string, value: string) => {
+						secrets.set(id, value);
+					},
 					listSecrets: vi.fn(() => [...secrets.keys()]),
 				},
 			};
@@ -320,9 +322,10 @@ describe('ObsidianGeminiSettings', () => {
 				isGeminiInitialized: boolean;
 				lastInitAttemptFingerprint: string | null;
 			};
-			// Simulate the failed onload attempt (eligibility: ollama, credentialed).
+			// Simulate the failed onload attempt recording its eligibility, the
+			// same string the fingerprint helper produces for these settings.
 			internal.isGeminiInitialized = false;
-			internal.lastInitAttemptFingerprint = 'ollama:credentialed';
+			internal.lastInitAttemptFingerprint = 'ollama:none-required:http://localhost:11434';
 
 			await plugin.saveSettings();
 			expect(setup).not.toHaveBeenCalled();
@@ -335,6 +338,57 @@ describe('ObsidianGeminiSettings', () => {
 			// openai with a key present is credentialed, unlike gemini keyless.
 			plugin.settings.features.chat = { provider: 'openai', model: '' };
 			plugin.settings.openaiApiKeySecretName = 'openai-key';
+			await plugin.saveSettings();
+			expect(setup).toHaveBeenCalledTimes(1);
+		});
+
+		it('retries when a rejected credential is replaced (#1555 review round 3)', async () => {
+			// A wrong-but-present key keeps hasCredentials true, so only the
+			// credential token distinguishes the failed attempt from the fixed
+			// one. Replacing the key must change the fingerprint and retry.
+			const { plugin, setup } = makeSaveablePlugin();
+			const internal = plugin as unknown as {
+				isGeminiInitialized: boolean;
+				lastInitAttemptFingerprint: string | null;
+				recordInitAttemptFingerprint(): void;
+			};
+			// Failed onload with the (bad) credential recorded: swap the stored
+			// value for a wrong one, record, then let the unrelated save pass.
+			plugin.app.secretStorage.setSecret('gemini-key', 'wrong-key');
+			internal.isGeminiInitialized = false;
+			internal.recordInitAttemptFingerprint();
+
+			// Unrelated save with the same bad key — no retry.
+			await plugin.saveSettings();
+			expect(setup).not.toHaveBeenCalled();
+
+			// The user replaces the key in secret storage and saves — retry.
+			plugin.app.secretStorage.setSecret('gemini-key', 'test-key');
+			await plugin.saveSettings();
+			expect(setup).toHaveBeenCalledTimes(1);
+		});
+
+		it('retries when the active chat provider base URL is corrected (#1555 review round 3)', async () => {
+			// Setup failed against an unreachable Ollama server; fixing the URL
+			// must change the fingerprint and retry, even though URL change
+			// detection is gated off while uninitialized.
+			const { plugin, setup } = makeSaveablePlugin({ apiKeySecretName: '' });
+			plugin.settings.features.chat = { provider: 'ollama', model: '' };
+			const internal = plugin as unknown as {
+				isGeminiInitialized: boolean;
+				lastInitAttemptFingerprint: string | null;
+				recordInitAttemptFingerprint(): void;
+			};
+			// Failed onload against the default (unreachable in the scenario) URL.
+			internal.isGeminiInitialized = false;
+			internal.recordInitAttemptFingerprint();
+
+			// Unrelated save — no retry.
+			await plugin.saveSettings();
+			expect(setup).not.toHaveBeenCalled();
+
+			// The user corrects the base URL and saves — retry.
+			plugin.settings.ollamaBaseUrl = 'http://localhost:11500';
 			await plugin.saveSettings();
 			expect(setup).toHaveBeenCalledTimes(1);
 		});

@@ -318,14 +318,46 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		this.lastInitAttemptFingerprint = this.initAttemptFingerprint();
 	}
 
-	/** The eligibility fingerprint `needsInit` compares against. */
+	/**
+	 * Deterministic, non-invertible change-detection token for a credential
+	 * value — a 32-bit FNV-1a of the key string, hex-encoded. Two keys with
+	 * the same token are effectively identical for "did the credential
+	 * change" purposes; the value itself never appears in the fingerprint.
+	 */
+	private static credentialToken(key: string): string {
+		let hash = 0x811c9dc5;
+		for (let i = 0; i < key.length; i++) {
+			hash ^= key.charCodeAt(i);
+			hash = Math.imul(hash, 0x01000193);
+		}
+		return (hash >>> 0).toString(16);
+	}
+
+	/**
+	 * The eligibility fingerprint `needsInit` compares against: the chat
+	 * provider, a non-secret token of the credential serving chat (so
+	 * replacing a rejected key is detected, not just adding/removing one),
+	 * and the chat provider's base URL (so correcting an unreachable-server
+	 * URL is detected). All three can independently unblock a failed setup.
+	 */
 	private initAttemptFingerprint(): string {
 		const chatProvider = this.settings.features.chat.provider;
 		const activeChatApiKey =
 			chatProvider === 'openai' ? this.openaiApiKey : chatProvider === 'anthropic' ? this.anthropicApiKey : this.apiKey;
-		const hasCredentials =
-			!getCapabilities(chatProvider === 'none' ? null : chatProvider).requiresApiKey || !!activeChatApiKey;
-		return `${chatProvider}:${hasCredentials ? 'credentialed' : 'keyless-blocked'}`;
+		const credToken = activeChatApiKey
+			? ObsidianGemini.credentialToken(activeChatApiKey)
+			: getCapabilities(chatProvider === 'none' ? null : chatProvider).requiresApiKey
+				? 'key-required-missing'
+				: 'none-required';
+		const baseUrl =
+			chatProvider === 'openai'
+				? this.settings.openaiBaseUrl
+				: chatProvider === 'anthropic'
+					? undefined
+					: chatProvider === 'ollama'
+						? this.settings.ollamaBaseUrl
+						: this.settings.customBaseUrl;
+		return `${chatProvider}:${credToken}:${baseUrl ?? ''}`;
 	}
 
 	/**
