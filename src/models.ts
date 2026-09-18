@@ -205,34 +205,6 @@ export function geminiGroundingModel(settings: FeatureRoutingSlice): string {
 	return resolveGenerateContentModel(route.provider === 'gemini' ? route.model : '', 'chat');
 }
 
-/** The settings shape `getActiveChatModel` fell back to before the settings redesign. */
-interface LegacyChatModelSlice {
-	provider?: ModelProvider;
-	chatModelName?: string;
-	ollamaModelName?: string;
-	openaiModelName?: string;
-}
-
-/**
- * Deprecated: Fallback for a hand-built settings fixture that predates the
- * settings redesign (no `features` object) — reproduces the old
- * `provider` + `chatModelName`/`ollamaModelName`/`openaiModelName`
- * resolution so a not-yet-migrated test fixture keeps passing. Production
- * settings always have `features` once `migrateToFeatureRouting` has run, so
- * this path is never exercised outside a test fixture; removed once every
- * caller's fixtures use `features`.
- */
-function legacyActiveChatModel(settings: LegacyChatModelSlice): string {
-	const provider = settings.provider ?? 'gemini';
-	if (provider === 'ollama') {
-		return settings.ollamaModelName || getDefaultModelForRole('chat', 'ollama');
-	}
-	if (provider === 'openai') {
-		return settings.openaiModelName || getDefaultModelForRole('chat', 'openai');
-	}
-	return settings.chatModelName || getDefaultModelForRole('chat', 'gemini');
-}
-
 /**
  * Resolve the chat model for whichever provider currently serves chat. Use
  * this anywhere the "current chat model" is needed for a request or for
@@ -240,10 +212,7 @@ function legacyActiveChatModel(settings: LegacyChatModelSlice): string {
  * RAG) intentionally resolve their own model via `geminiGroundingModel` /
  * `resolveGenerateContentModel` since they always call Google's API.
  */
-export function getActiveChatModel(settings: FeatureRoutingSlice & LegacyChatModelSlice): string {
-	if (settings.features === undefined) {
-		return legacyActiveChatModel(settings);
-	}
+export function getActiveChatModel(settings: FeatureRoutingSlice): string {
 	return resolveFeatureModel(settings, 'chat');
 }
 

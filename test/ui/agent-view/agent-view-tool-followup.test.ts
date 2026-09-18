@@ -12,7 +12,18 @@ const PER_TURN_CONTEXT = 'CONTEXT FILES: probe note content with unique facts';
 
 function makePlugin() {
 	return {
-		settings: { chatModelName: 'gemini-3-flash-preview' },
+		settings: {
+			features: {
+				chat: { provider: 'gemini', model: 'gemini-3-flash-preview' },
+				summary: { provider: 'gemini', model: '' },
+				completions: { provider: 'gemini', model: '' },
+				rewrite: { provider: 'gemini', model: '' },
+				webSearch: { provider: 'gemini', model: '' },
+				deepResearch: { provider: 'gemini', model: '' },
+				rag: { provider: 'gemini', model: '' },
+				imageGen: { provider: 'gemini', model: '' },
+			},
+		},
 		toolRegistry: {
 			getEnabledTools: vi.fn().mockReturnValue([{ name: 'read_file' }]),
 			getAutoApprovedTools: vi.fn().mockReturnValue([{ name: 'read_file' }]),

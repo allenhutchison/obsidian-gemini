@@ -101,7 +101,16 @@ function createMockPlugin(overrides: Record<string, any> = {}): any {
 		},
 		settings: {
 			historyFolder: 'gemini-scribe',
-			chatModelName: 'gemini-2.5-flash',
+			features: {
+				chat: { provider: 'gemini', model: 'gemini-2.5-flash' },
+				summary: { provider: 'gemini', model: '' },
+				completions: { provider: 'gemini', model: '' },
+				rewrite: { provider: 'gemini', model: '' },
+				webSearch: { provider: 'gemini', model: '' },
+				deepResearch: { provider: 'gemini', model: '' },
+				rag: { provider: 'gemini', model: '' },
+				imageGen: { provider: 'gemini', model: '' },
+			},
 		},
 		logger: createMockLogger(),
 		agentsMemory: {
