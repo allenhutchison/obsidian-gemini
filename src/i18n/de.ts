@@ -840,6 +840,18 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Ablehnen',
 	'agent.planMode.rejectedNotice': 'Plan abgelehnt.',
 	'agent.planMode.proceedMessage': 'Mit dem genehmigten Plan fortfahren.',
+	'agent.loopAborted':
+		'Der Agent hat denselben Tool-Aufruf wiederholt versucht (Schleifenerkennung wurde {count}-mal ausgelöst). Dieser Durchgang wurde abgebrochen, um eine Endlosschleife zu verhindern. Versuchen Sie, Ihre Anfrage umzuformulieren oder eine neue Sitzung zu starten.',
+	'agent.emptyResponseFallback.withTools':
+		'Ich habe die angeforderten Aktionen ausgeführt ({tools}), hatte jedoch Probleme beim Erstellen einer Zusammenfassung. Die Vorgänge waren erfolgreich.',
+	'agent.emptyResponseFallback.noTools':
+		'Ich habe die angeforderten Aktionen ausgeführt, hatte jedoch Probleme beim Erstellen einer Zusammenfassung. Die Vorgänge waren erfolgreich.',
+	'selection.emptyResponse': 'Die KI hat eine leere Antwort zurückgegeben. Bitte versuchen Sie es erneut.',
+	'provider.openai.noModelSelected': 'Kein OpenAI-Modell ausgewählt. Wählen Sie ein Modell in den Einstellungen.',
+	'provider.unsupportedAttachment':
+		'{provider} unterstützt nur Bildanhänge; {mimeType} empfangen. Wechseln Sie zum Gemini-Provider für PDF-, Audio- oder Video-Eingaben.',
+	'provider.gemini.noImageData':
+		'Keine Bilddaten in der Antwort. Das Modell hat möglicherweise nur Text zurückgegeben.',
 	'error.unknown': 'Ein unbekannter Fehler ist aufgetreten',
 	'error.openaiInvalidKey':
 		'Ungültiger OpenAI-API-Schlüssel. Bitte überprüfe den API-Schlüssel in Einstellungen → Gemini Scribe.',

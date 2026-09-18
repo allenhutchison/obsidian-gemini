@@ -836,6 +836,17 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Отклонить',
 	'agent.planMode.rejectedNotice': 'План отклонен.',
 	'agent.planMode.proceedMessage': 'Продолжить выполнение одобренного плана.',
+	'agent.loopAborted':
+		'Агент продолжал повторять один и тот же вызов инструмента (детектор зацикливания сработал {count} раз(а)). Текущий ход остановлен для предотвращения бесконечного цикла. Попробуйте перефразировать запрос или начать новую сессию.',
+	'agent.emptyResponseFallback.withTools':
+		'Я выполнил запрошенные действия ({tools}), но не смог составить сводку. Операции завершились успешно.',
+	'agent.emptyResponseFallback.noTools':
+		'Я выполнил запрошенные действия, но не смог составить сводку. Операции завершились успешно.',
+	'selection.emptyResponse': 'ИИ вернул пустой ответ. Пожалуйста, попробуйте снова.',
+	'provider.openai.noModelSelected': 'Модель OpenAI не выбрана. Выберите модель в настройках.',
+	'provider.unsupportedAttachment':
+		'{provider} поддерживает только вложения изображений; получено: {mimeType}. Переключитесь на провайдера Gemini для работы с PDF, аудио или видео.',
+	'provider.gemini.noImageData': 'В ответе нет данных изображения. Возможно, модель вернула только текст.',
 	'error.unknown': 'Произошла неизвестная ошибка',
 	'error.openaiInvalidKey':
 		'Неверный API-ключ OpenAI. Пожалуйста, проверьте API-ключ в меню Настройки → Gemini Scribe.',

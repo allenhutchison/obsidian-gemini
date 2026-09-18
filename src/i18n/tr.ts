@@ -834,6 +834,17 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Reddet',
 	'agent.planMode.rejectedNotice': 'Plan reddedildi.',
 	'agent.planMode.proceedMessage': 'Onaylanan planla devam et.',
+	'agent.loopAborted':
+		'Ajan aynı araç çağrısını tekrarlamaya devam etti (döngü algılayıcı {count} kez tetiklendi). Sonsuz döngüyü engellemek için bu tur durduruluyor. İsteğinizi yeniden ifade etmeyi veya yeni bir oturum başlatmayı deneyin.',
+	'agent.emptyResponseFallback.withTools':
+		'İstenen eylemleri ({tools}) tamamladım ancak bir özet oluştururken sorun yaşadım. İşlemler başarılı oldu.',
+	'agent.emptyResponseFallback.noTools':
+		'İstenen eylemleri tamamladım ancak bir özet oluştururken sorun yaşadım. İşlemler başarılı oldu.',
+	'selection.emptyResponse': 'Yapay zeka boş bir yanıt döndürdü. Lütfen tekrar deneyin.',
+	'provider.openai.noModelSelected': 'Hiçbir OpenAI modeli seçilmedi. Ayarlardan bir model seçin.',
+	'provider.unsupportedAttachment':
+		'{provider} yalnızca görsel eklerini destekler; {mimeType} alındı. PDF, ses veya video girdisi için Gemini sağlayıcısına geçin.',
+	'provider.gemini.noImageData': 'Yanıtta görsel verisi bulunamadı. Model yalnızca metin döndürmüş olabilir.',
 	'error.unknown': 'Bilinmeyen bir hata oluştu',
 	'error.openaiInvalidKey':
 		'Geçersiz OpenAI API anahtarı. Lütfen Ayarlar → Gemini Scribe altındaki API anahtarını kontrol edin.',
