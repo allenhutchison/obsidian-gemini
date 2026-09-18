@@ -35,6 +35,7 @@ import { GeminiPrompts } from '../../../prompts';
 import type { ObsidianGemini } from '../../../types/plugin';
 import type { OllamaClientConfig } from './config';
 import { walkHistoryEntry } from '../history-walk';
+import { t } from '../../../i18n';
 
 export class OllamaClient implements ModelApi {
 	private client: Ollama;
@@ -248,10 +249,7 @@ export class OllamaClient implements ModelApi {
 			if (att.mimeType.startsWith('image/')) {
 				userImages.push(att.base64);
 			} else {
-				throw new Error(
-					`Ollama only supports image attachments; received ${att.mimeType}. ` +
-						`Switch to the Gemini provider for PDF, audio, or video input.`
-				);
+				throw new Error(t('provider.unsupportedAttachment', { provider: 'Ollama', mimeType: att.mimeType }));
 			}
 		}
 		if (userParts.length || userImages.length) {

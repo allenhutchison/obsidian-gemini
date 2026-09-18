@@ -3035,6 +3035,48 @@ export const en = {
 			'Synthetic user message automatically sent after the user approves a plan, triggering the agent execution loop. Not user-typed.',
 	},
 
+	// Turn-path and provider-client messages (src/agent/, src/ui/agent-view/, src/services/,
+	// src/api/providers/). These reach the user as a rendered chat message, a modal body, or a
+	// thrown Error surfaced through the notice path — unlike the model-facing summarization and
+	// tool-prompt strings in the same modules, which deliberately stay English.
+	'agent.loopAborted': {
+		message:
+			'The agent kept retrying the same tool call (loop detector fired {count} times). Stopping this turn to prevent a runaway loop. Try rephrasing your request or starting a new session.',
+		context:
+			"Chat message shown in place of the agent's answer when the tool-loop detector aborted the turn. {count} is how many times the detector fired (3 or more).",
+	},
+	'agent.emptyResponseFallback.withTools': {
+		message:
+			'I completed the requested actions ({tools}) but had trouble generating a summary. The operations were successful.',
+		context:
+			"Chat message spoken in the agent's own voice when tools ran successfully but the model returned no summary text, even after a retry. {tools} is a comma-separated list of the tool display names that ran.",
+	},
+	'agent.emptyResponseFallback.noTools': {
+		message: 'I completed the requested actions but had trouble generating a summary. The operations were successful.',
+		context:
+			"Same as agent.emptyResponseFallback.withTools, but used when no tool name could be listed. Spoken in the agent's own voice.",
+	},
+	'selection.emptyResponse': {
+		message: 'The AI returned an empty response. Please try again.',
+		context:
+			'Error text in the response modal after running a selection action (summarize, rewrite, …) when the model returned nothing.',
+	},
+	'provider.openai.noModelSelected': {
+		message: 'No OpenAI model selected. Choose a model in settings.',
+		context:
+			'Error shown when an OpenAI-routed feature runs with no model configured. "settings" is Obsidian\'s settings window.',
+	},
+	'provider.unsupportedAttachment': {
+		message:
+			'{provider} only supports image attachments; received {mimeType}. Switch to the Gemini provider for PDF, audio, or video input.',
+		context:
+			'Error shown when a non-image attachment is sent to a provider that only accepts images. {provider} is a provider name (OpenAI / Ollama) and stays untranslated; {mimeType} is a MIME type such as "application/pdf". "Gemini" is a provider name and stays untranslated.',
+	},
+	'provider.gemini.noImageData': {
+		message: 'No image data in response. The model may have returned only text.',
+		context: 'Error shown when an image-generation request to Gemini came back without any image payload.',
+	},
+
 	// Model API error guidance (src/utils/error-utils.ts). These sentences are shown to users —
 	// sometimes interpolated into a longer notice, sometimes as the entire notice. Several are
 	// near-identical in English, so each context names the condition that produces it.

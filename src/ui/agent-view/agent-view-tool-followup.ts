@@ -5,6 +5,7 @@ import { ChatSession, type PerTurnContext } from '../../types/agent';
 import { ToolExecutionContext } from '../../tools/types';
 import { ExtendedModelRequest } from '../../api/interfaces/model-api';
 import { CustomPrompt } from '../../prompts/types';
+import { t } from '../../i18n';
 
 // Re-export so existing callers that import PerTurnContext from this module
 // keep working — the canonical home is now `src/types/agent.ts` so the
@@ -119,6 +120,6 @@ export function buildEmptyResponseMessage(
 		.join(', ');
 
 	return executedToolNames
-		? `I completed the requested actions (${executedToolNames}) but had trouble generating a summary. The operations were successful.`
-		: 'I completed the requested actions but had trouble generating a summary. The operations were successful.';
+		? t('agent.emptyResponseFallback.withTools', { tools: executedToolNames })
+		: t('agent.emptyResponseFallback.noTools');
 }

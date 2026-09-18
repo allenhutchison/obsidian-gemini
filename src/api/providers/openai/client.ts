@@ -46,6 +46,7 @@ import { walkHistoryEntry } from '../history-walk';
 import { SIMPLE_TOOL_ID_PATTERN, ToolIdLedger } from '../tool-id-ledger';
 import type { ResolvedToolCall } from '../tool-id-ledger';
 import { describeSdkApiError } from '../../../utils/error-utils';
+import { t } from '../../../i18n';
 
 type ChatMessage = OpenAI.ChatCompletionMessageParam;
 type ChatTool = OpenAI.ChatCompletionTool;
@@ -103,7 +104,7 @@ export class OpenAIClient implements ModelApi {
 		// e.g. a summary request to the chat model when `config.model` is empty.
 		const model = request.model || this.config.model;
 		if (!model) {
-			throw new Error('No OpenAI model selected. Choose a model in settings.');
+			throw new Error(t('provider.openai.noModelSelected'));
 		}
 
 		try {
@@ -164,7 +165,7 @@ export class OpenAIClient implements ModelApi {
 
 		const complete = (async (): Promise<ModelResponse> => {
 			if (!model) {
-				throw new Error('No OpenAI model selected. Choose a model in settings.');
+				throw new Error(t('provider.openai.noModelSelected'));
 			}
 
 			try {
@@ -308,10 +309,7 @@ export class OpenAIClient implements ModelApi {
 			if (att.mimeType.startsWith('image/')) {
 				imageParts.push(this.toImageContentPart(att));
 			} else {
-				throw new Error(
-					`OpenAI only supports image attachments; received ${att.mimeType}. ` +
-						`Switch to the Gemini provider for PDF, audio, or video input.`
-				);
+				throw new Error(t('provider.unsupportedAttachment', { provider: 'OpenAI', mimeType: att.mimeType }));
 			}
 		}
 
