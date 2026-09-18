@@ -477,6 +477,258 @@ describe('OllamaModelsService', () => {
 				await svc.getRuntimeContextLength('gemma4:12b-mlx');
 				expect(psCalls()).toBe(2);
 			});
+
+			// The stale probe settling late must not evict the newer entry from
+			// psInFlight: cleanup removes only the probe's own entry, or a superseded
+			// probe would strand the map with a settled promise and block the next
+			// coalescing window.
+			it('a superseded stale probe does not evict the newer in-flight probe', async () => {
+				let releaseA: (v: any) => void = () => {};
+				let releaseB: (v: any) => void = () => {};
+				const gateA = new Promise((r) => (releaseA = r));
+				const gateB = new Promise((r) => (releaseB = r));
+				let first = true;
+				mockedRequestUrl.mockImplementation(async (opts: { url: string }) => {
+					if (opts.url.endsWith('/api/ps')) {
+						const mine = first;
+						first = false;
+						await (mine ? gateA : gateB);
+						return {
+							status: 200,
+							json: { models: [{ name: 'gemma4:12b-mlx', context_length: mine ? 262_144 : 4_096 }] },
+						};
+					}
+					return { status: 200, json: { models: [] } };
+				});
+				const svc = new OllamaModelsService(buildPlugin());
+				const internal = svc as unknown as {
+					psInFlight: Map<string, { promise: Promise<number | null>; generation: number }>;
+					psCache: Map<string, { contextLength: number | null; at: number }>;
+				};
+				const cacheKey = 'http://localhost:11434|gemma4:12b-mlx';
+
+				const stale = svc.getRuntimeContextLength('gemma4:12b-mlx'); // gen 0, parks on gateA
+				await vi.waitFor(() => expect(mockedRequestUrl.mock.calls.length).toBeGreaterThan(0));
+				svc.invalidate(); // gen 1: the stale probe is superseded
+
+				const fresh = svc.getRuntimeContextLength('gemma4:12b-mlx'); // must NOT reuse it
+				await vi.waitFor(() => expect(psCalls()).toBe(2));
+
+				// Stale settles first: its cleanup must leave the fresh entry alone.
+				releaseA(null);
+				await stale;
+				expect(internal.psInFlight.has(cacheKey)).toBe(true);
+
+				// Fresh settles: its own entry is removed.
+				releaseB(null);
+				await fresh;
+				expect(internal.psInFlight.size).toBe(0);
+
+				// Only the fresh probe's write landed: stale suppressed, fresh cached.
+				expect(internal.psCache.size).toBe(1);
+				expect(internal.psCache.get(cacheKey)?.contextLength).toBe(4_096);
+			});
+		});
+	});
+
+	// Regression tests for #1545: showCache used to be keyed by model name alone
+	// and had no generation guard, so a probe in flight across an endpoint switch
+	// (or an invalidate) wrote its answer under the bare name and a later listing
+	// of the *new* daemon skipped probing and served the old daemon's capabilities.
+	describe('show cache identity (#1545)', () => {
+		/** Mock /api/show with a per-URL answer map so two daemons can disagree. */
+		function mockShowByDaemon(showByUrl: Record<string, (name: string) => any>) {
+			mockedRequestUrl.mockImplementation((opts: { url: string; body?: string }) => {
+				if (opts.url.endsWith('/api/show')) {
+					const body = JSON.parse(opts.body ?? '{}');
+					const baseUrl = opts.url.slice(0, opts.url.length - '/api/show'.length);
+					const responder = showByUrl[baseUrl];
+					return responder
+						? Promise.resolve({ status: 200, json: responder(body.model) })
+						: Promise.resolve({ status: 404, json: null });
+				}
+				// Both daemons report the same model name — that overlap is the point.
+				return Promise.resolve({ status: 200, json: { models: [{ name: 'llama3.2:3b' }] } });
+			});
+		}
+
+		const showCalls = (url: string) =>
+			mockedRequestUrl.mock.calls.filter((c: any[]) => c[0]?.url === `${url}/api/show`).length;
+
+		it('does not serve one daemon’s capabilities for a same-named model on another', async () => {
+			const plugin = buildPlugin();
+			mockShowByDaemon({
+				'http://localhost:11434': () => ({ capabilities: ['completion'] }),
+				'http://10.0.0.1:11434': () => ({ capabilities: ['completion', 'vision'] }),
+			});
+
+			const svc = new OllamaModelsService(plugin);
+			const local = await svc.getModels();
+			expect(local[0].supportsVision).toBe(false);
+
+			// Point at the second daemon running the same model name. Its /api/show
+			// must actually run — the name key alone would serve A's answer.
+			plugin.settings.ollamaBaseUrl = 'http://10.0.0.1:11434';
+			const remote = await svc.getModels();
+			expect(remote[0].supportsVision).toBe(true);
+			expect(showCalls('http://10.0.0.1:11434')).toBe(1);
+		});
+
+		it('does not let a probe started before an endpoint switch populate the new endpoint’s entry', async () => {
+			const plugin = buildPlugin();
+			let release: (v: any) => void = () => {};
+			const gate = new Promise((r) => (release = r));
+			mockedRequestUrl.mockImplementation(async (opts: { url: string }) => {
+				if (opts.url.endsWith('/api/show')) {
+					await gate;
+					return { status: 200, json: { capabilities: ['completion'] } };
+				}
+				// /api/tags answers immediately for both daemons.
+				return { status: 200, json: { models: [{ name: 'llama3.2:3b' }] } };
+			});
+
+			const svc = new OllamaModelsService(plugin);
+			const first = svc.getModels();
+			// The probe is parked on the gate; switch daemons, which clears
+			// showCache via the identity-change hook, then let the old probe land.
+			await Promise.resolve(); // let the fetch start and capture its generation
+			plugin.settings.ollamaBaseUrl = 'http://10.0.0.1:11434';
+			release(null);
+			await first;
+
+			// The stale write was suppressed; the new daemon's listing must probe
+			// for itself rather than read the old probe's entry.
+			const remote = await svc.getModels();
+			expect(remote).toHaveLength(1);
+			expect(showCalls('http://10.0.0.1:11434')).toBe(1);
+		});
+
+		it('does not let a probe started before invalidate() re-seed the cache', async () => {
+			let release: (v: any) => void = () => {};
+			const gate = new Promise((r) => (release = r));
+			mockedRequestUrl.mockImplementation(async (opts: { url: string }) => {
+				if (opts.url.endsWith('/api/show')) {
+					await gate;
+					return { status: 200, json: { capabilities: ['completion'] } };
+				}
+				return { status: 200, json: { models: [{ name: 'llama3.2:3b' }] } };
+			});
+
+			const svc = new OllamaModelsService(buildPlugin());
+			const first = svc.getModels();
+			svc.invalidate();
+			release(null);
+			await first;
+
+			// The caller that started the probe still gets its answer, but the
+			// cache write was suppressed: the next listing probes again.
+			await svc.getModels();
+			expect(showCalls('http://localhost:11434')).toBe(2);
+		});
+
+		it('suppresses a stale probe’s cache write across invalidate()', async () => {
+			// Behavioral observability of the stale write is shielded by the
+			// catalog's own clear-on-load in every reachable sequencing — which is
+			// exactly why the bug survived. Verify the guard's mechanism directly:
+			// after a probe started before invalidate() lands, showCache must not
+			// contain its entry (repo precedent for internal-state casts: main.test.ts).
+			let release: (v: any) => void = () => {};
+			const gate = new Promise((r) => (release = r));
+			mockedRequestUrl.mockImplementation(async (opts: { url: string }) => {
+				if (opts.url.endsWith('/api/show')) {
+					await gate;
+					return { status: 200, json: { capabilities: ['completion'] } };
+				}
+				return { status: 200, json: { models: [{ name: 'llama3.2:3b' }] } };
+			});
+
+			const svc = new OllamaModelsService(buildPlugin());
+			const internal = svc as unknown as { showCache: Map<string, unknown>; showGeneration: number };
+			const pending = svc.getModels();
+			// invalidate() must land while probeModel is already past its generation
+			// capture — i.e. after the /api/show request actually started.
+			await vi.waitFor(() => {
+				expect(mockedRequestUrl.mock.calls.some((c: any[]) => c[0]?.url.endsWith('/api/show'))).toBe(true);
+			});
+			svc.invalidate();
+			release(null);
+			await pending;
+
+			// The generation captured at probe start no longer matches, so the
+			// write was suppressed and the map is still empty.
+			expect(internal.showCache.size).toBe(0);
+		});
+
+		it('keys showCache by endpoint: a stale write for daemon A never lands under daemon B’s identity', async () => {
+			// Same mechanism, endpoint-switch variant: the suppressed write must
+			// not appear under ANY key, and the cache key must carry the endpoint.
+			let release: (v: any) => void = () => {};
+			const gate = new Promise((r) => (release = r));
+			mockedRequestUrl.mockImplementation(async (opts: { url: string }) => {
+				if (opts.url.endsWith('/api/show')) {
+					await gate;
+					return { status: 200, json: { capabilities: ['completion'] } };
+				}
+				if (opts.url.startsWith('http://10.0.0.1')) {
+					release(null);
+				}
+				return { status: 200, json: { models: [{ name: 'llama3.2:3b' }] } };
+			});
+
+			const plugin = buildPlugin();
+			const svc = new OllamaModelsService(plugin);
+			const internal = svc as unknown as { showCache: Map<string, unknown> };
+			const pending = svc.getModels();
+			// Wait until A's probe has actually started (and parked on the gate)
+			// rather than guessing at a wall-clock delay.
+			await vi.waitFor(() => {
+				expect(mockedRequestUrl.mock.calls.some((c: any[]) => c[0]?.url.endsWith('/api/show'))).toBe(true);
+			});
+			plugin.settings.ollamaBaseUrl = 'http://10.0.0.1:11434';
+			const next = svc.getModels(); // identity change clears showCache mid-flight
+			release(null);
+			await Promise.all([pending, next]);
+
+			// B's own probe (post-switch, fresh generation) legitimately caches its
+			// answer — keyed by B's endpoint. A's stale write must not appear under
+			// ANY key: not the bare name, not A's endpoint.
+			expect([...internal.showCache.keys()]).toEqual(['http://10.0.0.1:11434|llama3.2:3b']);
+		});
+
+		it('preserves the /api/ps in-flight result across a forced refresh that clears showCache', async () => {
+			// The endpoint-change/force-refresh hook bumps the show generation but
+			// not the ps generation: a forced refresh of the same daemon discards
+			// /api/show probes mid-flight, but an /api/ps result captured from that
+			// same daemon is still the truth about its allocation. The probe stays
+			// PENDING across the refresh — if the split-generation design ever
+			// regressed to a shared generation, the pending write would be
+			// suppressed and the final lookup would re-probe (2 calls, not 1).
+			let release: (v: any) => void = () => {};
+			const gate = new Promise((r) => (release = r));
+			mockedRequestUrl.mockImplementation(async (opts: { url: string }) => {
+				if (opts.url.endsWith('/api/ps')) {
+					await gate;
+					return { status: 200, json: { models: [{ name: 'gemma4:12b-mlx', context_length: 262_144 }] } };
+				}
+				return { status: 200, json: { models: [] } };
+			});
+			const svc = new OllamaModelsService(buildPlugin());
+
+			const pending = svc.getRuntimeContextLength('gemma4:12b-mlx');
+			// The probe is parked on the gate; start the forced refresh while the
+			// /api/ps request is still in flight.
+			await vi.waitFor(() => {
+				expect(mockedRequestUrl.mock.calls.some((c: any[]) => c[0]?.url.endsWith('/api/ps'))).toBe(true);
+			});
+			const refresh = svc.getModels(true);
+			release(null);
+			await Promise.all([pending, refresh]);
+
+			// The probe settled after the refresh began; within the TTL the
+			// allocation must be served from psCache, not re-probed.
+			await svc.getRuntimeContextLength('gemma4:12b-mlx');
+			const psCalls = mockedRequestUrl.mock.calls.filter((c: any[]) => String(c[0]?.url).endsWith('/api/ps')).length;
+			expect(psCalls).toBe(1);
 		});
 	});
 
