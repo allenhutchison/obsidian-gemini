@@ -157,6 +157,14 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 			return;
 		}
 
+		// Hooks/ is deliberately NOT in FolderInitializer's EAGER_SUBFOLDERS: it
+		// is gated on settings.hooksEnabled, so vaults with hooks off never get
+		// an empty folder (see state-folder.ts). That makes this manager — the
+		// only code that knows whether hooks are on — the folder's single
+		// owner: both creation sites for Hooks/ + Runs/ live here, and
+		// FolderInitializer never creates them. Runs/ is created eagerly here
+		// alongside Hooks/; per-run files inside it create deeper parents on
+		// demand via ensureParentFolderExists.
 		await ensureFolderExists(this.plugin.app.vault, this.hooksFolder, 'hooks', this.plugin.logger);
 		await ensureFolderExists(this.plugin.app.vault, this.runsFolder, 'hook runs', this.plugin.logger);
 		await this.loadState();

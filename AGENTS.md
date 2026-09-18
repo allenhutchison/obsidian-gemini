@@ -121,7 +121,10 @@ The plugin uses a factory pattern (`ModelClientFactory` in `src/api/factory.ts`)
      ``normalizePath(`${settings.historyFolder}/Prompts`)`` by hand. `FolderInitializer` creates
      `EAGER_SUBFOLDERS`, derived from the same constants — `Hooks/` is created on demand only when
      `hooksEnabled` is on, and read-only legacy `History/` is never created by current code. Both
-     omissions are documented in the module.
+     omissions are documented in the module. `FolderInitializer` is the single creator of
+     `Scheduled-Tasks/` and `Scheduled-Tasks/Runs/` (#1540): `LifecycleService.setup()` runs the
+     folder pass before refreshing the managers on a re-init, so `ScheduledTaskManager.initialize`
+     consumes the folders rather than re-creating them.
      It is a leaf module, so any consumer can import it without a cycle.
 8. **System Folder Protection**: Always exclude system folders from file operations:
    - The plugin state folder (`settings.historyFolder`)

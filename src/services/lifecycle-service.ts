@@ -78,6 +78,18 @@ export class LifecycleService {
 		// Phase C: Reinitializable services
 		await this.initializeReinitializableServices();
 
+		// On a re-init the refresh block below hands the renamed historyFolder to
+		// ScheduledTaskManager and HookManager *before* main.ts would re-run
+		// initializePluginFolders(), so the eager folders — including the
+		// scheduled-tasks folder the manager reads during initialize() — must
+		// exist first. initializePluginFolders() is itself guarded: it no-ops
+		// until Phase C has constructed folderInitializer, and on a first load
+		// (layout not ready) it does nothing here — onLayoutReady() owns that
+		// path. Idempotent, so re-running from main.ts after setup() is harmless.
+		if (plugin.app.workspace.layoutReady) {
+			await this.initializePluginFolders();
+		}
+
 		// If layout is already ready (i.e. this is a re-init triggered by a
 		// settings save), refresh the scheduled task manager so it picks up any
 		// historyFolder or other setting changes without requiring a restart.

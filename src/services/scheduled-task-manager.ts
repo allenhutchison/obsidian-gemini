@@ -1,6 +1,6 @@
 import { TFile, normalizePath } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
-import { ensureFolderExists, isPathInFolder } from '../utils/file-utils';
+import { isPathInFolder } from '../utils/file-utils';
 import { FeatureToolPolicy } from '../types/tool-policy';
 import { formatToolPolicyYaml } from './feature-policy-yaml';
 import { yamlScalar } from './yaml-scalar';
@@ -158,12 +158,10 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 		// changes (e.g. historyFolder rename) don't leave stale handlers active.
 		this.detachVaultListeners();
 
-		// Kept alongside FolderInitializer's own creation of these two folders: on a
-		// settings change, LifecycleService.setup() refreshes this manager *before*
-		// main.ts re-runs initializePluginFolders(), so a renamed historyFolder would
-		// otherwise have no Scheduled-Tasks folder for the duration of this call.
-		await ensureFolderExists(this.plugin.app.vault, this.scheduledTasksFolder, 'scheduled tasks', this.plugin.logger);
-		await ensureFolderExists(this.plugin.app.vault, this.runsFolder, 'scheduled task runs', this.plugin.logger);
+		// Scheduled-Tasks/ and Runs/ are created by FolderInitializer's eager
+		// pass (EAGER_SUBFOLDERS); LifecycleService.setup() guarantees that pass
+		// has run before this refresh, so the manager is the folder's consumer,
+		// not a second creator.
 		await this.loadState(isCurrent);
 		if (isCurrent()) {
 			await this.discoverDefinitions(isCurrent);
