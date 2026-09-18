@@ -229,6 +229,14 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	// when a later settings save recovers initialization, so a double
 	// registration must not happen.
 	private layoutReadyHookRegistered = false;
+	/**
+	 * The setup-eligibility fingerprint of the most recent `setup()` attempt —
+	 * the chat provider and whether credentials allow initialization, no
+	 * secret values. `needsInit` retries only when this changes (or never
+	 * recorded), so a failed setup is not re-run on every unrelated save while
+	 * the eligibility is unchanged (#1554 / #1555 review).
+	 */
+	private lastInitAttemptFingerprint: string | null = null;
 
 	async onload() {
 		// Initialize logger early so it's available during setup
@@ -258,6 +266,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 			this.lastInitError = getRawErrorMessage(error);
 			new Notice(this.getInitErrorMessage(error));
 			this.isGeminiInitialized = false;
+			this.recordInitAttemptFingerprint();
 		}
 
 		// Always register UI components and commands
@@ -301,6 +310,25 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	}
 
 	/**
+	 * Record the current setup-eligibility fingerprint after a `setup()`
+	 * attempt, whatever its outcome. Called from both init paths so a failed
+	 * attempt is not silently retried on unrelated saves.
+	 */
+	private recordInitAttemptFingerprint(): void {
+		this.lastInitAttemptFingerprint = this.initAttemptFingerprint();
+	}
+
+	/** The eligibility fingerprint `needsInit` compares against. */
+	private initAttemptFingerprint(): string {
+		const chatProvider = this.settings.features.chat.provider;
+		const activeChatApiKey =
+			chatProvider === 'openai' ? this.openaiApiKey : chatProvider === 'anthropic' ? this.anthropicApiKey : this.apiKey;
+		const hasCredentials =
+			!getCapabilities(chatProvider === 'none' ? null : chatProvider).requiresApiKey || !!activeChatApiKey;
+		return `${chatProvider}:${hasCredentials ? 'credentialed' : 'keyless-blocked'}`;
+	}
+
+	/**
 	 * Record a successful `lifecycle.setup()`: mark the plugin initialized and
 	 * snapshot every setting the re-init check in `saveSettings` compares against.
 	 *
@@ -313,6 +341,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	private markInitialized(): void {
 		this.isGeminiInitialized = true;
 		this.lastInitError = null;
+		this.recordInitAttemptFingerprint();
 		this.previousApiKey = this.apiKey;
 		this.previousOpenaiApiKey = this.openaiApiKey;
 		this.previousAnthropicApiKey = this.anthropicApiKey;
@@ -635,7 +664,14 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 			chatProvider === 'openai' ? this.openaiApiKey : chatProvider === 'anthropic' ? this.anthropicApiKey : this.apiKey;
 		const hasCredentials =
 			!getCapabilities(chatProvider === 'none' ? null : chatProvider).requiresApiKey || !!activeChatApiKey;
-		const needsInit = !this.isGeminiInitialized && hasCredentials;
+		// needsInit additionally compares the eligibility fingerprint recorded
+		// after the last setup attempt: without it, a failed attempt on a
+		// keyless provider (hasCredentials stays true) would retry setup on
+		// every unrelated save, defeating #1554's no-repeat contract. A retry
+		// fires only when eligibility actually changed — the chat provider
+		// moved, or the credential situation flipped (#1555 review).
+		const needsInit =
+			!this.isGeminiInitialized && hasCredentials && this.lastInitAttemptFingerprint !== this.initAttemptFingerprint();
 		// A state-folder rename must re-run the full setup: both file-backed
 		// managers reload their definitions, sidecar state, and vault listeners
 		// against the new location inside their initialize({ refresh: true })
@@ -675,6 +711,9 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 				this.logger.error('Failed to re-initialize after settings change:', error);
 				this.lastInitError = getRawErrorMessage(error);
 				this.isGeminiInitialized = false;
+				// A failed attempt records the eligibility it tried with, so the
+				// same eligibility is not retried on the next unrelated save.
+				this.recordInitAttemptFingerprint();
 			}
 		}
 
