@@ -185,6 +185,24 @@ deleting an event or an emit, check `evals/` and any external consumer. The `too
 half of #1500 was a genuine zero-reader case and got a subscriber; `turnError` was load-bearing
 out of tree.
 
+## A guard applies at every call site of the operation
+
+When you add or change a guard, budget check, or settings gate on an operation, apply it at
+**every** call site that performs that operation in the same change — or move the operation behind
+a single helper that owns the check. Enumerate the call sites by grepping the API you are gating
+(`generateStreamingResponse`, `vault.create`, the rasterizer entry point) rather than assuming the
+one in front of you is the only one. Nothing is duplicated in this defect and no field is
+reader-less, so the two rules above don't reach it: the check is simply **absent** at the sibling,
+which lint, knip, madge and the full suite all pass over.
+
+Recognise the shape by its instances: the post-rasterize attachment budget check landed at one of
+three SVG call sites (#1430); the two background-output write-path validators forked, leaving
+deep-research without the vault-escape guard (#1401); `settings.streamingEnabled` was read on both
+initial-request call sites in `agent-view-send.ts` but not on the follow-up in
+`agent-view-tools.ts`, so a tool-calling turn streamed every post-tool response with the toggle off
+(#1496). The reviewable question a diff has to answer is "which call sites does this gate, and
+which did you check?"
+
 ## Platform guards
 
 Desktop-only APIs (Electron, MCP, Node.js) must be guarded with Obsidian's `Platform` checks
