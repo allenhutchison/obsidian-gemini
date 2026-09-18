@@ -99,11 +99,24 @@ describe('ToolIdLedger', () => {
 			expect(responses[0].id).toBe(calls[0].id);
 		});
 
-		it('does not answer the same call twice with one id', () => {
+		it('does not answer the same call twice with one id (undeclared ids fall back to FIFO)', () => {
 			const ledger = openAiLedger();
 			const { calls, responses } = ledger.resolveEntry(
 				[call('read_file', 0)],
 				[response('read_file', 1, 'gemini-call-1'), response('read_file', 2, 'gemini-call-1')]
+			);
+			expect(responses[0].id).toBe(calls[0].id);
+			expect(responses[1].id).toBeNull();
+		});
+
+		it('does not answer a declared call twice with the same id', () => {
+			// First response consumes the declared id out of the FIFO; the second
+			// response carrying the same id must not re-match it — both APIs
+			// reject two tool results referencing one tool call.
+			const ledger = anthropicLedger();
+			const { calls, responses } = ledger.resolveEntry(
+				[call('read_file', 0, 'toolu_01')],
+				[response('read_file', 1, 'toolu_01'), response('read_file', 2, 'toolu_01')]
 			);
 			expect(responses[0].id).toBe(calls[0].id);
 			expect(responses[1].id).toBeNull();

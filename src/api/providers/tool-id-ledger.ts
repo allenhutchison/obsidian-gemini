@@ -125,12 +125,17 @@ export class ToolIdLedger {
 	private answer(response: WalkedToolResponse): ResolvedToolResponse {
 		const queue = this.pending.get(response.name);
 		let id: string | null;
-		if (response.id && this.config.isValidId(response.id) && this.declared.has(response.id)) {
-			// The response names a declared call: splice it out of the FIFO so a
-			// later id-less response can't answer the same call twice.
-			const index = queue?.indexOf(response.id) ?? -1;
-			if (index >= 0) queue?.splice(index, 1);
-			id = response.id;
+		// A declared id is only usable while it is still in the FIFO — the queue
+		// encodes "declared and unanswered". Once answered it is spliced out, so
+		// a repeat of the same id falls through to the FIFO fallback instead of
+		// answering the same call a second time.
+		const index =
+			response.id && this.config.isValidId(response.id) && this.declared.has(response.id)
+				? (queue?.indexOf(response.id) ?? -1)
+				: -1;
+		if (index >= 0) {
+			queue?.splice(index, 1);
+			id = response.id as string;
 		} else {
 			// No usable own id: pair with the oldest unanswered call of the same
 			// tool name, mirroring Gemini's positional pairing — or report no
