@@ -844,6 +844,13 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'provider.openai.noModelSelected': 'Hiçbir OpenAI modeli seçilmedi. Ayarlardan bir model seçin.',
 	'provider.unsupportedAttachment':
 		'{provider} yalnızca görsel eklerini destekler; {mimeType} alındı. PDF, ses veya video girdisi için Gemini sağlayıcısına geçin.',
+	'provider.anthropic.noModelSelected': 'Anthropic modeli seçilmedi. Ayarlardan bir model seçin.',
+	'provider.unsupportedAttachmentPdf':
+		'{provider} yalnızca görsel ve PDF eklerini destekler; {mimeType} alındı. Ses veya video girdisi için Gemini sağlayıcısına geçin.',
+	'provider.unsupportedAttachmentInHistory':
+		'{provider} yalnızca görsel eklerini destekler; konuşma geçmişi {mimeType} içeriyor. PDF, ses veya video girdisi için Gemini sağlayıcısına geçin.',
+	'provider.unsupportedAttachmentInHistoryPdf':
+		'{provider} yalnızca görsel ve PDF eklerini destekler; konuşma geçmişi {mimeType} içeriyor. Ses veya video girdisi için Gemini sağlayıcısına geçin.',
 	'provider.gemini.noImageData': 'Yanıtta görsel verisi bulunamadı. Model yalnızca metin döndürmüş olabilir.',
 	'error.unknown': 'Bilinmeyen bir hata oluştu',
 	'error.openaiInvalidKey':

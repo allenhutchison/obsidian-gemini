@@ -849,6 +849,13 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'provider.openai.noModelSelected': 'Nessun modello OpenAI selezionato. Scegli un modello nelle impostazioni.',
 	'provider.unsupportedAttachment':
 		'{provider} supporta solo allegati immagine; ricevuto {mimeType}. Passa al provider Gemini per file PDF, audio o video.',
+	'provider.anthropic.noModelSelected': 'Nessun modello Anthropic selezionato. Scegli un modello nelle impostazioni.',
+	'provider.unsupportedAttachmentPdf':
+		"{provider} supporta solo allegati di tipo immagine e PDF; ricevuto {mimeType}. Passa al provider Gemini per l'input audio o video.",
+	'provider.unsupportedAttachmentInHistory':
+		"{provider} supporta solo allegati di tipo immagine; la cronologia della conversazione contiene {mimeType}. Passa al provider Gemini per l'input PDF, audio o video.",
+	'provider.unsupportedAttachmentInHistoryPdf':
+		"{provider} supporta solo allegati di tipo immagine e PDF; la cronologia della conversazione contiene {mimeType}. Passa al provider Gemini per l'input audio o video.",
 	'provider.gemini.noImageData': 'Nessun dato immagine nella risposta. Il modello potrebbe aver restituito solo testo.',
 	'error.unknown': 'Si è verificato un errore sconosciuto',
 	'error.openaiInvalidKey': 'Chiave API OpenAI non valida. Verifica la chiave API in Impostazioni → Gemini Scribe.',

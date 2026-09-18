@@ -850,6 +850,13 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'provider.openai.noModelSelected': 'Kein OpenAI-Modell ausgewählt. Wählen Sie ein Modell in den Einstellungen.',
 	'provider.unsupportedAttachment':
 		'{provider} unterstützt nur Bildanhänge; {mimeType} empfangen. Wechseln Sie zum Gemini-Provider für PDF-, Audio- oder Video-Eingaben.',
+	'provider.anthropic.noModelSelected': 'Kein Anthropic-Modell ausgewählt. Wähle ein Modell in den Einstellungen.',
+	'provider.unsupportedAttachmentPdf':
+		'{provider} unterstützt nur Bild- und PDF-Anhänge; {mimeType} empfangen. Wechsle zum Gemini-Provider für Audio- oder Videoeingaben.',
+	'provider.unsupportedAttachmentInHistory':
+		'{provider} unterstützt nur Bildanhänge; der Konversationsverlauf enthält {mimeType}. Wechsle zum Gemini-Provider für PDF-, Audio- oder Videoeingaben.',
+	'provider.unsupportedAttachmentInHistoryPdf':
+		'{provider} unterstützt nur Bild- und PDF-Anhänge; der Konversationsverlauf enthält {mimeType}. Wechsle zum Gemini-Provider für Audio- oder Videoeingaben.',
 	'provider.gemini.noImageData':
 		'Keine Bilddaten in der Antwort. Das Modell hat möglicherweise nur Text zurückgegeben.',
 	'error.unknown': 'Ein unbekannter Fehler ist aufgetreten',

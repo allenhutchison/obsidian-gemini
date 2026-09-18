@@ -845,6 +845,13 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'provider.openai.noModelSelected': 'Geen OpenAI-model geselecteerd. Kies een model in de instellingen.',
 	'provider.unsupportedAttachment':
 		'{provider} ondersteunt alleen afbeeldingsbijlagen; {mimeType} ontvangen. Schakel over naar de Gemini-provider voor PDF-, audio- of video-invoer.',
+	'provider.anthropic.noModelSelected': 'Geen Anthropic-model geselecteerd. Kies een model in de instellingen.',
+	'provider.unsupportedAttachmentPdf':
+		'{provider} ondersteunt alleen afbeeldings- en PDF-bijlagen; {mimeType} ontvangen. Schakel over naar de Gemini-provider voor audio- of video-invoer.',
+	'provider.unsupportedAttachmentInHistory':
+		'{provider} ondersteunt alleen afbeeldingsbijlagen; de gespreksgeschiedenis bevat {mimeType}. Schakel over naar de Gemini-provider voor PDF-, audio- of video-invoer.',
+	'provider.unsupportedAttachmentInHistoryPdf':
+		'{provider} ondersteunt alleen afbeeldings- en PDF-bijlagen; de gespreksgeschiedenis bevat {mimeType}. Schakel over naar de Gemini-provider voor audio- of video-invoer.',
 	'provider.gemini.noImageData':
 		'Geen afbeeldingsgegevens in antwoord. Het model heeft mogelijk alleen tekst geretourneerd.',
 	'error.unknown': 'Er is een onbekende fout opgetreden',

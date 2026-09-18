@@ -804,6 +804,13 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'provider.openai.noModelSelected': '未选择 OpenAI 模型。请在设置中选择一个模型。',
 	'provider.unsupportedAttachment':
 		'{provider} 仅支持图片附件；当前接收到的是 {mimeType}。如需输入 PDF、音频或视频，请切换至 Gemini 提供商。',
+	'provider.anthropic.noModelSelected': '未选择 Anthropic 模型。请在设置中选择一个模型。',
+	'provider.unsupportedAttachmentPdf':
+		'{provider} 仅支持图片和 PDF 附件；收到 {mimeType}。如需音频或视频输入，请切换至 Gemini 提供商。',
+	'provider.unsupportedAttachmentInHistory':
+		'{provider} 仅支持图片附件；对话历史中包含 {mimeType}。如需 PDF、音频或视频输入，请切换至 Gemini 提供商。',
+	'provider.unsupportedAttachmentInHistoryPdf':
+		'{provider} 仅支持图片和 PDF 附件；对话历史中包含 {mimeType}。如需音频或视频输入，请切换至 Gemini 提供商。',
 	'provider.gemini.noImageData': '响应中未包含图像数据。模型可能仅返回了文本。',
 	'error.unknown': '发生未知错误',
 	'error.openaiInvalidKey': '无效的 OpenAI API 密钥。请检查 设置 → Gemini Scribe 中的 API 密钥。',

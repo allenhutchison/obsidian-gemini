@@ -844,6 +844,13 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'provider.openai.noModelSelected': 'Модель OpenAI не вибрано. Виберіть модель у налаштуваннях.',
 	'provider.unsupportedAttachment':
 		'{provider} підтримує лише вкладення-зображення; отримано {mimeType}. Перемкніться на постачальника Gemini для роботи з PDF, аудіо або відео.',
+	'provider.anthropic.noModelSelected': 'Не вибрано модель Anthropic. Оберіть модель у налаштуваннях.',
+	'provider.unsupportedAttachmentPdf':
+		'{provider} підтримує лише вкладення зображень та PDF; отримано {mimeType}. Перемкніться на провайдера Gemini для введення аудіо або відео.',
+	'provider.unsupportedAttachmentInHistory':
+		'{provider} підтримує лише вкладення зображень; історія розмови містить {mimeType}. Перемкніться на провайдера Gemini для введення PDF, аудіо або відео.',
+	'provider.unsupportedAttachmentInHistoryPdf':
+		'{provider} підтримує лише вкладення зображень та PDF; історія розмови містить {mimeType}. Перемкніться на провайдера Gemini для введення аудіо або відео.',
 	'provider.gemini.noImageData': 'У відповіді немає даних зображення. Модель могла повернути лише текст.',
 	'error.unknown': 'Виникла невідома помилка',
 	'error.openaiInvalidKey':

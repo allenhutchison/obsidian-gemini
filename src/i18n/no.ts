@@ -838,6 +838,13 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'provider.openai.noModelSelected': 'Ingen OpenAI-modell er valgt. Velg en modell i innstillingene.',
 	'provider.unsupportedAttachment':
 		'{provider} støtter bare bildevedlegg; mottok {mimeType}. Bytt til Gemini-leverandøren for PDF-, lyd- eller videoinndata.',
+	'provider.anthropic.noModelSelected': 'Ingen Anthropic-modell er valgt. Velg en modell i innstillinger.',
+	'provider.unsupportedAttachmentPdf':
+		'{provider} støtter kun bilde- og PDF-vedlegg; mottok {mimeType}. Bytt til Gemini-leverandøren for lyd- eller videoinndata.',
+	'provider.unsupportedAttachmentInHistory':
+		'{provider} støtter kun bildevedlegg; samtalehistorikken inneholder {mimeType}. Bytt til Gemini-leverandøren for PDF-, lyd- eller videoinndata.',
+	'provider.unsupportedAttachmentInHistoryPdf':
+		'{provider} støtter kun bilde- og PDF-vedlegg; samtalehistorikken inneholder {mimeType}. Bytt til Gemini-leverandøren for lyd- eller videoinndata.',
 	'provider.gemini.noImageData': 'Ingen bildedata i svaret. Modellen kan ha returnert bare tekst.',
 	'error.unknown': 'En ukjent feil oppstod',
 	'error.openaiInvalidKey': 'Ugyldig OpenAI API-nøkkel. Vennligst sjekk API-nøkkelen i Innstillinger → Gemini Scribe.',

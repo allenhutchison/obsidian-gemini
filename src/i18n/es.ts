@@ -849,6 +849,14 @@ export const es: Partial<Record<TranslationKey, string>> = {
 	'provider.openai.noModelSelected': 'No se ha seleccionado ningún modelo de OpenAI. Elige un modelo en los ajustes.',
 	'provider.unsupportedAttachment':
 		'{provider} solo admite archivos adjuntos de imagen; se recibió {mimeType}. Cambia al proveedor Gemini para entradas de PDF, audio o vídeo.',
+	'provider.anthropic.noModelSelected':
+		'No se ha seleccionado ningún modelo de Anthropic. Elige un modelo en los ajustes.',
+	'provider.unsupportedAttachmentPdf':
+		'{provider} solo admite archivos adjuntos de imagen y PDF; se recibió {mimeType}. Cambia al proveedor Gemini para entradas de audio o video.',
+	'provider.unsupportedAttachmentInHistory':
+		'{provider} solo admite archivos adjuntos de imagen; el historial de conversación contiene {mimeType}. Cambia al proveedor Gemini para entradas de PDF, audio o video.',
+	'provider.unsupportedAttachmentInHistoryPdf':
+		'{provider} solo admite archivos adjuntos de imagen y PDF; el historial de conversación contiene {mimeType}. Cambia al proveedor Gemini para entradas de audio o video.',
 	'provider.gemini.noImageData':
 		'No hay datos de imagen en la respuesta. Es posible que el modelo solo haya devuelto texto.',
 	'error.unknown': 'Ocurrió un error desconocido',

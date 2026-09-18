@@ -805,6 +805,13 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'provider.openai.noModelSelected': '尚未選擇 OpenAI 模型。請至設定中選擇模型。',
 	'provider.unsupportedAttachment':
 		'{provider} 僅支援圖片附件；接收到的格式為 {mimeType}。如需輸入 PDF、音訊或影片，請切換至 Gemini 提供者。',
+	'provider.anthropic.noModelSelected': '未選取 Anthropic 模型。請在設定中選擇模型。',
+	'provider.unsupportedAttachmentPdf':
+		'{provider} 僅支援圖片與 PDF 附件；收到 {mimeType}。請切換至 Gemini 提供者以使用音訊或影片輸入。',
+	'provider.unsupportedAttachmentInHistory':
+		'{provider} 僅支援圖片附件；對話記錄包含 {mimeType}。請切換至 Gemini 提供者以使用 PDF、音訊或影片輸入。',
+	'provider.unsupportedAttachmentInHistoryPdf':
+		'{provider} 僅支援圖片與 PDF 附件；對話記錄包含 {mimeType}。請切換至 Gemini 提供者以使用音訊或影片輸入。',
 	'provider.gemini.noImageData': '回應中沒有圖片資料。模型可能僅回傳了文字。',
 	'error.unknown': '發生未知錯誤',
 	'error.openaiInvalidKey': '無效的 OpenAI API 金鑰。請至 設定 → Gemini Scribe 檢查 API 金鑰。',

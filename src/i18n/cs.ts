@@ -840,6 +840,13 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'provider.openai.noModelSelected': 'Není vybrán žádný model OpenAI. Vyberte model v nastavení.',
 	'provider.unsupportedAttachment':
 		'{provider} podporuje pouze obrázkové přílohy; byl přijat typ {mimeType}. Pro vstup ve formátu PDF, zvuku nebo videa přepněte na poskytovatele Gemini.',
+	'provider.anthropic.noModelSelected': 'Není vybrán žádný model Anthropic. Vyberte model v nastavení.',
+	'provider.unsupportedAttachmentPdf':
+		'{provider} podporuje pouze obrázky a přílohy PDF; přijato {mimeType}. Pro audio nebo video vstup přepněte na poskytovatele Gemini.',
+	'provider.unsupportedAttachmentInHistory':
+		'{provider} podporuje pouze obrázkové přílohy; historie konverzace obsahuje {mimeType}. Pro vstup PDF, audia nebo videa přepněte na poskytovatele Gemini.',
+	'provider.unsupportedAttachmentInHistoryPdf':
+		'{provider} podporuje pouze obrázky a přílohy PDF; historie konverzace obsahuje {mimeType}. Pro audio nebo video vstup přepněte na poskytovatele Gemini.',
 	'provider.gemini.noImageData': 'V odpovědi nejsou žádná obrazová data. Model možná vrátil pouze text.',
 	'error.unknown': 'Došlo k neznámé chybě',
 	'error.openaiInvalidKey': 'Neplatný API klíč OpenAI. Zkontrolujte prosím API klíč v Nastavení → Gemini Scribe.',
