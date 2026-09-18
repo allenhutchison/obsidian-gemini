@@ -295,9 +295,10 @@ describe('ObsidianGeminiSettings', () => {
 				previousHistoryFolder: string;
 				lastInitAttemptFingerprint: string | null;
 			};
-			// Simulate the failed onload attempt recording its eligibility.
+			// Simulate the failed onload attempt recording its eligibility via
+			// the real helper, so the test tracks the current format.
 			internal.isGeminiInitialized = false;
-			internal.lastInitAttemptFingerprint = 'gemini:keyless-blocked';
+			internal.recordInitAttemptFingerprint();
 
 			// Unrelated save with the credential still missing — no retry.
 			await noKey.plugin.saveSettings();
@@ -321,11 +322,12 @@ describe('ObsidianGeminiSettings', () => {
 			const internal = plugin as unknown as {
 				isGeminiInitialized: boolean;
 				lastInitAttemptFingerprint: string | null;
+				recordInitAttemptFingerprint(): void;
 			};
-			// Simulate the failed onload attempt recording its eligibility, the
-			// same string the fingerprint helper produces for these settings.
+			// Simulate the failed onload attempt recording its eligibility via
+			// the real helper.
 			internal.isGeminiInitialized = false;
-			internal.lastInitAttemptFingerprint = 'ollama:none-required:http://localhost:11434';
+			internal.recordInitAttemptFingerprint();
 
 			await plugin.saveSettings();
 			expect(setup).not.toHaveBeenCalled();
