@@ -830,6 +830,13 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'provider.openai.noModelSelected': '선택된 OpenAI 모델이 없습니다. 설정에서 모델을 선택하세요.',
 	'provider.unsupportedAttachment':
 		'{provider}에서는 이미지 첨부 파일만 지원합니다({mimeType} 수신됨). PDF, 오디오 또는 비디오를 입력하려면 Gemini 제공자로 전환하세요.',
+	'provider.anthropic.noModelSelected': '선택된 Anthropic 모델이 없습니다. 설정에서 모델을 선택하세요.',
+	'provider.unsupportedAttachmentPdf':
+		'{provider}에서는 이미지 및 PDF 첨부 파일만 지원합니다. {mimeType}이(가) 수신되었습니다. 오디오 또는 비디오 입력을 사용하려면 Gemini 제공자로 전환하세요.',
+	'provider.unsupportedAttachmentInHistory':
+		'{provider}에서는 이미지 첨부 파일만 지원합니다. 대화 기록에 {mimeType}이(가) 포함되어 있습니다. PDF, 오디오 또는 비디오 입력을 사용하려면 Gemini 제공자로 전환하세요.',
+	'provider.unsupportedAttachmentInHistoryPdf':
+		'{provider}에서는 이미지 및 PDF 첨부 파일만 지원합니다. 대화 기록에 {mimeType}이(가) 포함되어 있습니다. 오디오 또는 비디오 입력을 사용하려면 Gemini 제공자로 전환하세요.',
 	'provider.gemini.noImageData': '응답에 이미지 데이터가 없습니다. 모델이 텍스트만 반환했을 수 있습니다.',
 	'error.unknown': '알 수 없는 오류가 발생했습니다',
 	'error.openaiInvalidKey': '올바르지 않은 OpenAI API 키입니다. 설정 → Gemini Scribe에서 API 키를 확인해 주세요.',

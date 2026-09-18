@@ -840,6 +840,13 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'provider.openai.noModelSelected': 'Chưa chọn mô hình OpenAI nào. Hãy chọn một mô hình trong phần cài đặt.',
 	'provider.unsupportedAttachment':
 		'{provider} chỉ hỗ trợ tệp đính kèm hình ảnh; đã nhận {mimeType}. Chuyển sang nhà cung cấp Gemini để dùng đầu vào là PDF, âm thanh hoặc video.',
+	'provider.anthropic.noModelSelected': 'Chưa chọn mô hình Anthropic nào. Hãy chọn một mô hình trong cài đặt.',
+	'provider.unsupportedAttachmentPdf':
+		'{provider} chỉ hỗ trợ tệp đính kèm hình ảnh và PDF; đã nhận {mimeType}. Hãy chuyển sang nhà cung cấp Gemini để nhập âm thanh hoặc video.',
+	'provider.unsupportedAttachmentInHistory':
+		'{provider} chỉ hỗ trợ tệp đính kèm hình ảnh; lịch sử cuộc trò chuyện chứa {mimeType}. Hãy chuyển sang nhà cung cấp Gemini để nhập PDF, âm thanh hoặc video.',
+	'provider.unsupportedAttachmentInHistoryPdf':
+		'{provider} chỉ hỗ trợ tệp đính kèm hình ảnh và PDF; lịch sử cuộc trò chuyện chứa {mimeType}. Hãy chuyển sang nhà cung cấp Gemini để nhập âm thanh hoặc video.',
 	'provider.gemini.noImageData': 'Không có dữ liệu hình ảnh trong phản hồi. Mô hình có thể chỉ trả về văn bản.',
 	'error.unknown': 'Đã xảy ra lỗi không xác định',
 	'error.openaiInvalidKey': 'API key OpenAI không hợp lệ. Vui lòng kiểm tra API key trong Cài đặt → Gemini Scribe.',

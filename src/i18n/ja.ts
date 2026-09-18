@@ -841,6 +841,13 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'provider.openai.noModelSelected': 'OpenAIモデルが選択されていません。設定でモデルを選択してください。',
 	'provider.unsupportedAttachment':
 		'{provider}は画像の添付のみに対応しています（受信した形式: {mimeType}）。PDF、音声、動画を入力するにはGeminiプロバイダーに切り替えてください。',
+	'provider.anthropic.noModelSelected': 'Anthropicモデルが選択されていません。設定でモデルを選択してください。',
+	'provider.unsupportedAttachmentPdf':
+		'{provider}は画像とPDFの添付のみをサポートしています。{mimeType}を受信しました。音声や動画を入力するにはGeminiプロバイダーに切り替えてください。',
+	'provider.unsupportedAttachmentInHistory':
+		'{provider}は画像の添付のみをサポートしています。会話履歴に{mimeType}が含まれています。PDF、音声、動画を入力するにはGeminiプロバイダーに切り替えてください。',
+	'provider.unsupportedAttachmentInHistoryPdf':
+		'{provider}は画像とPDFの添付のみをサポートしています。会話履歴に{mimeType}が含まれています。音声や動画を入力するにはGeminiプロバイダーに切り替えてください。',
 	'provider.gemini.noImageData': '応答に画像データが含まれていません。モデルがテキストのみを返した可能性があります。',
 	'error.unknown': '不明なエラーが発生しました',
 	'error.openaiInvalidKey': '無効なOpenAI APIキーです。設定 → Gemini Scribe でAPIキーを確認してください。',

@@ -846,6 +846,13 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'provider.openai.noModelSelected': 'Модель OpenAI не выбрана. Выберите модель в настройках.',
 	'provider.unsupportedAttachment':
 		'{provider} поддерживает только вложения изображений; получено: {mimeType}. Переключитесь на провайдера Gemini для работы с PDF, аудио или видео.',
+	'provider.anthropic.noModelSelected': 'Модель Anthropic не выбрана. Выберите модель в настройках.',
+	'provider.unsupportedAttachmentPdf':
+		'{provider} поддерживает только вложения изображений и PDF; получено {mimeType}. Переключитесь на провайдер Gemini для работы с аудио или видео.',
+	'provider.unsupportedAttachmentInHistory':
+		'{provider} поддерживает только вложения изображений; история беседы содержит {mimeType}. Переключитесь на провайдер Gemini для работы с PDF, аудио или видео.',
+	'provider.unsupportedAttachmentInHistoryPdf':
+		'{provider} поддерживает только вложения изображений и PDF; история беседы содержит {mimeType}. Переключитесь на провайдер Gemini для работы с аудио или видео.',
 	'provider.gemini.noImageData': 'В ответе нет данных изображения. Возможно, модель вернула только текст.',
 	'error.unknown': 'Произошла неизвестная ошибка',
 	'error.openaiInvalidKey':

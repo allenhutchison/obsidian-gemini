@@ -847,6 +847,13 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'provider.openai.noModelSelected': 'Nie wybrano modelu OpenAI. Wybierz model w ustawieniach.',
 	'provider.unsupportedAttachment':
 		'{provider} obsługuje tylko załączniki w postaci obrazów; odebrano {mimeType}. Przełącz na dostawcę Gemini, aby używać plików PDF, audio lub wideo.',
+	'provider.anthropic.noModelSelected': 'Nie wybrano modelu Anthropic. Wybierz model w ustawieniach.',
+	'provider.unsupportedAttachmentPdf':
+		'{provider} obsługuje tylko załączniki w postaci obrazów i plików PDF; otrzymano {mimeType}. Przełącz się na dostawcę Gemini, aby przesyłać pliki audio lub wideo.',
+	'provider.unsupportedAttachmentInHistory':
+		'{provider} obsługuje tylko załączniki w postaci obrazów; historia rozmowy zawiera {mimeType}. Przełącz się na dostawcę Gemini, aby przesyłać pliki PDF, audio lub wideo.',
+	'provider.unsupportedAttachmentInHistoryPdf':
+		'{provider} obsługuje tylko załączniki w postaci obrazów i plików PDF; historia rozmowy zawiera {mimeType}. Przełącz się na dostawcę Gemini, aby przesyłać pliki audio lub wideo.',
 	'provider.gemini.noImageData': 'Brak danych obrazu w odpowiedzi. Model mógł zwrócić tylko tekst.',
 	'error.unknown': 'Wystąpił nieznany błąd',
 	'error.openaiInvalidKey': 'Nieprawidłowy klucz API OpenAI. Sprawdź klucz API w Ustawienia → Gemini Scribe.',

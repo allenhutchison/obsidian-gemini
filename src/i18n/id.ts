@@ -837,6 +837,13 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'provider.openai.noModelSelected': 'Tidak ada model OpenAI yang dipilih. Pilih model di pengaturan.',
 	'provider.unsupportedAttachment':
 		'{provider} hanya mendukung lampiran gambar; menerima {mimeType}. Beralih ke penyedia Gemini untuk input PDF, audio, atau video.',
+	'provider.anthropic.noModelSelected': 'Tidak ada model Anthropic yang dipilih. Pilih model di pengaturan.',
+	'provider.unsupportedAttachmentPdf':
+		'{provider} hanya mendukung lampiran gambar dan PDF; menerima {mimeType}. Beralih ke penyedia Gemini untuk input audio atau video.',
+	'provider.unsupportedAttachmentInHistory':
+		'{provider} hanya mendukung lampiran gambar; riwayat percakapan berisi {mimeType}. Beralih ke penyedia Gemini untuk input PDF, audio, atau video.',
+	'provider.unsupportedAttachmentInHistoryPdf':
+		'{provider} hanya mendukung lampiran gambar dan PDF; riwayat percakapan berisi {mimeType}. Beralih ke penyedia Gemini untuk input audio atau video.',
 	'provider.gemini.noImageData': 'Tidak ada data gambar dalam respons. Model mungkin hanya mengembalikan teks.',
 	'error.unknown': 'Terjadi kesalahan yang tidak diketahui',
 	'error.openaiInvalidKey': 'Kunci API OpenAI tidak valid. Silakan periksa kunci API di Pengaturan → Gemini Scribe.',

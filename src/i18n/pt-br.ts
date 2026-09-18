@@ -839,6 +839,13 @@ export const ptBR: Partial<Record<TranslationKey, string>> = {
 	'provider.openai.noModelSelected': 'Nenhum modelo da OpenAI selecionado. Escolha um modelo nas configurações.',
 	'provider.unsupportedAttachment':
 		'{provider} suporta apenas anexos de imagem; {mimeType} recebido. Alterne para o provedor Gemini para entrada de PDF, áudio ou vídeo.',
+	'provider.anthropic.noModelSelected': 'Nenhum modelo da Anthropic selecionado. Escolha um modelo nas configurações.',
+	'provider.unsupportedAttachmentPdf':
+		'{provider} suporta apenas anexos de imagem e PDF; recebeu {mimeType}. Alterne para o provedor Gemini para entrada de áudio ou vídeo.',
+	'provider.unsupportedAttachmentInHistory':
+		'{provider} suporta apenas anexos de imagem; o histórico da conversa contém {mimeType}. Alterne para o provedor Gemini para entrada de PDF, áudio ou vídeo.',
+	'provider.unsupportedAttachmentInHistoryPdf':
+		'{provider} suporta apenas anexos de imagem e PDF; o histórico da conversa contém {mimeType}. Alterne para o provedor Gemini para entrada de áudio ou vídeo.',
 	'provider.gemini.noImageData': 'Nenhum dado de imagem na resposta. O modelo pode ter retornado apenas texto.',
 	'error.unknown': 'Ocorreu um erro desconhecido',
 	'error.openaiInvalidKey':
