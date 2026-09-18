@@ -79,7 +79,16 @@ function createMockPlugin(): any {
 		logger: { log: vi.fn(), debug: vi.fn(), error: vi.fn(), warn: vi.fn() },
 		settings: {
 			historyFolder: 'gemini-scribe',
-			chatModelName: 'plugin-default-model',
+			features: {
+				chat: { provider: 'gemini', model: 'plugin-default-model' },
+				summary: { provider: 'gemini', model: '' },
+				completions: { provider: 'gemini', model: '' },
+				rewrite: { provider: 'gemini', model: '' },
+				webSearch: { provider: 'gemini', model: '' },
+				deepResearch: { provider: 'gemini', model: '' },
+				rag: { provider: 'gemini', model: '' },
+				imageGen: { provider: 'gemini', model: '' },
+			},
 		},
 		sessionManager: {
 			releaseSession: vi.fn(),

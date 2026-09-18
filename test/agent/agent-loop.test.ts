@@ -58,7 +58,16 @@ function buildPlugin(overrides: any = {}) {
 	const logger = { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn(), ...overrides.logger };
 
 	const settings = {
-		chatModelName: 'gemini-test',
+		features: {
+			chat: { provider: 'gemini', model: 'gemini-test' },
+			summary: { provider: 'gemini', model: '' },
+			completions: { provider: 'gemini', model: '' },
+			rewrite: { provider: 'gemini', model: '' },
+			webSearch: { provider: 'gemini', model: '' },
+			deepResearch: { provider: 'gemini', model: '' },
+			rag: { provider: 'gemini', model: '' },
+			imageGen: { provider: 'gemini', model: '' },
+		},
 		...overrides.settings,
 	};
 

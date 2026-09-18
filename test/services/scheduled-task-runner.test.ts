@@ -68,7 +68,16 @@ function createMockPlugin(vaultFiles: Record<string, string> = {}): any {
 	return {
 		logger: { log: vi.fn(), debug: vi.fn(), error: vi.fn(), warn: vi.fn() },
 		settings: {
-			chatModelName: 'gemini-2.0-flash',
+			features: {
+				chat: { provider: 'gemini', model: 'gemini-2.0-flash' },
+				summary: { provider: 'gemini', model: '' },
+				completions: { provider: 'gemini', model: '' },
+				rewrite: { provider: 'gemini', model: '' },
+				webSearch: { provider: 'gemini', model: '' },
+				deepResearch: { provider: 'gemini', model: '' },
+				rag: { provider: 'gemini', model: '' },
+				imageGen: { provider: 'gemini', model: '' },
+			},
 		},
 		sessionManager: {
 			releaseSession: vi.fn(),
@@ -274,7 +283,7 @@ describe('ScheduledTaskRunner', () => {
 
 	it('uses task model override instead of plugin chat model', async () => {
 		const plugin = createMockPlugin();
-		plugin.settings.chatModelName = 'plugin-default-model';
+		plugin.settings.features.chat.model = 'plugin-default-model';
 		const task = makeTask({ model: 'task-override-model' });
 		const runner = new ScheduledTaskRunner(plugin, task);
 
@@ -283,7 +292,7 @@ describe('ScheduledTaskRunner', () => {
 		const request = ((ModelClientFactory.createChatModel as Mock).mock.results[0].value.generateModelResponse as Mock)
 			.mock.calls[0][0];
 		expect(request.model).toBe('task-override-model');
-		expect(request.model).not.toBe(plugin.settings.chatModelName);
+		expect(request.model).not.toBe(plugin.settings.features.chat.model);
 	});
 
 	it('generates a unique path when the resolved output file already exists', async () => {

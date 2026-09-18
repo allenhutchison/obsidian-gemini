@@ -130,7 +130,16 @@ function createMockPlugin(opts: { existingPaths?: string[]; createBehaviour?: Va
 	return {
 		logger: { log: vi.fn(), debug: vi.fn(), error: vi.fn(), warn: vi.fn() },
 		settings: {
-			chatModelName: 'gemini-2.0-flash',
+			features: {
+				chat: { provider: 'gemini', model: 'gemini-2.0-flash' },
+				summary: { provider: 'gemini', model: '' },
+				completions: { provider: 'gemini', model: '' },
+				rewrite: { provider: 'gemini', model: '' },
+				webSearch: { provider: 'gemini', model: '' },
+				deepResearch: { provider: 'gemini', model: '' },
+				rag: { provider: 'gemini', model: '' },
+				imageGen: { provider: 'gemini', model: '' },
+			},
 			summaryFrontmatterKey: 'summary',
 		},
 		sessionManager: {
