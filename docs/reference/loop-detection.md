@@ -37,6 +37,12 @@ The AI will receive an error message:
 
 > Execution loop detected: read_file has been called 3 times with the same parameters in the last 30 seconds. Please try a different approach.
 
+The first time this fires in a session, you'll also see a transient notice — "The agent is
+repeating the same '`<tool>`' call — it may be stuck." — so you learn the agent is looping before
+a turn actually aborts. This notice fires once per session; later fires in the same session stay
+silent until the per-turn abort below kicks in. Notice eligibility resets when the session is
+created or reloaded, so reopening the same session can show the notice again on its next loop.
+
 ## Per-Turn Abort
 
 In addition to the per-tool detection above, the agent loop counts how many times loop detection fires within a single turn. If it fires three or more times in one turn (the model keeps trying near-identical calls after being blocked), the entire turn aborts cleanly with a notice: "The agent kept retrying the same tool call (loop detector fired N times). Stopping this turn to prevent a runaway loop. Try rephrasing your request or starting a new session." This prevents a model that is genuinely stuck from spinning through every tool variation. The abort is per-turn — the next user message starts fresh.
