@@ -40,7 +40,8 @@ The AI will receive an error message:
 The first time this fires in a session, you'll also see a transient notice — "The agent is
 repeating the same '`<tool>`' call — it may be stuck." — so you learn the agent is looping before
 a turn actually aborts. This notice fires once per session; later fires in the same session stay
-silent until the per-turn abort below kicks in.
+silent until the per-turn abort below kicks in. Notice eligibility resets when the session is
+created or reloaded, so reopening the same session can show the notice again on its next loop.
 
 ## Per-Turn Abort
 
