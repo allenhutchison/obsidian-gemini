@@ -156,4 +156,13 @@ describe('OpenAIModelsService', () => {
 
 		expect(afterFailure).toEqual([]);
 	});
+
+	it('returns an empty list when /models returns an unexpected shape', async () => {
+		mockedRequestUrl.mockResolvedValue({ status: 200, json: { notData: [] } });
+
+		const svc = new OpenAIModelsService(buildPlugin());
+
+		expect(await svc.getModels()).toEqual([]);
+		expect(svc.lastProbe).toBe('unreachable');
+	});
 });

@@ -2,6 +2,7 @@ import { requestUrl } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { GeminiModel, ModelRole } from '../models';
 import { DEFAULT_OPENAI_BASE_URL } from '../api/providers/openai/config';
+import { CachedModelCatalog, joinBaseUrl, type CatalogEndpoint } from './remote-model-catalog';
 
 interface OpenAIModelMetadata {
 	contextWindow: number;
@@ -71,6 +72,11 @@ function isOpenAIHostedEndpoint(baseUrl: string): boolean {
 	}
 }
 
+interface OpenAIEndpoint extends CatalogEndpoint {
+	baseUrl: string;
+	apiKey: string;
+}
+
 /**
  * Fetches the list of models available from an OpenAI-compatible `/models`
  * endpoint (api.openai.com or a custom base URL — LM Studio, MLX, ...) and
@@ -84,74 +90,41 @@ function isOpenAIHostedEndpoint(baseUrl: string): boolean {
  */
 export class OpenAIModelsService {
 	private plugin: ObsidianGemini;
-	private cachedModels: GeminiModel[] | null = null;
-	private lastBaseUrl: string | null = null;
-	private lastApiKey: string | null = null;
+	private readonly catalog: CachedModelCatalog<OpenAIEndpoint>;
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
+		this.catalog = new CachedModelCatalog({
+			logger: () => this.plugin.logger,
+			logPrefix: '[OpenAIModelsService]',
+			endpoint: () => {
+				const baseUrl = this.plugin.settings.openaiBaseUrl || DEFAULT_OPENAI_BASE_URL;
+				const apiKey = this.plugin.openaiApiKey;
+				// Identity spans the key as well as the base URL: unlike Ollama's
+				// unauthenticated daemon, a changed key must not keep serving the
+				// previous key's catalog. JSON-encoded rather than concatenated so no
+				// base URL can forge the boundary between the two halves.
+				return { key: JSON.stringify([baseUrl, apiKey]), label: baseUrl, baseUrl, apiKey };
+			},
+			load: ({ baseUrl, apiKey }) => this.fetchModels(baseUrl, apiKey),
+		});
+	}
+
+	/**
+	 * Outcome of the most recent /models fetch; `null` until the first fetch or
+	 * after `invalidate()`. Lets the settings UI tell "not checked yet" from a
+	 * failed refresh, since `getModels` never rejects.
+	 */
+	get lastProbe(): 'reachable' | 'unreachable' | null {
+		return this.catalog.lastProbe;
 	}
 
 	/**
 	 * Returns the cached model list if available, otherwise fetches fresh.
 	 * Cache is invalidated when the base URL or API key changes.
 	 */
-	/**
-	 * Outcome of the most recent /models fetch; `null` until the first fetch or
-	 * after `invalidate()`. Lets the settings UI tell "not checked yet" from a
-	 * failed refresh, since `getModels` never rejects.
-	 */
-	private lastProbeResult: 'reachable' | 'unreachable' | null = null;
-
-	get lastProbe(): 'reachable' | 'unreachable' | null {
-		return this.lastProbeResult;
-	}
-
 	async getModels(forceRefresh = false): Promise<GeminiModel[]> {
-		const baseUrl = this.plugin.settings.openaiBaseUrl || DEFAULT_OPENAI_BASE_URL;
-		const apiKey = this.plugin.openaiApiKey;
-		const cacheMatches = this.lastBaseUrl === baseUrl && this.lastApiKey === apiKey;
-		if (!forceRefresh && this.cachedModels && cacheMatches) {
-			return this.cachedModels;
-		}
-
-		try {
-			const url = `${baseUrl.replace(/\/$/, '')}/models`;
-			const response = await requestUrl({
-				url,
-				method: 'GET',
-				headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : undefined,
-				throw: false,
-			});
-
-			if (response.status !== 200) {
-				throw new Error(`OpenAI /models returned HTTP ${response.status}`);
-			}
-
-			const data = response.json as OpenAIModelListResponse;
-			if (!data || !Array.isArray(data.data)) {
-				throw new Error('Invalid /models response shape');
-			}
-
-			const restrictToSupported = isOpenAIHostedEndpoint(baseUrl);
-			this.cachedModels = data.data
-				.filter((m) => !restrictToSupported || SUPPORTED_OPENAI_HOSTED_MODELS.has(m.id))
-				.map((m) => this.toGeminiModel(m.id));
-			this.lastBaseUrl = baseUrl;
-			this.lastApiKey = apiKey;
-			this.lastProbeResult = 'reachable';
-			this.plugin.logger.log(`[OpenAIModelsService] Loaded ${this.cachedModels.length} models from ${baseUrl}`);
-			return this.cachedModels;
-		} catch (error) {
-			this.lastProbeResult = 'unreachable';
-			this.plugin.logger.warn('[OpenAIModelsService] Failed to fetch model list:', error);
-			// Don't poison the cache with an empty array — that would stick until the
-			// user manually clicks "Refresh" even after the server comes back. Only
-			// reuse the cache when it matches the active base URL/key; falling back to
-			// another endpoint's models would let the dropdown surface entries that
-			// don't exist there and let the user save invalid selections.
-			return cacheMatches ? (this.cachedModels ?? []) : [];
-		}
+		return this.catalog.get(forceRefresh);
 	}
 
 	/**
@@ -159,10 +132,36 @@ export class OpenAIModelsService {
 	 * clicks "Refresh").
 	 */
 	invalidate(): void {
-		this.lastProbeResult = null;
-		this.cachedModels = null;
-		this.lastBaseUrl = null;
-		this.lastApiKey = null;
+		this.catalog.reset();
+	}
+
+	/**
+	 * Fetches and maps the endpoint's `/models` catalog, restricting to
+	 * {@link SUPPORTED_OPENAI_HOSTED_MODELS} only on api.openai.com. Throws on an
+	 * unreachable endpoint, a non-200 status, or an unexpected response shape; the
+	 * shared catalog turns any of those into the identity-aware cache fallback.
+	 */
+	private async fetchModels(baseUrl: string, apiKey: string): Promise<GeminiModel[]> {
+		const response = await requestUrl({
+			url: joinBaseUrl(baseUrl, '/models'),
+			method: 'GET',
+			headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : undefined,
+			throw: false,
+		});
+
+		if (response.status !== 200) {
+			throw new Error(`OpenAI /models returned HTTP ${response.status}`);
+		}
+
+		const data = response.json as OpenAIModelListResponse;
+		if (!data || !Array.isArray(data.data)) {
+			throw new Error('Invalid /models response shape');
+		}
+
+		const restrictToSupported = isOpenAIHostedEndpoint(baseUrl);
+		return data.data
+			.filter((m) => !restrictToSupported || SUPPORTED_OPENAI_HOSTED_MODELS.has(m.id))
+			.map((m) => this.toGeminiModel(m.id));
 	}
 
 	private toGeminiModel(id: string): GeminiModel {
