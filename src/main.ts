@@ -218,6 +218,11 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	// the actual cause (e.g. "model not pulled") instead of the ephemeral Notice
 	// the user may have missed. Cleared on a subsequent successful init.
 	private lastInitError: string | null = null;
+	// Whether the deferred onLayoutReady() callback is (or will be) registered.
+	// The registration is skipped when onload's setup() fails and re-attempted
+	// when a later settings save recovers initialization, so a double
+	// registration must not happen.
+	private layoutReadyHookRegistered = false;
 
 	async onload() {
 		// Initialize logger early so it's available during setup
@@ -257,6 +262,26 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		// provider cards and tool-permission rows reflect the loaded state.
 		this.settingTab.update();
 
+		// Only run the deferred initialization after a successful setup. When
+		// setup() fails (e.g. an exception mid-phase), FolderInitializer may not
+		// exist yet, so onLayoutReady()'s folder pass would no-op — and services
+		// constructed before the failure (ScheduledTaskManager) would initialize
+		// against folders that were never created. The recovery path is a
+		// settings save: saveSettings() re-runs setup() (needsInit) and re-runs
+		// this registration via registerLayoutReadyHook() on success.
+		this.registerLayoutReadyHook();
+	}
+
+	/**
+	 * Register the deferred post-layout initialization exactly once.
+	 *
+	 * `workspace.onLayoutReady` fires immediately when layout is already ready,
+	 * so re-invoking after recovery is safe; the flag only guards against
+	 * registering twice while layout is still pending.
+	 */
+	private registerLayoutReadyHook(): void {
+		if (this.layoutReadyHookRegistered || !this.isGeminiInitialized) return;
+		this.layoutReadyHookRegistered = true;
 		this.app.workspace.onLayoutReady(() => this.lifecycle.onLayoutReady());
 	}
 
@@ -592,6 +617,11 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 			try {
 				await this.lifecycle.setup();
 				this.markInitialized();
+				// Recovered initialization: the onload registration was skipped
+				// when setup() first failed, so run the deferred post-layout init
+				// now (no-op if layout is already ready — onLayoutReady fires
+				// immediately — and registered for later otherwise).
+				this.registerLayoutReadyHook();
 
 				// If this is the first successful initialization, we may need to
 				// re-register UI components to make them functional
