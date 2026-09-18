@@ -692,6 +692,50 @@ describe('LifecycleService', () => {
 			expect(scheduledMgr.initialize).toHaveBeenCalledWith({ refresh: true });
 			expect(scheduledMgr.start).toHaveBeenCalled();
 		});
+
+		it('creates plugin folders before refreshing the managers on re-init (issue #1540)', async () => {
+			await lifecycle.setup();
+
+			// Simulate re-init after a historyFolder rename: layout is ready, so
+			// the manager refresh block runs against the renamed folder.
+			mockPlugin.isGeminiInitialized = true;
+			mockPlugin.app.workspace.layoutReady = true;
+
+			const mockCancel = vi.fn();
+			const mockDrain = vi.fn().mockResolvedValue(undefined);
+			mockPlugin.backgroundTaskManager = {
+				getActiveTasks: vi.fn().mockReturnValue([]),
+				cancel: mockCancel,
+				drain: mockDrain,
+				destroy: vi.fn(),
+				runningCount: 0,
+			};
+
+			const scheduledMgr = mockPlugin.scheduledTaskManager;
+			const hookMgr = mockPlugin.hookManager;
+
+			await lifecycle.setup();
+
+			// initializeReinitializableServices constructs a fresh FolderInitializer
+			// instance on every setup(), so read it off the plugin afterwards.
+			const folderInit = mockPlugin.folderInitializer;
+
+			// FolderInitializer must have run before either manager initialize —
+			// the managers read their (renamed) folders during initialize() and
+			// no longer create the folders themselves.
+			expect(folderInit.initializeAll).toHaveBeenCalled();
+			const foldersIdx = folderInit.initializeAll.mock.invocationCallOrder[0];
+			expect(foldersIdx).toBeLessThan(scheduledMgr.initialize.mock.invocationCallOrder[0]);
+			expect(foldersIdx).toBeLessThan(hookMgr.initialize.mock.invocationCallOrder[0]);
+		});
+
+		it('does not create folders in setup when layout is not ready (first-load path)', async () => {
+			await lifecycle.setup();
+
+			// First load: layoutReady false — folder creation is deferred to
+			// onLayoutReady(), which runs it before the manager initializes.
+			expect(mockPlugin.folderInitializer.initializeAll).not.toHaveBeenCalled();
+		});
 	});
 
 	describe('setup – hook manager refresh on re-init', () => {

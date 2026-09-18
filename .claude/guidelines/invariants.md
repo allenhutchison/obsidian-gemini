@@ -99,10 +99,12 @@ otherwise).
   hand-written twin. Two folders are deliberately not eager, and the module says so in one place:
   `Hooks/` (created by `HookManager.initialize`, gated on `settings.hooksEnabled`, so hooks-off
   vaults get no empty folder) and `History/` (read-only v3.x legacy, never created).
-  `ScheduledTaskManager.initialize` still creates `Scheduled-Tasks/` + `Runs/` alongside
-  `FolderInitializer` **on purpose**: on a settings change `LifecycleService.setup()` refreshes the
-  manager _before_ `main.ts` re-runs `initializePluginFolders()`, so a renamed `historyFolder` would
-  otherwise have no folder for the duration of that call.
+  `FolderInitializer` is the **single creator** of `Scheduled-Tasks/` + `Runs/` (#1540):
+  `LifecycleService.setup()` runs `initializePluginFolders()` _before_ refreshing the managers on a
+  re-init (a first load gets the guarantee from `onLayoutReady()` running the same pass before
+  `scheduledTaskManager.initialize()`), so `ScheduledTaskManager.initialize` reads its folders
+  instead of creating them. `HookManager` keeps its own `ensureFolderExists` pair because `Hooks/`
+  is not eager — the manager is the only code that knows `hooksEnabled`.
 
 ## Tool execution ordering
 
