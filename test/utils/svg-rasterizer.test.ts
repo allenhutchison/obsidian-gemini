@@ -4,7 +4,6 @@ import {
 	rasterizeSvg,
 	SvgTooLargeError,
 	computeScaledDimensions,
-	isSvgExtension,
 	SVG_RASTER_MAX_EDGE,
 } from '../../src/utils/svg-rasterizer';
 
@@ -88,24 +87,6 @@ afterEach(() => {
 	vi.unstubAllGlobals();
 	URL.createObjectURL = origCreate;
 	URL.revokeObjectURL = origRevoke;
-});
-
-// --- isSvgExtension ------------------------------------------------------------
-
-describe('isSvgExtension', () => {
-	it('recognizes svg and svgz with and without a dot, case-insensitively', () => {
-		expect(isSvgExtension('svg')).toBe(true);
-		expect(isSvgExtension('.svg')).toBe(true);
-		expect(isSvgExtension('SVG')).toBe(true);
-		expect(isSvgExtension('svgz')).toBe(true);
-		expect(isSvgExtension('.SVGZ')).toBe(true);
-	});
-
-	it('rejects non-svg extensions', () => {
-		expect(isSvgExtension('png')).toBe(false);
-		expect(isSvgExtension('svgx')).toBe(false);
-		expect(isSvgExtension('')).toBe(false);
-	});
 });
 
 // --- computeScaledDimensions ---------------------------------------------------

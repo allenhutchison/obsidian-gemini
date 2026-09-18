@@ -9,7 +9,6 @@ import {
 	GeminiModel,
 	isInteractionsOnlyModel,
 	contextWindowForModel,
-	providerForModel,
 	resolveFeatureModel,
 	resolveGenerateContentModel,
 	RETIRED_MODEL_SUCCESSORS,
@@ -409,7 +408,7 @@ describe('resolveGenerateContentModel', () => {
 	});
 });
 
-describe('findModelProvider / providerForModel', () => {
+describe('findModelProvider', () => {
 	let originalModels: GeminiModel[];
 
 	beforeEach(() => {
@@ -443,11 +442,6 @@ describe('findModelProvider / providerForModel', () => {
 		const bundled = DEFAULT_GEMINI_MODELS[0].value;
 		setTestModels([{ value: 'llama3.2', label: 'Llama 3.2', provider: 'ollama' as const }]);
 		expect(findModelProvider(bundled)).toBe('gemini');
-	});
-
-	it('providerForModel defaults an unknown model to gemini', () => {
-		expect(providerForModel('mistral-nemo')).toBe('gemini');
-		expect(providerForModel('llama3.2')).toBe('ollama');
 	});
 });
 

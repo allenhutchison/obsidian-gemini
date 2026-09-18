@@ -2,7 +2,6 @@ import type { Mock } from 'vitest';
 import {
 	shouldExcludePath,
 	shouldExcludePathForPlugin,
-	createFileFilter,
 	ensureFolderExists,
 	ensureParentFolderExists,
 	getFileName,
@@ -11,7 +10,7 @@ import {
 	validateGeneratedOutputPath,
 } from '../../src/utils/file-utils';
 import type { GeneratedOutputPathOptions } from '../../src/utils/file-utils';
-import { TFile, TFolder, Vault, Notice, normalizePath } from 'obsidian';
+import { TFolder, Vault, Notice, normalizePath } from 'obsidian';
 
 describe('file-utils', () => {
 	describe('isPathInFolder', () => {
@@ -145,64 +144,6 @@ describe('file-utils', () => {
 			expect(shouldExcludePathForPlugin('_obsidian/plugins/x', renamedConfigPlugin)).toBe(true);
 			// ...and a real vault folder literally named .obsidian is NOT over-matched.
 			expect(shouldExcludePathForPlugin('.obsidian/plugins/x', renamedConfigPlugin)).toBe(false);
-		});
-	});
-
-	describe('createFileFilter', () => {
-		it('should create a filter function that excludes the config directory', () => {
-			const filter = createFileFilter(undefined, '.obsidian');
-
-			const obsidianFile = { path: '.obsidian/config' } as TFile;
-			const normalFile = { path: 'notes/my-note.md' } as TFile;
-
-			expect(filter(obsidianFile)).toBe(false);
-			expect(filter(normalFile)).toBe(true);
-		});
-
-		it('should create a filter function that excludes a renamed config directory', () => {
-			const filter = createFileFilter(undefined, '_obsidian');
-
-			expect(filter({ path: '_obsidian/workspace' } as TFile)).toBe(false);
-			// A real vault folder literally named .obsidian is not over-matched.
-			expect(filter({ path: '.obsidian/workspace' } as TFile)).toBe(true);
-		});
-
-		it('should create a filter function that excludes custom folder', () => {
-			const filter = createFileFilter('gemini-scribe', '.obsidian');
-
-			const stateFile = { path: 'gemini-scribe/History/chat.md' } as TFile;
-			const obsidianFile = { path: '.obsidian/workspace' } as TFile;
-			const normalFile = { path: 'notes/my-note.md' } as TFile;
-
-			expect(filter(stateFile)).toBe(false);
-			expect(filter(obsidianFile)).toBe(false);
-			expect(filter(normalFile)).toBe(true);
-		});
-
-		it('should work with Array.filter()', () => {
-			const files = [
-				{ path: 'notes/note1.md' } as TFile,
-				{ path: '.obsidian/config' } as TFile,
-				{ path: 'gemini-scribe/History/chat.md' } as TFile,
-				{ path: 'Projects/project.md' } as TFile,
-				{ path: 'gemini-scribe/Prompts/custom.md' } as TFile,
-			];
-
-			const filtered = files.filter(createFileFilter('gemini-scribe', '.obsidian'));
-
-			expect(filtered).toHaveLength(2);
-			expect(filtered[0].path).toBe('notes/note1.md');
-			expect(filtered[1].path).toBe('Projects/project.md');
-		});
-
-		it('should work with TFolder as well as TFile', () => {
-			const filter = createFileFilter('gemini-scribe', '.obsidian');
-
-			const stateFolder = { path: 'gemini-scribe' } as TFolder;
-			const normalFolder = { path: 'Projects' } as TFolder;
-
-			expect(filter(stateFolder)).toBe(false);
-			expect(filter(normalFolder)).toBe(true);
 		});
 	});
 

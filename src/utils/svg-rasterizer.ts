@@ -34,16 +34,6 @@ export class SvgTooLargeError extends Error {
 const SVG_FALLBACK_SIZE = 512;
 
 /**
- * Whether an extension is an SVG variant that must be rasterized before inlining.
- *
- * @param extension - File extension, with or without a leading dot.
- */
-export function isSvgExtension(extension: string): boolean {
-	const ext = extension.replace(/^\./, '').toLowerCase();
-	return ext === 'svg' || ext === 'svgz';
-}
-
-/**
  * Scale a (width, height) pair so its longest edge is at most `maxEdge`,
  * preserving aspect ratio. Dimensions already within the cap are returned
  * unchanged (never upscaled). Result dimensions are rounded to whole pixels

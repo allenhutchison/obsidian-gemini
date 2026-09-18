@@ -1,5 +1,5 @@
 import type { Mock } from 'vitest';
-import { GoogleMapsTool, getGoogleMapsTool } from '../../src/tools/google-maps-tool';
+import { GoogleMapsTool } from '../../src/tools/google-maps-tool';
 import { ToolExecutionContext } from '../../src/tools/types';
 import { GoogleGenAI } from '@google/genai';
 import { getDefaultModelForRole } from '../../src/models';
@@ -211,14 +211,6 @@ describe('GoogleMapsTool', () => {
 					model: getDefaultModelForRole('chat'),
 				})
 			);
-		});
-	});
-
-	describe('getGoogleMapsTool', () => {
-		it('should return a GoogleMapsTool instance', () => {
-			const tool = getGoogleMapsTool();
-			expect(tool).toBeInstanceOf(GoogleMapsTool);
-			expect(tool.name).toBe('google_maps');
 		});
 	});
 

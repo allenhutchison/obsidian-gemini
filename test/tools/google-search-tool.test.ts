@@ -1,5 +1,5 @@
 import type { Mock } from 'vitest';
-import { GoogleSearchTool, getGoogleSearchTool } from '../../src/tools/google-search-tool';
+import { GoogleSearchTool } from '../../src/tools/google-search-tool';
 import { ToolExecutionContext } from '../../src/tools/types';
 import { GoogleGenAI } from '@google/genai';
 import { getDefaultModelForRole } from '../../src/models';
@@ -212,14 +212,6 @@ describe('GoogleSearchTool', () => {
 					model: getDefaultModelForRole('chat'),
 				})
 			);
-		});
-	});
-
-	describe('getGoogleSearchTool', () => {
-		it('should return a GoogleSearchTool instance', () => {
-			const tool = getGoogleSearchTool();
-			expect(tool).toBeInstanceOf(GoogleSearchTool);
-			expect(tool.name).toBe('google_search');
 		});
 	});
 

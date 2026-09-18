@@ -139,14 +139,6 @@ export function findModelProvider(modelValue: string | null | undefined): ModelP
 }
 
 /**
- * Like `findModelProvider`, but defaults an unknown model to Gemini. Only for
- * callers with no feature to fall back on.
- */
-export function providerForModel(modelValue: string | null | undefined): ModelProvider {
-	return findModelProvider(modelValue) ?? 'gemini';
-}
-
-/**
  * A model's own input token limit, or `null` when the list carries none.
  *
  * Providers whose windows differ per model (OpenAI: 922k on GPT-5.6 versus the

@@ -56,10 +56,3 @@ export class GoogleSearchTool implements Tool {
 		});
 	}
 }
-
-/**
- * Get Google Search tool
- */
-export function getGoogleSearchTool(): Tool {
-	return new GoogleSearchTool();
-}

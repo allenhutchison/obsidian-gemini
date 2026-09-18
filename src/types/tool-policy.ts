@@ -133,55 +133,6 @@ export const CLASSIFICATION_LABELS: Record<ToolClassification, TranslationKey> =
 };
 
 /**
- * Build the full toolPermissions map for a given preset based on a list of registered tools.
- *
- * @param preset - The preset to generate permissions for.
- * @param tools - Array of objects with `name` and `classification` properties.
- * @returns A complete toolPermissions record.
- */
-export function buildPermissionsForPreset(
-	preset: PolicyPreset,
-	tools: Array<{ name: string; classification: ToolClassification }>
-): Record<string, ToolPermission> {
-	const presetMap = PRESET_PERMISSIONS[preset];
-	const permissions: Record<string, ToolPermission> = {};
-
-	for (const tool of tools) {
-		permissions[tool.name] = presetMap[tool.classification];
-	}
-
-	return permissions;
-}
-
-/**
- * Resolve the effective permission for a tool given the current policy settings
- * and the tool's classification.
- *
- * Resolution order:
- * 1. Explicit per-tool override in `settings.toolPermissions`
- * 2. Preset-defined permission based on tool classification
- *
- * @param toolName - The tool's registered name.
- * @param classification - The tool's classification (read/write/destructive/external).
- * @param settings - The current tool policy settings.
- * @returns The effective ToolPermission for this tool.
- */
-export function resolvePermission(
-	toolName: string,
-	classification: ToolClassification,
-	settings: ToolPolicySettings
-): ToolPermission {
-	// Check for explicit per-tool override
-	const override = settings.toolPermissions[toolName];
-	if (override !== undefined) {
-		return override;
-	}
-
-	// Fall back to preset-defined permission
-	return PRESET_PERMISSIONS[settings.activePreset][classification];
-}
-
-/**
  * Per-feature tool policy. Lets a Project, Scheduled Task, Hook, or Session
  * narrow (or open up) the global tool policy for the duration of one run.
  *
