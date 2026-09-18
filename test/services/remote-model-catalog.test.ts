@@ -224,6 +224,54 @@ describe('CachedModelCatalog', () => {
 		});
 	});
 
+	describe('a reset landing mid-load', () => {
+		/** A load the test resolves or rejects by hand, so reset() can land mid-flight. */
+		function deferred<T>() {
+			let settle!: (value: T) => void;
+			let fail!: (error: unknown) => void;
+			const promise = new Promise<T>((resolve, reject) => {
+				settle = resolve;
+				fail = reject;
+			});
+			return { promise, settle, fail };
+		}
+
+		it('hands the result to its caller but does not re-seed the cleared cache', async () => {
+			const { catalog, load } = buildCatalog();
+			const gate = deferred<GeminiModel[]>();
+			load.mockReturnValue(gate.promise);
+
+			const inFlight = catalog.get();
+			catalog.reset();
+			gate.settle([model('a')]);
+
+			// The caller asked for this list, so it still gets it...
+			expect(await inFlight).toEqual([model('a')]);
+			// ...but the state reset() cleared stays cleared.
+			expect(catalog.lastProbe).toBeNull();
+			load.mockResolvedValue([model('b')]);
+			expect(await catalog.get()).toEqual([model('b')]);
+			expect(load).toHaveBeenCalledTimes(2);
+		});
+
+		it('does not report a probe outcome when the stale load fails', async () => {
+			const { catalog, load } = buildCatalog();
+			load.mockResolvedValue([model('a')]);
+			await catalog.get();
+
+			const gate = deferred<GeminiModel[]>();
+			load.mockReturnValue(gate.promise);
+			const inFlight = catalog.get(true);
+			catalog.reset();
+			gate.fail(new Error('down'));
+
+			// Nothing valid is left to serve: reset() dropped the cache this would
+			// otherwise have fallen back to.
+			expect(await inFlight).toEqual([]);
+			expect(catalog.lastProbe).toBeNull();
+		});
+	});
+
 	describe('reset', () => {
 		it('drops the cached list so the next call refetches', async () => {
 			const { catalog, load } = buildCatalog();

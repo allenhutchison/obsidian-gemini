@@ -81,6 +81,12 @@ export class CachedModelCatalog<E extends CatalogEndpoint> {
 	private cachedModels: GeminiModel[] | null = null;
 	private lastIdentity: string | null = null;
 	private lastProbeResult: 'reachable' | 'unreachable' | null = null;
+	/**
+	 * Bumped by {@link reset} so a load started beforehand can't re-seed the state
+	 * it just cleared. Mirrors the guard `OllamaModelsService` already applies to
+	 * its `/api/ps` cache and the settings UI applies to its model counts.
+	 */
+	private generation = 0;
 
 	constructor(private readonly options: CachedModelCatalogOptions<E>) {}
 
@@ -103,17 +109,28 @@ export class CachedModelCatalog<E extends CatalogEndpoint> {
 
 		this.options.beforeFetch?.({ forceRefresh, identityChanged: !identityMatches });
 
+		// Captured before the await: a reset() landing mid-load must not be undone by
+		// the older result arriving afterwards and restoring what it cleared. The
+		// in-flight caller still gets its own result; only the shared state is guarded.
+		const generation = this.generation;
 		const { logPrefix } = this.options;
 		try {
 			const models = await this.options.load(endpoint);
-			this.cachedModels = models;
-			this.lastIdentity = endpoint.key;
-			this.lastProbeResult = 'reachable';
 			this.options.logger().log(`${logPrefix} Loaded ${models.length} models from ${endpoint.label}`);
+			if (generation === this.generation) {
+				this.cachedModels = models;
+				this.lastIdentity = endpoint.key;
+				this.lastProbeResult = 'reachable';
+			}
 			return models;
 		} catch (error) {
-			this.lastProbeResult = 'unreachable';
 			this.options.logger().warn(`${logPrefix} Failed to fetch model list:`, error);
+			if (generation !== this.generation) {
+				// reset() cleared the cache while this was in flight, so a stale request
+				// has nothing valid left to serve and must not report a probe outcome.
+				return [];
+			}
+			this.lastProbeResult = 'unreachable';
 			// Don't poison the cache with an empty array — that would stick until the
 			// user manually clicks "Refresh" even after the server comes back.
 			// Returning the previous cache (or an empty list as a non-cached fallback)
@@ -125,8 +142,12 @@ export class CachedModelCatalog<E extends CatalogEndpoint> {
 		}
 	}
 
-	/** Drops the cached list, its identity, and the probe outcome. */
+	/**
+	 * Drops the cached list, its identity, and the probe outcome, and invalidates
+	 * any load already in flight so it cannot write back afterwards.
+	 */
 	reset(): void {
+		this.generation++;
 		this.lastProbeResult = null;
 		this.cachedModels = null;
 		this.lastIdentity = null;
