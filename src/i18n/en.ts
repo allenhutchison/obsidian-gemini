@@ -3072,6 +3072,29 @@ export const en = {
 		context:
 			'Error shown when a non-image attachment is sent to a provider that only accepts images. {provider} is a provider name (OpenAI / Ollama) and stays untranslated; {mimeType} is a MIME type such as "application/pdf". "Gemini" is a provider name and stays untranslated.',
 	},
+	'provider.anthropic.noModelSelected': {
+		message: 'No Anthropic model selected. Choose a model in settings.',
+		context:
+			'Error shown when an Anthropic-routed feature runs with no model configured. "settings" is Obsidian\'s settings window.',
+	},
+	'provider.unsupportedAttachmentPdf': {
+		message:
+			'{provider} only supports image and PDF attachments; received {mimeType}. Switch to the Gemini provider for audio or video input.',
+		context:
+			'Error shown when an attachment that is neither an image nor a PDF is sent to a provider that accepts both. {provider} is a provider name (Anthropic) and stays untranslated; {mimeType} is a MIME type such as "audio/mpeg". "Gemini" is a provider name and stays untranslated.',
+	},
+	'provider.unsupportedAttachmentInHistory': {
+		message:
+			'{provider} only supports image attachments; conversation history contains {mimeType}. Switch to the Gemini provider for PDF, audio, or video input.',
+		context:
+			'Same as provider.unsupportedAttachment, but the offending attachment came from earlier in the conversation rather than the current message. {provider} and "Gemini" are provider names and stay untranslated; {mimeType} is a MIME type.',
+	},
+	'provider.unsupportedAttachmentInHistoryPdf': {
+		message:
+			'{provider} only supports image and PDF attachments; conversation history contains {mimeType}. Switch to the Gemini provider for audio or video input.',
+		context:
+			'Same as provider.unsupportedAttachmentPdf, but the offending attachment came from earlier in the conversation rather than the current message. {provider} and "Gemini" are provider names and stay untranslated; {mimeType} is a MIME type.',
+	},
 	'provider.gemini.noImageData': {
 		message: 'No image data in response. The model may have returned only text.',
 		context: 'Error shown when an image-generation request to Gemini came back without any image payload.',

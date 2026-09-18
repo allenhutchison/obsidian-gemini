@@ -45,6 +45,7 @@ import { decodeThinkingBlocks, encodeThinkingBlocks } from './thinking-replay';
 import { walkHistoryEntry } from '../history-walk';
 import { SIMPLE_TOOL_ID_PATTERN, ToolIdLedger } from '../tool-id-ledger';
 import { describeSdkApiError } from '../../../utils/error-utils';
+import { t } from '../../../i18n';
 
 type MessageParam = Anthropic.Beta.BetaMessageParam;
 type ContentBlockParam = Anthropic.Beta.BetaContentBlockParam;
@@ -80,7 +81,7 @@ export class AnthropicClient implements ModelApi {
 		// deliberately no chat-default fallback here (see OpenAIClient).
 		const model = request.model || this.config.model;
 		if (!model) {
-			throw new Error('No Anthropic model selected. Choose a model in settings.');
+			throw new Error(t('provider.anthropic.noModelSelected'));
 		}
 
 		try {
@@ -114,7 +115,7 @@ export class AnthropicClient implements ModelApi {
 
 		const complete = (async (): Promise<ModelResponse> => {
 			if (!model) {
-				throw new Error('No Anthropic model selected. Choose a model in settings.');
+				throw new Error(t('provider.anthropic.noModelSelected'));
 			}
 
 			try {
@@ -207,10 +208,7 @@ export class AnthropicClient implements ModelApi {
 		// Final user turn: attachments before text, as the API recommends.
 		const content: ContentBlockParam[] = (request.inlineAttachments ?? []).map((att) => {
 			if (!att.mimeType.startsWith('image/') && att.mimeType !== 'application/pdf') {
-				throw new Error(
-					`Anthropic only supports image and PDF attachments; received ${att.mimeType}. ` +
-						`Switch to the Gemini provider for audio or video input.`
-				);
+				throw new Error(t('provider.unsupportedAttachmentPdf', { provider: 'Anthropic', mimeType: att.mimeType }));
 			}
 			return this.toAttachmentBlock(att);
 		});

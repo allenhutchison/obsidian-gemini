@@ -14,13 +14,14 @@
  * The Gemini client is deliberately not a consumer: it speaks `Content`
  * natively and has no equivalent conversion step.
  *
- * This is a leaf module — it imports types and one pure helper, never a
- * client — so it stays outside the import-cycle graph (`npm run lint:cycles`
- * is at zero and must stay there).
+ * This is a leaf module — it imports types, one pure helper, and the i18n
+ * lookup (itself a leaf), never a client — so it stays outside the
+ * import-cycle graph (`npm run lint:cycles` is at zero and must stay there).
  */
 
 import type { InlineDataPart } from '../interfaces/model-api';
 import { getLegacyEntryText } from '../../utils/history-normalize';
+import { t } from '../../i18n';
 
 /** A `functionCall` part, decoded but not yet given a provider-specific id. */
 export interface WalkedToolCall {
@@ -127,11 +128,12 @@ export function walkHistoryEntry(
 				// Mirror buildChatRequest's current-turn handling so resumed sessions
 				// don't silently drop PDF/audio/video context the model never sees.
 				throw new Error(
-					options.acceptsPdf
-						? `${providerName} only supports image and PDF attachments; conversation history contains ${part.inlineData.mimeType}. ` +
-								`Switch to the Gemini provider for audio or video input.`
-						: `${providerName} only supports image attachments; conversation history contains ${part.inlineData.mimeType}. ` +
-								`Switch to the Gemini provider for PDF, audio, or video input.`
+					t(
+						options.acceptsPdf
+							? 'provider.unsupportedAttachmentInHistoryPdf'
+							: 'provider.unsupportedAttachmentInHistory',
+						{ provider: providerName, mimeType: part.inlineData.mimeType }
+					)
 				);
 			} else if (part?.functionCall) {
 				toolCalls.push({
