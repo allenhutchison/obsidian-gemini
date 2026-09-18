@@ -55,10 +55,3 @@ export class GoogleMapsTool implements Tool {
 		});
 	}
 }
-
-/**
- * Get Google Maps tool
- */
-export function getGoogleMapsTool(): Tool {
-	return new GoogleMapsTool();
-}

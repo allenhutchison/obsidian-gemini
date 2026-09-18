@@ -6,7 +6,7 @@
  * - Agent vault tools (read_file, write_file, list_files, etc.)
  */
 
-import { TAbstractFile, TFolder, Vault, normalizePath, Notice } from 'obsidian';
+import { TFolder, Vault, normalizePath, Notice } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import type { Logger } from './logger';
 import { getRawErrorMessage } from './error-utils';
@@ -161,21 +161,6 @@ export function shouldExcludePath(path: string, excludeFolder: string | undefine
  */
 export function shouldExcludePathForPlugin(path: string, plugin: ObsidianGemini): boolean {
 	return shouldExcludePath(path, plugin.settings.historyFolder, plugin.app.vault.configDir);
-}
-
-/**
- * Filter function for file/folder lists that excludes system and plugin folders.
- * Can be used directly with Array.filter()
- *
- * @param excludeFolder - Optional folder path to exclude (e.g., 'gemini-scribe')
- * @param configDir - The vault's configuration directory (from `vault.configDir`)
- * @returns Filter function that returns true for items that should be included
- */
-export function createFileFilter(
-	excludeFolder: string | undefined,
-	configDir: string
-): (item: TAbstractFile) => boolean {
-	return (item: TAbstractFile) => !shouldExcludePath(item.path, excludeFolder, configDir);
 }
 
 /**

@@ -1,4 +1,4 @@
-import { DeepResearchTool, getDeepResearchTool } from '../../src/tools/deep-research-tool';
+import { DeepResearchTool } from '../../src/tools/deep-research-tool';
 import { ToolExecutionContext } from '../../src/tools/types';
 import { ToolCategory } from '../../src/types/agent';
 import { TFile } from 'obsidian';
@@ -457,23 +457,6 @@ describe('DeepResearchTool', () => {
 			expect(result.success).toBe(true);
 			expect(result.data).toHaveProperty('report');
 			expect(mockBackgroundTaskManager.submit).not.toHaveBeenCalled();
-		});
-	});
-
-	describe('getDeepResearchTool', () => {
-		it('should return DeepResearchTool instance', () => {
-			const tool = getDeepResearchTool();
-
-			expect(tool).toBeInstanceOf(DeepResearchTool);
-			expect(tool.name).toBe('deep_research');
-		});
-
-		it('should return a new instance each time', () => {
-			const tool1 = getDeepResearchTool();
-			const tool2 = getDeepResearchTool();
-
-			expect(tool1).not.toBe(tool2);
-			expect(tool1.name).toBe(tool2.name);
 		});
 	});
 });

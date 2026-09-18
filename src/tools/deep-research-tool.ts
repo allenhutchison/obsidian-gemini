@@ -183,10 +183,3 @@ export class DeepResearchTool implements Tool {
 		}
 	}
 }
-
-/**
- * Get Deep Research tool
- */
-export function getDeepResearchTool(): Tool {
-	return new DeepResearchTool();
-}
