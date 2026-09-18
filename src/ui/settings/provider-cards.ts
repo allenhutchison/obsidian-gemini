@@ -20,8 +20,7 @@ import { modelCountCache, modelCountGeneration, bumpGeneration, invalidateModelC
 
 export type AuthRow =
 	| { kind: 'secret'; settingsKey: 'apiKeySecretName' | 'openaiApiKeySecretName' | 'anthropicApiKeySecretName' }
-	| { kind: 'baseUrl'; settingsKey: 'customBaseUrl' | 'ollamaBaseUrl' | 'openaiBaseUrl'; optional: boolean }
-	| { kind: 'subscription'; provider: 'openai' };
+	| { kind: 'baseUrl'; settingsKey: 'customBaseUrl' | 'ollamaBaseUrl' | 'openaiBaseUrl'; optional: boolean };
 
 export interface ProviderCardSpec {
 	id: ModelProvider;
@@ -47,7 +46,6 @@ export const PROVIDER_CARDS: ProviderCardSpec[] = [
 		id: 'openai',
 		labelKey: 'settings.providers.shortLabel.openai',
 		auth: [
-			{ kind: 'subscription', provider: 'openai' },
 			{ kind: 'secret', settingsKey: 'openaiApiKeySecretName' },
 			{ kind: 'baseUrl', settingsKey: 'openaiBaseUrl', optional: true },
 		],
@@ -58,17 +56,6 @@ export const PROVIDER_CARDS: ProviderCardSpec[] = [
 		auth: [{ kind: 'secret', settingsKey: 'anthropicApiKeySecretName' }],
 	},
 ];
-
-/**
- * Begin an interactive subscription sign-in for a provider. No implementation
- * ships in this release — the OpenAI "Sign in with your ChatGPT subscription"
- * row is disabled and its description says so. This is the seam a later
- * OAuth package plugs into; registering an entry here lights the row up with
- * no other change. Intentionally unread/unwritten outside this file today
- * (design doc §6.4). File-local until a real writer lands — see #1524.
- */
-type SubscriptionSignIn = (plugin: ObsidianGemini) => Promise<'signed-in' | 'cancelled'>;
-const SUBSCRIPTION_SIGN_IN: Partial<Record<ModelProvider, SubscriptionSignIn>> = {};
 
 /**
  * Moved from the deleted `src/ui/settings-general.ts` (settings redesign
@@ -206,33 +193,21 @@ function authRows(ctx: SettingsContext, spec: ProviderCardSpec): SettingDefiniti
 				},
 			};
 		}
-		if (row.kind === 'baseUrl') {
-			return {
-				name: t('settings.providers.baseUrlName'),
-				desc: row.optional ? t('settings.providers.baseUrlOptionalDesc') : t('settings.providers.baseUrlRequiredDesc'),
-				control: {
-					type: 'text',
-					key: row.settingsKey,
-					placeholder: t('settings.providers.baseUrlPlaceholder'),
-					validate: (value) => {
-						if (!value && row.optional) return;
-						try {
-							new URL(value);
-						} catch {
-							return t('settings.providers.baseUrlInvalid');
-						}
-					},
-				},
-			};
-		}
-		// row.kind === 'subscription'
 		return {
-			name: t('settings.providers.subscriptionSignInName'),
-			desc: t('settings.providers.subscriptionComingSoon'),
-			disabled: () => SUBSCRIPTION_SIGN_IN[row.provider] === undefined,
-			action: () => {
-				const handler = SUBSCRIPTION_SIGN_IN[row.provider];
-				if (handler) void handler(plugin);
+			name: t('settings.providers.baseUrlName'),
+			desc: row.optional ? t('settings.providers.baseUrlOptionalDesc') : t('settings.providers.baseUrlRequiredDesc'),
+			control: {
+				type: 'text',
+				key: row.settingsKey,
+				placeholder: t('settings.providers.baseUrlPlaceholder'),
+				validate: (value) => {
+					if (!value && row.optional) return;
+					try {
+						new URL(value);
+					} catch {
+						return t('settings.providers.baseUrlInvalid');
+					}
+				},
 			},
 		};
 	});

@@ -1,14 +1,14 @@
 # OpenAI
 
-Gemini Scribe can route chat, summary, completions, rewrite, and agent tool-calling through the **OpenAI Chat Completions API** instead of the Google Gemini API. Use this when you already pay for OpenAI models, or when you want to point the plugin at an **OpenAI-compatible server** — LM Studio, an MLX-served endpoint, Ollama's own OpenAI-compatible endpoint, or similar — running locally or on your network.
+Gemini Scribe can route chat, summary, completions, rewrite, and agent tool-calling through the **OpenAI Chat Completions API** instead of the Google Gemini API. Use this with OpenAI Platform billing, or point the plugin at an **OpenAI-compatible server** — LM Studio, an MLX-served endpoint, Ollama's own OpenAI-compatible endpoint, or similar — running locally or on your network.
 
 This is API-key billing only: there is no "Sign in with ChatGPT" / ChatGPT-subscription (Codex-style) authentication. You need an OpenAI API key, or a placeholder key for a compatible server that doesn't check one.
 
 ## Setup
 
 1. **Get an API key** — Visit [platform.openai.com/api-keys](https://platform.openai.com/api-keys), create a key, and copy it. If you're only targeting a local compatible server that doesn't validate keys, you can skip this and use any placeholder value instead — the provider still requires a key to be set.
-2. **Add the OpenAI card** — Open Settings → Gemini Scribe → **Providers** and add an entry for OpenAI. The card also has a disabled "Sign in with your ChatGPT subscription" row, labelled "coming soon" — that flow isn't implemented yet, so use the API key row below it.
-3. **Enter your API key** — On the "Or use an API key" row, click "Link..." and paste your key (or your placeholder value, for a compatible server). It's stored securely using Obsidian's SecretStorage, the same as the Gemini key.
+2. **Add the OpenAI card** — Open Settings → Gemini Scribe → **Providers** and add an entry for OpenAI.
+3. **Enter your API key** — On the **API key** row, click "Link..." and paste your key (or your placeholder value, for a compatible server). It's stored securely using Obsidian's SecretStorage, the same as the Gemini key.
 4. **Route features to it** — Open the **Features** page and set Chat and agent (and anything else you want) to **OpenAI**. Set **Default provider** on the Providers page to OpenAI too if you want it to catch everything you haven't routed elsewhere.
 5. **Pick models** — Chat, summary, and completions each get their own model dropdown on the Features page, populated from `GET <OpenAI base URL>/models`. Unlike Ollama, OpenAI has no single-resident-model constraint, so picking a different model per feature costs nothing extra. Click **Refresh** on the OpenAI provider card if a model doesn't show up.
 

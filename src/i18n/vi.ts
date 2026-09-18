@@ -1008,8 +1008,6 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.baseUrlRequiredDesc': 'Địa chỉ máy chủ cục bộ mà nhà cung cấp này kết nối tới.',
 	'settings.providers.baseUrlPlaceholder': 'http://localhost:11434',
 	'settings.providers.baseUrlInvalid': 'Nhập URL hợp lệ.',
-	'settings.providers.subscriptionSignInName': 'Đăng nhập bằng gói đăng ký ChatGPT của bạn',
-	'settings.providers.subscriptionComingSoon': 'Sắp ra mắt — tạm thời hãy dùng khóa API bên dưới.',
 	'settings.providers.modelsHeading': 'Mô hình',
 	'settings.providers.modelsRowName': 'Mô hình khả dụng',
 	'settings.providers.refreshButton': 'Làm mới',

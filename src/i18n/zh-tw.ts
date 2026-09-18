@@ -954,8 +954,6 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.baseUrlRequiredDesc': '此提供者連線的本地伺服器位址。',
 	'settings.providers.baseUrlPlaceholder': 'http://localhost:11434',
 	'settings.providers.baseUrlInvalid': '請輸入有效的 URL。',
-	'settings.providers.subscriptionSignInName': '使用您的 ChatGPT 訂閱登入',
-	'settings.providers.subscriptionComingSoon': '即將推出 — 目前請於下方使用 API 金鑰。',
 	'settings.providers.modelsHeading': '模型',
 	'settings.providers.modelsRowName': '可用模型',
 	'settings.providers.refreshButton': '重新整理',

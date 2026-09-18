@@ -77,9 +77,7 @@ summarizes its connection state (Connected / Not set up / Unreachable).
 
 ### OpenAI card
 
-- **Sign in with your ChatGPT subscription** — disabled placeholder row for a future OAuth flow;
-  no implementation ships yet.
-- **Or use an API key** (`openaiApiKeySecretName`) — String, SecretStorage key name, default
+- **API key** (`openaiApiKeySecretName`) — String, SecretStorage key name, default
   `""`. Any placeholder value satisfies a compatible server that doesn't check one.
 - **Base URL** (`openaiBaseUrl`) — String, default `https://api.openai.com/v1`. Point this at an
   OpenAI-compatible local server instead — LM Studio, MLX, Ollama's own OpenAI-compatible

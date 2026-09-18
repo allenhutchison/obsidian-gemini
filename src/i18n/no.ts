@@ -1006,8 +1006,6 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.baseUrlRequiredDesc': 'Adressen til den lokale serveren denne leverandøren snakker med.',
 	'settings.providers.baseUrlPlaceholder': 'http://localhost:11434',
 	'settings.providers.baseUrlInvalid': 'Oppgi en gyldig URL.',
-	'settings.providers.subscriptionSignInName': 'Logg inn med ditt ChatGPT-abonnement',
-	'settings.providers.subscriptionComingSoon': 'Kommer snart – bruk en API-nøkkel nedenfor inntil videre.',
 	'settings.providers.modelsHeading': 'Modeller',
 	'settings.providers.modelsRowName': 'Tilgjengelige modeller',
 	'settings.providers.refreshButton': 'Oppdater',

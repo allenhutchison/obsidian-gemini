@@ -1012,8 +1012,6 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.baseUrlRequiredDesc': 'Adres lokalnego serwera, z którym łączy się ten dostawca.',
 	'settings.providers.baseUrlPlaceholder': 'http://localhost:11434',
 	'settings.providers.baseUrlInvalid': 'Wprowadź prawidłowy adres URL.',
-	'settings.providers.subscriptionSignInName': 'Zaloguj się za pomocą subskrypcji ChatGPT',
-	'settings.providers.subscriptionComingSoon': 'Wkrótce dostępne — na razie użyj klucza API poniżej.',
 	'settings.providers.modelsHeading': 'Modele',
 	'settings.providers.modelsRowName': 'Dostępne modele',
 	'settings.providers.refreshButton': 'Odśwież',

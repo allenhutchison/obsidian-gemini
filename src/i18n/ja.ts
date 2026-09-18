@@ -1003,8 +1003,6 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.baseUrlRequiredDesc': 'このプロバイダーが通信するローカルサーバーのアドレス。',
 	'settings.providers.baseUrlPlaceholder': 'http://localhost:11434',
 	'settings.providers.baseUrlInvalid': '有効なURLを入力してください。',
-	'settings.providers.subscriptionSignInName': 'ChatGPTのサブスクリプションでサインイン',
-	'settings.providers.subscriptionComingSoon': '近日対応予定 — 当面は下記のAPIキーをご利用ください。',
 	'settings.providers.modelsHeading': 'モデル',
 	'settings.providers.modelsRowName': '利用可能なモデル',
 	'settings.providers.refreshButton': '更新',

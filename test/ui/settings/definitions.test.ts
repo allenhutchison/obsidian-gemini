@@ -110,6 +110,17 @@ describe('ObsidianGeminiSettingTab#getSettingDefinitions', () => {
 		expect(features.displayValue!().length).toBeGreaterThan(0);
 	});
 
+	it('the OpenAI card exposes only supported connection controls', () => {
+		const { tab } = buildTab();
+		const providers = tab.getSettingDefinitions()[0] as { items: SettingDefinitionItem[] };
+		const openai = providers.items.find((item) => (item as { name?: string }).name === 'OpenAI') as {
+			items: SettingDefinitionItem[];
+		};
+
+		expect(openai.items.slice(0, 2).map((item) => (item as { name?: string }).name)).toEqual(['API key', 'Base URL']);
+		expect(openai.items.some((item) => 'disabled' in item)).toBe(false);
+	});
+
 	it('a feature routed to "none" displays Off with no warning status', () => {
 		const plugin = buildPlugin({
 			features: {

@@ -1009,8 +1009,6 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.baseUrlRequiredDesc': 'Adresa lokálního serveru, se kterým tento poskytovatel komunikuje.',
 	'settings.providers.baseUrlPlaceholder': 'http://localhost:11434',
 	'settings.providers.baseUrlInvalid': 'Zadejte platnou adresu URL.',
-	'settings.providers.subscriptionSignInName': 'Přihlásit se pomocí předplatného ChatGPT',
-	'settings.providers.subscriptionComingSoon': 'Již brzy — prozatím použijte klíč API níže.',
 	'settings.providers.modelsHeading': 'Modely',
 	'settings.providers.modelsRowName': 'Dostupné modely',
 	'settings.providers.refreshButton': 'Obnovit',
