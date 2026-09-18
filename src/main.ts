@@ -229,6 +229,14 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	// when a later settings save recovers initialization, so a double
 	// registration must not happen.
 	private layoutReadyHookRegistered = false;
+	/**
+	 * The setup-eligibility fingerprint of the most recent `setup()` attempt —
+	 * the chat provider and whether credentials allow initialization, no
+	 * secret values. `needsInit` retries only when this changes (or never
+	 * recorded), so a failed setup is not re-run on every unrelated save while
+	 * the eligibility is unchanged (#1554 / #1555 review).
+	 */
+	private lastInitAttemptFingerprint: string | null = null;
 
 	async onload() {
 		// Initialize logger early so it's available during setup
@@ -258,6 +266,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 			this.lastInitError = getRawErrorMessage(error);
 			new Notice(this.getInitErrorMessage(error));
 			this.isGeminiInitialized = false;
+			this.recordInitAttemptFingerprint();
 		}
 
 		// Always register UI components and commands
@@ -301,6 +310,57 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	}
 
 	/**
+	 * Record the current setup-eligibility fingerprint after a `setup()`
+	 * attempt, whatever its outcome. Called from both init paths so a failed
+	 * attempt is not silently retried on unrelated saves.
+	 */
+	private recordInitAttemptFingerprint(): void {
+		this.lastInitAttemptFingerprint = this.initAttemptFingerprint();
+	}
+
+	/**
+	 * Deterministic, non-invertible change-detection token for a credential
+	 * value — a 32-bit FNV-1a of the key string, hex-encoded. Two keys with
+	 * the same token are effectively identical for "did the credential
+	 * change" purposes; the value itself never appears in the fingerprint.
+	 */
+	private static credentialToken(key: string): string {
+		let hash = 0x811c9dc5;
+		for (let i = 0; i < key.length; i++) {
+			hash ^= key.charCodeAt(i);
+			hash = Math.imul(hash, 0x01000193);
+		}
+		return (hash >>> 0).toString(16);
+	}
+
+	/**
+	 * The eligibility fingerprint `needsInit` compares against: the chat
+	 * provider, a non-secret token of the credential serving chat (so
+	 * replacing a rejected key is detected, not just adding/removing one),
+	 * and the chat provider's base URL (so correcting an unreachable-server
+	 * URL is detected). All three can independently unblock a failed setup.
+	 */
+	private initAttemptFingerprint(): string {
+		const chatProvider = this.settings.features.chat.provider;
+		const activeChatApiKey =
+			chatProvider === 'openai' ? this.openaiApiKey : chatProvider === 'anthropic' ? this.anthropicApiKey : this.apiKey;
+		const credToken = activeChatApiKey
+			? ObsidianGemini.credentialToken(activeChatApiKey)
+			: getCapabilities(chatProvider === 'none' ? null : chatProvider).requiresApiKey
+				? 'key-required-missing'
+				: 'none-required';
+		const baseUrl =
+			chatProvider === 'openai'
+				? this.settings.openaiBaseUrl
+				: chatProvider === 'anthropic'
+					? undefined
+					: chatProvider === 'ollama'
+						? this.settings.ollamaBaseUrl
+						: this.settings.customBaseUrl;
+		return `${chatProvider}:${credToken}:${baseUrl ?? ''}`;
+	}
+
+	/**
 	 * Record a successful `lifecycle.setup()`: mark the plugin initialized and
 	 * snapshot every setting the re-init check in `saveSettings` compares against.
 	 *
@@ -313,6 +373,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	private markInitialized(): void {
 		this.isGeminiInitialized = true;
 		this.lastInitError = null;
+		this.recordInitAttemptFingerprint();
 		this.previousApiKey = this.apiKey;
 		this.previousOpenaiApiKey = this.openaiApiKey;
 		this.previousAnthropicApiKey = this.anthropicApiKey;
@@ -594,23 +655,38 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	async saveSettings() {
 		await this.saveData(this.settings);
 
-		// Check if we need to re-initialize
+		// Check if we need to re-initialize. Every change condition below is
+		// gated on `isGeminiInitialized`: the `previous*` baselines are only
+		// populated by a successful `markInitialized()`, so on a vault that has
+		// never initialized (e.g. credentials still missing) each comparison
+		// would fire on every save — re-running a setup that keeps failing for
+		// the same unrelated reason (#1554). Recovery from that state is
+		// `needsInit`'s job: it fires exactly when the credential situation
+		// starts allowing initialization, which is the only change that can
+		// actually succeed.
 		const apiKeyChanged =
-			this.previousApiKey !== this.apiKey ||
-			this.previousOpenaiApiKey !== this.openaiApiKey ||
-			this.previousAnthropicApiKey !== this.anthropicApiKey;
+			this.isGeminiInitialized &&
+			(this.previousApiKey !== this.apiKey ||
+				this.previousOpenaiApiKey !== this.openaiApiKey ||
+				this.previousAnthropicApiKey !== this.anthropicApiKey);
 		// Any change to *which provider serves which use case* re-inits: tool
 		// registration, RAG, and image generation are all keyed off the resolved
 		// providers, not just the primary.
-		const providerChanged = this.previousRoutingKey !== routingKey(this.settings);
+		const providerChanged = this.isGeminiInitialized && this.previousRoutingKey !== routingKey(this.settings);
 		// A base URL only matters when its provider is used somewhere — an Ollama
 		// URL edit is a no-op for an all-Gemini install and vice versa.
 		const ollamaUrlChanged =
-			isProviderActive(this.settings, 'ollama') && this.previousOllamaBaseUrl !== this.settings.ollamaBaseUrl;
+			this.isGeminiInitialized &&
+			isProviderActive(this.settings, 'ollama') &&
+			this.previousOllamaBaseUrl !== this.settings.ollamaBaseUrl;
 		const customBaseUrlChanged =
-			isProviderActive(this.settings, 'gemini') && this.previousCustomBaseUrl !== this.settings.customBaseUrl;
+			this.isGeminiInitialized &&
+			isProviderActive(this.settings, 'gemini') &&
+			this.previousCustomBaseUrl !== this.settings.customBaseUrl;
 		const openaiBaseUrlChanged =
-			isProviderActive(this.settings, 'openai') && this.previousOpenaiBaseUrl !== this.settings.openaiBaseUrl;
+			this.isGeminiInitialized &&
+			isProviderActive(this.settings, 'openai') &&
+			this.previousOpenaiBaseUrl !== this.settings.openaiBaseUrl;
 		// A chat provider that needs no key (Ollama) can initialize on the
 		// provider switch alone; other features routed to a cloud provider
 		// degrade gracefully without one rather than blocking init. The
@@ -620,7 +696,14 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 			chatProvider === 'openai' ? this.openaiApiKey : chatProvider === 'anthropic' ? this.anthropicApiKey : this.apiKey;
 		const hasCredentials =
 			!getCapabilities(chatProvider === 'none' ? null : chatProvider).requiresApiKey || !!activeChatApiKey;
-		const needsInit = !this.isGeminiInitialized && hasCredentials;
+		// needsInit additionally compares the eligibility fingerprint recorded
+		// after the last setup attempt: without it, a failed attempt on a
+		// keyless provider (hasCredentials stays true) would retry setup on
+		// every unrelated save, defeating #1554's no-repeat contract. A retry
+		// fires only when eligibility actually changed — the chat provider
+		// moved, or the credential situation flipped (#1555 review).
+		const needsInit =
+			!this.isGeminiInitialized && hasCredentials && this.lastInitAttemptFingerprint !== this.initAttemptFingerprint();
 		// A state-folder rename must re-run the full setup: both file-backed
 		// managers reload their definitions, sidecar state, and vault listeners
 		// against the new location inside their initialize({ refresh: true })
@@ -660,6 +743,9 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 				this.logger.error('Failed to re-initialize after settings change:', error);
 				this.lastInitError = getRawErrorMessage(error);
 				this.isGeminiInitialized = false;
+				// A failed attempt records the eligibility it tried with, so the
+				// same eligibility is not retried on the next unrelated save.
+				this.recordInitAttemptFingerprint();
 			}
 		}
 
