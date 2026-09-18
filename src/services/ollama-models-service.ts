@@ -37,6 +37,14 @@ const VISION_NAME_HINTS = ['llava', 'bakllava', 'vision', 'moondream', 'qwen2-vl
 const OLLAMA_DEFAULT_BASE_URL = 'http://localhost:11434';
 
 /**
+ * Cache identity shared by the two probe caches: endpoint plus model name. The
+ * same model name on two daemons must never share a probe answer (#1545).
+ */
+function probeCacheKey(baseUrl: string, name: string): string {
+	return `${baseUrl}|${name}`;
+}
+
+/**
  * How long an /api/ps result stays fresh. Long enough to collapse the two or
  * three context-limit lookups a single turn makes into one probe, short enough
  * that a model swap (which reloads under a different window) is picked up on the
@@ -105,9 +113,13 @@ export class OllamaModelsService {
 	private plugin: ObsidianGemini;
 	private readonly catalog: CachedModelCatalog<OllamaEndpoint>;
 	/**
-	 * Caches /api/show responses by model name so each model is probed at most
-	 * once per listing cycle. A sibling probe (e.g. for tool-use detection,
-	 * issue #709) can reuse these cached responses without extra network calls.
+	 * Caches /api/show responses so each model is probed at most once per
+	 * listing cycle. A sibling probe (e.g. for tool-use detection, issue #709)
+	 * can reuse these cached responses without extra network calls.
+	 *
+	 * Keyed by {@link probeCacheKey} — endpoint plus model name. Keying on the
+	 * name alone let a probe from one daemon serve a same-named model on
+	 * another after an endpoint switch (#1545).
 	 */
 	private showCache = new Map<string, OllamaShowResponse>();
 	/**
@@ -125,8 +137,17 @@ export class OllamaModelsService {
 	 * request instead of each hitting the daemon. Entries are removed on settle.
 	 */
 	private psInFlight = new Map<string, Promise<number | null>>();
-	/** Bumped by invalidate() so a probe started beforehand can't re-seed the cache. */
-	private cacheGeneration = 0;
+	/**
+	 * Generations guarding the two probe caches against a probe that was already
+	 * in flight when its cache was cleared. Kept separate because the caches have
+	 * different clearing paths: `showCache` is also emptied by the endpoint-change
+	 * / force-refresh hook, which must not discard in-flight /api/ps results — a
+	 * forced refresh of the same daemon leaves those perfectly valid. Bumping a
+	 * shared generation there would throw away good data, so each cache bumps its
+	 * own. `invalidate()` bumps both.
+	 */
+	private showGeneration = 0;
+	private psGeneration = 0;
 
 	/**
 	 * Outcome of the most recent /api/tags fetch: whether the daemon answered.
@@ -150,9 +171,12 @@ export class OllamaModelsService {
 				return { key: baseUrl, label: baseUrl, baseUrl };
 			},
 			// Clear capability probes so they run against the current daemon state.
+			// Bumping the show generation too: a probe already in flight against the
+			// previous endpoint must not re-seed the cache it just cleared (#1545).
 			beforeFetch: ({ forceRefresh, identityChanged }) => {
 				if (forceRefresh || identityChanged) {
 					this.showCache.clear();
+					this.showGeneration++;
 				}
 			},
 			load: ({ baseUrl }) => this.fetchModels(baseUrl),
@@ -197,17 +221,25 @@ export class OllamaModelsService {
 		this.catalog.reset();
 		this.showCache.clear();
 		this.psCache.clear();
-		this.cacheGeneration++;
+		this.showGeneration++;
+		this.psGeneration++;
 	}
 
 	/**
 	 * Fetches /api/show for a model and caches the result. Returns null on any
 	 * failure so callers can fall back to name-hint detection gracefully.
+	 *
+	 * Keyed by {@link probeCacheKey} and generation-guarded like `psCache`: the
+	 * capture-before-await / write-only-if-current pair means a probe started
+	 * against one endpoint (or before an invalidate) can neither serve nor re-seed
+	 * another endpoint's cache entry after the switch (#1545).
 	 */
 	private async probeModel(name: string, baseUrl: string): Promise<OllamaShowResponse | null> {
-		if (this.showCache.has(name)) {
-			return this.showCache.get(name)!;
+		const cacheKey = probeCacheKey(baseUrl, name);
+		if (this.showCache.has(cacheKey)) {
+			return this.showCache.get(cacheKey)!;
 		}
+		const generation = this.showGeneration;
 		try {
 			const response = await requestUrl({
 				url: joinBaseUrl(baseUrl, '/api/show'),
@@ -220,7 +252,9 @@ export class OllamaModelsService {
 				return null;
 			}
 			const result = response.json as OllamaShowResponse;
-			this.showCache.set(name, result);
+			if (generation === this.showGeneration) {
+				this.showCache.set(cacheKey, result);
+			}
 			return result;
 		} catch (err) {
 			this.plugin.logger.debug(`[OllamaModelsService] /api/show probe failed for ${name}:`, err);
@@ -284,10 +318,10 @@ export class OllamaModelsService {
 	 */
 	async getRuntimeContextLength(modelName: string): Promise<number | null> {
 		const baseUrl = this.plugin.settings.ollamaBaseUrl || OLLAMA_DEFAULT_BASE_URL;
-		// Keyed by base URL too: pointing at a different daemon must not serve the
-		// previous one's allocation, and this probe can run without getModels()
+		// Keyed by probeCacheKey too: pointing at a different daemon must not serve
+		// the previous one's allocation, and this probe can run without getModels()
 		// having noticed the switch.
-		const cacheKey = `${baseUrl}|${modelName}`;
+		const cacheKey = probeCacheKey(baseUrl, modelName);
 		const cached = this.psCache.get(cacheKey);
 		if (cached && Date.now() - cached.at < PS_CACHE_TTL_MS) {
 			return cached.contextLength;
@@ -302,14 +336,14 @@ export class OllamaModelsService {
 		// Writes are guarded by the generation captured at probe start: an
 		// invalidate() mid-probe must not be undone by the older result landing
 		// afterwards and re-seeding the cache it just cleared.
-		const generation = this.cacheGeneration;
+		const generation = this.psGeneration;
 		const probe = this.fetchRuntimeContextLength(modelName, baseUrl)
 			.then((contextLength) => {
 				// Every outcome is cached, including "not loaded" and probe failure. A
 				// failing daemon is the case that most needs it — otherwise each turn
 				// pays the connection timeout three times over — and the short TTL
 				// keeps recovery within a few seconds.
-				if (generation === this.cacheGeneration) {
+				if (generation === this.psGeneration) {
 					this.psCache.set(cacheKey, { contextLength, at: Date.now() });
 				}
 				return contextLength;
