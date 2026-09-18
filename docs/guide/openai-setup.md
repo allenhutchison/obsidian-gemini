@@ -7,7 +7,7 @@ This is API-key billing only: there is no "Sign in with ChatGPT" / ChatGPT-subsc
 ## Setup
 
 1. **Get an API key** — Visit [platform.openai.com/api-keys](https://platform.openai.com/api-keys), create a key, and copy it. If you're only targeting a local compatible server that doesn't validate keys, you can skip this and use any placeholder value instead — the provider still requires a key to be set.
-2. **Add the OpenAI card** — Open Settings → Gemini Scribe → **Providers** and add an entry for OpenAI.
+2. **Open the OpenAI card** — Open Settings → Gemini Scribe → **Providers**, then select **OpenAI**.
 3. **Enter your API key** — On the **API key** row, click "Link..." and paste your key (or your placeholder value, for a compatible server). It's stored securely using Obsidian's SecretStorage, the same as the Gemini key.
 4. **Route features to it** — Open the **Features** page and set Chat and agent (and anything else you want) to **OpenAI**. Set **Default provider** on the Providers page to OpenAI too if you want it to catch everything you haven't routed elsewhere.
 5. **Pick models** — Chat, summary, and completions each get their own model dropdown on the Features page, populated from `GET <OpenAI base URL>/models`. Unlike Ollama, OpenAI has no single-resident-model constraint, so picking a different model per feature costs nothing extra. Click **Refresh** on the OpenAI provider card if a model doesn't show up.
