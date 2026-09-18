@@ -2,6 +2,7 @@ import { requestUrl } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { GeminiModel } from '../models';
 import { t } from '../i18n';
+import { CachedModelCatalog, joinBaseUrl, type CatalogEndpoint } from './remote-model-catalog';
 
 /**
  * Models that Ollama exposes for completions are tiny by convention. We pre-bias
@@ -88,6 +89,10 @@ interface OllamaPsResponse {
 	models?: { name?: string; model?: string; context_length?: number }[];
 }
 
+interface OllamaEndpoint extends CatalogEndpoint {
+	baseUrl: string;
+}
+
 /**
  * Fetches the list of locally available models from an Ollama server's
  * `/api/tags` endpoint and returns them as `GeminiModel` entries that can
@@ -98,8 +103,7 @@ interface OllamaPsResponse {
  */
 export class OllamaModelsService {
 	private plugin: ObsidianGemini;
-	private cachedModels: GeminiModel[] | null = null;
-	private lastBaseUrl: string | null = null;
+	private readonly catalog: CachedModelCatalog<OllamaEndpoint>;
 	/**
 	 * Caches /api/show responses by model name so each model is probed at most
 	 * once per listing cycle. A sibling probe (e.g. for tool-use detection,
@@ -123,19 +127,36 @@ export class OllamaModelsService {
 	private psInFlight = new Map<string, Promise<number | null>>();
 	/** Bumped by invalidate() so a probe started beforehand can't re-seed the cache. */
 	private cacheGeneration = 0;
+
 	/**
 	 * Outcome of the most recent /api/tags fetch: whether the daemon answered.
 	 * `null` until the first fetch (or after `invalidate()`), so the settings UI
 	 * can distinguish "not checked yet" from "unreachable".
 	 */
-	private lastProbeResult: 'reachable' | 'unreachable' | null = null;
-
 	get lastProbe(): 'reachable' | 'unreachable' | null {
-		return this.lastProbeResult;
+		return this.catalog.lastProbe;
 	}
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
+		this.catalog = new CachedModelCatalog({
+			logger: () => this.plugin.logger,
+			logPrefix: '[OllamaModelsService]',
+			endpoint: () => {
+				// Mirror the runtime client's fallback so model refresh and generation
+				// target the same daemon when the user has cleared the field.
+				const baseUrl = this.plugin.settings.ollamaBaseUrl || OLLAMA_DEFAULT_BASE_URL;
+				// The daemon is unauthenticated, so the base URL alone identifies a catalog.
+				return { key: baseUrl, label: baseUrl, baseUrl };
+			},
+			// Clear capability probes so they run against the current daemon state.
+			beforeFetch: ({ forceRefresh, identityChanged }) => {
+				if (forceRefresh || identityChanged) {
+					this.showCache.clear();
+				}
+			},
+			load: ({ baseUrl }) => this.fetchModels(baseUrl),
+		});
 	}
 
 	/**
@@ -143,61 +164,32 @@ export class OllamaModelsService {
 	 * Cache is invalidated when the base URL changes.
 	 */
 	async getModels(forceRefresh = false): Promise<GeminiModel[]> {
-		// Mirror the runtime client's fallback so model refresh and generation
-		// target the same daemon when the user has cleared the field.
-		const baseUrl = this.plugin.settings.ollamaBaseUrl || OLLAMA_DEFAULT_BASE_URL;
-		const cacheMatchesBaseUrl = this.lastBaseUrl === baseUrl;
-		if (!forceRefresh && this.cachedModels && cacheMatchesBaseUrl) {
-			return this.cachedModels;
+		return this.catalog.get(forceRefresh);
+	}
+
+	private async fetchModels(baseUrl: string): Promise<GeminiModel[]> {
+		// Deliberately no retry/backoff: ECONNREFUSED against the local daemon is
+		// permanent until `ollama serve` runs, so retrying only delays the
+		// actionable error — see #709 for the full rationale.
+		const response = await requestUrl({ url: joinBaseUrl(baseUrl, '/api/tags'), method: 'GET', throw: false });
+
+		if (response.status !== 200) {
+			throw new Error(`Ollama /api/tags returned HTTP ${response.status}`);
 		}
 
-		// Clear capability probes so they run against the current daemon state.
-		if (forceRefresh || !cacheMatchesBaseUrl) {
-			this.showCache.clear();
+		const data = response.json as OllamaTagsResponse;
+		if (!data || !Array.isArray(data.models)) {
+			throw new Error('Invalid /api/tags response shape');
 		}
 
-		try {
-			// Deliberately no retry/backoff: ECONNREFUSED against the local daemon is
-			// permanent until `ollama serve` runs, so retrying only delays the
-			// actionable error — see #709 for the full rationale.
-			const url = `${baseUrl.replace(/\/$/, '')}/api/tags`;
-			const response = await requestUrl({ url, method: 'GET', throw: false });
-
-			if (response.status !== 200) {
-				throw new Error(`Ollama /api/tags returned HTTP ${response.status}`);
-			}
-
-			const data = response.json as OllamaTagsResponse;
-			if (!data || !Array.isArray(data.models)) {
-				throw new Error('Invalid /api/tags response shape');
-			}
-
-			this.cachedModels = await Promise.all(data.models.map((m) => this.toGeminiModel(m, baseUrl)));
-			this.lastBaseUrl = baseUrl;
-			this.lastProbeResult = 'reachable';
-			this.plugin.logger.log(`[OllamaModelsService] Loaded ${this.cachedModels.length} models from ${baseUrl}`);
-			return this.cachedModels;
-		} catch (error) {
-			this.lastProbeResult = 'unreachable';
-			this.plugin.logger.warn('[OllamaModelsService] Failed to fetch model list:', error);
-			// Don't poison the cache with an empty array — that would stick until
-			// the user manually clicks "Refresh" even after the daemon comes back.
-			// Returning the previous cache (or an empty list as a non-cached
-			// fallback) lets a subsequent automatic call retry the fetch. But only
-			// reuse the cache when it matches the active base URL — falling back to
-			// another daemon's models would let the dropdown surface entries that
-			// don't exist on the new daemon and let the user save invalid selections.
-			return cacheMatchesBaseUrl ? (this.cachedModels ?? []) : [];
-		}
+		return Promise.all(data.models.map((m) => this.toGeminiModel(m, baseUrl)));
 	}
 
 	/**
 	 * Drop the cache (e.g. when the base URL changes or the user clicks "Refresh").
 	 */
 	invalidate(): void {
-		this.lastProbeResult = null;
-		this.cachedModels = null;
-		this.lastBaseUrl = null;
+		this.catalog.reset();
 		this.showCache.clear();
 		this.psCache.clear();
 		this.cacheGeneration++;
@@ -212,9 +204,8 @@ export class OllamaModelsService {
 			return this.showCache.get(name)!;
 		}
 		try {
-			const url = `${baseUrl.replace(/\/$/, '')}/api/show`;
 			const response = await requestUrl({
-				url,
+				url: joinBaseUrl(baseUrl, '/api/show'),
 				method: 'POST',
 				contentType: 'application/json',
 				body: JSON.stringify({ model: name }),
@@ -326,8 +317,7 @@ export class OllamaModelsService {
 
 	private async fetchRuntimeContextLength(modelName: string, baseUrl: string): Promise<number | null> {
 		try {
-			const url = `${baseUrl.replace(/\/$/, '')}/api/ps`;
-			const response = await requestUrl({ url, method: 'GET', throw: false });
+			const response = await requestUrl({ url: joinBaseUrl(baseUrl, '/api/ps'), method: 'GET', throw: false });
 			if (response.status !== 200) return null;
 
 			const data = response.json as OllamaPsResponse;
