@@ -626,7 +626,12 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		// against the new location inside their initialize({ refresh: true })
 		// blocks, and the deferred folder pass recreates the eager subfolders
 		// there (initializePluginFolders() below also runs on every save).
-		const historyFolderChanged = this.previousHistoryFolder !== this.settings.historyFolder;
+		// Gated on a successful init: before that, previousHistoryFolder is
+		// still '' and the comparison would be true on every save, re-running a
+		// setup that already failed for unrelated reasons (e.g. no credentials)
+		// each time any setting was saved. Credentialled recovery of an
+		// uninitialized vault is needsInit's job.
+		const historyFolderChanged = this.isGeminiInitialized && this.previousHistoryFolder !== this.settings.historyFolder;
 
 		if (
 			apiKeyChanged ||

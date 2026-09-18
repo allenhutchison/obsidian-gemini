@@ -1,4 +1,5 @@
 import ObsidianGemini, { ObsidianGeminiSettings } from '../src/main';
+import { routingKey } from '../src/api/feature-routing';
 import { FEATURE_IDS } from '../src/types/features';
 import type { App, PluginManifest } from 'obsidian';
 
@@ -148,6 +149,12 @@ describe('ObsidianGeminiSettings', () => {
 				defaultProvider: 'gemini',
 				apiKeySecretName: 'gemini-key',
 				historyFolder: 'gemini-scribe',
+				// The base-URL defaults from DEFAULT_SETTINGS: without them the
+				// customBaseUrlChanged comparison sees undefined and fires a phantom
+				// provider change on the first save.
+				ollamaBaseUrl: 'http://localhost:11434',
+				customBaseUrl: '',
+				openaiBaseUrl: 'https://api.openai.com/v1',
 				fileLogging: false,
 				logToolExecution: false,
 				hooksEnabled: false,
@@ -226,6 +233,30 @@ describe('ObsidianGeminiSettings', () => {
 			// markInitialized snapshots the folder, so the rename detector starts
 			// from the right baseline after recovery.
 			expect(internal.previousHistoryFolder).toBe('gemini-scribe');
+		});
+
+		it('does not treat a folder delta as a rename before a successful init (#1553 review)', async () => {
+			// No credentials: needsInit is false, so nothing else may trigger setup.
+			const { plugin, setup } = makeSaveablePlugin({ apiKeySecretName: '' });
+			const internal = plugin as unknown as {
+				isGeminiInitialized: boolean;
+				previousHistoryFolder: string;
+				previousRoutingKey: string;
+			};
+			// Never initialized: previousHistoryFolder is still ''. Without the
+			// gate, the ''-vs-'gemini-scribe' delta would be true on every save
+			// of any setting, re-running a setup that already failed for lack of
+			// credentials. previousRoutingKey is pinned to the current routing so
+			// the pre-existing phantom-provider-change condition (an
+			// uninitialized plugin snapshots nothing) doesn't fire first and mask
+			// the gate under test.
+			internal.isGeminiInitialized = false;
+			internal.previousHistoryFolder = '';
+			internal.previousRoutingKey = routingKey(plugin.settings);
+
+			await plugin.saveSettings();
+
+			expect(setup).not.toHaveBeenCalled();
 		});
 
 		it('advances the historyFolder snapshot when setup succeeds on a rename', async () => {
