@@ -796,6 +796,16 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': '拒絕',
 	'agent.planMode.rejectedNotice': '計畫已拒絕。',
 	'agent.planMode.proceedMessage': '繼續執行已核准的計畫。',
+	'agent.loopAborted':
+		'Agent 持續重試相同的工具呼叫（迴圈偵測器已觸發 {count} 次）。為避免無限迴圈已中止此回合。請嘗試換個方式描述您的請求，或開啟新的對話。',
+	'agent.emptyResponseFallback.withTools':
+		'我已完成請求的操作（{tools}），但在產生摘要時發生問題。操作本身已順利完成。',
+	'agent.emptyResponseFallback.noTools': '我已完成請求的操作，但在產生摘要時發生問題。操作本身已順利完成。',
+	'selection.emptyResponse': 'AI 回傳了空白內容。請再試一次。',
+	'provider.openai.noModelSelected': '尚未選擇 OpenAI 模型。請至設定中選擇模型。',
+	'provider.unsupportedAttachment':
+		'{provider} 僅支援圖片附件；接收到的格式為 {mimeType}。如需輸入 PDF、音訊或影片，請切換至 Gemini 提供者。',
+	'provider.gemini.noImageData': '回應中沒有圖片資料。模型可能僅回傳了文字。',
 	'error.unknown': '發生未知錯誤',
 	'error.openaiInvalidKey': '無效的 OpenAI API 金鑰。請至 設定 → Gemini Scribe 檢查 API 金鑰。',
 	'error.anthropicInvalidKey': 'Anthropic API 金鑰無效。請至「設定」→「Gemini Scribe」檢查 API 金鑰。',

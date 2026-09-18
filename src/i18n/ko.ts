@@ -820,6 +820,17 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': '거절',
 	'agent.planMode.rejectedNotice': '계획이 거절되었습니다.',
 	'agent.planMode.proceedMessage': '승인된 계획을 진행합니다.',
+	'agent.loopAborted':
+		'에이전트가 동일한 도구 호출을 계속 반복했습니다(루프 감지기가 {count}회 작동함). 무한 루프를 방지하기 위해 이번 턴을 중단합니다. 요청을 다시 작성하거나 새 세션을 시작해 보세요.',
+	'agent.emptyResponseFallback.withTools':
+		'요청하신 작업({tools})을 완료했으나 요약을 생성하는 데 문제가 발생했습니다. 작업 자체는 성공적으로 완료되었습니다.',
+	'agent.emptyResponseFallback.noTools':
+		'요청하신 작업을 완료했으나 요약을 생성하는 데 문제가 발생했습니다. 작업 자체는 성공적으로 완료되었습니다.',
+	'selection.emptyResponse': 'AI가 빈 응답을 반환했습니다. 다시 시도해 주세요.',
+	'provider.openai.noModelSelected': '선택된 OpenAI 모델이 없습니다. 설정에서 모델을 선택하세요.',
+	'provider.unsupportedAttachment':
+		'{provider}에서는 이미지 첨부 파일만 지원합니다({mimeType} 수신됨). PDF, 오디오 또는 비디오를 입력하려면 Gemini 제공자로 전환하세요.',
+	'provider.gemini.noImageData': '응답에 이미지 데이터가 없습니다. 모델이 텍스트만 반환했을 수 있습니다.',
 	'error.unknown': '알 수 없는 오류가 발생했습니다',
 	'error.openaiInvalidKey': '올바르지 않은 OpenAI API 키입니다. 설정 → Gemini Scribe에서 API 키를 확인해 주세요.',
 	'error.anthropicInvalidKey': '유효하지 않은 Anthropic API 키입니다. 설정 → Gemini Scribe에서 API 키를 확인해 주세요.',

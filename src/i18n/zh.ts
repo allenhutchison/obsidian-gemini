@@ -796,6 +796,15 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': '拒绝',
 	'agent.planMode.rejectedNotice': '计划已拒绝。',
 	'agent.planMode.proceedMessage': '继续执行已批准的计划。',
+	'agent.loopAborted':
+		'Agent 持续重试同一个工具调用（循环检测器已触发 {count} 次）。为避免陷入死循环，已终止本轮交互。请尝试重新描述您的请求或开启新会话。',
+	'agent.emptyResponseFallback.withTools': '我已完成请求的操作（{tools}），但在生成摘要时遇到问题。操作已成功执行。',
+	'agent.emptyResponseFallback.noTools': '我已完成请求的操作，但在生成摘要时遇到问题。操作已成功执行。',
+	'selection.emptyResponse': 'AI 返回了空响应。请重试。',
+	'provider.openai.noModelSelected': '未选择 OpenAI 模型。请在设置中选择一个模型。',
+	'provider.unsupportedAttachment':
+		'{provider} 仅支持图片附件；当前接收到的是 {mimeType}。如需输入 PDF、音频或视频，请切换至 Gemini 提供商。',
+	'provider.gemini.noImageData': '响应中未包含图像数据。模型可能仅返回了文本。',
 	'error.unknown': '发生未知错误',
 	'error.openaiInvalidKey': '无效的 OpenAI API 密钥。请检查 设置 → Gemini Scribe 中的 API 密钥。',
 	'error.anthropicInvalidKey': 'Anthropic API 密钥无效。请在 设置 → Gemini Scribe 中检查 API 密钥。',

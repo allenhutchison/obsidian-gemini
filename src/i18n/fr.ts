@@ -845,6 +845,17 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Rejeter',
 	'agent.planMode.rejectedNotice': 'Plan rejeté.',
 	'agent.planMode.proceedMessage': 'Poursuivre avec le plan approuvé.',
+	'agent.loopAborted':
+		"L'agent a continué de répéter le même appel d'outil (le détecteur de boucle s'est déclenché {count} fois). Arrêt de ce tour pour éviter une boucle infinie. Essayez de reformuler votre demande ou de démarrer une nouvelle session.",
+	'agent.emptyResponseFallback.withTools':
+		"J'ai effectué les actions demandées ({tools}) mais j'ai rencontré des difficultés pour générer un résumé. Les opérations ont réussi.",
+	'agent.emptyResponseFallback.noTools':
+		"J'ai effectué les actions demandées mais j'ai rencontré des difficultés pour générer un résumé. Les opérations ont réussi.",
+	'selection.emptyResponse': "L'IA a renvoyé une réponse vide. Veuillez réessayer.",
+	'provider.openai.noModelSelected': 'Aucun modèle OpenAI sélectionné. Choisissez un modèle dans les paramètres.',
+	'provider.unsupportedAttachment':
+		"{provider} ne prend en charge que les pièces jointes d'images ; {mimeType} reçu. Passez au fournisseur Gemini pour les fichiers PDF, audio ou vidéo.",
+	'provider.gemini.noImageData': "Aucune donnée d'image dans la réponse. Le modèle n'a peut-être renvoyé que du texte.",
 	'error.unknown': 'Une erreur inconnue est survenue',
 	'error.openaiInvalidKey': 'Clé API OpenAI non valide. Veuillez vérifier la clé API dans Paramètres → Gemini Scribe.',
 	'error.anthropicInvalidKey':

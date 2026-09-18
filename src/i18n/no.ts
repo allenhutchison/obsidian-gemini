@@ -828,6 +828,17 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Avvis',
 	'agent.planMode.rejectedNotice': 'Plan avvist.',
 	'agent.planMode.proceedMessage': 'Fortsett med den godkjente planen.',
+	'agent.loopAborted':
+		'Agenten fortsatte å prøve samme verktøykall på nytt (løkkedetektoren slo ut {count} ganger). Avbryter denne turen for å hindre en uendelig løkke. Prøv å omformulere forespørselen eller start en ny økt.',
+	'agent.emptyResponseFallback.withTools':
+		'Jeg fullførte de forespurte handlingene ({tools}), men hadde problemer med å generere et sammendrag. Handlingene var vellykkede.',
+	'agent.emptyResponseFallback.noTools':
+		'Jeg fullførte de forespurte handlingene, men hadde problemer med å generere et sammendrag. Handlingene var vellykkede.',
+	'selection.emptyResponse': 'AI-en returnerte et tomt svar. Prøv igjen.',
+	'provider.openai.noModelSelected': 'Ingen OpenAI-modell er valgt. Velg en modell i innstillingene.',
+	'provider.unsupportedAttachment':
+		'{provider} støtter bare bildevedlegg; mottok {mimeType}. Bytt til Gemini-leverandøren for PDF-, lyd- eller videoinndata.',
+	'provider.gemini.noImageData': 'Ingen bildedata i svaret. Modellen kan ha returnert bare tekst.',
 	'error.unknown': 'En ukjent feil oppstod',
 	'error.openaiInvalidKey': 'Ugyldig OpenAI API-nøkkel. Vennligst sjekk API-nøkkelen i Innstillinger → Gemini Scribe.',
 	'error.anthropicInvalidKey': 'Ugyldig Anthropic-API-nøkkel. Kontroller API-nøkkelen i Innstillinger → Gemini Scribe.',

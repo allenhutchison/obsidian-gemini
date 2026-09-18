@@ -837,6 +837,17 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Odrzuć',
 	'agent.planMode.rejectedNotice': 'Plan odrzucony.',
 	'agent.planMode.proceedMessage': 'Kontynuuj zgodnie z zatwierdzonym planem.',
+	'agent.loopAborted':
+		'Agent ponawiał tę samą próbę wywołania narzędzia (detektor pętli zadziałał {count} razy). Przerywam tę turę, aby zapobiec zapętleniu. Spróbuj inaczej sformułować zapytanie lub rozpocząć nową sesję.',
+	'agent.emptyResponseFallback.withTools':
+		'Wykonałem żądane działania ({tools}), ale wystąpił problem z wygenerowaniem podsumowania. Operacje zakończyły się powodzeniem.',
+	'agent.emptyResponseFallback.noTools':
+		'Wykonałem żądane działania, ale wystąpił problem z wygenerowaniem podsumowania. Operacje zakończyły się powodzeniem.',
+	'selection.emptyResponse': 'AI zwróciło pustą odpowiedź. Spróbuj ponownie.',
+	'provider.openai.noModelSelected': 'Nie wybrano modelu OpenAI. Wybierz model w ustawieniach.',
+	'provider.unsupportedAttachment':
+		'{provider} obsługuje tylko załączniki w postaci obrazów; odebrano {mimeType}. Przełącz na dostawcę Gemini, aby używać plików PDF, audio lub wideo.',
+	'provider.gemini.noImageData': 'Brak danych obrazu w odpowiedzi. Model mógł zwrócić tylko tekst.',
 	'error.unknown': 'Wystąpił nieznany błąd',
 	'error.openaiInvalidKey': 'Nieprawidłowy klucz API OpenAI. Sprawdź klucz API w Ustawienia → Gemini Scribe.',
 	'error.anthropicInvalidKey': 'Nieprawidłowy klucz API Anthropic. Sprawdź klucz API w Ustawienia → Gemini Scribe.',

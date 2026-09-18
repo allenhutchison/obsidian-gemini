@@ -835,6 +835,18 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Afwijzen',
 	'agent.planMode.rejectedNotice': 'Plan afgewezen.',
 	'agent.planMode.proceedMessage': 'Ga verder met het goedgekeurde plan.',
+	'agent.loopAborted':
+		'De agent bleef dezelfde toolaanroep herhalen (loop-detector is {count} keer geactiveerd). Deze beurt is gestopt om een oneindige lus te voorkomen. Probeer je verzoek anders te formuleren of start een nieuwe sessie.',
+	'agent.emptyResponseFallback.withTools':
+		'Ik heb de gevraagde acties voltooid ({tools}), maar had moeite met het genereren van een samenvatting. De bewerkingen zijn geslaagd.',
+	'agent.emptyResponseFallback.noTools':
+		'Ik heb de gevraagde acties voltooid, maar had moeite met het genereren van een samenvatting. De bewerkingen zijn geslaagd.',
+	'selection.emptyResponse': 'De AI gaf een leeg antwoord terug. Probeer het opnieuw.',
+	'provider.openai.noModelSelected': 'Geen OpenAI-model geselecteerd. Kies een model in de instellingen.',
+	'provider.unsupportedAttachment':
+		'{provider} ondersteunt alleen afbeeldingsbijlagen; {mimeType} ontvangen. Schakel over naar de Gemini-provider voor PDF-, audio- of video-invoer.',
+	'provider.gemini.noImageData':
+		'Geen afbeeldingsgegevens in antwoord. Het model heeft mogelijk alleen tekst geretourneerd.',
 	'error.unknown': 'Er is een onbekende fout opgetreden',
 	'error.openaiInvalidKey': 'Ongeldige OpenAI API-sleutel. Controleer de API-sleutel in Instellingen → Gemini Scribe.',
 	'error.anthropicInvalidKey':

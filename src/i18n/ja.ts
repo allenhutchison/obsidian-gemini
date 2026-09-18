@@ -831,6 +831,17 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': '却下',
 	'agent.planMode.rejectedNotice': '計画が却下されました。',
 	'agent.planMode.proceedMessage': '承認された計画を進めてください。',
+	'agent.loopAborted':
+		'エージェントが同じツールの呼び出しを繰り返しました（ループ検出が{count}回作動）。無限ループを防ぐため、このターンを中断します。リクエストの表現を変えるか、新しいセッションを開始してください。',
+	'agent.emptyResponseFallback.withTools':
+		'リクエストされたアクション（{tools}）を完了しましたが、要約の生成に問題が発生しました。操作自体は正常に完了しています。',
+	'agent.emptyResponseFallback.noTools':
+		'リクエストされたアクションを完了しましたが、要約の生成に問題が発生しました。操作自体は正常に完了しています。',
+	'selection.emptyResponse': 'AIから空の応答が返されました。もう一度お試しください。',
+	'provider.openai.noModelSelected': 'OpenAIモデルが選択されていません。設定でモデルを選択してください。',
+	'provider.unsupportedAttachment':
+		'{provider}は画像の添付のみに対応しています（受信した形式: {mimeType}）。PDF、音声、動画を入力するにはGeminiプロバイダーに切り替えてください。',
+	'provider.gemini.noImageData': '応答に画像データが含まれていません。モデルがテキストのみを返した可能性があります。',
 	'error.unknown': '不明なエラーが発生しました',
 	'error.openaiInvalidKey': '無効なOpenAI APIキーです。設定 → Gemini Scribe でAPIキーを確認してください。',
 	'error.anthropicInvalidKey': '無効なAnthropic APIキーです。設定 → Gemini Scribe でAPIキーを確認してください。',

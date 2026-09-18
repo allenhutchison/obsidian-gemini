@@ -830,6 +830,17 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Từ chối',
 	'agent.planMode.rejectedNotice': 'Đã từ chối kế hoạch.',
 	'agent.planMode.proceedMessage': 'Tiếp tục với kế hoạch đã được phê duyệt.',
+	'agent.loopAborted':
+		'Agent liên tục thử lại cùng một lệnh gọi công cụ (bộ phát hiện lặp đã kích hoạt {count} lần). Đang dừng lượt này để tránh vòng lặp vô hạn. Hãy thử diễn đạt lại yêu cầu hoặc bắt đầu một phiên mới.',
+	'agent.emptyResponseFallback.withTools':
+		'Tôi đã hoàn thành các hành động được yêu cầu ({tools}) nhưng gặp sự cố khi tạo bản tóm tắt. Các thao tác đã thành công.',
+	'agent.emptyResponseFallback.noTools':
+		'Tôi đã hoàn thành các hành động được yêu cầu nhưng gặp sự cố khi tạo bản tóm tắt. Các thao tác đã thành công.',
+	'selection.emptyResponse': 'AI đã trả về một phản hồi trống. Vui lòng thử lại.',
+	'provider.openai.noModelSelected': 'Chưa chọn mô hình OpenAI nào. Hãy chọn một mô hình trong phần cài đặt.',
+	'provider.unsupportedAttachment':
+		'{provider} chỉ hỗ trợ tệp đính kèm hình ảnh; đã nhận {mimeType}. Chuyển sang nhà cung cấp Gemini để dùng đầu vào là PDF, âm thanh hoặc video.',
+	'provider.gemini.noImageData': 'Không có dữ liệu hình ảnh trong phản hồi. Mô hình có thể chỉ trả về văn bản.',
 	'error.unknown': 'Đã xảy ra lỗi không xác định',
 	'error.openaiInvalidKey': 'API key OpenAI không hợp lệ. Vui lòng kiểm tra API key trong Cài đặt → Gemini Scribe.',
 	'error.anthropicInvalidKey':

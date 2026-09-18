@@ -834,6 +834,17 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Відхилити',
 	'agent.planMode.rejectedNotice': 'План відхилено.',
 	'agent.planMode.proceedMessage': 'Продовжити виконання затвердженого плану.',
+	'agent.loopAborted':
+		'Агент повторював той самий виклик інструмента (детектор циклу спрацював {count} разів). Зупиняємо цей хід, щоб уникнути нескінченного циклу. Спробуйте перефразувати запит або почати новий сеанс.',
+	'agent.emptyResponseFallback.withTools':
+		'Я виконав(-ла) потрібні дії ({tools}), але виникла проблема зі створенням підсумку. Самі операції завершилися успішно.',
+	'agent.emptyResponseFallback.noTools':
+		'Я виконав(-ла) потрібні дії, але виникла проблема зі створенням підсумку. Самі операції завершилися успішно.',
+	'selection.emptyResponse': 'ШІ повернув порожню відповідь. Будь ласка, спробуйте знову.',
+	'provider.openai.noModelSelected': 'Модель OpenAI не вибрано. Виберіть модель у налаштуваннях.',
+	'provider.unsupportedAttachment':
+		'{provider} підтримує лише вкладення-зображення; отримано {mimeType}. Перемкніться на постачальника Gemini для роботи з PDF, аудіо або відео.',
+	'provider.gemini.noImageData': 'У відповіді немає даних зображення. Модель могла повернути лише текст.',
 	'error.unknown': 'Виникла невідома помилка',
 	'error.openaiInvalidKey':
 		'Недійсний API-ключ OpenAI. Будь ласка, перевірте API-ключ у меню Налаштування → Gemini Scribe.',

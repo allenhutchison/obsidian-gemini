@@ -831,6 +831,17 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Afvis',
 	'agent.planMode.rejectedNotice': 'Plan afvist.',
 	'agent.planMode.proceedMessage': 'Fortsæt med den godkendte plan.',
+	'agent.loopAborted':
+		'Agenten blev ved med at prøve det samme værktøjskald (løkkedetektoren blev udløst {count} gange). Stopper denne tur for at forhindre en uendelig løkke. Prøv at omformulere din anmodning eller starte en ny session.',
+	'agent.emptyResponseFallback.withTools':
+		'Jeg fuldførte de ønskede handlinger ({tools}), men havde problemer med at generere et resumé. Handlingerne lykkedes.',
+	'agent.emptyResponseFallback.noTools':
+		'Jeg fuldførte de ønskede handlinger, men havde problemer med at generere et resumé. Handlingerne lykkedes.',
+	'selection.emptyResponse': "AI'en returnerede et tomt svar. Prøv venligst igen.",
+	'provider.openai.noModelSelected': 'Ingen OpenAI-model valgt. Vælg en model i indstillingerne.',
+	'provider.unsupportedAttachment':
+		'{provider} understøtter kun billedvedhæftninger; modtog {mimeType}. Skift til Gemini-udbyderen for PDF-, lyd- eller videoinput.',
+	'provider.gemini.noImageData': 'Ingen billeddata i svaret. Modellen har muligvis kun returneret tekst.',
 	'error.unknown': 'Der opstod en ukendt fejl',
 	'error.openaiInvalidKey': 'Ugyldig OpenAI API-nøgle. Kontroller venligst API-nøglen i Indstillinger → Gemini Scribe.',
 	'error.anthropicInvalidKey':

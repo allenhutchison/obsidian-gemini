@@ -827,6 +827,17 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Tolak',
 	'agent.planMode.rejectedNotice': 'Rencana ditolak.',
 	'agent.planMode.proceedMessage': 'Lanjutkan dengan rencana yang disetujui.',
+	'agent.loopAborted':
+		'Agen terus mencoba ulang pemanggilan alat yang sama (pendeteksi loop terpicu {count} kali). Menghentikan giliran ini untuk mencegah loop tanpa akhir. Coba ubah kalimat permintaan Anda atau mulai sesi baru.',
+	'agent.emptyResponseFallback.withTools':
+		'Saya telah menyelesaikan tindakan yang diminta ({tools}) tetapi kesulitan membuat ringkasan. Tindakan tersebut berhasil dilakukan.',
+	'agent.emptyResponseFallback.noTools':
+		'Saya telah menyelesaikan tindakan yang diminta tetapi kesulitan membuat ringkasan. Tindakan tersebut berhasil dilakukan.',
+	'selection.emptyResponse': 'AI mengembalikan respons kosong. Silakan coba lagi.',
+	'provider.openai.noModelSelected': 'Tidak ada model OpenAI yang dipilih. Pilih model di pengaturan.',
+	'provider.unsupportedAttachment':
+		'{provider} hanya mendukung lampiran gambar; menerima {mimeType}. Beralih ke penyedia Gemini untuk input PDF, audio, atau video.',
+	'provider.gemini.noImageData': 'Tidak ada data gambar dalam respons. Model mungkin hanya mengembalikan teks.',
 	'error.unknown': 'Terjadi kesalahan yang tidak diketahui',
 	'error.openaiInvalidKey': 'Kunci API OpenAI tidak valid. Silakan periksa kunci API di Pengaturan → Gemini Scribe.',
 	'error.anthropicInvalidKey':

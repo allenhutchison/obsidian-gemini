@@ -829,6 +829,17 @@ export const ptBR: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Rejeitar',
 	'agent.planMode.rejectedNotice': 'Plano rejeitado.',
 	'agent.planMode.proceedMessage': 'Prosseguir com o plano aprovado.',
+	'agent.loopAborted':
+		'O agente continuou repetindo a mesma chamada de ferramenta (o detector de loop disparou {count} vezes). Interrompendo este turno para evitar um loop infinito. Tente reformular sua solicitação ou iniciar uma nova sessão.',
+	'agent.emptyResponseFallback.withTools':
+		'Concluí as ações solicitadas ({tools}), mas tive problemas para gerar um resumo. As operações foram bem-sucedidas.',
+	'agent.emptyResponseFallback.noTools':
+		'Concluí as ações solicitadas, mas tive problemas para gerar um resumo. As operações foram bem-sucedidas.',
+	'selection.emptyResponse': 'A IA retornou uma resposta vazia. Tente novamente.',
+	'provider.openai.noModelSelected': 'Nenhum modelo da OpenAI selecionado. Escolha um modelo nas configurações.',
+	'provider.unsupportedAttachment':
+		'{provider} suporta apenas anexos de imagem; {mimeType} recebido. Alterne para o provedor Gemini para entrada de PDF, áudio ou vídeo.',
+	'provider.gemini.noImageData': 'Nenhum dado de imagem na resposta. O modelo pode ter retornado apenas texto.',
 	'error.unknown': 'Ocorreu um erro desconhecido',
 	'error.openaiInvalidKey':
 		'Chave de API da OpenAI inválida. Verifique a chave de API em Configurações → Gemini Scribe.',
