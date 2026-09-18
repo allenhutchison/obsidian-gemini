@@ -249,6 +249,31 @@ describe('CachedModelCatalog', () => {
 		expect(await inFlight).toEqual([]);
 	});
 
+	it("does not serve another endpoint's cache when two refreshes overlap (A/B/A)", async () => {
+		const { catalog, load, setEndpoint } = buildCatalog();
+		load.mockResolvedValue([model('a')]);
+		await catalog.get();
+
+		let failA!: (error: unknown) => void;
+		const aPending = new Promise<GeminiModel[]>((_resolve, reject) => {
+			failA = reject;
+		});
+		load.mockImplementation((endpoint) => (endpoint.baseUrl === 'http://a' ? aPending : Promise.resolve([model('b')])));
+
+		// A forced refresh of A is still in flight...
+		const inFlightA = catalog.get(true);
+		// ...when a load of B lands and takes the cache over.
+		setEndpoint('http://b');
+		expect(await catalog.get()).toEqual([model('b')]);
+		// The user switches back to A, and only then does A's request fail. Both the
+		// entry-time "A matched" and the active endpoint now say A, so only reading
+		// the cache's *current* identity reveals that it holds B's models.
+		setEndpoint('http://a');
+		failA(new Error('ECONNREFUSED'));
+
+		expect(await inFlightA).toEqual([]);
+	});
+
 	describe('a reset landing mid-load', () => {
 		/** A load the test resolves or rejects by hand, so reset() can land mid-flight. */
 		function deferred<T>() {

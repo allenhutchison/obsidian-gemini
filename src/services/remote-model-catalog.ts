@@ -78,8 +78,13 @@ export function joinBaseUrl(baseUrl: string, path: string): string {
  * outside the shared policy.
  */
 export class CachedModelCatalog<E extends CatalogEndpoint> {
-	private cachedModels: GeminiModel[] | null = null;
-	private lastIdentity: string | null = null;
+	/**
+	 * The cached list together with the endpoint identity it came from, as one
+	 * value. Held as a single snapshot rather than two fields so "the cache holds
+	 * A's models but the identity says B" is unrepresentable — every read sees a
+	 * consistent pair, including a read that happens after an await.
+	 */
+	private cache: { identity: string; models: GeminiModel[] } | null = null;
 	private lastProbeResult: 'reachable' | 'unreachable' | null = null;
 	/**
 	 * Bumped by {@link reset} so a load started beforehand can't re-seed the state
@@ -103,9 +108,10 @@ export class CachedModelCatalog<E extends CatalogEndpoint> {
 	/** Returns the cached list when it is still valid, otherwise fetches fresh. */
 	async get(forceRefresh = false): Promise<GeminiModel[]> {
 		const endpoint = this.options.endpoint();
-		const identityMatches = this.lastIdentity === endpoint.key;
-		if (!forceRefresh && this.cachedModels && identityMatches) {
-			return this.cachedModels;
+		const cachedOnEntry = this.cache;
+		const identityMatches = cachedOnEntry?.identity === endpoint.key;
+		if (!forceRefresh && identityMatches) {
+			return cachedOnEntry.models;
 		}
 
 		this.options.beforeFetch?.({ forceRefresh, identityChanged: !identityMatches });
@@ -119,8 +125,7 @@ export class CachedModelCatalog<E extends CatalogEndpoint> {
 			const models = await this.options.load(endpoint);
 			this.options.logger().log(`${logPrefix} Loaded ${models.length} models from ${endpoint.label}`);
 			if (generation === this.generation) {
-				this.cachedModels = models;
-				this.lastIdentity = endpoint.key;
+				this.cache = { identity: endpoint.key, models };
 				this.lastProbeResult = 'reachable';
 			}
 			return models;
@@ -135,17 +140,20 @@ export class CachedModelCatalog<E extends CatalogEndpoint> {
 			// Don't poison the cache with an empty array — that would stick until the
 			// user manually clicks "Refresh" even after the server comes back.
 			// Returning the previous cache (or an empty list as a non-cached fallback)
-			// lets a subsequent automatic call retry the fetch. But only reuse the
-			// cache while it matches the active endpoint identity — falling back to
-			// another endpoint's models would let the dropdown surface entries that
-			// don't exist there and let the user save invalid selections.
+			// lets a subsequent automatic call retry the fetch. But only serve that
+			// cache when it is this endpoint's and this endpoint is still the active
+			// one — another endpoint's models would let the dropdown surface entries
+			// that don't exist there and let the user save invalid selections.
 			//
-			// "Active" is re-read here rather than reused from before the await: the
-			// user can retarget the provider while a refresh is in flight, and the
-			// identity captured at entry would still say the dead endpoint's cache is
-			// safe to serve for the new one.
-			const stillActive = identityMatches && this.options.endpoint().key === endpoint.key;
-			return stillActive ? (this.cachedModels ?? []) : [];
+			// Both halves are read *now* rather than reused from before the await, and
+			// that is the whole point. An overlapping load may have replaced the cache
+			// with another endpoint's models since (a forced refresh of A still in
+			// flight while a load of B lands), and the user may have retargeted the
+			// provider. Either captured value would wave through a list this endpoint
+			// never served.
+			const cached = this.cache;
+			const safeToServe = cached?.identity === endpoint.key && this.options.endpoint().key === endpoint.key;
+			return safeToServe ? cached.models : [];
 		}
 	}
 
@@ -156,7 +164,6 @@ export class CachedModelCatalog<E extends CatalogEndpoint> {
 	reset(): void {
 		this.generation++;
 		this.lastProbeResult = null;
-		this.cachedModels = null;
-		this.lastIdentity = null;
+		this.cache = null;
 	}
 }
