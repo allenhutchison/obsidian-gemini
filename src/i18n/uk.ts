@@ -1011,8 +1011,6 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.baseUrlRequiredDesc': 'Адреса локального сервера, з яким взаємодіє цей провайдер.',
 	'settings.providers.baseUrlPlaceholder': 'http://localhost:11434',
 	'settings.providers.baseUrlInvalid': 'Введіть дійсний URL.',
-	'settings.providers.subscriptionSignInName': 'Увійти за допомогою підписки ChatGPT',
-	'settings.providers.subscriptionComingSoon': 'Незабаром — наразі використовуйте ключ API нижче.',
 	'settings.providers.modelsHeading': 'Моделі',
 	'settings.providers.modelsRowName': 'Доступні моделі',
 	'settings.providers.refreshButton': 'Оновити',

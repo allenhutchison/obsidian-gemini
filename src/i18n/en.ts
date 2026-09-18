@@ -3698,14 +3698,6 @@ export const en = {
 		message: 'Enter a valid URL.',
 		context: 'Inline validation error shown under a base-URL field that does not parse as a URL.',
 	},
-	'settings.providers.subscriptionSignInName': {
-		message: 'Sign in with your ChatGPT subscription',
-		context: 'Row name for the OpenAI provider card\'s subscription sign-in action. "ChatGPT" is a product name.',
-	},
-	'settings.providers.subscriptionComingSoon': {
-		message: 'Coming soon — use an API key below for now.',
-		context: 'Row description explaining that subscription sign-in is not yet implemented.',
-	},
 	'settings.providers.modelsHeading': {
 		message: 'Models',
 		context: 'Group heading on a provider card for the model list / refresh row.',

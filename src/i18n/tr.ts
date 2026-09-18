@@ -1014,8 +1014,6 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.baseUrlRequiredDesc': 'Bu sağlayıcının iletişim kurduğu yerel sunucunun adresi.',
 	'settings.providers.baseUrlPlaceholder': 'http://localhost:11434',
 	'settings.providers.baseUrlInvalid': 'Geçerli bir URL girin.',
-	'settings.providers.subscriptionSignInName': 'ChatGPT aboneliğinizle giriş yapın',
-	'settings.providers.subscriptionComingSoon': 'Yakında — şimdilik aşağıda bir API anahtarı kullanın.',
 	'settings.providers.modelsHeading': 'Modeller',
 	'settings.providers.modelsRowName': 'Kullanılabilir modeller',
 	'settings.providers.refreshButton': 'Yenile',

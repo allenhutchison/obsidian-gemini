@@ -987,8 +987,6 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.baseUrlRequiredDesc': '이 제공자가 통신하는 로컬 서버의 주소입니다.',
 	'settings.providers.baseUrlPlaceholder': 'http://localhost:11434',
 	'settings.providers.baseUrlInvalid': '유효한 URL을 입력하세요.',
-	'settings.providers.subscriptionSignInName': 'ChatGPT 구독으로 로그인',
-	'settings.providers.subscriptionComingSoon': '곧 지원 예정 — 지금은 아래의 API 키를 사용하세요.',
 	'settings.providers.modelsHeading': '모델',
 	'settings.providers.modelsRowName': '사용 가능한 모델',
 	'settings.providers.refreshButton': '새로고침',

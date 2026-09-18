@@ -1017,8 +1017,6 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.baseUrlRequiredDesc': 'Адрес локального сервера, к которому обращается этот провайдер.',
 	'settings.providers.baseUrlPlaceholder': 'http://localhost:11434',
 	'settings.providers.baseUrlInvalid': 'Введите корректный URL.',
-	'settings.providers.subscriptionSignInName': 'Войти с подпиской ChatGPT',
-	'settings.providers.subscriptionComingSoon': 'Скоро появится — пока используйте API-ключ ниже.',
 	'settings.providers.modelsHeading': 'Модели',
 	'settings.providers.modelsRowName': 'Доступные модели',
 	'settings.providers.refreshButton': 'Обновить',

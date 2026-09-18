@@ -1002,8 +1002,6 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.baseUrlRequiredDesc': 'Alamat server lokal yang dihubungi oleh penyedia ini.',
 	'settings.providers.baseUrlPlaceholder': 'http://localhost:11434',
 	'settings.providers.baseUrlInvalid': 'Masukkan URL yang valid.',
-	'settings.providers.subscriptionSignInName': 'Masuk dengan langganan ChatGPT Anda',
-	'settings.providers.subscriptionComingSoon': 'Segera hadir — gunakan kunci API di bawah untuk saat ini.',
 	'settings.providers.modelsHeading': 'Model',
 	'settings.providers.modelsRowName': 'Model yang tersedia',
 	'settings.providers.refreshButton': 'Segarkan',

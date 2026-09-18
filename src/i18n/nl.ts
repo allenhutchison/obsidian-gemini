@@ -1013,8 +1013,6 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.baseUrlRequiredDesc': 'Adres van de lokale server waarmee deze provider communiceert.',
 	'settings.providers.baseUrlPlaceholder': 'http://localhost:11434',
 	'settings.providers.baseUrlInvalid': 'Voer een geldige URL in.',
-	'settings.providers.subscriptionSignInName': 'Inloggen met je ChatGPT-abonnement',
-	'settings.providers.subscriptionComingSoon': 'Binnenkort beschikbaar — gebruik voorlopig hieronder een API-sleutel.',
 	'settings.providers.modelsHeading': 'Modellen',
 	'settings.providers.modelsRowName': 'Beschikbare modellen',
 	'settings.providers.refreshButton': 'Vernieuwen',
