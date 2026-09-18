@@ -108,6 +108,33 @@ describe('CachedModelCatalog', () => {
 		expect(catalog.lastProbe).toBe('unreachable');
 	});
 
+	it('treats a malformed-response failure exactly like an HTTP failure', async () => {
+		// The policy is loader-agnostic: each service throws for a non-200 status and
+		// for an unexpected response shape, and the catalog must not distinguish them.
+		const { catalog, load, logger } = buildCatalog();
+		load.mockResolvedValue([model('a')]);
+		await catalog.get();
+
+		const httpError = new Error('Ollama /api/tags returned HTTP 500');
+		load.mockRejectedValue(httpError);
+		expect(await catalog.get(true)).toEqual([model('a')]);
+		expect(logger.warn).toHaveBeenLastCalledWith('[TestService] Failed to fetch model list:', httpError);
+
+		const shapeError = new Error('Invalid /api/tags response shape');
+		load.mockRejectedValue(shapeError);
+		expect(await catalog.get(true)).toEqual([model('a')]);
+		expect(logger.warn).toHaveBeenLastCalledWith('[TestService] Failed to fetch model list:', shapeError);
+		expect(catalog.lastProbe).toBe('unreachable');
+	});
+
+	it('returns an empty list when a malformed response is the very first fetch', async () => {
+		const { catalog, load } = buildCatalog();
+		load.mockRejectedValue(new Error('Invalid /models response shape'));
+
+		expect(await catalog.get()).toEqual([]);
+		expect(catalog.lastProbe).toBe('unreachable');
+	});
+
 	it('serves the previous cache when a refresh fails against the same endpoint', async () => {
 		const { catalog, load } = buildCatalog();
 		load.mockResolvedValue([model('a')]);

@@ -135,6 +135,12 @@ export class OpenAIModelsService {
 		this.catalog.reset();
 	}
 
+	/**
+	 * Fetches and maps the endpoint's `/models` catalog, restricting to
+	 * {@link SUPPORTED_OPENAI_HOSTED_MODELS} only on api.openai.com. Throws on an
+	 * unreachable endpoint, a non-200 status, or an unexpected response shape; the
+	 * shared catalog turns any of those into the identity-aware cache fallback.
+	 */
 	private async fetchModels(baseUrl: string, apiKey: string): Promise<GeminiModel[]> {
 		const response = await requestUrl({
 			url: joinBaseUrl(baseUrl, '/models'),

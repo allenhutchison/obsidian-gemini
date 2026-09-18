@@ -479,4 +479,13 @@ describe('OllamaModelsService', () => {
 			});
 		});
 	});
+
+	it('returns an empty list when /api/tags returns an unexpected shape', async () => {
+		mockedRequestUrl.mockResolvedValue({ status: 200, json: { notModels: [] } });
+
+		const svc = new OllamaModelsService(buildPlugin());
+
+		expect(await svc.getModels()).toEqual([]);
+		expect(svc.lastProbe).toBe('unreachable');
+	});
 });

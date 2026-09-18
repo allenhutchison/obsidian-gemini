@@ -167,6 +167,11 @@ export class OllamaModelsService {
 		return this.catalog.get(forceRefresh);
 	}
 
+	/**
+	 * Fetches and maps the daemon's `/api/tags` catalog. Throws on an unreachable
+	 * daemon, a non-200 status, or an unexpected response shape; the shared
+	 * catalog turns any of those into the identity-aware cache fallback.
+	 */
 	private async fetchModels(baseUrl: string): Promise<GeminiModel[]> {
 		// Deliberately no retry/backoff: ECONNREFUSED against the local daemon is
 		// permanent until `ollama serve` runs, so retrying only delays the
