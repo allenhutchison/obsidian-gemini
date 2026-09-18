@@ -89,11 +89,14 @@ const PERVASIVE_OBSIDIANMD_RULES_TODO = {
 // `p.startsWith(folder + '/')` instead of calling `isPathInFolder()` — eleven-plus
 // sites across five audit sweeps. That matters because `isPathInFolder` is a live
 // fix surface (#1372 changed its semantics, #1374 is an open bug in it) and no
-// inline copy inherits a correction to it. The selector matches any `.startsWith()`
-// whose argument is a concatenation, which measured against `src/` hits exactly the
-// path-containment sites and nothing else (8/8, no false positives).
+// inline copy inherits a correction to it. Two selectors cover the two shapes the
+// pattern takes: the concatenation passed straight to `.startsWith()` (#1402,
+// measured 8/8 against `src/` with no false positives), and the same concatenation
+// hoisted into a local first (#1482), which the first selector cannot see.
 // A deliberate strict-descendant site takes a line-scoped disable carrying the
 // "why strict descendant" reason the rule in `.claude/guidelines/coding.md` asks for.
+// Both selectors live under the one `no-restricted-syntax` rule so that disable —
+// which is per-rule, not per-selector — keeps suppressing exactly its own site.
 const PATH_CONTAINMENT_RULE = {
 	'no-restricted-syntax': [
 		'error',
@@ -106,6 +109,29 @@ const PATH_CONTAINMENT_RULE = {
 				"CallExpression[callee.property.name='startsWith'][arguments.0.type='BinaryExpression'][arguments.0.operator='+']",
 			message:
 				"Don't hand-roll path containment: use isPathInFolder(path, folder) from src/utils/file-utils.ts (or shouldExcludePath/shouldExcludePathForPlugin for system paths). If this site genuinely needs strict-descendant semantics, add an eslint-disable-next-line with a reason explaining why.",
+		},
+		{
+			// #1482: the selector above only fires when the concatenation IS the
+			// `startsWith` argument. Hoisting it one line earlier evades it entirely —
+			// `const prefix = folder + '/'` is a BinaryExpression, but the call's
+			// argument is then an Identifier. `npm run lint` was green on `master`
+			// with three such sites present (#1481). A selector cannot follow the
+			// binding from the declarator to the later `.startsWith(prefix)`, so this
+			// matches the assignment shape instead: building a path prefix by hand.
+			// `[init.right.value='/']` keeps it to the path case — any other suffix
+			// (`x + ', '`, `x + '\n'`) is not this pattern.
+			//
+			// Measured against `src/` before shipping: zero matches. All five
+			// surviving `+ '/'` occurrences are accounted for — the deliberate
+			// strict-descendant call in `skill-manager.ts` (line-scoped disable, and
+			// the call form anyway, so this selector never sees it), two in
+			// `file-utils.ts` (the exempt file that owns the predicate), and two
+			// inside comments, which are not walked AST nodes. So the widened guard
+			// adds no false positives on today's tree; it is a trap for the next
+			// hoisted prefix rather than a fix for a current one.
+			selector: "VariableDeclarator[init.type='BinaryExpression'][init.operator='+'][init.right.value='/']",
+			message:
+				"Don't build a path prefix by hand: `folder + '/'` assigned to a local is the hoisted form of hand-rolled containment, which the .startsWith() selector can't see. Call isPathInFolder(path, folder) from src/utils/file-utils.ts at the use site instead (or shouldExcludePath/shouldExcludePathForPlugin for system paths). If this site genuinely needs strict-descendant semantics, add an eslint-disable-next-line with a reason explaining why.",
 		},
 	],
 };

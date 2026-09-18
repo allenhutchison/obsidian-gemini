@@ -62,11 +62,23 @@ state-folder pair. These predicates are a live fix surface (#1372, #1374); an in
 misses every correction to them. If a site genuinely needs _strict descendant_ semantics (the folder
 itself excluded), say so in a comment explaining why — that is a real distinction, not a shorthand.
 
-A `no-restricted-syntax` ESLint entry backs this up mechanically: any `.startsWith()` whose argument
-is a concatenation is flagged in `src/` (`src/utils/file-utils.ts`, which owns the predicates, is
-exempt). A deliberate strict-descendant site takes a line-scoped
+A `no-restricted-syntax` ESLint entry backs this up mechanically, with two selectors for the two
+shapes the pattern takes in `src/` (`src/utils/file-utils.ts`, which owns the predicates, is exempt
+from both):
+
+1. any `.startsWith()` whose argument is a concatenation — `p.startsWith(folder + '/')`;
+2. any local initialized to a `+ '/'` concatenation — `const prefix = folder + '/'` (#1482).
+
+The second exists because hoisting the concatenation one line up evades the first entirely: the
+call's argument is then an Identifier, and a selector cannot follow the binding back to the
+declarator. `npm run lint` was green with three such sites present before it landed. Building the
+prefix by hand is the thing to stop, so the fix is at the use site either way — call
+`isPathInFolder(path, folder)`.
+
+A deliberate strict-descendant site takes a line-scoped
 `// eslint-disable-next-line no-restricted-syntax -- <why strict descendant>` — the description is
-the comment the rule already asks for, so the disable and the rule agree.
+the comment the rule already asks for, so the disable and the rule agree. Both selectors sit under
+the same rule, so that per-rule disable keeps working unchanged.
 
 ## Plugin type surface — never import `main.ts`
 
