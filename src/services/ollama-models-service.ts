@@ -133,10 +133,15 @@ export class OllamaModelsService {
 	 */
 	private psCache = new Map<string, { contextLength: number | null; at: number }>();
 	/**
-	 * In-flight /api/ps probes, so concurrent misses for the same key share one
-	 * request instead of each hitting the daemon. Entries are removed on settle.
+	 * In-flight /api/ps probes with the ps generation each started under, so
+	 * concurrent misses for the same key share one request instead of each
+	 * hitting the daemon. An entry is reused only while its generation is still
+	 * current — after an invalidate() the stale probe keeps answering its own
+	 * caller, but new lookups probe fresh. Entries are removed on settle, and
+	 * only by the probe that owns them: a stale probe superseded by a newer one
+	 * must not evict the newer entry when it lands.
 	 */
-	private psInFlight = new Map<string, Promise<number | null>>();
+	private psInFlight = new Map<string, { promise: Promise<number | null>; generation: number }>();
 	/**
 	 * Generations guarding the two probe caches against a probe that was already
 	 * in flight when its cache was cleared. Kept separate because the caches have
@@ -329,9 +334,13 @@ export class OllamaModelsService {
 		// The result cache only helps once a probe has resolved, so callers that
 		// overlap (the UI's token indicator refreshing while a turn's
 		// prepareHistory runs) would each miss and hit the daemon. Share the
-		// in-flight probe instead.
+		// in-flight probe instead — but only while its generation is still
+		// current: after an invalidate() mid-probe, a new lookup must go to the
+		// daemon rather than ride the stale probe.
 		const inFlight = this.psInFlight.get(cacheKey);
-		if (inFlight) return inFlight;
+		if (inFlight && inFlight.generation === this.psGeneration) {
+			return inFlight.promise;
+		}
 
 		// Writes are guarded by the generation captured at probe start: an
 		// invalidate() mid-probe must not be undone by the older result landing
@@ -348,9 +357,16 @@ export class OllamaModelsService {
 				}
 				return contextLength;
 			})
-			.finally(() => this.psInFlight.delete(cacheKey));
+			.finally(() => {
+				// Remove only if the map still holds *this* probe: a superseded stale
+				// probe settling late must not evict the newer entry that replaced it.
+				const entry = this.psInFlight.get(cacheKey);
+				if (entry?.promise === probe) {
+					this.psInFlight.delete(cacheKey);
+				}
+			});
 
-		this.psInFlight.set(cacheKey, probe);
+		this.psInFlight.set(cacheKey, { promise: probe, generation });
 		return probe;
 	}
 

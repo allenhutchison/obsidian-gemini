@@ -477,6 +477,57 @@ describe('OllamaModelsService', () => {
 				await svc.getRuntimeContextLength('gemma4:12b-mlx');
 				expect(psCalls()).toBe(2);
 			});
+
+			// The stale probe settling late must not evict the newer entry from
+			// psInFlight: cleanup removes only the probe's own entry, or a superseded
+			// probe would strand the map with a settled promise and block the next
+			// coalescing window.
+			it('a superseded stale probe does not evict the newer in-flight probe', async () => {
+				let releaseA: (v: any) => void = () => {};
+				let releaseB: (v: any) => void = () => {};
+				const gateA = new Promise((r) => (releaseA = r));
+				const gateB = new Promise((r) => (releaseB = r));
+				let first = true;
+				mockedRequestUrl.mockImplementation(async (opts: { url: string }) => {
+					if (opts.url.endsWith('/api/ps')) {
+						const mine = first;
+						first = false;
+						await (mine ? gateA : gateB);
+						return {
+							status: 200,
+							json: { models: [{ name: 'gemma4:12b-mlx', context_length: mine ? 262_144 : 4_096 }] },
+						};
+					}
+					return { status: 200, json: { models: [] } };
+				});
+				const svc = new OllamaModelsService(buildPlugin());
+				const internal = svc as unknown as {
+					psInFlight: Map<string, { promise: Promise<number | null>; generation: number }>;
+					psCache: Map<string, { contextLength: number | null; at: number }>;
+				};
+				const cacheKey = 'http://localhost:11434|gemma4:12b-mlx';
+
+				const stale = svc.getRuntimeContextLength('gemma4:12b-mlx'); // gen 0, parks on gateA
+				await vi.waitFor(() => expect(mockedRequestUrl.mock.calls.length).toBeGreaterThan(0));
+				svc.invalidate(); // gen 1: the stale probe is superseded
+
+				const fresh = svc.getRuntimeContextLength('gemma4:12b-mlx'); // must NOT reuse it
+				await vi.waitFor(() => expect(psCalls()).toBe(2));
+
+				// Stale settles first: its cleanup must leave the fresh entry alone.
+				releaseA(null);
+				await stale;
+				expect(internal.psInFlight.has(cacheKey)).toBe(true);
+
+				// Fresh settles: its own entry is removed.
+				releaseB(null);
+				await fresh;
+				expect(internal.psInFlight.size).toBe(0);
+
+				// Only the fresh probe's write landed: stale suppressed, fresh cached.
+				expect(internal.psCache.size).toBe(1);
+				expect(internal.psCache.get(cacheKey)?.contextLength).toBe(4_096);
+			});
 		});
 	});
 
@@ -648,7 +699,10 @@ describe('OllamaModelsService', () => {
 			// The endpoint-change/force-refresh hook bumps the show generation but
 			// not the ps generation: a forced refresh of the same daemon discards
 			// /api/show probes mid-flight, but an /api/ps result captured from that
-			// same daemon is still the truth about its allocation.
+			// same daemon is still the truth about its allocation. The probe stays
+			// PENDING across the refresh — if the split-generation design ever
+			// regressed to a shared generation, the pending write would be
+			// suppressed and the final lookup would re-probe (2 calls, not 1).
 			let release: (v: any) => void = () => {};
 			const gate = new Promise((r) => (release = r));
 			mockedRequestUrl.mockImplementation(async (opts: { url: string }) => {
@@ -660,15 +714,18 @@ describe('OllamaModelsService', () => {
 			});
 			const svc = new OllamaModelsService(buildPlugin());
 
-			const stale = svc.getRuntimeContextLength('gemma4:12b-mlx');
+			const pending = svc.getRuntimeContextLength('gemma4:12b-mlx');
+			// The probe is parked on the gate; start the forced refresh while the
+			// /api/ps request is still in flight.
+			await vi.waitFor(() => {
+				expect(mockedRequestUrl.mock.calls.some((c: any[]) => c[0]?.url.endsWith('/api/ps'))).toBe(true);
+			});
+			const refresh = svc.getModels(true);
 			release(null);
-			await stale;
+			await Promise.all([pending, refresh]);
 
-			// Forced refresh: showCache clears, showGeneration bumps, ps untouched.
-			// Awaited so the beforeFetch hook has definitely run before the lookup.
-			await svc.getModels(true);
-
-			// Within the TTL the allocation must still be served from psCache.
+			// The probe settled after the refresh began; within the TTL the
+			// allocation must be served from psCache, not re-probed.
 			await svc.getRuntimeContextLength('gemma4:12b-mlx');
 			const psCalls = mockedRequestUrl.mock.calls.filter((c: any[]) => String(c[0]?.url).endsWith('/api/ps')).length;
 			expect(psCalls).toBe(1);
