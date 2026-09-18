@@ -594,23 +594,38 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	async saveSettings() {
 		await this.saveData(this.settings);
 
-		// Check if we need to re-initialize
+		// Check if we need to re-initialize. Every change condition below is
+		// gated on `isGeminiInitialized`: the `previous*` baselines are only
+		// populated by a successful `markInitialized()`, so on a vault that has
+		// never initialized (e.g. credentials still missing) each comparison
+		// would fire on every save — re-running a setup that keeps failing for
+		// the same unrelated reason (#1554). Recovery from that state is
+		// `needsInit`'s job: it fires exactly when the credential situation
+		// starts allowing initialization, which is the only change that can
+		// actually succeed.
 		const apiKeyChanged =
-			this.previousApiKey !== this.apiKey ||
-			this.previousOpenaiApiKey !== this.openaiApiKey ||
-			this.previousAnthropicApiKey !== this.anthropicApiKey;
+			this.isGeminiInitialized &&
+			(this.previousApiKey !== this.apiKey ||
+				this.previousOpenaiApiKey !== this.openaiApiKey ||
+				this.previousAnthropicApiKey !== this.anthropicApiKey);
 		// Any change to *which provider serves which use case* re-inits: tool
 		// registration, RAG, and image generation are all keyed off the resolved
 		// providers, not just the primary.
-		const providerChanged = this.previousRoutingKey !== routingKey(this.settings);
+		const providerChanged = this.isGeminiInitialized && this.previousRoutingKey !== routingKey(this.settings);
 		// A base URL only matters when its provider is used somewhere — an Ollama
 		// URL edit is a no-op for an all-Gemini install and vice versa.
 		const ollamaUrlChanged =
-			isProviderActive(this.settings, 'ollama') && this.previousOllamaBaseUrl !== this.settings.ollamaBaseUrl;
+			this.isGeminiInitialized &&
+			isProviderActive(this.settings, 'ollama') &&
+			this.previousOllamaBaseUrl !== this.settings.ollamaBaseUrl;
 		const customBaseUrlChanged =
-			isProviderActive(this.settings, 'gemini') && this.previousCustomBaseUrl !== this.settings.customBaseUrl;
+			this.isGeminiInitialized &&
+			isProviderActive(this.settings, 'gemini') &&
+			this.previousCustomBaseUrl !== this.settings.customBaseUrl;
 		const openaiBaseUrlChanged =
-			isProviderActive(this.settings, 'openai') && this.previousOpenaiBaseUrl !== this.settings.openaiBaseUrl;
+			this.isGeminiInitialized &&
+			isProviderActive(this.settings, 'openai') &&
+			this.previousOpenaiBaseUrl !== this.settings.openaiBaseUrl;
 		// A chat provider that needs no key (Ollama) can initialize on the
 		// provider switch alone; other features routed to a cloud provider
 		// degrade gracefully without one rather than blocking init. The

@@ -247,9 +247,9 @@ describe('ObsidianGeminiSettings', () => {
 			// gate, the ''-vs-'gemini-scribe' delta would be true on every save
 			// of any setting, re-running a setup that already failed for lack of
 			// credentials. previousRoutingKey is pinned to the current routing so
-			// the pre-existing phantom-provider-change condition (an
-			// uninitialized plugin snapshots nothing) doesn't fire first and mask
-			// the gate under test.
+			// the phantom-provider-change condition (an uninitialized plugin
+			// snapshots nothing — fixed for all conditions in #1554) doesn't
+			// fire first and mask the gate under test.
 			internal.isGeminiInitialized = false;
 			internal.previousHistoryFolder = '';
 			internal.previousRoutingKey = routingKey(plugin.settings);
@@ -257,6 +257,63 @@ describe('ObsidianGeminiSettings', () => {
 			await plugin.saveSettings();
 
 			expect(setup).not.toHaveBeenCalled();
+		});
+
+		// #1554: every change condition is gated on isGeminiInitialized, so a
+		// vault that has never initialized successfully re-runs setup() only
+		// via needsInit — never from a phantom previous*-baseline delta.
+		it('does not re-run setup on unrelated saves while uninitialized (#1554)', async () => {
+			// No credentials: needsInit is false, and every previous* baseline is
+			// at its initial value. Before the gate, the phantom provider-change
+			// (previousRoutingKey '' vs a valid routing key) fired setup() on
+			// every save of any setting.
+			const { plugin, setup } = makeSaveablePlugin({ apiKeySecretName: '' });
+			const internal = plugin as unknown as { isGeminiInitialized: boolean };
+
+			await plugin.saveSettings();
+			expect(setup).not.toHaveBeenCalled();
+
+			// A second unrelated save — e.g. the user edits an unrelated toggle —
+			// behaves the same: no doomed setup re-run.
+			await plugin.saveSettings();
+			expect(setup).not.toHaveBeenCalled();
+		});
+
+		it('still re-runs setup when a credential starts allowing initialization (recovery preserved)', async () => {
+			// Uninitialized because the Gemini key was missing. The user adds one
+			// via secret storage and saves: needsInit fires even though every
+			// change condition is gated off.
+			const { plugin, setup } = makeSaveablePlugin();
+			const internal = plugin as unknown as {
+				isGeminiInitialized: boolean;
+				previousApiKey: string;
+				previousOpenaiApiKey: string;
+				previousAnthropicApiKey: string;
+				previousRoutingKey: string;
+				previousHistoryFolder: string;
+			};
+			internal.isGeminiInitialized = false;
+
+			await plugin.saveSettings();
+
+			expect(setup).toHaveBeenCalledTimes(1);
+			expect(internal.previousApiKey).toBe('test-key');
+		});
+
+		it('does not re-run setup while uninitialized even when the routing key changes', async () => {
+			// The user rearranges routing before any init succeeded. Without
+			// credentials nothing can initialize, so setup() must not run — the
+			// save that eventually works is caught by needsInit.
+			const { plugin, setup } = makeSaveablePlugin({ apiKeySecretName: '' });
+			const internal = plugin as unknown as { isGeminiInitialized: boolean };
+			internal.isGeminiInitialized = false;
+			plugin.settings.features.chat = { provider: 'ollama', model: '' };
+
+			await plugin.saveSettings();
+
+			// needsInit: chat routed to ollama requires no key, so this DOES fire.
+			expect(setup).toHaveBeenCalledTimes(1);
+			expect((plugin as unknown as { isGeminiInitialized: boolean }).isGeminiInitialized).toBe(true);
 		});
 
 		it('advances the historyFolder snapshot when setup succeeds on a rename', async () => {
