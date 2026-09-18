@@ -120,4 +120,122 @@ describe('ObsidianGeminiSettings', () => {
 			expect(message).toContain('OpenAI');
 		});
 	});
+
+	describe('saveSettings – historyFolder change triggers manager refresh (#1551)', () => {
+		/**
+		 * A plugin wired for `saveSettings()` with layout NOT ready, so every
+		 * layout-gated block is skipped and the test observes only the re-init
+		 * decision: whether `lifecycle.setup()` runs for a given snapshot delta.
+		 */
+		function makeSaveablePlugin(settingsOverrides: Partial<ObsidianGeminiSettings> = {}) {
+			const secrets = new Map<string, string>([['gemini-key', 'test-key']]);
+			const app = {
+				workspace: { layoutReady: false, onLayoutReady: vi.fn() },
+				secretStorage: {
+					getSecret: (id: string) => secrets.get(id) ?? null,
+					setSecret: vi.fn(),
+					listSecrets: vi.fn(() => [...secrets.keys()]),
+				},
+			};
+			const plugin = new ObsidianGemini(app as unknown as App, {} as PluginManifest);
+			(plugin as unknown as { logger: unknown }).logger = {
+				log: vi.fn(),
+				debug: vi.fn(),
+				warn: vi.fn(),
+				error: vi.fn(),
+			};
+			plugin.settings = {
+				defaultProvider: 'gemini',
+				apiKeySecretName: 'gemini-key',
+				historyFolder: 'gemini-scribe',
+				fileLogging: false,
+				logToolExecution: false,
+				hooksEnabled: false,
+				ragIndexing: {
+					enabled: false,
+					fileSearchStoreName: null,
+					excludeFolders: [],
+					autoSync: true,
+					includeAttachments: false,
+				},
+				features: {
+					chat: { provider: 'gemini', model: '' },
+					summary: { provider: 'gemini', model: '' },
+					completions: { provider: 'gemini', model: '' },
+					rewrite: { provider: 'gemini', model: '' },
+					webSearch: { provider: 'gemini', model: '' },
+					deepResearch: { provider: 'gemini', model: '' },
+					rag: { provider: 'gemini', model: '' },
+					imageGen: { provider: 'gemini', model: '' },
+				},
+				...settingsOverrides,
+			} as ObsidianGeminiSettings;
+			const setup = vi.fn().mockResolvedValue(undefined);
+			(plugin as unknown as { lifecycle: unknown }).lifecycle = {
+				setup,
+				syncToolExecutionLogger: vi.fn(),
+			};
+			plugin.saveData = vi.fn().mockResolvedValue(undefined);
+			return { plugin, setup };
+		}
+
+		/**
+		 * Initialize the plugin's snapshot baseline the way a real successful
+		 * init does: via markInitialized(), so every `previous*` field matches
+		 * the current settings and only the delta under test can trigger a
+		 * re-init.
+		 */
+		function initBaseline(plugin: ObsidianGemini): void {
+			const internal = plugin as unknown as { markInitialized(): void };
+			internal.markInitialized();
+		}
+
+		it('re-runs setup when historyFolder changes, refreshing the managers', async () => {
+			const { plugin, setup } = makeSaveablePlugin();
+			initBaseline(plugin);
+			setup.mockClear();
+
+			plugin.settings.historyFolder = 'renamed-folder';
+			await plugin.saveSettings();
+
+			expect(setup).toHaveBeenCalledTimes(1);
+			// The snapshot advanced, so a second save with no further change is a no-op.
+			await plugin.saveSettings();
+			expect(setup).toHaveBeenCalledTimes(1);
+		});
+
+		it('does not re-run setup when historyFolder is unchanged', async () => {
+			const { plugin, setup } = makeSaveablePlugin();
+			initBaseline(plugin);
+			setup.mockClear();
+
+			await plugin.saveSettings();
+
+			expect(setup).not.toHaveBeenCalled();
+		});
+
+		it('re-runs setup on an uninitialized-but-credentialed save (needsInit baseline)', async () => {
+			const { plugin, setup } = makeSaveablePlugin();
+			const internal = plugin as unknown as { isGeminiInitialized: boolean; previousHistoryFolder: string };
+			internal.isGeminiInitialized = false;
+			internal.previousHistoryFolder = plugin.settings.historyFolder;
+
+			await plugin.saveSettings();
+
+			expect(setup).toHaveBeenCalledTimes(1);
+			// markInitialized snapshots the folder, so the rename detector starts
+			// from the right baseline after recovery.
+			expect(internal.previousHistoryFolder).toBe('gemini-scribe');
+		});
+
+		it('advances the historyFolder snapshot when setup succeeds on a rename', async () => {
+			const { plugin } = makeSaveablePlugin();
+			initBaseline(plugin);
+			plugin.settings.historyFolder = 'renamed-folder';
+
+			await plugin.saveSettings();
+
+			expect((plugin as unknown as { previousHistoryFolder: string }).previousHistoryFolder).toBe('renamed-folder');
+		});
+	});
 });

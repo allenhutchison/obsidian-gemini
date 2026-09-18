@@ -213,6 +213,12 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	private previousCustomBaseUrl: string = '';
 	private previousOpenaiBaseUrl: string = '';
 	private previousHooksEnabled: boolean = false;
+	/**
+	 * The state-folder setting as of the last successful init. Compared in
+	 * `saveSettings()` so a rename re-enters `setup()` and both file-backed
+	 * managers reload against the new location (see #1551).
+	 */
+	private previousHistoryFolder: string = '';
 	private lifecycle!: LifecycleService;
 	// Captures the last initialization failure so guarded commands can surface
 	// the actual cause (e.g. "model not pulled") instead of the ephemeral Notice
@@ -316,6 +322,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		this.previousCustomBaseUrl = this.settings.customBaseUrl;
 		this.previousOpenaiBaseUrl = this.settings.openaiBaseUrl;
 		this.previousHooksEnabled = this.settings.hooksEnabled;
+		this.previousHistoryFolder = this.settings.historyFolder;
 	}
 
 	/**
@@ -614,6 +621,12 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		const hasCredentials =
 			!getCapabilities(chatProvider === 'none' ? null : chatProvider).requiresApiKey || !!activeChatApiKey;
 		const needsInit = !this.isGeminiInitialized && hasCredentials;
+		// A state-folder rename must re-run the full setup: both file-backed
+		// managers reload their definitions, sidecar state, and vault listeners
+		// against the new location inside their initialize({ refresh: true })
+		// blocks, and the deferred folder pass recreates the eager subfolders
+		// there (initializePluginFolders() below also runs on every save).
+		const historyFolderChanged = this.previousHistoryFolder !== this.settings.historyFolder;
 
 		if (
 			apiKeyChanged ||
@@ -621,6 +634,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 			ollamaUrlChanged ||
 			customBaseUrlChanged ||
 			openaiBaseUrlChanged ||
+			historyFolderChanged ||
 			needsInit
 		) {
 			try {
@@ -644,7 +658,11 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 			}
 		}
 
-		// Re-create plugin state folders if historyFolder changed (idempotent)
+		// Re-create plugin state folders (idempotent): runs on every save, and on
+		// a historyFolder rename it materializes the eager subfolders at the new
+		// location. setup()'s entry condition above also covers renames, so the
+		// managers refresh against folders that already exist by the time their
+		// initialize({ refresh: true }) blocks run (#1543 ordering guarantee).
 		if (this.isGeminiInitialized && this.app.workspace.layoutReady) {
 			await this.lifecycle.initializePluginFolders();
 		}
