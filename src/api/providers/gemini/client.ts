@@ -20,6 +20,7 @@ import { GeminiPrompts } from '../../../prompts';
 import type { ObsidianGemini } from '../../../types/plugin';
 import { getDefaultModelForRole, isInteractionsOnlyModel } from '../../../models';
 import { normalizeToContent } from '../../../utils/history-normalize';
+import { t } from '../../../i18n';
 import type { GeminiClientConfig } from './config';
 import { ModelUseCase } from '../../model-use-case';
 import {
@@ -370,7 +371,7 @@ export class GeminiClient implements ModelApi {
 			}
 
 			// If we get here, no image data was found
-			throw new Error('No image data in response. The model may have returned only text.');
+			throw new Error(t('provider.gemini.noImageData'));
 		} catch (error) {
 			this.plugin?.logger.error('[GeminiClient] Error generating image:', error);
 			throw error;
@@ -394,7 +395,7 @@ export class GeminiClient implements ModelApi {
 
 			const imageData = extractImageDataFromInteraction(interaction);
 			if (!imageData) {
-				throw new Error('No image data in response. The model may have returned only text.');
+				throw new Error(t('provider.gemini.noImageData'));
 			}
 			return imageData;
 		} catch (error) {

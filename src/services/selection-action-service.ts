@@ -161,7 +161,7 @@ export class SelectionActionService {
 			if (response.markdown && response.markdown.trim()) {
 				await responseModal.showResponse(response.markdown);
 			} else {
-				responseModal.showError('The AI returned an empty response. Please try again.');
+				responseModal.showError(t('selection.emptyResponse'));
 			}
 		} catch (error) {
 			this.plugin.logger.error('Error generating response:', error);

@@ -9,6 +9,7 @@ import type { CustomPrompt } from '../prompts/types';
 import type { IConfirmationProvider, IToolHostView, ToolExecutionContext, ToolResult } from '../tools/types';
 import { generateToolDescription } from '../utils/text-generation';
 import { getRawErrorMessageOr } from '../utils/error-utils';
+import { t } from '../i18n';
 import {
 	sortToolCallsByPriority,
 	buildToolHistoryTurns,
@@ -659,9 +660,7 @@ export class AgentLoop {
 
 	private loopAbortedResult(history: Content[], iterations: number, fireCount: number): AgentLoopResult {
 		return this.makeResult({
-			markdown:
-				`The agent kept retrying the same tool call (loop detector fired ${fireCount} times). ` +
-				'Stopping this turn to prevent a runaway loop. Try rephrasing your request or starting a new session.',
+			markdown: t('agent.loopAborted', { count: fireCount }),
 			history,
 			loopAborted: true,
 			iterations,

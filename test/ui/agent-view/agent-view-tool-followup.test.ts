@@ -1,6 +1,10 @@
 import { describe, test, expect, vi } from 'vitest';
 import type { Content } from '@google/genai';
-import { buildFollowUpRequest, buildRetryRequest } from '../../../src/ui/agent-view/agent-view-tool-followup';
+import {
+	buildFollowUpRequest,
+	buildRetryRequest,
+	buildEmptyResponseMessage,
+} from '../../../src/ui/agent-view/agent-view-tool-followup';
 import { buildToolHistoryTurns, type ToolCallResultPair } from '../../../src/agent/agent-loop-helpers';
 import type { ToolCall } from '../../../src/api/interfaces/model-api';
 
@@ -73,5 +77,43 @@ describe('buildFollowUpRequest / buildRetryRequest — perTurnContext is not dup
 		expect(request.perTurnContext).toBeUndefined();
 		expect(request.conversationHistory).toBe(updatedHistory);
 		expect(countContextOccurrences(request.conversationHistory)).toBe(1);
+	});
+});
+
+// The fallback markdown is rendered straight into the chat. Since #1391 it comes from t(),
+// so these assert the message a user actually sees — a missing key or a broken placeholder
+// would surface here as a raw key or an unfilled {tools}.
+describe('buildEmptyResponseMessage — localized fallback text', () => {
+	function pluginWithTools(displayNames: Record<string, string>) {
+		return {
+			toolRegistry: {
+				getTool: (name: string) => (displayNames[name] ? { displayName: displayNames[name] } : undefined),
+			},
+		} as any;
+	}
+
+	test('lists the executed tool display names', () => {
+		const message = buildEmptyResponseMessage(
+			[
+				{ toolName: 'read_file', result: { success: true } },
+				{ toolName: 'write_file', result: { success: true } },
+			],
+			pluginWithTools({ read_file: 'Read File', write_file: 'Write File' })
+		);
+
+		expect(message).toBe(
+			'I completed the requested actions (Read File, Write File) but had trouble generating a summary. The operations were successful.'
+		);
+	});
+
+	test('omits the tool list when no tool succeeded', () => {
+		const message = buildEmptyResponseMessage(
+			[{ toolName: 'read_file', result: { success: false } }],
+			pluginWithTools({ read_file: 'Read File' })
+		);
+
+		expect(message).toBe(
+			'I completed the requested actions but had trouble generating a summary. The operations were successful.'
+		);
 	});
 });

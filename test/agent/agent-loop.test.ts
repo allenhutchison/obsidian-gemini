@@ -641,6 +641,13 @@ describe('AgentLoop', () => {
 			expect(result.loopAborted).toBe(true);
 			expect(result.exhausted).toBe(false);
 			expect(result.iterations).toBe(1);
+			// The abort notice is rendered straight into the chat. Since #1391 it comes from
+			// t(), so assert the sentence a user actually sees — a missing key or a broken
+			// placeholder would show up here as a raw key or an unfilled {count}.
+			expect(result.markdown).toBe(
+				'The agent kept retrying the same tool call (loop detector fired 3 times). ' +
+					'Stopping this turn to prevent a runaway loop. Try rephrasing your request or starting a new session.'
+			);
 		});
 	});
 
