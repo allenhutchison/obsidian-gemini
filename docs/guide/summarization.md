@@ -89,13 +89,11 @@ Discussed timeline changes, budget concerns, and new feature requests...
 
 ### Settings
 
-In Settings → Gemini Scribe:
-
-1. **Summary model**: Choose the AI model for summarization
+1. **Model**: Open **Settings → Gemini Scribe → Features** and select the **Summaries** row to choose the provider and model used for summarization (and conversation compaction).
    - Flash models (recommended for speed)
    - Pro models (highest quality, slower)
 
-2. **Summary frontmatter key**: Customize the metadata field
+2. **Summary frontmatter key**: Customize the metadata field in **Settings → Gemini Scribe → Advanced**
    - Default: `summary`
    - Change to: `description`, `abstract`, `brief`, etc.
 

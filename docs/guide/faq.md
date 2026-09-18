@@ -6,7 +6,7 @@ Common questions and answers gathered from [GitHub Issues](https://github.com/al
 
 ### Where do I get an API key?
 
-Get a free API key from [Google AI Studio](https://aistudio.google.com/apikey). Paste it into the plugin settings under Settings → Gemini Scribe → API Key.
+Get a free API key from [Google AI Studio](https://aistudio.google.com/apikey). Paste it into the plugin settings under Settings → Gemini Scribe → **Providers** → Gemini card → API key.
 
 ### Why do Pro models fail with my free API key?
 
