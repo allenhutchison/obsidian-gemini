@@ -2,8 +2,10 @@ import { CachedModelCatalog, joinBaseUrl } from '../../src/services/remote-model
 import type { CatalogEndpoint } from '../../src/services/remote-model-catalog';
 import type { GeminiModel } from '../../src/models';
 
+/** The two logger methods the catalog reads, as spies. */
 const buildLogger = () => ({ log: vi.fn(), warn: vi.fn() });
 
+/** A minimal catalog entry; only identity matters to these tests. */
 function model(value: string): GeminiModel {
 	return { value, label: value, provider: 'ollama', supportsVision: false };
 }
@@ -18,20 +20,21 @@ interface TestEndpoint extends CatalogEndpoint {
  */
 function buildCatalog(options?: { withBeforeFetch?: boolean }) {
 	const logger = buildLogger();
-	const endpoint: TestEndpoint = { key: 'http://a', label: 'http://a', baseUrl: 'http://a' };
+	// A fresh object per call, exactly as the real services' `endpoint()` closures
+	// build one. Handing out a shared mutable object would let a later retarget
+	// silently rewrite a snapshot an in-flight call had already captured.
+	let baseUrl = 'http://a';
 	const load = vi.fn<(e: TestEndpoint) => Promise<GeminiModel[]>>();
 	const beforeFetch = vi.fn();
 	const catalog = new CachedModelCatalog<TestEndpoint>({
 		logger: () => logger,
 		logPrefix: '[TestService]',
-		endpoint: () => endpoint,
+		endpoint: (): TestEndpoint => ({ key: baseUrl, label: baseUrl, baseUrl }),
 		load,
 		...(options?.withBeforeFetch ? { beforeFetch } : {}),
 	});
-	const setEndpoint = (key: string) => {
-		endpoint.key = key;
-		endpoint.label = key;
-		endpoint.baseUrl = key;
+	const setEndpoint = (next: string) => {
+		baseUrl = next;
 	};
 	return { catalog, load, logger, beforeFetch, setEndpoint };
 }
@@ -222,6 +225,28 @@ describe('CachedModelCatalog', () => {
 			await catalog.get();
 			expect(beforeFetch).not.toHaveBeenCalled();
 		});
+	});
+
+	it("does not serve the old endpoint's cache when the endpoint changes mid-refresh", async () => {
+		const { catalog, load, setEndpoint } = buildCatalog();
+		load.mockResolvedValue([model('a')]);
+		await catalog.get();
+
+		// A forced refresh is in flight against endpoint A when the user retargets
+		// the provider at B, and only then does A's request fail. The identity
+		// captured at entry still says "A matches", so without re-reading it here
+		// the dropdown would be handed A's models while the setting reads B.
+		let failLoad!: (error: unknown) => void;
+		load.mockReturnValue(
+			new Promise<GeminiModel[]>((_resolve, reject) => {
+				failLoad = reject;
+			})
+		);
+		const inFlight = catalog.get(true);
+		setEndpoint('http://b');
+		failLoad(new Error('ECONNREFUSED'));
+
+		expect(await inFlight).toEqual([]);
 	});
 
 	describe('a reset landing mid-load', () => {

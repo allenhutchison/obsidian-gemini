@@ -88,6 +88,7 @@ export class CachedModelCatalog<E extends CatalogEndpoint> {
 	 */
 	private generation = 0;
 
+	/** Holds `options` by reference; each field is resolved per call, not captured. */
 	constructor(private readonly options: CachedModelCatalogOptions<E>) {}
 
 	/**
@@ -138,7 +139,13 @@ export class CachedModelCatalog<E extends CatalogEndpoint> {
 			// cache while it matches the active endpoint identity — falling back to
 			// another endpoint's models would let the dropdown surface entries that
 			// don't exist there and let the user save invalid selections.
-			return identityMatches ? (this.cachedModels ?? []) : [];
+			//
+			// "Active" is re-read here rather than reused from before the await: the
+			// user can retarget the provider while a refresh is in flight, and the
+			// identity captured at entry would still say the dead endpoint's cache is
+			// safe to serve for the new one.
+			const stillActive = identityMatches && this.options.endpoint().key === endpoint.key;
+			return stillActive ? (this.cachedModels ?? []) : [];
 		}
 	}
 
