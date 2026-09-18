@@ -294,6 +294,7 @@ describe('ObsidianGeminiSettings', () => {
 				previousRoutingKey: string;
 				previousHistoryFolder: string;
 				lastInitAttemptFingerprint: string | null;
+				recordInitAttemptFingerprint(): void;
 			};
 			// Simulate the failed onload attempt recording its eligibility via
 			// the real helper, so the test tracks the current format.
