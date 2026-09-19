@@ -869,8 +869,11 @@ describe('GeminiClient', () => {
 			let capturedOptions: { signal?: AbortSignal } | undefined;
 			let resolveCreate: (stream: unknown) => void = () => {};
 			const gate = new Promise((r) => (resolveCreate = r));
+			let resolveStarted: () => void = () => {};
+			const started = new Promise<void>((r) => (resolveStarted = r));
 			interactionsCreateMock.mockImplementation((_params: unknown, options?: { signal?: AbortSignal }) => {
 				capturedOptions = options;
+				resolveStarted();
 				return gate as any;
 			});
 
@@ -879,7 +882,11 @@ describe('GeminiClient', () => {
 				{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] },
 				() => {}
 			);
-			// cancel() while create is still pending
+			// Deterministic ordering: wait until interactions.create has actually
+			// begun (mock invoked, gate unresolved), then cancel — otherwise
+			// cancel() races the mock's invocation and the test could pass
+			// without exercising the create-pending window at all.
+			await started;
 			stream.cancel();
 			resolveCreate({
 				async *[Symbol.asyncIterator]() {
