@@ -307,52 +307,6 @@ export class MCPManager {
 	}
 
 	/**
-	 * Re-query tools from a connected server. Registers new tools, removes old ones.
-	 */
-	async refreshTools(serverName: string): Promise<void> {
-		const conn = this.connections.get(serverName);
-		if (!conn) {
-			this.logger.warn(`MCP: Cannot refresh tools for disconnected server "${serverName}"`);
-			return;
-		}
-
-		const config = this.plugin.settings.mcpServers.find((s) => s.name === serverName);
-		if (!config) {
-			this.logger.warn(`MCP: Cannot refresh tools — config not found for "${serverName}"`);
-			return;
-		}
-
-		// Re-query and build new wrappers first so a listTools() failure
-		// doesn't leave us with no tools registered.
-		const { tools } = await withTimeout(
-			conn.client.listTools(),
-			MCP_LIST_TOOLS_TIMEOUT_MS,
-			`MCP listTools (refresh) for "${serverName}"`
-		);
-		const newWrappers: MCPToolWrapper[] = [];
-		for (const toolDef of tools) {
-			const wrapper = new MCPToolWrapper(conn.client, config.name, toolDef);
-			newWrappers.push(wrapper);
-		}
-
-		// Swap registrations
-		for (const wrapper of conn.toolWrappers) {
-			this.plugin.toolRegistry.unregisterTool(wrapper.name);
-		}
-		for (const wrapper of newWrappers) {
-			this.plugin.toolRegistry.registerTool(wrapper);
-		}
-
-		conn.toolWrappers = newWrappers;
-		this.updateState(serverName, {
-			status: MCPConnectionStatus.CONNECTED,
-			toolNames: tools.map((t) => t.name),
-		});
-
-		this.logger.log(`MCP: Refreshed tools for "${serverName}": ${tools.length} tool(s)`);
-	}
-
-	/**
 	 * Get the connection status of a server.
 	 */
 	getServerStatus(serverName: string): MCPServerState {
@@ -362,13 +316,6 @@ export class MCPManager {
 				toolNames: [],
 			}
 		);
-	}
-
-	/**
-	 * Get status for all configured servers.
-	 */
-	getAllServerStatuses(): Map<string, MCPServerState> {
-		return new Map(this.serverStates);
 	}
 
 	/**

@@ -623,56 +623,6 @@ describe('MCPManager', () => {
 		});
 	});
 
-	describe('refreshTools', () => {
-		it('should unregister old tools and register new ones', async () => {
-			// Initial connection with 1 tool
-			mockListTools.mockResolvedValueOnce({ tools: [{ name: 'old_tool' }] });
-			plugin.settings.mcpServers = [createStdioConfig()];
-			await manager.connectServer(createStdioConfig());
-
-			vi.clearAllMocks();
-
-			// Refresh returns different tools
-			mockListTools.mockResolvedValueOnce({
-				tools: [
-					{ name: 'new_tool_a', description: 'A' },
-					{ name: 'new_tool_b', description: 'B' },
-				],
-			});
-
-			await manager.refreshTools('test-stdio');
-
-			// Old tools unregistered
-			expect(plugin.toolRegistry.unregisterTool).toHaveBeenCalledTimes(1);
-			// New tools registered
-			expect(plugin.toolRegistry.registerTool).toHaveBeenCalledTimes(2);
-			// Status updated
-			const status = manager.getServerStatus('test-stdio');
-			expect(status.toolNames).toEqual(['new_tool_a', 'new_tool_b']);
-		});
-
-		it('should warn and return for disconnected server', async () => {
-			await manager.refreshTools('not-connected');
-
-			expect(plugin.logger.warn).toHaveBeenCalledWith(
-				expect.stringContaining('Cannot refresh tools for disconnected server')
-			);
-		});
-
-		it('should warn and return when config is missing', async () => {
-			// Connect a server
-			mockListTools.mockResolvedValueOnce({ tools: [] });
-			await manager.connectServer(createStdioConfig());
-
-			// Remove config from settings
-			plugin.settings.mcpServers = [];
-
-			await manager.refreshTools('test-stdio');
-
-			expect(plugin.logger.warn).toHaveBeenCalledWith(expect.stringContaining('config not found'));
-		});
-	});
-
 	describe('disconnectAll', () => {
 		it('should disconnect all connected servers', async () => {
 			// Ensure online so HTTP server connects (master added offline detection)
@@ -690,23 +640,6 @@ describe('MCPManager', () => {
 
 			expect(manager.isConnected('server-a')).toBe(false);
 			expect(manager.isConnected('server-b')).toBe(false);
-		});
-	});
-
-	describe('getAllServerStatuses', () => {
-		it('should return a copy of all server states', async () => {
-			mockListTools.mockResolvedValue({ tools: [{ name: 'tool1' }] });
-			await manager.connectServer(createStdioConfig());
-
-			const statuses = manager.getAllServerStatuses();
-
-			expect(statuses).toBeInstanceOf(Map);
-			expect(statuses.get('test-stdio')).toBeDefined();
-			expect(statuses.get('test-stdio')!.status).toBe(MCPConnectionStatus.CONNECTED);
-
-			// Verify it's a copy (mutating returned map shouldn't affect internal state)
-			statuses.delete('test-stdio');
-			expect(manager.getServerStatus('test-stdio').status).toBe(MCPConnectionStatus.CONNECTED);
 		});
 	});
 
