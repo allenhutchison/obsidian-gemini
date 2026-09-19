@@ -152,29 +152,6 @@ describe('ToolRegistry', () => {
 		});
 	});
 
-	describe('getToolsByCategory', () => {
-		it('should return tools by category', () => {
-			const readOnlyTool = new TestTool();
-			const vaultTool = new DestructiveTestTool();
-
-			registry.registerTool(readOnlyTool);
-			registry.registerTool(vaultTool);
-
-			const readOnlyTools = registry.getToolsByCategory(ToolCategory.READ_ONLY);
-			const vaultTools = registry.getToolsByCategory(ToolCategory.VAULT_OPERATIONS);
-
-			expect(readOnlyTools).toHaveLength(1);
-			expect(readOnlyTools[0]).toBe(readOnlyTool);
-			expect(vaultTools).toHaveLength(1);
-			expect(vaultTools[0]).toBe(vaultTool);
-		});
-
-		it('should return empty array for category with no tools', () => {
-			const tools = registry.getToolsByCategory(ToolCategory.EXTERNAL_MCP);
-			expect(tools).toHaveLength(0);
-		});
-	});
-
 	describe('validateParameters', () => {
 		beforeEach(() => {
 			registry.registerTool(new TestTool());
@@ -516,54 +493,6 @@ describe('ToolRegistry', () => {
 
 			expect(result.valid).toBe(false);
 			expect(result.errors).toContain('Parameter message should be string but got array');
-		});
-	});
-
-	describe('getToolDescriptions', () => {
-		it('should return correct format with function wrappers', () => {
-			const tool = new TestTool();
-			registry.registerTool(tool);
-
-			const context = { session: { context: {} } } as any;
-			const descriptions = registry.getToolDescriptions(context);
-
-			expect(descriptions).toHaveLength(1);
-			expect(descriptions[0]).toEqual({
-				type: 'function',
-				function: {
-					name: 'test_tool',
-					description: 'A test tool',
-					parameters: {
-						type: 'object',
-						properties: {
-							message: {
-								type: 'string',
-								description: 'A test message',
-							},
-						},
-						required: ['message'],
-					},
-				},
-			});
-		});
-
-		it('should only include enabled (non-DENY) tools', () => {
-			const readTool = new TestTool();
-			const destructiveTool = new DestructiveTestTool();
-
-			registry.registerTool(readTool);
-			registry.registerTool(destructiveTool);
-
-			// DENY the destructive tool
-			mockPlugin.settings.toolPolicy.toolPermissions = {
-				destructive_tool: ToolPermission.DENY,
-			};
-
-			const context = { session: { context: {} } } as any;
-			const descriptions = registry.getToolDescriptions(context);
-
-			expect(descriptions).toHaveLength(1);
-			expect(descriptions[0].function.name).toBe('test_tool');
 		});
 	});
 

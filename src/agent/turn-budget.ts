@@ -38,21 +38,12 @@ export interface TurnBudgetOptions {
 	 * without doubling the cost of a runaway one.
 	 */
 	extensionTurns?: number;
-	/**
-	 * Optional view onto the current prefix-cache hit ratio (0–1). Reserved for
-	 * the cache-aware extension heuristic (#622 follow-up): granting turns is
-	 * cheap when the cache is warm and far costlier right after a compaction
-	 * that wiped the cached prefix. Stored and exposed but **not** yet consulted
-	 * by `grantExtension` — wiring it in needs no signature change.
-	 */
-	getCachedRatio?: () => number | undefined;
 }
 
 export class TurnBudget {
 	private currentLimit: number | undefined;
 	private readonly remindAt: number;
 	private readonly extensionTurns: number;
-	private readonly getCachedRatioFn?: () => number | undefined;
 	private extensionGranted = false;
 
 	/**
@@ -63,7 +54,6 @@ export class TurnBudget {
 		this.currentLimit = limit;
 		this.remindAt = options.remindAt ?? DEFAULT_TURN_BUDGET_REMIND_AT;
 		this.extensionTurns = options.extensionTurns ?? (limit !== undefined ? Math.max(1, Math.ceil(limit / 2)) : 0);
-		this.getCachedRatioFn = options.getCachedRatio;
 	}
 
 	/** True when this budget imposes no cap (constructed from `undefined`). */
@@ -130,14 +120,5 @@ export class TurnBudget {
 	/** Whether the one-shot extension has been granted. */
 	get wasExtended(): boolean {
 		return this.extensionGranted;
-	}
-
-	/**
-	 * Current prefix-cache hit ratio via the injected callback, or `undefined`
-	 * when no callback was provided. Reserved for the cache-aware extension
-	 * follow-up; see {@link TurnBudgetOptions.getCachedRatio}.
-	 */
-	getCachedRatio(): number | undefined {
-		return this.getCachedRatioFn?.();
 	}
 }

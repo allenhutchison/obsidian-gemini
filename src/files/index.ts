@@ -57,25 +57,6 @@ export class ScribeFile {
 		return 'The following files have been provided as context:\n\n' + contextParts.join('\n\n---\n\n');
 	}
 
-	async addToFrontMatter(key: string, value: string) {
-		const activeFile = this.getActiveFile();
-		if (activeFile) {
-			// Use processFrontMatter to add or update the summary in the frontmatter
-			await this.plugin.app.fileManager.processFrontMatter(activeFile, (frontmatter: Record<string, unknown>) => {
-				frontmatter[key] = value;
-			});
-		}
-	}
-
-	async replaceTextInActiveFile(newText: string) {
-		const activeFile = this.getActiveFile();
-		const vault = this.plugin.app.vault;
-
-		if (activeFile) {
-			await vault.modify(activeFile, newText);
-		}
-	}
-
 	getActiveFile(): TFile | null {
 		const activeFile = this.plugin.app.workspace.getActiveFile();
 		if (this.isFile(activeFile)) {

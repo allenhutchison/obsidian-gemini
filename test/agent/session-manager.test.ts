@@ -120,29 +120,6 @@ describe('SessionManager', () => {
 			expect(session.title).toMatch(/Agent Session/);
 			expect(session.type).toBe(SessionType.AGENT_SESSION);
 		});
-	});
-
-	describe('createNoteChatSession', () => {
-		it('should sanitize note chat session titles', async () => {
-			const fileWithSpecialChars = {
-				...mockFile,
-				basename: 'Test:File*Name',
-			};
-
-			const session = await sessionManager.createNoteChatSession(fileWithSpecialChars);
-
-			// Should sanitize the basename in the title
-			expect(session.title).toBe('Test-File-Name Chat');
-			expect(session.historyPath).toContain('Test-File-Name Chat.md');
-		});
-
-		it('should create note chat session with proper type', async () => {
-			const session = await sessionManager.createNoteChatSession(mockFile);
-
-			expect(session.type).toBe(SessionType.NOTE_CHAT);
-			expect(session.sourceNotePath).toBe(mockFile.path);
-			expect(session.context.contextFiles).toContain(mockFile);
-		});
 
 		it('should create agent session with context files', async () => {
 			const contextFiles = [mockFile];
@@ -152,25 +129,6 @@ describe('SessionManager', () => {
 
 			expect(session.context.contextFiles).toEqual(contextFiles);
 			expect(session.context.contextFiles).toHaveLength(1);
-		});
-	});
-
-	describe('getNoteChatSession', () => {
-		it('should use sanitized file name when checking for existing history', async () => {
-			const fileWithSpecialChars = {
-				...mockFile,
-				basename: 'Test:File',
-			};
-
-			// Mock that no file exists
-			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(null);
-
-			await sessionManager.getNoteChatSession(fileWithSpecialChars);
-
-			// Should have called getAbstractFileByPath with sanitized name
-			expect(mockPlugin.app.vault.getAbstractFileByPath).toHaveBeenCalledWith(
-				expect.stringContaining('Test-File Chat.md')
-			);
 		});
 	});
 

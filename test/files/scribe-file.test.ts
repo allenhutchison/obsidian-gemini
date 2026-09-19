@@ -405,42 +405,4 @@ describe('ScribeFile', () => {
 			expect(result.size).toBe(0);
 		});
 	});
-
-	describe('addToFrontMatter', () => {
-		it('should call processFrontMatter on the active file', async () => {
-			const file = createMockFile('note.md');
-			plugin.app.workspace.getActiveFile.mockReturnValue(file);
-
-			await scribeFile.addToFrontMatter('summary', 'A summary');
-
-			expect(plugin.app.fileManager.processFrontMatter).toHaveBeenCalledWith(file, expect.any(Function));
-		});
-
-		it('should not call processFrontMatter when no active file', async () => {
-			plugin.app.workspace.getActiveFile.mockReturnValue(null);
-
-			await scribeFile.addToFrontMatter('summary', 'A summary');
-
-			expect(plugin.app.fileManager.processFrontMatter).not.toHaveBeenCalled();
-		});
-	});
-
-	describe('replaceTextInActiveFile', () => {
-		it('should modify the active file content', async () => {
-			const file = createMockFile('note.md');
-			plugin.app.workspace.getActiveFile.mockReturnValue(file);
-
-			await scribeFile.replaceTextInActiveFile('new content');
-
-			expect(plugin.app.vault.modify).toHaveBeenCalledWith(file, 'new content');
-		});
-
-		it('should not modify when no active file', async () => {
-			plugin.app.workspace.getActiveFile.mockReturnValue(null);
-
-			await scribeFile.replaceTextInActiveFile('new content');
-
-			expect(plugin.app.vault.modify).not.toHaveBeenCalled();
-		});
-	});
 });

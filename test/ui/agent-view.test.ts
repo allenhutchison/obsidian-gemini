@@ -309,12 +309,13 @@ describe('AgentView UI Tests', () => {
 		it('should show session configuration badges', async () => {
 			await agentView.onOpen();
 
-			// Create session with custom config
+			// Create session with custom config. modelConfig is plain session
+			// data — the badges render whatever the loaded session carries.
 			const session = await plugin.sessionManager.createAgentSession();
-			await plugin.sessionManager.updateSessionModelConfig(session.id, {
+			session.modelConfig = {
 				model: 'custom-model',
 				promptTemplate: 'custom-prompt.md',
-			});
+			};
 
 			// Create badge elements
 			const promptBadge = document.createElement('div');

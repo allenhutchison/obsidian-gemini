@@ -88,12 +88,4 @@ describe('TurnBudget', () => {
 			expect(budget.limit).toBeUndefined();
 		});
 	});
-
-	describe('cache ratio callback', () => {
-		test('exposes the injected ratio, or undefined when absent', () => {
-			expect(new TurnBudget(5).getCachedRatio()).toBeUndefined();
-			const budget = new TurnBudget(5, { getCachedRatio: () => 0.75 });
-			expect(budget.getCachedRatio()).toBe(0.75);
-		});
-	});
 });
