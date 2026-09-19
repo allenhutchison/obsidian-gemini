@@ -301,6 +301,48 @@ describe('AgentLoop', () => {
 			const executedNames = plugin.toolExecutionEngine.executeTool.mock.calls.map((c: any[]) => c[0].name);
 			expect(executedNames).toEqual(['read_file', 'write_file', 'delete_file']);
 		});
+
+		test('the follow-up history pairs each tool result with its own call (#1499)', async () => {
+			// Each helper was individually correct before this fix; the defect
+			// only showed when the sorted execution order fed the unsorted call
+			// array's history. So assert it end-to-end, through run().
+			const plugin = buildPlugin({
+				toolExecutionEngine: {
+					executeTool: vi
+						.fn()
+						.mockImplementation((call: ToolCall) =>
+							Promise.resolve({ success: true, data: { ranFor: call.arguments.path } })
+						),
+				},
+			});
+			const session = buildSession();
+			const api = makeScriptedModelApi([textResponse('done')]);
+
+			// Emitted delete-then-read; the sort executes read first.
+			const loop = new AgentLoop();
+			await loop.run({
+				initialResponse: toolResponse([tc('delete_file', { path: 'old.md' }), tc('read_file', { path: 'src.md' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
+			});
+
+			expect(plugin.toolExecutionEngine.executeTool.mock.calls.map((c: any[]) => c[0].name)).toEqual([
+				'read_file',
+				'delete_file',
+			]);
+
+			const followUp = (api.generateModelResponse as unknown as Mock).mock.calls[0][0];
+			const history = followUp.conversationHistory;
+			const callParts = history.flatMap((c: any) => c.parts).filter((p: any) => p.functionCall);
+			const responseParts = history.flatMap((c: any) => c.parts).filter((p: any) => p.functionResponse);
+
+			// The model turn keeps the order the model emitted...
+			expect(callParts.map((p: any) => p.functionCall.name)).toEqual(['delete_file', 'read_file']);
+			// ...and each response sits opposite the call it actually answers.
+			expect(responseParts.map((p: any) => p.functionResponse.name)).toEqual(['delete_file', 'read_file']);
+			expect(responseParts.map((p: any) => p.functionResponse.response.data.ranFor)).toEqual(['old.md', 'src.md']);
+		});
 	});
 
 	describe('cancellation', () => {

@@ -606,6 +606,7 @@ describe('GeminiClient', () => {
 						toolArguments: { path: 'foo.md' },
 						result: { success: true, data: { content: 'hi' } },
 						id: 'c1',
+						sourceIndex: 0,
 					},
 				],
 			});
@@ -644,12 +645,19 @@ describe('GeminiClient', () => {
 				{ id: 'call_r1', name: 'read_file', arguments: { path: 'b.md' } },
 			];
 			const toolResults: ToolCallResultPair[] = [
-				{ toolName: 'read_file', toolArguments: { path: 'b.md' }, result: { success: true, data: {} }, id: 'call_r1' },
+				{
+					toolName: 'read_file',
+					toolArguments: { path: 'b.md' },
+					result: { success: true, data: {} },
+					id: 'call_r1',
+					sourceIndex: 1,
+				},
 				{
 					toolName: 'delete_file',
 					toolArguments: { path: 'a.md' },
 					result: { success: true, data: {} },
 					id: 'call_d1',
+					sourceIndex: 0,
 				},
 			];
 			const conversationHistory = buildToolHistoryTurns({
@@ -658,7 +666,7 @@ describe('GeminiClient', () => {
 				toolCalls,
 				toolResults,
 			});
-			// Sanity: the call parts are in model order, responses in execution order.
+			// Sanity: the call parts are in the model's emitted order.
 			const callParts = conversationHistory
 				.flatMap((c) => c.parts)
 				.filter((p): p is NonNullable<typeof p> => p?.functionCall !== undefined);
@@ -678,7 +686,12 @@ describe('GeminiClient', () => {
 			for (const r of results) {
 				expect(calls.some((c: { id?: string }) => c.id === r.call_id)).toBe(true);
 			}
-			expect(results.map((r: { call_id: string }) => r.call_id)).toEqual(['call_r1', 'call_d1']);
+			// ...and the results are realigned onto the model's emitted order, so
+			// the two turns pair up positionally as well as by id (#1499). Before
+			// the realignment these came back in execution order (r1 then d1),
+			// leaving the id as the only thing holding the pairing together.
+			expect(results.map((r: { call_id: string }) => r.call_id)).toEqual(['call_d1', 'call_r1']);
+			expect(calls.map((c: { id?: string }) => c.id)).toEqual(['call_d1', 'call_r1']);
 		});
 
 		test('maps inline image attachments to image content items', async () => {
