@@ -37,6 +37,11 @@ export class ObsidianVaultAdapter implements FileSystemAdapter {
 	/**
 	 * List all files in the vault that should be indexed.
 	 * If includeAttachments is true, includes PDFs and other supported file types.
+	 *
+	 * Required by the external {@link FileSystemAdapter} contract even though
+	 * in-repo consumers (the RAG modules) currently reach the same listing
+	 * through `shouldIndex` + vault queries directly (#1388 audit: no
+	 * in-repo caller, not deletable).
 	 */
 	async listFiles(_basePath: string): Promise<string[]> {
 		const files = this.includeAttachments ? this.vault.getFiles() : this.vault.getMarkdownFiles();
@@ -45,6 +50,10 @@ export class ObsidianVaultAdapter implements FileSystemAdapter {
 
 	/**
 	 * Get file info/metadata.
+	 *
+	 * Required by the external {@link FileSystemAdapter} contract even though
+	 * in-repo consumers currently use `readFileForUpload`/`computeHash`
+	 * instead (#1388 audit: no in-repo caller, not deletable).
 	 */
 	async getFileInfo(filePath: string): Promise<FileInfo | null> {
 		const file = this.vault.getAbstractFileByPath(filePath);
