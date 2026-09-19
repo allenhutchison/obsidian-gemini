@@ -111,6 +111,18 @@ otherwise).
 When the agent performs multiple operations in a batch, **reads run before writes/deletes** — the
 pipeline sorts tool calls accordingly to prevent races where a file is deleted before being read.
 
+That sort governs **execution** order only. The turn pair replayed back to the model — the `model`
+turn of `functionCall` parts and the `user` turn of `functionResponse` parts — stays in the model's
+**emitted** order, so each response sits opposite the call it answers and each `thoughtSignature`
+stays attached to its own call. `buildToolHistoryTurns` (`src/agent/agent-loop-helpers.ts`) is the
+**single enforcement point**: it replays `toolCalls` verbatim and realigns the results onto that
+order by the `sourceIndex` stamped on each `ToolCallResultPair` before the sort ran, so the two
+arrays are never assumed to be parallel — which is the assumption the sort quietly broke. Callers
+owe it one thing in return: pass the array the indices were stamped from (the emitted one, via
+`indexToolCalls`), never the sorted one. A batch cut short by cancellation gets a synthetic
+`functionResponse` for every call it never reached, so the two turns always carry the same parts in
+the same order and no unpaired `functionCall` survives into history (#1499).
+
 ## Documentation is mandatory (hard repo rule)
 
 Every code change ships its documentation updates **in the same PR/commit** — README for

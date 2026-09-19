@@ -27,6 +27,43 @@ export interface ToolCallResultPair {
 	toolArguments: Record<string, unknown>;
 	result: ToolResult;
 	id?: string;
+	/**
+	 * Position of this call in the `toolCalls` array that will be replayed as
+	 * the model turn — i.e. the model's **emitted** order, not the executed
+	 * (sorted) order this result came back in.
+	 *
+	 * `sortToolCallsByPriority` reorders a batch so reads run before
+	 * writes/deletes (#1424), so execution order and emitted order differ
+	 * exactly when the batch mixes classifications out of priority order. The
+	 * replayed model turn keeps the model's emitted order, so the responses
+	 * have to be mapped back onto it or a `read_file` result answers a
+	 * `delete_file` call (#1499). Required — a producer that can't say where
+	 * the call came from can't have its result paired correctly.
+	 *
+	 * Stamp it **before** sorting, and hand `buildToolHistoryTurns` the same
+	 * array the indices were stamped from.
+	 */
+	sourceIndex: number;
+}
+
+/**
+ * A tool call tagged with its position in the model's emitted array.
+ *
+ * `name` is duplicated at the top level so an entry can be fed straight to
+ * `sortToolCallsByPriority`, and `sourceIndex` is stamped **before** the sort
+ * so execution order maps back to emitted order without depending on object
+ * identity surviving the sort (which is invisible to a reader and breaks
+ * silently the first time the batch is mapped or cloned).
+ */
+export interface IndexedToolCall {
+	name: string;
+	call: ToolCall;
+	sourceIndex: number;
+}
+
+/** Tag each call with its position in the model's emitted array, pre-sort. */
+export function indexToolCalls(toolCalls: ToolCall[]): IndexedToolCall[] {
+	return toolCalls.map((call, sourceIndex) => ({ name: call.name, call, sourceIndex }));
 }
 
 /**
@@ -135,6 +172,61 @@ export function buildFunctionResponseParts(toolResults: ToolCallResultPair[]): P
 }
 
 /**
+ * Response text recorded for a call the batch never ran.
+ *
+ * `executeToolBatch` stops at the first cancellation check, so a cancelled
+ * batch returns fewer results than it was given calls. Every provider requires
+ * one response per call — an unpaired `functionCall` is what breaks a resumed
+ * session — so the unanswered calls get this synthetic failure rather than
+ * being dropped from the replayed turn. Model-facing, so it stays English.
+ */
+export const TOOL_CALL_NOT_EXECUTED_ERROR = 'Tool execution cancelled before this call ran';
+
+/**
+ * Map a batch's results back onto the model's emitted call order.
+ *
+ * The returned array is positionally aligned with `toolCalls`: entry `i` is
+ * the response to `toolCalls[i]`. Results land by their `sourceIndex` (stamped
+ * pre-sort, so the priority sort can't scramble the pairing), and any call the
+ * batch never reached gets a synthetic cancelled response so the model turn
+ * and the response turn always carry the same number of parts in the same
+ * order (#1499).
+ *
+ * `unplaced` is unreachable from `executeToolBatch` — it stamps one in-range,
+ * unique index per result. It exists so a malformed batch degrades to
+ * "appended at the end" rather than silently losing a real tool result.
+ */
+function alignResultsToCalls(toolCalls: ToolCall[], toolResults: ToolCallResultPair[]): ToolCallResultPair[] {
+	const slots: (ToolCallResultPair | undefined)[] = toolCalls.map(() => undefined);
+	const unplaced: ToolCallResultPair[] = [];
+
+	for (const result of toolResults) {
+		const i = result.sourceIndex;
+		if (Number.isInteger(i) && i >= 0 && i < slots.length && slots[i] === undefined) {
+			slots[i] = result;
+		} else {
+			unplaced.push(result);
+		}
+	}
+
+	const aligned = slots.map((slot, i) => slot ?? synthesizeUnrunResult(toolCalls[i], i));
+	return unplaced.length > 0 ? [...aligned, ...unplaced] : aligned;
+}
+
+/** The stand-in response for a call the batch never executed. */
+function synthesizeUnrunResult(toolCall: ToolCall, sourceIndex: number): ToolCallResultPair {
+	return {
+		toolName: toolCall.name,
+		toolArguments: toolCall.arguments || {},
+		result: { success: false, error: TOOL_CALL_NOT_EXECUTED_ERROR },
+		sourceIndex,
+		// Keep the correlation id so the synthetic response pairs with its own
+		// call on the id-carrying providers too (#1398).
+		...(toolCall.id && { id: toolCall.id }),
+	};
+}
+
+/**
  * Compose the full updated conversation history after a tool execution batch.
  *
  * Layout:
@@ -149,6 +241,19 @@ export function buildFunctionResponseParts(toolResults: ToolCallResultPair[]): P
  * Use this whenever building the history for a follow-up request after the
  * model emits tool calls. Both UI and headless callers must produce the
  * same shape or the API will reject or misinterpret the request.
+ *
+ * **This function owns the call/response pairing invariant.** The model turn
+ * is replayed from `toolCalls` verbatim — so each `thoughtSignature` stays
+ * attached to the call that produced it — and the results are realigned onto
+ * that order by `sourceIndex` before the response parts are built. The two
+ * arrays are therefore never assumed to be parallel, which is the assumption
+ * the priority sort quietly broke (#1499): whatever order execution returned
+ * results in, each response comes back opposite its own call.
+ *
+ * The contract callers owe in return: `toolCalls` must be the same array the
+ * `sourceIndex` values were stamped from (the model's emitted array — see
+ * `indexToolCalls`), not the sorted one. `AgentLoop` stamps pre-sort and
+ * replays the emitted array for exactly that reason.
  */
 export function buildToolHistoryTurns(args: {
 	conversationHistory: Content[];
@@ -174,7 +279,7 @@ export function buildToolHistoryTurns(args: {
 		userParts.push({ text: perTurnContext });
 	}
 
-	const responseParts = buildFunctionResponseParts(toolResults);
+	const responseParts = buildFunctionResponseParts(alignResultsToCalls(toolCalls, toolResults));
 	if (appendText && appendText.trim()) {
 		responseParts.push({ text: appendText });
 	}

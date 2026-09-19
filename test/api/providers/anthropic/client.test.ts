@@ -293,10 +293,11 @@ describe('AnthropicClient', () => {
 				conversationHistory: [],
 				userMessage: 'hi there',
 				toolCalls: first.toolCalls!,
-				toolResults: first.toolCalls!.map((call) => ({
+				toolResults: first.toolCalls!.map((call, sourceIndex) => ({
 					toolName: call.name,
 					toolArguments: call.arguments,
 					id: call.id,
+					sourceIndex,
 					result: call.arguments.path === 'b.md' ? { success: false, error: 'missing' } : { success: true, data: 'A' },
 				})),
 			});

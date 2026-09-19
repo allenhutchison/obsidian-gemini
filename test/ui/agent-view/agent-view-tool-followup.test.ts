@@ -45,6 +45,7 @@ describe('buildFollowUpRequest / buildRetryRequest — perTurnContext is not dup
 		toolName: 'read_file',
 		toolArguments: { path: 'a.md' },
 		result: { success: true, data: { content: 'x' } },
+		sourceIndex: 0,
 	};
 
 	// buildToolHistoryTurns splices perTurnContext into the user turn — so the
