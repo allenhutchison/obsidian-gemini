@@ -6,6 +6,7 @@ import { RewriteInstructionsModal } from '../ui/rewrite-modal';
 import { UpdateNotificationModal } from '../ui/update-notification-modal';
 import { getErrorMessage } from '../utils/error-utils';
 import type { ObsidianGemini } from '../types/plugin';
+import type { ProjectSummary } from '../types/project';
 import { featureStatus } from '../api/provider-status';
 
 /**
@@ -168,32 +169,47 @@ export function registerCommands(plugin: ObsidianGemini): void {
 		},
 	});
 
+	/**
+	 * Shared preamble for the project-picker commands: gate on initialization,
+	 * discover projects, bail with the no-projects notice when there are none,
+	 * then either act directly on a lone project (the single-project shortcut —
+	 * asking "which project?" with one candidate is noise) or show the picker.
+	 *
+	 * `act` receives the chosen project summary in both paths, so the two commands
+	 * differ only in what they do with it. The modal resolves `null` for unlink
+	 * selection; `act` is skipped in that case, matching the picker flow.
+	 */
+	async function pickProject(
+		plugin: ObsidianGemini,
+		act: (project: ProjectSummary) => Promise<void> | void
+	): Promise<void> {
+		if (!plugin.checkInitialized()) return;
+		const projects = plugin.projectManager?.discoverProjects() ?? [];
+		if (projects.length === 0) {
+			new Notice(t('notice.main.noProjectsFound'));
+			return;
+		}
+		if (projects.length === 1) {
+			await act(projects[0]);
+			return;
+		}
+		const { ProjectPickerModal } = await import('../ui/agent-view/project-picker-modal');
+		const modal = new ProjectPickerModal(plugin.app, plugin, {
+			onSelect: (project) => {
+				if (project) {
+					void act(project);
+				}
+			},
+		});
+		modal.open();
+	}
+
 	// Open project settings (the project file itself)
 	plugin.addCommand({
 		id: 'open-project-settings',
 		name: t('command.openProjectSettings'),
 		callback: async () => {
-			if (!plugin.checkInitialized()) return;
-			const projects = plugin.projectManager?.discoverProjects() ?? [];
-			if (projects.length === 0) {
-				new Notice(t('notice.main.noProjectsFound'));
-				return;
-			}
-			// If only one project, open it directly
-			if (projects.length === 1) {
-				await plugin.app.workspace.openLinkText(projects[0].filePath, '', true);
-				return;
-			}
-			// Show picker for multiple projects
-			const { ProjectPickerModal } = await import('../ui/agent-view/project-picker-modal');
-			const modal = new ProjectPickerModal(plugin.app, plugin, {
-				onSelect: (project) => {
-					if (project) {
-						void plugin.app.workspace.openLinkText(project.filePath, '', true);
-					}
-				},
-			});
-			modal.open();
+			await pickProject(plugin, (project) => plugin.app.workspace.openLinkText(project.filePath, '', true));
 		},
 	});
 
@@ -202,39 +218,26 @@ export function registerCommands(plugin: ObsidianGemini): void {
 		id: 'resume-project-session',
 		name: t('command.resumeProjectSession'),
 		callback: async () => {
-			if (!plugin.checkInitialized()) return;
-			const projects = plugin.projectManager?.discoverProjects() ?? [];
-			if (projects.length === 0) {
-				new Notice(t('notice.main.noProjectsFound'));
-				return;
-			}
-			const { ProjectPickerModal } = await import('../ui/agent-view/project-picker-modal');
-			const modal = new ProjectPickerModal(plugin.app, plugin, {
-				onSelect: (project) => {
-					void (async () => {
-						try {
-							if (!project) return;
-							// Find most recent session linked to this project
-							const sessions = await plugin.sessionManager.getRecentAgentSessions(50);
-							const projectSession = sessions.find((s) => s.projectPath === project.filePath);
-							if (projectSession) {
-								await plugin.activateAgentView();
-								// The agent view will load the session
-								if (plugin.agentView) {
-									await plugin.agentView.loadSession(projectSession);
-								}
-							} else {
-								new Notice(t('notice.main.noSessionsForProject', { name: project.name }));
-							}
-						} catch (error) {
-							// Mirror the try/catch the sibling project commands already have.
-							plugin.logger.error('Failed to resume project session:', error);
-							new Notice(t('notice.main.resumeProjectSessionFailed'));
+			await pickProject(plugin, async (project) => {
+				try {
+					// Find most recent session linked to this project
+					const sessions = await plugin.sessionManager.getRecentAgentSessions(50);
+					const projectSession = sessions.find((s) => s.projectPath === project.filePath);
+					if (projectSession) {
+						await plugin.activateAgentView();
+						// The agent view will load the session
+						if (plugin.agentView) {
+							await plugin.agentView.loadSession(projectSession);
 						}
-					})();
-				},
+					} else {
+						new Notice(t('notice.main.noSessionsForProject', { name: project.name }));
+					}
+				} catch (error) {
+					// Mirror the try/catch the sibling project commands already have.
+					plugin.logger.error('Failed to resume project session:', error);
+					new Notice(t('notice.main.resumeProjectSessionFailed'));
+				}
 			});
-			modal.open();
 		},
 	});
 

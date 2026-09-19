@@ -2171,7 +2171,8 @@ export const en = {
 	},
 	'command.resumeProjectSession': {
 		message: 'Resume project session',
-		context: 'Command palette entry that reopens the most recent agent session linked to a chosen project.',
+		context:
+			'Command palette entry that reopens the most recent agent session linked to a chosen project (opens the only project directly when just one exists).',
 	},
 	'command.removeProject': {
 		message: 'Remove project',
