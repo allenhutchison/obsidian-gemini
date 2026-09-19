@@ -340,9 +340,9 @@ describe('OllamaClient', () => {
 			// does not exist yet.
 			streaming.cancel();
 			resolveStream({
-				[Symbol.asyncIterator]: (async function* () {
+				[Symbol.asyncIterator]: async function* () {
 					yield { message: { content: 'late' }, done: false };
-				})(),
+				},
 				abort,
 			});
 
