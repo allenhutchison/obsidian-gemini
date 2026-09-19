@@ -3,7 +3,6 @@ import {
 	ToolResult,
 	ToolExecutionContext,
 	ToolCall,
-	ToolExecution,
 	ToolParams,
 	IConfirmationProvider,
 	ConfirmationResult,
@@ -155,29 +154,6 @@ export class ToolExecutionEngine {
 	}
 
 	/**
-	 * Execute multiple tool calls in sequence
-	 */
-	async executeToolCalls(
-		toolCalls: ToolCall[],
-		context: ToolExecutionContext,
-		confirmationProvider: IConfirmationProvider
-	): Promise<ToolResult[]> {
-		const results: ToolResult[] = [];
-
-		for (const toolCall of toolCalls) {
-			const result = await this.executeTool(toolCall, context, confirmationProvider);
-			results.push(result);
-
-			// Stop execution chain if a tool fails (unless configured otherwise)
-			if (!result.success && this.plugin.settings.stopOnToolError !== false) {
-				break;
-			}
-		}
-
-		return results;
-	}
-
-	/**
 	 * Request user confirmation for tool execution
 	 */
 	private async requestUserConfirmation(
@@ -206,55 +182,5 @@ export class ToolExecutionEngine {
 	 */
 	clearLoopDetectorSession(sessionId: string): void {
 		this.loopDetector.clearSession(sessionId);
-	}
-
-	/**
-	 * Format tool results for display in chat
-	 */
-	formatToolResult(execution: ToolExecution): string {
-		const icon = execution.result.success ? '✓' : '✗';
-		const status = execution.result.success ? 'Success' : 'Failed';
-
-		let formatted = `### Tool Execution: ${execution.toolName}\n\n`;
-		formatted += `**Status:** ${icon} ${status}\n\n`;
-
-		if (execution.result.data) {
-			formatted += `**Result:**\n\`\`\`json\n${JSON.stringify(execution.result.data, null, 2)}\n\`\`\`\n`;
-		}
-
-		if (execution.result.error) {
-			formatted += `**Error:** ${execution.result.error}\n`;
-		}
-
-		return formatted;
-	}
-
-	/**
-	 * Get available tools for the current context as formatted descriptions
-	 */
-	getAvailableToolsDescription(context: ToolExecutionContext): string {
-		const tools = this.registry.getEnabledTools(context);
-
-		if (tools.length === 0) {
-			return 'No tools are currently available.';
-		}
-
-		let description = '## Available Tools\n\n';
-
-		for (const tool of tools) {
-			description += `### ${tool.name}\n`;
-			description += `${tool.description}\n\n`;
-
-			if (tool.parameters.properties && Object.keys(tool.parameters.properties).length > 0) {
-				description += '**Parameters:**\n';
-				for (const [param, schema] of Object.entries(tool.parameters.properties)) {
-					const required = tool.parameters.required?.includes(param) ? ' (required)' : '';
-					description += `- \`${param}\` (${schema.type})${required}: ${schema.description}\n`;
-				}
-				description += '\n';
-			}
-		}
-
-		return description;
 	}
 }

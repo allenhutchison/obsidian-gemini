@@ -155,17 +155,6 @@ export interface Tool {
 }
 
 /**
- * Tool execution record for history
- */
-export interface ToolExecution {
-	toolName: string;
-	parameters: ToolParams;
-	result: ToolResult;
-	timestamp: Date;
-	confirmed?: boolean;
-}
-
-/**
  * Context for displaying a diff view when write_file is called
  */
 export interface DiffContext {
