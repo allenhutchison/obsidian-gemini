@@ -16,7 +16,7 @@
  * like a quiet "no new models" week.
  */
 
-import { readFileSync, writeFileSync, appendFileSync } from 'fs';
+import { readFileSync, writeFileSync, appendFileSync, realpathSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -24,6 +24,18 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const MODELS_PATH = join(__dirname, '..', 'src', 'data', 'models.json');
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+
+/**
+ * Gemma models served by the Gemini API (`gemma-4-31b-it`, `gemma-4-26b-a4b-it`
+ — see
+ * https://ai.google.dev/gemma/docs/core/gemma_on_gemini_api). Opted in by
+ * prefix: new Gemma variants that appear in ListModels are picked up by the
+ * weekly run instead of needing manual curation, and anything outside the
+ * prefix (embedding variants, older gemma-3, non-`-it` builds) stays excluded.
+ * Gemma 4 does native function calling (verified live 2026-09-18), so no
+ * capability gate — they are ordinary generateContent models to the plugin.
+ */
+const GEMMA_INCLUDE_PREFIX = 'gemma-4-';
 
 // Model name substrings to exclude
 const EXCLUDE_PATTERNS = [
@@ -75,15 +87,19 @@ async function fetchAllModels(apiKey) {
 	return allModels;
 }
 
-function shouldIncludeModel(model) {
-	const name = (model.name || '').toLowerCase();
+export function shouldIncludeModel(model) {
+	const name = (model.name || '').toLowerCase().replace(/^models\//, '');
 	const methods = model.supportedGenerationMethods || [];
-
-	// Must be a Gemini model
-	if (!name.includes('gemini')) return false;
 
 	// Must support content generation
 	if (!methods.includes('generateContent')) return false;
+
+	// Curated Gemma opt-in: served Gemini-API Gemma variants are included
+	// despite the blanket `gemma` exclusion below.
+	if (name.startsWith(GEMMA_INCLUDE_PREFIX)) return true;
+
+	// Must be a Gemini model
+	if (!name.includes('gemini')) return false;
 
 	// Exclude known non-generative model types
 	for (const pattern of EXCLUDE_PATTERNS) {
@@ -245,7 +261,14 @@ function main() {
 	});
 }
 
-main().catch((err) => {
-	console.error('Error:', err.message);
-	process.exit(1);
-});
+// Only auto-run when executed directly, so a test harness can import the
+// module for its helpers without triggering a live fetch. realpathSync
+// resolves macOS's /var → /private/var symlink (and similar), so the
+// comparison is not fooled by aliasing.
+const invokedDirectly = process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url);
+if (invokedDirectly || process.env.UPDATE_MODELS_AUTORUN === '1') {
+	main().catch((err) => {
+		console.error('Error:', err.message);
+		process.exit(1);
+	});
+}
