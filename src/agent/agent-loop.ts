@@ -12,10 +12,12 @@ import { getRawErrorMessageOr } from '../utils/error-utils';
 import { t } from '../i18n';
 import {
 	sortToolCallsByPriority,
+	indexToolCalls,
 	buildToolHistoryTurns,
 	formatBudgetReminder,
 	formatBudgetExtension,
 	type ToolCallResultPair,
+	type IndexedToolCall,
 } from './agent-loop-helpers';
 import { TurnBudget } from './turn-budget';
 import {
@@ -344,18 +346,22 @@ export class AgentLoop {
 			// classification (#1424); a name missing from the registry sorts into the
 			// EXTERNAL fallback band and is logged so a missing registration
 			// surfaces instead of silently mis-sorting.
+			// Each call is tagged with its emitted position *before* the sort, so
+			// `buildToolHistoryTurns` can map the results back onto the model's
+			// own turn order no matter how the sort rearranged execution (#1499).
 			const unresolvable = new Set<string>();
-			const sortedToolCalls = sortToolCallsByPriority(currentToolCalls, (name) => {
+			const sortedEntries = sortToolCallsByPriority(indexToolCalls(currentToolCalls), (name) => {
 				const classification = plugin.toolRegistry?.getTool(name)?.classification;
 				if (classification === undefined) unresolvable.add(name);
 				return classification;
 			});
+			const sortedToolCalls = sortedEntries.map((entry) => entry.call);
 			for (const name of unresolvable) {
 				plugin.logger.warn(`[AgentLoop] Tool "${name}" is not in the registry; sorting it before writes.`);
 			}
 			await this.safeHook('onToolBatchStart', plugin, () => hooks?.onToolBatchStart?.(sortedToolCalls, iterations));
 			iterations++;
-			const toolResults = await this.executeToolBatch(sortedToolCalls, toolContext, options);
+			const toolResults = await this.executeToolBatch(sortedEntries, toolContext, options);
 
 			// Count any loop-detector fires in this batch against the turn budget.
 			// If the model has triggered the detector too many times in this turn,
@@ -668,14 +674,14 @@ export class AgentLoop {
 	}
 
 	private async executeToolBatch(
-		sortedToolCalls: ToolCall[],
+		sortedToolCalls: IndexedToolCall[],
 		toolContext: ToolExecutionContext,
 		options: AgentLoopOptions
 	): Promise<ToolCallResultPair[]> {
 		const { plugin, isCancelled, hooks, confirmationProvider } = options;
 		const results: ToolCallResultPair[] = [];
 
-		for (const toolCall of sortedToolCalls) {
+		for (const { call: toolCall, sourceIndex } of sortedToolCalls) {
 			if (isCancelled()) {
 				plugin.logger.debug('[AgentLoop] Cancellation detected, stopping tool execution');
 				break;
@@ -722,7 +728,9 @@ export class AgentLoop {
 					toolArguments: toolCall.arguments,
 					result,
 					// Carry the model-assigned correlation id so the replayed
-					// functionResponse pairs with its functionCall (#1398).
+					// functionResponse pairs with its functionCall (#1398), and
+					// the emitted position so it pairs by order too (#1499).
+					sourceIndex,
 					...(toolCall.id && { id: toolCall.id }),
 				});
 			} catch (error) {
@@ -736,7 +744,8 @@ export class AgentLoop {
 						error: getRawErrorMessageOr(error, 'Unknown error'),
 					},
 					// Same correlation on the error path — the functionResponse
-					// still needs to pair with its functionCall (#1398).
+					// still needs to pair with its functionCall (#1398, #1499).
+					sourceIndex,
 					...(toolCall.id && { id: toolCall.id }),
 				});
 			}
