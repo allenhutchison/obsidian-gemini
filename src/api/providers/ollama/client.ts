@@ -35,6 +35,7 @@ import { GeminiPrompts } from '../../../prompts';
 import type { ObsidianGemini } from '../../../types/plugin';
 import type { OllamaClientConfig } from './config';
 import { walkHistoryEntry } from '../history-walk';
+import { runCancellableStream } from '../../utils/cancellable-stream';
 import { t } from '../../../i18n';
 
 export class OllamaClient implements ModelApi {
@@ -96,116 +97,108 @@ export class OllamaClient implements ModelApi {
 		// role-correct model; no chat-default fallback here.
 		const model = request.model || this.config.model;
 
-		let cancelled = false;
-		let accumulatedText = '';
-		let accumulatedThoughts = '';
-		let toolCalls: ToolCall[] | undefined;
-		let promptEvalCount: number | undefined;
-		let evalCount: number | undefined;
+		const state = {
+			accumulatedText: '',
+			accumulatedThoughts: '',
+			toolCalls: undefined as ToolCall[] | undefined,
+			promptEvalCount: undefined as number | undefined,
+			evalCount: undefined as number | undefined,
+		};
+
+		const finalize = (): ModelResponse => {
+			const usageMetadata = this.toUsageMetadata(state.promptEvalCount, state.evalCount);
+			return {
+				markdown: state.accumulatedText,
+				rendered: '',
+				...(state.accumulatedThoughts && { thoughts: state.accumulatedThoughts }),
+				...(state.toolCalls && state.toolCalls.length && { toolCalls: state.toolCalls }),
+				...(usageMetadata && { usageMetadata }),
+			};
+		};
+
+		// The Ollama SDK's requests take no signal; its streams expose abort().
+		// The helper's signal covers the lifecycle; `onCancel` and the
+		// post-`start` abort inside the callbacks reach the transport, closing
+		// the cancel-before-the-stream-reference window the signal-first shape
+		// (openai) avoids by construction.
 		let activeStream: { abort: () => void } | null = null;
 
-		const complete = (async (): Promise<ModelResponse> => {
-			if (!model) {
-				throw new Error('No Ollama model selected. Pull a model with `ollama pull <name>` and choose it in settings.');
-			}
-
-			try {
+		return runCancellableStream<ChatResponse & { response?: string }>({
+			start: async (signal) => {
+				if (!model) {
+					throw new Error(
+						'No Ollama model selected. Pull a model with `ollama pull <name>` and choose it in settings.'
+					);
+				}
+				let stream: AsyncIterable<ChatResponse> & { abort: () => void };
 				if (!isExtended) {
 					// generate() supports streaming too; route the same way for consistency
-					const stream = await this.client.generate({
+					stream = (await this.client.generate({
 						model,
 						prompt: request.prompt,
 						stream: true,
 						options: this.buildOptions(),
-					});
-					activeStream = stream;
-					// cancel() may have fired while the await above was outstanding —
-					// abort immediately so the daemon stops generating.
-					if (cancelled) {
-						stream.abort();
-					}
-
-					for await (const chunk of stream) {
-						if (cancelled) break;
-						if (chunk.response) {
-							accumulatedText += chunk.response;
-							onChunk({ text: chunk.response });
-						}
-						if (chunk.done) {
-							promptEvalCount = chunk.prompt_eval_count;
-							evalCount = chunk.eval_count;
-						}
-					}
+					})) as AsyncIterable<ChatResponse> & { abort: () => void };
 				} else {
 					const chatRequest = await this.buildChatRequest(request, model, true);
-					const stream = await this.client.chat(chatRequest as ChatRequest & { stream: true });
-					activeStream = stream;
-					if (cancelled) {
+					stream = (await this.client.chat(
+						chatRequest as ChatRequest & { stream: true }
+					)) as AsyncIterable<ChatResponse> & { abort: () => void };
+				}
+				activeStream = stream;
+				// cancel() may have fired while the await above was outstanding —
+				// abort immediately so the daemon stops generating.
+				if (signal.aborted) {
+					try {
 						stream.abort();
-					}
-
-					for await (const chunk of stream) {
-						if (cancelled) break;
-						const msg = chunk.message;
-						if (msg?.content) {
-							accumulatedText += msg.content;
-							onChunk({ text: msg.content });
-						}
-						if (msg?.thinking) {
-							accumulatedThoughts += msg.thinking;
-							onChunk({ text: '', thought: msg.thinking });
-						}
-						if (msg?.tool_calls?.length) {
-							toolCalls = toolCalls ?? [];
-							for (const tc of msg.tool_calls) {
-								toolCalls.push({
-									name: tc.function.name,
-									arguments: tc.function.arguments || {},
-								});
-							}
-						}
-						if (chunk.done) {
-							promptEvalCount = chunk.prompt_eval_count;
-							evalCount = chunk.eval_count;
-						}
+					} catch (err) {
+						this.plugin?.logger.debug('[OllamaClient] Abort failed:', err);
 					}
 				}
-
-				const usageMetadata = this.toUsageMetadata(promptEvalCount, evalCount);
-				return {
-					markdown: accumulatedText,
-					rendered: '',
-					...(accumulatedThoughts && { thoughts: accumulatedThoughts }),
-					...(toolCalls && toolCalls.length && { toolCalls }),
-					...(usageMetadata && { usageMetadata }),
-				};
-			} catch (error) {
-				if (cancelled) {
-					const usageMetadata = this.toUsageMetadata(promptEvalCount, evalCount);
-					return {
-						markdown: accumulatedText,
-						rendered: '',
-						...(accumulatedThoughts && { thoughts: accumulatedThoughts }),
-						...(toolCalls && toolCalls.length && { toolCalls }),
-						...(usageMetadata && { usageMetadata }),
-					};
-				}
-				this.plugin?.logger.error('[OllamaClient] Streaming error:', error);
-				throw error;
-			}
-		})();
-
-		return {
-			complete,
-			cancel: () => {
-				cancelled = true;
+				return stream;
+			},
+			onCancel: () => {
 				try {
 					activeStream?.abort();
 				} catch (err) {
 					this.plugin?.logger.debug('[OllamaClient] Abort failed:', err);
 				}
 			},
-		};
+			onChunk: (chunk) => {
+				if (!isExtended) {
+					// generate() chunks carry `.response` (and no message shape).
+					if (chunk.response) {
+						state.accumulatedText += chunk.response;
+						onChunk({ text: chunk.response });
+					}
+				} else {
+					const msg = chunk.message;
+					if (msg?.content) {
+						state.accumulatedText += msg.content;
+						onChunk({ text: msg.content });
+					}
+					if (msg?.thinking) {
+						state.accumulatedThoughts += msg.thinking;
+						onChunk({ text: '', thought: msg.thinking });
+					}
+					if (msg?.tool_calls?.length) {
+						state.toolCalls = state.toolCalls ?? [];
+						for (const tc of msg.tool_calls) {
+							state.toolCalls.push({
+								name: tc.function.name,
+								arguments: tc.function.arguments || {},
+							});
+						}
+					}
+				}
+				if (chunk.done) {
+					state.promptEvalCount = chunk.prompt_eval_count;
+					state.evalCount = chunk.eval_count;
+				}
+			},
+			finalize,
+			onError: (error) => this.plugin?.logger.error('[OllamaClient] Streaming error:', error),
+		});
 	}
 
 	private buildOptions(): Record<string, unknown> {
