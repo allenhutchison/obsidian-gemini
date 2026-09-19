@@ -862,6 +862,39 @@ describe('GeminiClient', () => {
 			expect(result.markdown).not.toContain('NEVER');
 		});
 
+		test('cancel() while create is pending aborts the signal passed to the SDK', async () => {
+			// Cancellation during the create-pending window must reach the
+			// transport: the helper's signal rides the create request, so the
+			// in-flight HTTP call stops instead of completing unnoticed.
+			let capturedOptions: { signal?: AbortSignal } | undefined;
+			let resolveCreate: (stream: unknown) => void = () => {};
+			const gate = new Promise((r) => (resolveCreate = r));
+			interactionsCreateMock.mockImplementation((_params: unknown, options?: { signal?: AbortSignal }) => {
+				capturedOptions = options;
+				return gate as any;
+			});
+
+			const client = makeInteractionsClient();
+			const stream = client.generateStreamingResponse(
+				{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] },
+				() => {}
+			);
+			// cancel() while create is still pending
+			stream.cancel();
+			resolveCreate({
+				async *[Symbol.asyncIterator]() {
+					yield { event_type: 'step.delta', index: 0, delta: { type: 'text', text: ' NEVER' } };
+				},
+				controller: new AbortController(),
+			});
+
+			const result = await stream.complete;
+
+			expect(capturedOptions?.signal).toBeDefined();
+			expect(capturedOptions?.signal?.aborted).toBe(true);
+			expect(result.markdown).toBe(''); // nothing was consumed
+		});
+
 		test('one-shot base requests pass the prompt as input', async () => {
 			const client = makeInteractionsClient();
 			await client.generateModelResponse({ prompt: 'just answer', kind: 'base' } as any);
