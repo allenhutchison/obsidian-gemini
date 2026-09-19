@@ -1,7 +1,7 @@
 import { App, Modal, Notice, setIcon } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import type { PendingCatchUp } from '../services/scheduled-task-manager';
-import { t } from '../i18n';
+import { t, type TranslationKey } from '../i18n';
 
 /**
  * Modal shown on startup when scheduled tasks were missed while the plugin
@@ -122,52 +122,63 @@ export class CatchUpModal extends Modal {
 				cls: 'mod-cta gemini-catchup-approve',
 				attr: { type: 'button' },
 			});
-			approveBtn.addEventListener('click', () => {
-				void (async () => {
-					approveBtn.disabled = true;
-					skipBtn.disabled = true;
-					try {
-						await this.approveOne(entry);
-						this.pending = this.pending.filter((p) => p.task.slug !== entry.task.slug);
-						if (this.pending.length === 0) {
-							this.close();
-						} else {
-							this.renderList(list);
-						}
-					} catch (err) {
-						this.plugin.logger.error(`[CatchUpModal] Failed to run "${entry.task.slug}":`, err);
-						new Notice(t('catchUp.runFailed', { slug: entry.task.slug }));
-						approveBtn.disabled = false;
-						skipBtn.disabled = false;
-					}
-				})();
-			});
 
 			const skipBtn = btns.createEl('button', {
 				text: t('catchUp.skipButton'),
 				attr: { type: 'button' },
 			});
-			skipBtn.addEventListener('click', () => {
-				void (async () => {
-					approveBtn.disabled = true;
-					skipBtn.disabled = true;
-					try {
-						await this.skipOne(entry);
-						this.pending = this.pending.filter((p) => p.task.slug !== entry.task.slug);
-						if (this.pending.length === 0) {
-							this.close();
-						} else {
-							this.renderList(list);
-						}
-					} catch (err) {
-						this.plugin.logger.error(`[CatchUpModal] Failed to skip "${entry.task.slug}":`, err);
-						new Notice(t('catchUp.skipFailed', { slug: entry.task.slug }));
-						approveBtn.disabled = false;
-						skipBtn.disabled = false;
-					}
-				})();
+
+			this.wireEntryAction(approveBtn, skipBtn, list, entry, {
+				action: (e) => this.approveOne(e),
+				logVerb: 'run',
+				failedKey: 'catchUp.runFailed',
+			});
+			this.wireEntryAction(skipBtn, approveBtn, list, entry, {
+				action: (e) => this.skipOne(e),
+				logVerb: 'skip',
+				failedKey: 'catchUp.skipFailed',
 			});
 		}
+	}
+
+	/**
+	 * Shared click handler for a per-entry Approve/Skip button pair: disable
+	 * both buttons, run the one differing action, drop the entry from the
+	 * pending list, and close or re-render. On failure, log + notice with the
+	 * per-action wording and re-enable both. `primary`/`other` are threaded
+	 * both ways so the disable/re-enable pairing stays symmetric.
+	 */
+	private wireEntryAction(
+		primary: HTMLButtonElement,
+		other: HTMLButtonElement,
+		list: HTMLElement,
+		entry: PendingCatchUp,
+		opts: {
+			action: (entry: PendingCatchUp) => Promise<void>;
+			logVerb: string;
+			failedKey: TranslationKey;
+		}
+	): void {
+		primary.addEventListener('click', () => {
+			void (async () => {
+				primary.disabled = true;
+				other.disabled = true;
+				try {
+					await opts.action(entry);
+					this.pending = this.pending.filter((p) => p.task.slug !== entry.task.slug);
+					if (this.pending.length === 0) {
+						this.close();
+					} else {
+						this.renderList(list);
+					}
+				} catch (err) {
+					this.plugin.logger.error(`[CatchUpModal] Failed to ${opts.logVerb} "${entry.task.slug}":`, err);
+					new Notice(t(opts.failedKey, { slug: entry.task.slug }));
+					primary.disabled = false;
+					other.disabled = false;
+				}
+			})();
+		});
 	}
 
 	private async approveOne(entry: PendingCatchUp): Promise<void> {
