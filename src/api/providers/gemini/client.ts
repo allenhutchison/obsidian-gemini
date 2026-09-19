@@ -20,6 +20,7 @@ import { GeminiPrompts } from '../../../prompts';
 import type { ObsidianGemini } from '../../../types/plugin';
 import { getDefaultModelForRole, isInteractionsOnlyModel } from '../../../models';
 import { normalizeToContent } from '../../../utils/history-normalize';
+import { runCancellableStream } from '../../utils/cancellable-stream';
 import { t } from '../../../i18n';
 import type { GeminiClientConfig } from './config';
 import { ModelUseCase } from '../../model-use-case';
@@ -149,56 +150,51 @@ export class GeminiClient implements ModelApi {
 		request: BaseModelRequest | ExtendedModelRequest,
 		onChunk: StreamCallback
 	): StreamingModelResponse {
-		let cancelled = false;
-		// The SDK's Stream exposes an AbortController; aborting it actively
-		// interrupts an in-flight SSE read so cancel() doesn't have to wait for the
-		// next frame (or the server) to unblock the `for await`.
-		let activeStream: { controller?: AbortController } | undefined;
 		const accumulator = new InteractionStreamAccumulator();
 
-		const cancel = () => {
-			cancelled = true;
-			try {
-				activeStream?.controller?.abort();
-			} catch {
-				// Best-effort: an SDK stream without a controller still stops via the flag.
-			}
-		};
-
-		const complete = (async (): Promise<ModelResponse> => {
-			const params = await this.buildInteractionParams(request);
-			params.stream = true;
-
-			try {
+		// The SDK's Stream exposes an AbortController; aborting it actively
+		// interrupts an in-flight SSE read so cancel() doesn't have to wait for
+		// the next frame (or the server) to unblock the `for await`. The helper
+		// aborts its own signal synchronously; this hook reaches the
+		// SDK-supplied controller, which no signal of ours could reach.
+		return runCancellableStream<Record<string, unknown>>({
+			start: async () => {
+				const params = await this.buildInteractionParams(request);
+				params.stream = true;
 				const stream = await this.interactionsClient.create(params);
-				activeStream = stream;
-				// Cancelled during request setup, before iteration began.
-				if (cancelled) {
-					cancel();
-					return accumulator.finalize();
+				this.activeInteractionsStream = stream;
+				return stream;
+			},
+			onChunk: (event) => {
+				const chunk = accumulator.handleEvent(event);
+				if (chunk && (chunk.text || chunk.thought)) {
+					onChunk(chunk);
 				}
-				for await (const event of stream) {
-					if (cancelled) break;
-					const chunk = accumulator.handleEvent(event);
-					if (chunk && (chunk.text || chunk.thought)) {
-						onChunk(chunk);
+			},
+			finalize: () => accumulator.finalize(),
+			onCancel: () => {
+				// `activeStream` is the SDK stream's own controller, assigned only
+				// after `start` resolves — so it reads the helper's signal first
+				// and falls back to the flag when cancel() wins the race.
+				if (this.activeInteractionsStream?.controller) {
+					try {
+						this.activeInteractionsStream.controller.abort();
+					} catch {
+						// Best-effort: an SDK stream without a controller still stops via the flag.
 					}
 				}
-				return accumulator.finalize();
-			} catch (error) {
-				if (cancelled) {
-					return accumulator.finalize();
-				}
-				this.plugin?.logger.error('[GeminiClient] Error streaming interaction:', error);
-				throw error;
-			}
-		})();
-
-		return {
-			complete,
-			cancel,
-		};
+			},
+			onError: (error) => this.plugin?.logger.error('[GeminiClient] Error streaming interaction:', error),
+		});
 	}
+
+	/**
+	 * The SDK stream handed back by the in-flight `interactions.create`, kept
+	 * on the instance so `onCancel` can abort its controller. Assigned after
+	 * `start` resolves; reads of it race-cancel safely because the helper's
+	 * signal is aborted synchronously first.
+	 */
+	private activeInteractionsStream?: { controller?: AbortController };
 
 	/**
 	 * Build Interactions `create` params from our request format, emitting the
