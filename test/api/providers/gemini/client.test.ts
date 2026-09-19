@@ -352,7 +352,6 @@ describe('GeminiClient', () => {
 			[ModelUseCase.COMPLETIONS, 'minimal'],
 			[ModelUseCase.SUMMARY, 'low'],
 			[ModelUseCase.REWRITE, 'low'],
-			[ModelUseCase.SEARCH, 'medium'],
 			[ModelUseCase.CHAT, 'high'],
 		])('%s maps to thinking_level %s', async (useCase, expectedLevel) => {
 			const generationConfig = await generationConfigFor(useCase);
@@ -360,7 +359,7 @@ describe('GeminiClient', () => {
 			expect(generationConfig.thinking_summaries).toBe('auto');
 		});
 
-		test('defaults to high when no use case is set (e.g. createCustom callers)', async () => {
+		test('defaults to high when no use case is set (e.g. direct ImageGeneration construction)', async () => {
 			const generationConfig = await generationConfigFor(undefined);
 			expect(generationConfig.thinking_level).toBe('high');
 		});
@@ -433,10 +432,11 @@ describe('GeminiClient', () => {
 		});
 
 		test('no-plugin fallback constructs GoogleGenAI with config.apiKey only', () => {
-			// When GeminiClient is constructed without a plugin (e.g. via
-			// ModelClientFactory.createCustom in code paths that don't have one
-			// handy), the helper isn't invoked — the constructor falls back to
-			// using config.apiKey directly and customBaseUrl is unreachable.
+			// When GeminiClient is constructed without a plugin (direct
+			// construction in code paths that don't have one handy, e.g.
+			// ImageGeneration), the helper isn't invoked — the constructor falls
+			// back to using config.apiKey directly and customBaseUrl is
+			// unreachable.
 			const promptsPlugin: any = { logger: mockLogger, settings: {} };
 			new GeminiClient({ apiKey: 'config-only-key', model: 'gemini-pro' }, new GeminiPrompts(promptsPlugin), undefined);
 

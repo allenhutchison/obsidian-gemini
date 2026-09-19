@@ -11,5 +11,4 @@ export enum ModelUseCase {
 	SUMMARY = 'summary',
 	COMPLETIONS = 'completions',
 	REWRITE = 'rewrite',
-	SEARCH = 'search',
 }

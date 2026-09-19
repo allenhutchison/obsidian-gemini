@@ -269,35 +269,12 @@ describe('ModelClientFactory', () => {
 			expect(config.model).toBe('my-rewrite-model');
 		});
 
-		it('should use the chat feature model for the SEARCH use case (SEARCH bills to chat)', () => {
-			const plugin = createMockPlugin({ features: { chat: { provider: 'gemini', model: 'my-chat-model' } } });
-			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SEARCH);
-
-			const config = MockGeminiClient.mock.calls[0][0];
-			expect(config.model).toBe('my-chat-model');
-		});
-
 		it('should fall back to a default when the stored model is empty', () => {
 			const plugin = createMockPlugin({ features: { chat: { provider: 'gemini', model: '' } } });
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
 
 			const config = MockGeminiClient.mock.calls[0][0];
 			expect(config.model).toBeTruthy();
-		});
-
-		it('routes REWRITE and SEARCH independently of each other and of chat when each has its own route', () => {
-			const plugin = createMockPlugin({
-				features: {
-					chat: { provider: 'gemini', model: 'chat-model' },
-					rewrite: { provider: 'ollama', model: 'rewrite-model' },
-				},
-			});
-
-			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.REWRITE);
-			expect(MockOllamaClient.mock.calls[0][0].model).toBe('rewrite-model');
-
-			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SEARCH);
-			expect(MockGeminiClient.mock.calls[0][0].model).toBe('chat-model');
 		});
 	});
 
@@ -382,24 +359,6 @@ describe('ModelClientFactory', () => {
 
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
 			expect(MockOllamaClient).toHaveBeenCalledTimes(1);
-			expect(MockOllamaClient.mock.calls[0][0].model).toBe('ollama-local');
-		});
-
-		// ModelUseCase.SEARCH is a thinking-level tier on the chat path, not the
-		// `webSearch` feature — it must follow chat's provider, and never be
-		// gated off just because chat isn't routed to a web-search-capable provider.
-		it('routes the SEARCH use case with chat, not with the webSearch feature', () => {
-			const plugin = createMockPlugin({
-				features: {
-					chat: { provider: 'ollama', model: 'ollama-local' },
-					webSearch: { provider: 'none', model: '' },
-				},
-			});
-
-			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SEARCH);
-
-			expect(MockOllamaClient).toHaveBeenCalledTimes(1);
-			expect(MockGeminiClient).not.toHaveBeenCalled();
 			expect(MockOllamaClient.mock.calls[0][0].model).toBe('ollama-local');
 		});
 	});
