@@ -190,6 +190,29 @@ export class RagVaultScanner {
 	}
 
 	/**
+	 * The delete call both `deleteFileSearchStore` and `startFresh` run,
+	 * wrapped in retry with the caller's operationName (so the retry logs can
+	 * tell the two paths apart). Deliberately only this inner call is shared:
+	 * the surrounding error handling differs — `startFresh` swallows
+	 * not-found and continues, `deleteFileSearchStore` surfaces the failure.
+	 */
+	private async deleteStore(
+		ai: NonNullable<ReturnType<VaultScannerCallbacks['getAi']>>,
+		storeName: string,
+		operationName: string
+	): Promise<void> {
+		await executeWithRetry(
+			() =>
+				ai.fileSearchStores.delete({
+					name: storeName,
+					config: { force: true },
+				}),
+			undefined,
+			{ operationName, logger: this.plugin.logger }
+		);
+	}
+
+	/**
 	 * Delete the File Search Store
 	 */
 	async deleteFileSearchStore(): Promise<void> {
@@ -200,15 +223,7 @@ export class RagVaultScanner {
 		if (!storeName) return;
 
 		try {
-			await executeWithRetry(
-				() =>
-					ai.fileSearchStores.delete({
-						name: storeName,
-						config: { force: true },
-					}),
-				undefined,
-				{ operationName: 'RagVaultScanner.deleteFileSearchStore.delete', logger: this.plugin.logger }
-			);
+			await this.deleteStore(ai, storeName, 'RagVaultScanner.deleteFileSearchStore.delete');
 
 			// Clear settings and cache
 			this.plugin.settings.ragIndexing.fileSearchStoreName = null;
@@ -315,15 +330,7 @@ export class RagVaultScanner {
 			const ai = this.callbacks.getAi();
 			if (storeName && ai) {
 				try {
-					await executeWithRetry(
-						() =>
-							ai.fileSearchStores.delete({
-								name: storeName,
-								config: { force: true },
-							}),
-						undefined,
-						{ operationName: 'RagVaultScanner.startFresh.delete', logger: this.plugin.logger }
-					);
+					await this.deleteStore(ai, storeName, 'RagVaultScanner.startFresh.delete');
 					this.plugin.logger.log(`RAG Indexing: Deleted store ${storeName}`);
 				} catch (deleteError) {
 					if (isNotFoundError(deleteError)) {
