@@ -626,7 +626,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'command.createProject': 'Créer un projet',
 	'command.convertToProject': 'Convertir la note en projet',
 	'command.openProjectSettings': 'Ouvrir les paramètres du projet',
-	'command.resumeProjectSession': 'Reprendre la session du projet',
+	'command.resumeProjectSession': 'Reprendre la session de projet',
 	'command.removeProject': 'Retirer le projet',
 	'command.rewriteSelection': "Réécrire le texte avec l'IA",
 	'command.explainSelection': "Expliquer la sélection avec l'IA",
