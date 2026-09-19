@@ -590,7 +590,7 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'command.createProject': '建立專案',
 	'command.convertToProject': '將筆記轉換為專案',
 	'command.openProjectSettings': '開啟專案設定',
-	'command.resumeProjectSession': '恢復專案工作階段',
+	'command.resumeProjectSession': '繼續專案工作階段',
 	'command.removeProject': '移除專案',
 	'command.rewriteSelection': '使用 AI 重寫選取文字',
 	'command.explainSelection': '使用 AI 解釋選取內容',
