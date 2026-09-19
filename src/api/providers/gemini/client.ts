@@ -20,6 +20,7 @@ import { GeminiPrompts } from '../../../prompts';
 import type { ObsidianGemini } from '../../../types/plugin';
 import { getDefaultModelForRole, isInteractionsOnlyModel } from '../../../models';
 import { normalizeToContent } from '../../../utils/history-normalize';
+import { runCancellableStream } from '../../utils/cancellable-stream';
 import { t } from '../../../i18n';
 import type { GeminiClientConfig } from './config';
 import { ModelUseCase } from '../../model-use-case';
@@ -107,14 +108,16 @@ export class GeminiClient implements ModelApi {
 	 */
 	private get interactionsClient(): {
 		create(
-			params: Record<string, unknown>
+			params: Record<string, unknown>,
+			options?: { signal?: AbortSignal }
 		): Promise<Record<string, unknown> & AsyncIterable<Record<string, unknown>> & { controller?: AbortController }>;
 	} {
 		return (
 			this.ai as unknown as {
 				interactions: {
 					create(
-						params: Record<string, unknown>
+						params: Record<string, unknown>,
+						options?: { signal?: AbortSignal }
 					): Promise<
 						Record<string, unknown> & AsyncIterable<Record<string, unknown>> & { controller?: AbortController }
 					>;
@@ -149,15 +152,11 @@ export class GeminiClient implements ModelApi {
 		request: BaseModelRequest | ExtendedModelRequest,
 		onChunk: StreamCallback
 	): StreamingModelResponse {
-		let cancelled = false;
-		// The SDK's Stream exposes an AbortController; aborting it actively
-		// interrupts an in-flight SSE read so cancel() doesn't have to wait for the
-		// next frame (or the server) to unblock the `for await`.
-		let activeStream: { controller?: AbortController } | undefined;
 		const accumulator = new InteractionStreamAccumulator();
-
-		const cancel = () => {
-			cancelled = true;
+		// Per-call, not an instance field: two overlapping calls on the same
+		// client must not be able to cancel each other's stream.
+		let activeStream: { controller?: AbortController } | undefined;
+		const abortActiveStream = () => {
 			try {
 				activeStream?.controller?.abort();
 			} catch {
@@ -165,39 +164,37 @@ export class GeminiClient implements ModelApi {
 			}
 		};
 
-		const complete = (async (): Promise<ModelResponse> => {
-			const params = await this.buildInteractionParams(request);
-			params.stream = true;
-
-			try {
-				const stream = await this.interactionsClient.create(params);
+		// Two cancellation paths, both needed. The signal rides the create
+		// request itself (RequestInit `signal` reaches the fetch), so a cancel
+		// *while create is pending* stops the HTTP call; the SDK's Stream then
+		// exposes its own AbortController, which actively interrupts an
+		// in-flight SSE read so cancel() doesn't have to wait for the next
+		// frame (or the server) to unblock the `for await`.
+		return runCancellableStream<Record<string, unknown>>({
+			start: async (signal) => {
+				const params = await this.buildInteractionParams(request);
+				params.stream = true;
+				const stream = await this.interactionsClient.create(params, { signal });
 				activeStream = stream;
-				// Cancelled during request setup, before iteration began.
-				if (cancelled) {
-					cancel();
-					return accumulator.finalize();
+				// cancel() may have fired while the create was pending — the
+				// signal already aborted the request; abort the stream's
+				// controller too so a returned-but-unread stream doesn't sit
+				// open.
+				if (signal.aborted) {
+					abortActiveStream();
 				}
-				for await (const event of stream) {
-					if (cancelled) break;
-					const chunk = accumulator.handleEvent(event);
-					if (chunk && (chunk.text || chunk.thought)) {
-						onChunk(chunk);
-					}
+				return stream;
+			},
+			onChunk: (event) => {
+				const chunk = accumulator.handleEvent(event);
+				if (chunk && (chunk.text || chunk.thought)) {
+					onChunk(chunk);
 				}
-				return accumulator.finalize();
-			} catch (error) {
-				if (cancelled) {
-					return accumulator.finalize();
-				}
-				this.plugin?.logger.error('[GeminiClient] Error streaming interaction:', error);
-				throw error;
-			}
-		})();
-
-		return {
-			complete,
-			cancel,
-		};
+			},
+			finalize: () => accumulator.finalize(),
+			onCancel: abortActiveStream,
+			onError: (error) => this.plugin?.logger.error('[GeminiClient] Error streaming interaction:', error),
+		});
 	}
 
 	/**

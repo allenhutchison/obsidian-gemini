@@ -321,6 +321,36 @@ describe('OllamaClient', () => {
 			expect(result.markdown).toBe('partial');
 			expect(result.usageMetadata).toBeUndefined();
 		});
+
+		it('cancel() before the stream resolves aborts the stream once it arrives', async () => {
+			// The Ollama SDK's requests take no signal, so the stream reference
+			// doesn't exist until the await resolves — the window the post-hoc
+			// abort closes. cancel() firing inside that window must still reach
+			// the daemon via abort(), not just stop the flag-driven loop.
+			const abort = vi.fn();
+			let resolveStream: (s: unknown) => void = () => {};
+			const gate = new Promise((r) => (resolveStream = r));
+			ollamaCalls.chat.mockImplementation(() => gate);
+
+			const streaming = client.generateStreamingResponse(
+				{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] },
+				() => {}
+			);
+			// cancel() while `start` is still awaiting the gate — the reference
+			// does not exist yet.
+			streaming.cancel();
+			resolveStream({
+				[Symbol.asyncIterator]: async function* () {
+					yield { message: { content: 'late' }, done: false };
+				},
+				abort,
+			});
+
+			const result = await streaming.complete;
+
+			expect(abort).toHaveBeenCalled();
+			expect(result.markdown).toBe(''); // no chunk was consumed
+		});
 	});
 
 	describe('convertHistoryEntry() complex formats', () => {
