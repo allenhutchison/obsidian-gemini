@@ -1,4 +1,4 @@
-import { Tool, ToolExecutionContext, ToolParameterSchema, ToolParams } from './types';
+import { Tool, ToolExecutionContext, ToolParams } from './types';
 import {
 	ToolPermission,
 	FeatureToolPolicy,
@@ -48,13 +48,6 @@ export class ToolRegistry {
 	 */
 	getAllTools(): Tool[] {
 		return Array.from(this.tools.values());
-	}
-
-	/**
-	 * Get tools by category
-	 */
-	getToolsByCategory(category: string): Tool[] {
-		return this.getAllTools().filter((tool) => tool.category === category);
 	}
 
 	/**
@@ -121,29 +114,6 @@ export class ToolRegistry {
 	 */
 	requiresConfirmation(toolName: string, featurePolicy?: FeatureToolPolicy): boolean {
 		return this.getEffectivePermission(toolName, featurePolicy) === ToolPermission.ASK_USER;
-	}
-
-	/**
-	 * Get tool descriptions for AI context
-	 */
-	getToolDescriptions(context: ToolExecutionContext): Array<{
-		type: 'function';
-		function: {
-			name: string;
-			description: string;
-			parameters: ToolParameterSchema;
-		};
-	}> {
-		const enabledTools = this.getEnabledTools(context);
-
-		return enabledTools.map((tool) => ({
-			type: 'function' as const,
-			function: {
-				name: tool.name,
-				description: tool.description,
-				parameters: tool.parameters,
-			},
-		}));
 	}
 
 	/**
