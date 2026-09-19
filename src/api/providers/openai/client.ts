@@ -43,6 +43,7 @@ import { GeminiPrompts } from '../../../prompts';
 import type { ObsidianGemini } from '../../../types/plugin';
 import type { OpenAIClientConfig } from './config';
 import { walkHistoryEntry } from '../history-walk';
+import { runCancellableStream } from '../../utils/cancellable-stream';
 import { SIMPLE_TOOL_ID_PATTERN, ToolIdLedger } from '../tool-id-ledger';
 import type { ResolvedToolCall } from '../tool-id-ledger';
 import { describeSdkApiError } from '../../../utils/error-utils';
@@ -140,38 +141,36 @@ export class OpenAIClient implements ModelApi {
 		// role-correct model; no chat-default fallback here.
 		const model = request.model || this.config.model;
 
-		let cancelled = false;
-		// Unlike Ollama's post-hoc `stream.abort()` (which races cancel() firing
-		// before the stream reference is assigned), the signal is threaded into
-		// the request from the start, so aborting it is safe to call at any time
-		// — before, during, or after the awaits below.
-		const controller = new AbortController();
-		let accumulatedText = '';
-		let accumulatedThoughts = '';
-		const toolCallAccumulators = new Map<number, StreamingToolCallAccumulator>();
-		let usage: OpenAI.CompletionUsage | undefined;
+		const state = {
+			accumulatedText: '',
+			accumulatedThoughts: '',
+			toolCallAccumulators: new Map<number, StreamingToolCallAccumulator>(),
+			usage: undefined as OpenAI.CompletionUsage | undefined,
+		};
 
-		const buildResult = (): ModelResponse => {
-			const toolCalls = this.finalizeToolCalls(toolCallAccumulators);
-			const usageMetadata = this.toUsageMetadata(usage);
+		const finalize = (): ModelResponse => {
+			const toolCalls = this.finalizeToolCalls(state.toolCallAccumulators);
+			const usageMetadata = this.toUsageMetadata(state.usage);
 			return {
-				markdown: accumulatedText,
+				markdown: state.accumulatedText,
 				rendered: '',
-				...(accumulatedThoughts && { thoughts: accumulatedThoughts }),
+				...(state.accumulatedThoughts && { thoughts: state.accumulatedThoughts }),
 				...(toolCalls && toolCalls.length && { toolCalls }),
 				...(usageMetadata && { usageMetadata }),
 			};
 		};
 
-		const complete = (async (): Promise<ModelResponse> => {
-			if (!model) {
-				throw new Error(t('provider.openai.noModelSelected'));
-			}
-
-			try {
-				let stream: AsyncIterable<OpenAI.ChatCompletionChunk>;
+		// Signal-first: the helper's controller exists before `start` runs, and
+		// the signal is threaded into the request options, so aborting it is
+		// safe at any point — before, during, or after the awaits. (Transports
+		// without signal support need the post-`start` re-check Ollama has.)
+		return runCancellableStream<OpenAI.ChatCompletionChunk>({
+			start: async (signal) => {
+				if (!model) {
+					throw new Error(t('provider.openai.noModelSelected'));
+				}
 				if (!isExtended) {
-					stream = await this.client.chat.completions.create(
+					return this.client.chat.completions.create(
 						{
 							model,
 							messages: [{ role: 'user', content: request.prompt }],
@@ -180,68 +179,42 @@ export class OpenAIClient implements ModelApi {
 							// toUsageMetadata() tolerates that by returning undefined.
 							stream_options: { include_usage: true },
 						},
-						{ signal: controller.signal }
-					);
-				} else {
-					const { messages, tools } = await this.buildChatRequest(request);
-					stream = await this.client.chat.completions.create(
-						{
-							model,
-							messages,
-							stream: true,
-							stream_options: { include_usage: true },
-							...this.toolParams(model, tools),
-						},
-						{ signal: controller.signal }
+						{ signal }
 					);
 				}
-
-				// cancel() may have fired while the awaits above were outstanding —
-				// abort immediately so the server stops generating.
-				if (cancelled) {
-					controller.abort();
-				}
-
-				for await (const chunk of stream) {
-					if (cancelled) break;
-					this.accumulateStreamChunk(
-						chunk,
-						toolCallAccumulators,
-						(text) => {
-							accumulatedText += text;
-							onChunk({ text });
-						},
-						(thought) => {
-							accumulatedThoughts += thought;
-							onChunk({ text: '', thought });
-						}
-					);
-					if (chunk.usage) {
-						usage = chunk.usage;
+				const { messages, tools } = await this.buildChatRequest(request);
+				return this.client.chat.completions.create(
+					{
+						model,
+						messages,
+						stream: true,
+						stream_options: { include_usage: true },
+						...this.toolParams(model, tools),
+					},
+					{ signal }
+				);
+			},
+			onChunk: (chunk) => {
+				this.accumulateStreamChunk(
+					chunk,
+					state.toolCallAccumulators,
+					(text) => {
+						state.accumulatedText += text;
+						onChunk({ text });
+					},
+					(thought) => {
+						state.accumulatedThoughts += thought;
+						onChunk({ text: '', thought });
 					}
-				}
-
-				return buildResult();
-			} catch (error) {
-				if (cancelled) {
-					return buildResult();
-				}
-				this.plugin?.logger.error('[OpenAIClient] Streaming error:', describeSdkApiError(error), error);
-				throw error;
-			}
-		})();
-
-		return {
-			complete,
-			cancel: () => {
-				cancelled = true;
-				try {
-					controller.abort();
-				} catch (err) {
-					this.plugin?.logger.debug('[OpenAIClient] Abort failed:', err);
+				);
+				if (chunk.usage) {
+					state.usage = chunk.usage;
 				}
 			},
-		};
+			finalize: () => finalize(),
+			onError: (error) =>
+				this.plugin?.logger.error('[OpenAIClient] Streaming error:', describeSdkApiError(error), error),
+		});
 	}
 
 	/** Whether `model` is a GPT-5.6-family reasoning model. */
