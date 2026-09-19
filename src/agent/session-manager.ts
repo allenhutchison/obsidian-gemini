@@ -55,36 +55,6 @@ export class SessionManager {
 	}
 
 	/**
-	 * Create a new note-centric chat session
-	 */
-	async createNoteChatSession(sourceFile: TFile): Promise<ChatSession> {
-		const context: AgentContext = {
-			...DEFAULT_CONTEXTS.NOTE_CHAT,
-			contextFiles: [sourceFile],
-			// Clone the policy so per-session mutations (e.g. overrides) don't bleed
-			// into the shared default. requireConfirmation is similarly cloned below.
-			toolPolicy: clonePolicy(DEFAULT_CONTEXTS.NOTE_CHAT.toolPolicy),
-			requireConfirmation: [...DEFAULT_CONTEXTS.NOTE_CHAT.requireConfirmation],
-		};
-
-		const sessionTitle = sanitizeFileName(`${sourceFile.basename} Chat`);
-
-		const session: ChatSession = {
-			id: this.generateSessionId(),
-			type: SessionType.NOTE_CHAT,
-			title: sessionTitle,
-			context,
-			created: new Date(),
-			lastActive: new Date(),
-			historyPath: `${this.getHistoryFolderPath()}/${sessionTitle}.md`,
-			sourceNotePath: sourceFile.path,
-		};
-
-		this.activeSessions.set(session.id, session);
-		return session;
-	}
-
-	/**
 	 * Create a new agent session
 	 */
 	async createAgentSession(title?: string, initialContext?: Partial<AgentContext>): Promise<ChatSession> {
@@ -127,34 +97,6 @@ export class SessionManager {
 	releaseSession(sessionId: string): void {
 		this.activeSessions.delete(sessionId);
 		this.plugin.toolExecutionEngine?.clearLoopDetectorSession(sessionId);
-	}
-
-	/**
-	 * Get existing session for a note (note-centric mode)
-	 */
-	async getNoteChatSession(sourceFile: TFile): Promise<ChatSession> {
-		// Check if we already have an active session for this note
-		const existingSession = Array.from(this.activeSessions.values()).find(
-			(session) => session.type === SessionType.NOTE_CHAT && session.sourceNotePath === sourceFile.path
-		);
-
-		if (existingSession) {
-			existingSession.lastActive = new Date();
-			return existingSession;
-		}
-
-		// Check if a history file exists for this note
-		const sanitizedTitle = sanitizeFileName(`${sourceFile.basename} Chat`);
-		const historyPath = `${this.getHistoryFolderPath()}/${sanitizedTitle}.md`;
-		const historyFile = this.plugin.app.vault.getAbstractFileByPath(historyPath);
-
-		if (historyFile instanceof TFile) {
-			// Load existing session from history file
-			return this.loadSessionFromFile(historyFile);
-		}
-
-		// Create new session
-		return this.createNoteChatSession(sourceFile);
 	}
 
 	/**
@@ -235,97 +177,6 @@ export class SessionManager {
 			if (extracted) result.push(extracted);
 		}
 		return result;
-	}
-
-	/**
-	 * Update session context
-	 */
-	async updateSessionContext(sessionId: string, context: Partial<AgentContext>): Promise<void> {
-		const session = this.activeSessions.get(sessionId);
-		if (session) {
-			session.context = { ...session.context, ...context };
-			session.lastActive = new Date();
-
-			// Save metadata to history file for agent sessions
-			if (session.type === SessionType.AGENT_SESSION) {
-				await this.plugin.history.updateSessionMetadata(session);
-			}
-		}
-	}
-
-	/**
-	 * Update session model configuration
-	 */
-	async updateSessionModelConfig(sessionId: string, modelConfig: SessionModelConfig): Promise<void> {
-		const session = this.activeSessions.get(sessionId);
-		if (session) {
-			// Replace the entire modelConfig to properly handle deletions
-			// If modelConfig is empty, set to undefined
-			if (Object.keys(modelConfig).length === 0) {
-				session.modelConfig = undefined;
-			} else {
-				session.modelConfig = modelConfig;
-			}
-			session.lastActive = new Date();
-
-			// Save metadata to history file for agent sessions
-			if (session.type === SessionType.AGENT_SESSION) {
-				await this.plugin.history.updateSessionMetadata(session);
-			}
-		}
-	}
-
-	/**
-	 * Add files to session context
-	 */
-	async addContextFiles(sessionId: string, files: TFile[]): Promise<void> {
-		const session = this.activeSessions.get(sessionId);
-		if (session) {
-			const existingPaths = session.context.contextFiles.map((f) => f.path);
-			const newFiles = files.filter((f) => !existingPaths.includes(f.path));
-			session.context.contextFiles.push(...newFiles);
-			session.lastActive = new Date();
-
-			// Save metadata to history file for agent sessions
-			if (session.type === SessionType.AGENT_SESSION) {
-				await this.plugin.history.updateSessionMetadata(session);
-			}
-		}
-	}
-
-	/**
-	 * Remove files from session context
-	 */
-	async removeContextFiles(sessionId: string, filePaths: string[]): Promise<void> {
-		const session = this.activeSessions.get(sessionId);
-		if (session) {
-			session.context.contextFiles = session.context.contextFiles.filter((f) => !filePaths.includes(f.path));
-			session.lastActive = new Date();
-
-			// Save metadata to history file for agent sessions
-			if (session.type === SessionType.AGENT_SESSION) {
-				await this.plugin.history.updateSessionMetadata(session);
-			}
-		}
-	}
-
-	/**
-	 * Promote a note chat to an agent session
-	 */
-	async promoteToAgentSession(noteChatId: string, title?: string): Promise<ChatSession> {
-		const noteSession = this.activeSessions.get(noteChatId);
-		if (!noteSession || noteSession.type !== SessionType.NOTE_CHAT) {
-			throw new Error('Session not found or not a note chat');
-		}
-
-		// Create new agent session with expanded capabilities
-		const agentSession = await this.createAgentSession(title || `${noteSession.title} (Agent)`, {
-			contextFiles: noteSession.context.contextFiles,
-		});
-
-		// TODO: Copy message history from note session to agent session
-
-		return agentSession;
 	}
 
 	/**
@@ -492,13 +343,6 @@ export class SessionManager {
 	 */
 	private generateSessionId(): string {
 		return `session_${crypto.randomUUID()}`;
-	}
-
-	/**
-	 * Get the history folder path within the plugin's state folder
-	 */
-	private getHistoryFolderPath(): string {
-		return stateFolderPath(this.plugin.settings, STATE_SUBFOLDERS.history);
 	}
 
 	/**
