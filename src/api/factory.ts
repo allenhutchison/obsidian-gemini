@@ -29,19 +29,22 @@ import type { FeatureId } from '../types/features';
 /**
  * Which routable feature each model-client use case is billed to.
  *
- * Mapped explicitly rather than reusing the enum's string values: they overlap
- * by coincidence, not by design. `ModelUseCase.SEARCH` is a *thinking-level
- * tier* for query-understanding calls on the chat path — not the `webSearch`
- * feature, which gates the Google Search / URL-context tools. Routing it to
- * `webSearch` would send a local-only install's chat calls looking for a
- * provider that serves web search and find none.
+ * Mapped explicitly rather than reusing the enum's string values: any overlap
+ * between a `ModelUseCase` name and a `FeatureId` name is coincidence, not
+ * design. A use-case name that matches a feature must NOT route to that
+ * feature unless that is really intended — e.g. a hypothetical `SEARCH`
+ * use case is a thinking-level tier for query-understanding calls on the chat
+ * path, not the `webSearch` feature, which gates the Google Search /
+ * URL-context tools. Routing on the name collision would send a local-only
+ * install's chat calls looking for a provider that serves web search and find
+ * none. Decide each row by what the call site does, not what the enum arm is
+ * called.
  */
 const FEATURE_FOR_USE_CASE: Record<ModelUseCase, FeatureId> = {
 	[ModelUseCase.CHAT]: 'chat',
 	[ModelUseCase.SUMMARY]: 'summary',
 	[ModelUseCase.COMPLETIONS]: 'completions',
 	[ModelUseCase.REWRITE]: 'rewrite',
-	[ModelUseCase.SEARCH]: 'chat',
 };
 
 // Re-exported so existing `import { ModelUseCase } from '.../api/factory'` call

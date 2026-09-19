@@ -46,7 +46,6 @@ import {
  * | Completions | MINIMAL  | latency-sensitive, simple next-token output    |
  * | Summary     | LOW      | bounded, templated output                      |
  * | Rewrite     | LOW      | short, focused edits                           |
- * | Search      | MEDIUM   | query understanding + synthesis                |
  * | Chat        | HIGH     | agent mode: multi-step tool use, benefits most |
  */
 // The literal strings are the `ThinkingLevel` enum's own runtime values, used
@@ -58,7 +57,6 @@ const THINKING_LEVEL_BY_USE_CASE: Record<ModelUseCase, ThinkingLevel> = {
 	[ModelUseCase.COMPLETIONS]: 'MINIMAL',
 	[ModelUseCase.SUMMARY]: 'LOW',
 	[ModelUseCase.REWRITE]: 'LOW',
-	[ModelUseCase.SEARCH]: 'MEDIUM',
 	[ModelUseCase.CHAT]: 'HIGH',
 } as Record<ModelUseCase, ThinkingLevel>;
 

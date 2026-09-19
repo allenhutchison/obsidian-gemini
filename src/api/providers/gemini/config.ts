@@ -8,8 +8,9 @@ export interface GeminiClientConfig {
 	model?: string;
 	/**
 	 * The use case this client was created for. Drives per-use-case request
-	 * tuning (e.g. `thinkingLevel`). Optional — `createCustom` callers leave it
-	 * unset and fall back to the CHAT defaults.
+	 * tuning (e.g. `thinkingLevel`). Optional — direct construction without
+	 * the factory (e.g. `ImageGeneration`) leaves it unset and falls back to
+	 * the CHAT defaults.
 	 */
 	useCase?: ModelUseCase;
 	maxOutputTokens?: number;
