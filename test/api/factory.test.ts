@@ -13,13 +13,13 @@ const {
 	MockGeminiPrompts,
 } = vi.hoisted(() => {
 	const MockGeminiClient = vi.fn().mockImplementation(function () {
-		return { generateModelResponse: vi.fn() };
+		return { generateModelResponse: vi.fn(), generateImage: vi.fn() };
 	});
 	const MockOllamaClient = vi.fn().mockImplementation(function () {
 		return { generateModelResponse: vi.fn() };
 	});
 	const MockOpenAIClient = vi.fn().mockImplementation(function () {
-		return { generateModelResponse: vi.fn() };
+		return { generateModelResponse: vi.fn(), generateImage: vi.fn() };
 	});
 	const MockAnthropicClient = vi.fn().mockImplementation(function () {
 		return { generateModelResponse: vi.fn() };
@@ -219,6 +219,39 @@ describe('ModelClientFactory', () => {
 
 			const openaiConfig = MockOpenAIClient.mock.calls[0][0];
 			expect(openaiConfig.baseUrl).toBe('https://api.openai.com/v1');
+		});
+	});
+
+	describe('createImageGenerationClient', () => {
+		it('creates a Gemini image client for a Gemini route', () => {
+			const plugin = createMockPlugin({ features: { imageGen: { provider: 'gemini', model: '' } } });
+
+			const client = ModelClientFactory.createImageGenerationClient(plugin);
+
+			expect(MockGeminiClient).toHaveBeenCalledWith({ apiKey: 'test-api-key' }, expect.anything(), plugin);
+			expect(client).toBe(MockGeminiClient.mock.results[0].value);
+		});
+
+		it('creates an OpenAI image client with the configured endpoint', () => {
+			const plugin = createMockPlugin({
+				features: { imageGen: { provider: 'openai', model: 'gpt-image-2.5-flare' } },
+				settings: { openaiBaseUrl: 'http://localhost:1234/v1' },
+			});
+
+			const client = ModelClientFactory.createImageGenerationClient(plugin);
+
+			expect(MockOpenAIClient).toHaveBeenCalledWith(
+				{ apiKey: 'sk-test-key', baseUrl: 'http://localhost:1234/v1' },
+				expect.anything(),
+				plugin
+			);
+			expect(client).toBe(MockOpenAIClient.mock.results[0].value);
+		});
+
+		it('throws when image generation is off', () => {
+			const plugin = createMockPlugin({ features: { imageGen: { provider: 'none', model: '' } } });
+
+			expect(() => ModelClientFactory.createImageGenerationClient(plugin)).toThrow(FeatureUnavailableError);
 		});
 	});
 

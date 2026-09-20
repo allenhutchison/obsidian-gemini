@@ -39,6 +39,26 @@ describe('OpenAIModelsService', () => {
 		expect(models[2]).toMatchObject({ value: 'gpt-5.6-luna', defaultForRoles: ['completions'] });
 	});
 
+	it('marks GPT Image models for the image-generation picker', async () => {
+		mockModelList(['gpt-image-2.5-flare', 'gpt-image-2.5-sunburst']);
+
+		const models = await new OpenAIModelsService(buildPlugin()).getModels();
+
+		expect(models).toEqual([
+			expect.objectContaining({
+				value: 'gpt-image-2.5-flare',
+				provider: 'openai',
+				defaultForRoles: ['image'],
+				supportsImageGeneration: true,
+			}),
+			expect.objectContaining({
+				value: 'gpt-image-2.5-sunburst',
+				provider: 'openai',
+				supportsImageGeneration: true,
+			}),
+		]);
+	});
+
 	it('applies conservative defaults to a model id with no curated metadata', async () => {
 		mockModelList(['some-custom-local-model']);
 		// Unknown ids only survive the filter on a non-hosted (compatible) endpoint.
@@ -51,6 +71,7 @@ describe('OpenAIModelsService', () => {
 				provider: 'openai',
 				supportsVision: false,
 				contextWindow: 128_000,
+				capabilitiesUnknown: true,
 			}),
 		]);
 	});
@@ -67,11 +88,13 @@ describe('OpenAIModelsService', () => {
 	});
 
 	describe('model filtering', () => {
-		it('keeps only the supported GPT-5.6 models on api.openai.com', async () => {
+		it('keeps only supported chat and image models on api.openai.com', async () => {
 			mockModelList([
 				'gpt-5.6-sol',
 				'gpt-5.6-terra',
 				'gpt-5.6-luna',
+				'gpt-image-2.5-flare',
+				'gpt-image-2.5-sunburst',
 				'gpt-5.1',
 				'gpt-4o',
 				'text-embedding-3-large',
@@ -82,7 +105,13 @@ describe('OpenAIModelsService', () => {
 			const svc = new OpenAIModelsService(buildPlugin());
 			const models = await svc.getModels();
 
-			expect(models.map((m) => m.value)).toEqual(['gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna']);
+			expect(models.map((m) => m.value)).toEqual([
+				'gpt-5.6-sol',
+				'gpt-5.6-terra',
+				'gpt-5.6-luna',
+				'gpt-image-2.5-flare',
+				'gpt-image-2.5-sunburst',
+			]);
 		});
 
 		it('does not filter model ids on a custom (non-api.openai.com) base URL', async () => {

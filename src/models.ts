@@ -25,6 +25,8 @@ export interface GeminiModel {
 	label: string;
 	defaultForRoles?: ModelRole[];
 	supportsImageGeneration?: boolean;
+	/** The provider catalog reported no role capabilities, so the model may be selected for either text or image use. */
+	capabilitiesUnknown?: boolean;
 	maxTemperature?: number;
 	/** Provider that serves this model. Omitted entries are treated as 'gemini' for backward compat. */
 	provider?: ModelProvider;
@@ -84,13 +86,19 @@ function getModelProvider(model: GeminiModel): ModelProvider {
 	return model.provider ?? 'gemini';
 }
 
+/** Whether a model is eligible for a role without treating unknown capabilities as known text-only metadata. */
+export function isModelEligibleForRole(model: GeminiModel, role: ModelRole): boolean {
+	if (model.capabilitiesUnknown) return true;
+	return Boolean(model.supportsImageGeneration) === (role === 'image');
+}
+
 /**
  * Returns the default model value for a given role, scoped to a provider.
  * For Gemini, falls back to the first matching bundled model. For Ollama,
  * falls back to the first available model since we don't ship a curated list.
  */
 export function getDefaultModelForRole(role: ModelRole, provider: ModelProvider = 'gemini'): string {
-	const candidates = GEMINI_MODELS.filter((m) => getModelProvider(m) === provider);
+	const candidates = GEMINI_MODELS.filter((m) => getModelProvider(m) === provider && isModelEligibleForRole(m, role));
 
 	const modelForRole = candidates.find((m) => m.defaultForRoles?.includes(role));
 	if (modelForRole) {
@@ -241,22 +249,28 @@ export function getUpdatedFeatureRoutes(
 		if (sourceMemory[p]) newMemory[p] = { ...sourceMemory[p] };
 	}
 
-	const modelValuesFor = (provider: ModelProvider): Set<string> =>
-		new Set(GEMINI_MODELS.filter((m) => getModelProvider(m) === provider).map((m) => m.value));
+	const providerModels = (provider: ModelProvider): GeminiModel[] =>
+		GEMINI_MODELS.filter((m) => getModelProvider(m) === provider);
+	const modelValuesFor = (provider: ModelProvider, role: ModelRole): Set<string> =>
+		new Set(
+			providerModels(provider)
+				.filter((m) => isModelEligibleForRole(m, role))
+				.map((m) => m.value)
+		);
 
 	const reconcile = (provider: ModelProvider, role: ModelRole, previous: string, label: string): string => {
 		if (!previous) return previous;
-		const values = modelValuesFor(provider);
+		const values = modelValuesFor(provider, role);
 		const successor = RETIRED_MODEL_SUCCESSORS[previous];
 		if (successor === undefined && values.has(previous)) return previous;
 		// The provider's list isn't loaded yet — tolerate the stale value rather
 		// than blanking it (mirrors the pre-redesign Ollama/OpenAI gating).
-		if (values.size === 0) return previous;
+		if (providerModels(provider).length === 0) return previous;
 		const useSuccessor = successor !== undefined && values.has(successor);
 		const next = useSuccessor ? successor : getDefaultModelForRole(role, provider);
-		if (!next || next === previous) return previous;
+		if (next === previous) return previous;
 		info.push(
-			`${label}: '${previous}' -> '${next}' ${useSuccessor ? '(retired model migrated to successor)' : '(legacy model update)'}`
+			`${label}: '${previous}' -> '${next || '(default)'}' ${useSuccessor ? '(retired model migrated to successor)' : '(legacy model update)'}`
 		);
 		changed = true;
 		return next;

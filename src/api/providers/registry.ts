@@ -141,7 +141,7 @@ export const PROVIDERS: Record<ModelProvider, ProviderDefinition> = {
 			webSearch: false,
 			deepResearch: false,
 			rag: false,
-			imageGen: false,
+			imageGen: true,
 			maps: false,
 			nativeTokenCount: false,
 			customBaseUrl: true,

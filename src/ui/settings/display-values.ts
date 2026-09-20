@@ -15,7 +15,7 @@ import { t, type TranslationKey } from '../../i18n';
 import { featureRoute, activeProviders, featuresUsing } from '../../api/feature-routing';
 import { providerConnection, featureStatus, type ProviderConnection } from '../../api/provider-status';
 import { getCapabilities, type ModelProvider } from '../../api/providers/registry';
-import { GEMINI_MODELS, getDefaultModelForRole } from '../../models';
+import { GEMINI_MODELS, getDefaultModelForRole, isModelEligibleForRole } from '../../models';
 import { FEATURE_GROUPS, FEATURE_MODEL_ROLE, type FeatureId } from '../../types/features';
 
 function sep(): string {
@@ -171,12 +171,14 @@ export function modelOptions(ctx: SettingsContext, f: FeatureId): Record<string,
 	if (route.provider === 'none') return {};
 	const provider = route.provider;
 	const wantsImage = f === 'imageGen';
+	const role = wantsImage ? 'image' : FEATURE_MODEL_ROLE[f];
 	const pool = GEMINI_MODELS.filter(
-		(m) => (m.provider ?? 'gemini') === provider && Boolean(m.supportsImageGeneration) === wantsImage
+		(m) => (m.provider ?? 'gemini') === provider && role !== null && isModelEligibleForRole(m, role)
 	);
 	const options: Record<string, string> = { '': defaultModelLabel(provider, f) };
 	for (const m of pool) {
-		options[m.value] = m.label;
+		options[m.value] =
+			wantsImage && m.capabilitiesUnknown ? `${m.label} (${t('settings.features.modelCapabilitiesUnknown')})` : m.label;
 	}
 	if (route.model && !(route.model in options)) {
 		options[route.model] = `${route.model} (${t('settings.features.modelMissing')})`;
@@ -189,7 +191,13 @@ export function isModelMissing(ctx: SettingsContext, f: FeatureId): boolean {
 	const route = featureRoute(ctx.plugin.settings, f);
 	if (route.provider === 'none' || !route.model) return false;
 	const provider = route.provider;
-	return !GEMINI_MODELS.some((m) => m.value === route.model && (m.provider ?? 'gemini') === provider);
+	const wantsImage = f === 'imageGen';
+	return !GEMINI_MODELS.some(
+		(m) =>
+			m.value === route.model &&
+			(m.provider ?? 'gemini') === provider &&
+			isModelEligibleForRole(m, wantsImage ? 'image' : (FEATURE_MODEL_ROLE[f] ?? 'chat'))
+	);
 }
 
 /** Top-level tab's "Providers" row: every provider currently used, or serving as the default, in display order. */

@@ -16,7 +16,7 @@ function parseImageParams(params: ToolParams): { prompt?: string; outputPath?: s
 }
 
 /**
- * Tool to generate images from text prompts using Gemini's image generation API
+ * Tool to generate images from text prompts through the routed provider.
  */
 export class GenerateImageTool implements Tool {
 	name = 'generate_image';

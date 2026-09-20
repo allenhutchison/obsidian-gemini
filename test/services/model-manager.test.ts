@@ -276,6 +276,18 @@ describe('ModelManager', () => {
 			expect(models.some((m) => bundledValues.has(m.value))).toBe(false);
 		});
 
+		it('offers an unknown compatible-endpoint model for image generation', async () => {
+			openaiPlugin.settings.openaiBaseUrl = 'http://localhost:1234/v1';
+			mockedRequestUrl.mockResolvedValue({
+				status: 200,
+				json: { data: [{ id: 'custom-image-model' }] },
+			});
+
+			const models = await openaiManager.getImageGenerationModels('openai');
+
+			expect(models).toEqual([expect.objectContaining({ value: 'custom-image-model', capabilitiesUnknown: true })]);
+		});
+
 		it('getProviderModelsService() returns a distinct service per provider', () => {
 			const service = openaiManager.getProviderModelsService('openai');
 			expect(service).not.toBe(openaiManager.getProviderModelsService('anthropic'));

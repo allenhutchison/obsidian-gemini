@@ -776,7 +776,7 @@ describe('LifecycleService', () => {
 			expect(mockPlugin.imageGeneration).toBeUndefined();
 		});
 
-		it('should create image generation when provider is not ollama', async () => {
+		it('should create image generation when provider supports it', async () => {
 			routeAllTo(mockPlugin.settings, 'gemini');
 			await lifecycle.setup();
 
@@ -1355,6 +1355,20 @@ describe('LifecycleService', () => {
 			expect(plugin.imageGeneration).toBeDefined();
 		});
 
+		it('should call ImageGeneration constructor when imageGen is routed to openai', async () => {
+			const { ImageGeneration } = await import('../../src/services/image-generation');
+			(ImageGeneration as unknown as Mock).mockClear();
+
+			const plugin = createMockPlugin();
+			plugin.settings.openaiApiKeySecretName = 'openai-key';
+			plugin.settings.features.imageGen = { provider: 'openai', model: 'gpt-image-2.5-flare' };
+			const service = new LifecycleService(plugin);
+			await service.setup();
+
+			expect(ImageGeneration).toHaveBeenCalledTimes(1);
+			expect(plugin.imageGeneration).toBeDefined();
+		});
+
 		it('should NOT call ImageGeneration constructor when provider is ollama', async () => {
 			const { ImageGeneration } = await import('../../src/services/image-generation');
 			(ImageGeneration as unknown as Mock).mockClear();
@@ -1387,9 +1401,9 @@ describe('LifecycleService', () => {
 
 	describe('setup – image generation provider switch transitions', () => {
 		// Exercises the Gemini → Ollama → Gemini runtime provider switch: teardown
-		// nulls the Gemini-only ImageGeneration service (lifecycle-service.ts ~L134)
-		// and setup re-instantiates it only when the active provider isn't Ollama
-		// (~L513). A single-provider setup can't cover the drop + re-create cycle.
+		// nulls the ImageGeneration service and setup re-instantiates it only when
+		// the active provider supports the feature. A single-provider setup can't
+		// cover the drop + re-create cycle.
 		it('drops and re-instantiates ImageGeneration across gemini → ollama → gemini switches', async () => {
 			const { ImageGeneration } = await import('../../src/services/image-generation');
 			(ImageGeneration as unknown as Mock).mockClear();

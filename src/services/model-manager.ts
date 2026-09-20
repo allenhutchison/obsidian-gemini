@@ -1,6 +1,12 @@
 import type { ObsidianGemini } from '../types/plugin';
 import * as modelsModule from '../models';
-import { GeminiModel, ModelProvider, getUpdatedFeatureRoutes, DEFAULT_GEMINI_MODELS } from '../models';
+import {
+	GeminiModel,
+	ModelProvider,
+	getUpdatedFeatureRoutes,
+	DEFAULT_GEMINI_MODELS,
+	isModelEligibleForRole,
+} from '../models';
 import { activeProviders, featureProvider } from '../api/feature-routing';
 import type { ObsidianGeminiSettings } from '../types/settings';
 import { ModelListProvider, RefreshResult } from './model-list-provider';
@@ -47,16 +53,18 @@ export class ModelManager {
 		if (target === 'gemini') {
 			return this.listProvider.getTextModels();
 		}
-		return this.getProviderModelsService(target).getModels(options.forceRefresh);
+		return (await this.getProviderModelsService(target).getModels(options.forceRefresh)).filter((m) =>
+			isModelEligibleForRole(m, 'chat')
+		);
 	}
 
 	/**
-	 * Get image generation models. Only Gemini serves image generation today
-	 * (`capabilities.imageGen`), so this is always the Gemini list; the picker is
-	 * hidden entirely when no provider is routed to image generation.
+	 * Get image-generation models for the provider serving that feature.
 	 */
-	async getImageGenerationModels(): Promise<GeminiModel[]> {
-		return this.listProvider.getImageModels();
+	async getImageGenerationModels(provider?: ModelProvider): Promise<GeminiModel[]> {
+		const target = provider ?? featureProvider(this.plugin.settings, 'imageGen') ?? 'gemini';
+		if (target === 'gemini') return this.listProvider.getImageModels();
+		return (await this.getProviderModelsService(target).getModels()).filter((m) => isModelEligibleForRole(m, 'image'));
 	}
 
 	/**

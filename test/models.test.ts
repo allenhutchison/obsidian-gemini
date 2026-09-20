@@ -122,6 +122,41 @@ describe('getDefaultModelForRole', () => {
 		]);
 		expect(getDefaultModelForRole('summary')).toBe('gemini-2.5-flash-preview-04-17');
 	});
+
+	it('never falls back across the text/image model boundary', () => {
+		setTestModels([
+			{ value: 'openai-chat', label: 'OpenAI Chat', provider: 'openai' },
+			{
+				value: 'openai-image',
+				label: 'OpenAI Image',
+				provider: 'openai',
+				supportsImageGeneration: true,
+			},
+		]);
+
+		expect(getDefaultModelForRole('chat', 'openai')).toBe('openai-chat');
+		expect(getDefaultModelForRole('image', 'openai')).toBe('openai-image');
+	});
+
+	it('returns no image default when a provider only advertises text models', () => {
+		setTestModels([{ value: 'openai-chat', label: 'OpenAI Chat', provider: 'openai' }]);
+
+		expect(getDefaultModelForRole('image', 'openai')).toBe('');
+	});
+
+	it('allows a compatible-endpoint model with unknown capabilities for text and image roles', () => {
+		setTestModels([
+			{
+				value: 'custom-compatible-model',
+				label: 'Custom Compatible Model',
+				provider: 'openai',
+				capabilitiesUnknown: true,
+			},
+		]);
+
+		expect(getDefaultModelForRole('chat', 'openai')).toBe('custom-compatible-model');
+		expect(getDefaultModelForRole('image', 'openai')).toBe('custom-compatible-model');
+	});
 });
 
 describe('bundled model catalog', () => {
@@ -155,6 +190,13 @@ describe('resolveFeatureModel', () => {
 	it('returns the stored model for a routed feature', () => {
 		const s: FeatureRoutingSlice = { features: routes({ chat: { provider: 'gemini', model: 'gemini-flash-lite' } }) };
 		expect(resolveFeatureModel(s, 'chat')).toBe('gemini-flash-lite');
+	});
+
+	it('returns a stored compatible-endpoint model for image generation', () => {
+		const s: FeatureRoutingSlice = {
+			features: routes({ imageGen: { provider: 'openai', model: 'custom-image-model' } }),
+		};
+		expect(resolveFeatureModel(s, 'imageGen')).toBe('custom-image-model');
 	});
 
 	it('falls back to getDefaultModelForRole when the stored model is ""', () => {
@@ -213,7 +255,12 @@ describe('getUpdatedFeatureRoutes', () => {
 			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
 			{ value: 'gemini-summary-default', label: 'Summary Default', defaultForRoles: ['summary'] },
 			{ value: 'gemini-completions-default', label: 'Completions Default', defaultForRoles: ['completions'] },
-			{ value: 'gemini-image-default', label: 'Image Default', defaultForRoles: ['image'] },
+			{
+				value: 'gemini-image-default',
+				label: 'Image Default',
+				defaultForRoles: ['image'],
+				supportsImageGeneration: true,
+			},
 			{ value: 'gemini-another-model', label: 'Another Model' },
 		]);
 	});
@@ -285,6 +332,33 @@ describe('getUpdatedFeatureRoutes', () => {
 		const result = getUpdatedFeatureRoutes(features, {});
 		expect(result.changed).toBe(false);
 		expect(result.features.chat.model).toBe('llama3.2');
+	});
+
+	it('clears an image model when the loaded provider catalog contains only text models', () => {
+		setTestModels([{ value: 'openai-chat', label: 'OpenAI Chat', provider: 'openai' }]);
+		const features = routes({ imageGen: { provider: 'openai', model: 'openai-chat' } });
+
+		const result = getUpdatedFeatureRoutes(features, {});
+
+		expect(result.changed).toBe(true);
+		expect(result.features.imageGen.model).toBe('');
+	});
+
+	it('preserves a compatible-endpoint model with unknown capabilities for image generation', () => {
+		setTestModels([
+			{
+				value: 'custom-image-model',
+				label: 'Custom Image Model',
+				provider: 'openai',
+				capabilitiesUnknown: true,
+			},
+		]);
+		const features = routes({ imageGen: { provider: 'openai', model: 'custom-image-model' } });
+
+		const result = getUpdatedFeatureRoutes(features, {});
+
+		expect(result.changed).toBe(false);
+		expect(result.features.imageGen.model).toBe('custom-image-model');
 	});
 
 	it('reconciles providerModelMemory the same way, per provider', () => {

@@ -530,7 +530,7 @@ export class LifecycleService {
 		// Deep research
 		plugin.deepResearch = new DeepResearchService(plugin);
 
-		// Image generation needs a provider that offers it (Gemini today). The
+		// Image generation needs a provider that offers it. The
 		// command-palette entry is registered unconditionally in main.ts so it
 		// shows a clear "not available" notice when nothing is routed here,
 		// instead of silently disappearing or pointing at an orphaned closure
