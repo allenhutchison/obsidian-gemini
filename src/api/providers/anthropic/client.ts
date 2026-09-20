@@ -123,6 +123,11 @@ export class AnthropicClient implements ModelApi {
 					throw new Error(t('provider.anthropic.noModelSelected'));
 				}
 				const params = await this.buildParams(model, request, MAX_TOKENS_STREAMING);
+				// Preserve the pre-migration behavior: cancel() landing during
+				// buildParams means no stream is created at all (the SDK starts
+				// its request path as soon as stream() is called, aborted signal
+				// or not).
+				signal.throwIfAborted();
 				stream = this.client.beta.messages.stream(params, { signal });
 				return stream;
 			},
@@ -144,7 +149,23 @@ export class AnthropicClient implements ModelApi {
 						...(accumulatedThoughts && { thoughts: accumulatedThoughts }),
 					};
 				}
-				return this.toModelResponse(await stream.finalMessage());
+				try {
+					return this.toModelResponse(await stream.finalMessage());
+				} catch (error) {
+					// The helper awaits this finalizer once; a cancelled stream
+					// must resolve, never reject. If cancel() raced the
+					// aggregate (finalMessage rejects on abort), return the
+					// partial; anything else is a real error and rethrows.
+					if (signal.aborted) {
+						this.plugin?.logger.debug('[AnthropicClient] finalMessage raced cancel:', error);
+						return {
+							markdown: accumulatedText,
+							rendered: '',
+							...(accumulatedThoughts && { thoughts: accumulatedThoughts }),
+						};
+					}
+					throw error;
+				}
 			},
 			onError: (error) =>
 				this.plugin?.logger.error('[AnthropicClient] Streaming error:', describeSdkApiError(error), error),

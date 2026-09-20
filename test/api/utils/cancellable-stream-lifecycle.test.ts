@@ -176,4 +176,31 @@ describe('runCancellableStream', () => {
 		await expect(streaming.complete).rejects.toBe(boom);
 		expect(finalize).not.toHaveBeenCalled();
 	});
+
+	it('an async finalize rejecting into the cancelled catch arm is re-awaited, never re-run', async () => {
+		// The finalize is in flight when cancel() fires, and rejects. The catch
+		// arm must await the SAME (cached) promise — exactly-once — and
+		// propagate the rejection; a finalizer that wants the cancelled path to
+		// resolve swallows its own cancel-induced rejection (see the Anthropic
+		// finalizer).
+		let release!: () => void;
+		const gate = new Promise<void>((resolve) => (release = resolve));
+		const finalize = vi.fn(async () => {
+			await gate;
+			throw new Error('abort raced finalize');
+		});
+		const streaming = runCancellableStream<number>({
+			start: async () => of(1),
+			onChunk: () => {},
+			finalize,
+		});
+
+		// finalize #1 is in flight (blocked on the gate); cancel() lands; then
+		// the finalizer rejects — the catch arm re-awaits the cached promise.
+		await vi.waitFor(() => expect(finalize).toHaveBeenCalled());
+		streaming.cancel();
+		release();
+		await expect(streaming.complete).rejects.toThrow('abort raced finalize');
+		expect(finalize).toHaveBeenCalledTimes(1);
+	});
 });

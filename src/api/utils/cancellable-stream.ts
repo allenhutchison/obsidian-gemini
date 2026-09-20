@@ -42,8 +42,12 @@ import type { ModelResponse, StreamingModelResponse } from '../interfaces/model-
  *   treated like any stream error (caught; rethrown unless cancelled).
  * @param options.finalize - Builds the final `ModelResponse` from whatever the
  *   callbacks accumulated. Called exactly once, on every exit path; may return
- *   a promise (the completion awaits it). The success/cancelled branch, when
- *   one is needed, lives inside it — see the doc above.
+ *   a promise (the completion awaits it; the helper caches the in-flight
+ *   promise, so an async finalizer rejecting into the catch arm is re-awaited,
+ *   never re-run). The success/cancelled branch, when one is needed, lives
+ *   inside it — see the doc above. A cancelled stream must resolve, never
+ *   reject: an async finalizer that can observe the cancel (e.g. an SDK
+ *   aggregate rejecting on abort) must catch that and return its partial.
  * @param options.onCancel - Optional extra transport stop for SDKs that don't
  *   take a signal. Fired synchronously inside `cancel()`, after the signal is
  *   aborted. Best-effort: a throw here is swallowed like the SDK aborts it
@@ -64,22 +68,37 @@ export function runCancellableStream<TChunk>(options: {
 	const { signal } = controller;
 	let cancelled = false;
 
+	// Exactly-once finalization: the promise is cached on first call, so a
+	// rejection reaching the catch arm re-awaits the in-flight (or settled)
+	// finalization instead of running `options.finalize` a second time.
+	let finalizePromise: Promise<ModelResponse> | undefined;
+	const finalizeOnce = (): Promise<ModelResponse> => (finalizePromise ??= Promise.resolve().then(options.finalize));
+
 	const complete = (async (): Promise<ModelResponse> => {
 		try {
 			const stream = await options.start(signal);
 			// cancel() may have fired while `start` was outstanding. The signal
 			// is already aborted — break before the first read.
 			if (cancelled) {
-				return options.finalize();
+				// `return await` — not bare `return`: the catch arm must govern
+				// an async finalizer's rejection (a bare `return promise` adopts
+				// the settlement outside the try/catch, so the cancelled arm
+				// never sees a finalize that rejects).
+				return await finalizeOnce();
 			}
 			for await (const chunk of stream) {
 				if (cancelled) break;
 				options.onChunk(chunk);
 			}
-			return options.finalize();
+			return await finalizeOnce();
 		} catch (error) {
 			if (cancelled) {
-				return options.finalize();
+				// The finalization itself was the thing that failed (e.g. an
+				// abort raced an async finalizer). Re-await the cached promise so
+				// `finalize` runs exactly once; a finalizer that wants the
+				// cancelled path to resolve (they all do) must swallow its own
+				// cancel-induced rejection.
+				return await finalizeOnce();
 			}
 			options.onError?.(error);
 			throw error;

@@ -470,6 +470,66 @@ describe('AnthropicClient', () => {
 			expect(captured.aborted).toBe(true);
 		});
 
+		it('does not create the SDK stream when cancel() lands during buildParams', async () => {
+			// Pre-migration behavior: `if (cancelled) return partialResult()`
+			// sat between buildParams and stream creation. The helper checks
+			// cancellation only after start resolves, so the client guards
+			// with throwIfAborted — otherwise the SDK's request path starts
+			// even with an already-aborted signal.
+			let releaseParams!: () => void;
+			const paramsGate = new Promise<void>((resolve) => (releaseParams = resolve));
+			const buildParamsSpy = vi.spyOn(AnthropicClient.prototype, 'buildParams' as never) as any;
+			buildParamsSpy.mockImplementation(() =>
+				paramsGate.then(
+					() =>
+						// minimal params shape; the real impl is bypassed
+						({ model: 'claude-opus-5', max_tokens: 64000, messages: [] }) as any
+				)
+			);
+
+			const streaming = client().generateStreamingResponse(extended(), () => {});
+			await vi.waitFor(() => expect(buildParamsSpy).toHaveBeenCalled());
+			streaming.cancel(); // cancel while buildParams is pending
+			releaseParams();
+
+			await streaming.complete;
+			expect(anthropicCalls.stream).not.toHaveBeenCalled();
+			buildParamsSpy.mockRestore();
+		});
+
+		it('returns the partial when cancel() races the finalMessage aggregate', async () => {
+			// The iterable finishes cleanly, but finalMessage() is still in
+			// flight when cancel() lands — the SDK's aggregate rejects on
+			// abort. The cancelled stream must resolve to the partial, never
+			// reject.
+			let releaseIterable!: () => void;
+			const iterableGate = new Promise<void>((resolve) => (releaseIterable = resolve));
+			let releaseFinal!: () => void;
+			const finalGate = new Promise<void>((resolve) => (releaseFinal = resolve));
+			anthropicCalls.stream.mockImplementation((_params: unknown, { signal }: { signal: AbortSignal }) => ({
+				async *[Symbol.asyncIterator]() {
+					yield { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'kept' } };
+					await iterableGate;
+				},
+				finalMessage: vi.fn(async () => {
+					await finalGate;
+					if (signal.aborted) throw new Error('Request was aborted.');
+					return { content: [{ type: 'text', text: 'final' }], usage: {} };
+				}),
+			}));
+
+			const streaming = client().generateStreamingResponse(extended(), () => {});
+			await vi.waitFor(() => expect(anthropicCalls.stream).toHaveBeenCalled());
+			releaseIterable(); // iterable ends -> finalize -> finalMessage blocks on finalGate
+			await new Promise((r) => window.setTimeout(r, 0));
+			streaming.cancel(); // cancel while finalMessage is in flight
+			releaseFinal();
+
+			const response = await streaming.complete;
+			expect(response.markdown).toBe('kept');
+			expect(response).not.toHaveProperty('thoughts');
+		});
+
 		it('rejects with the stream error when not cancelled', async () => {
 			anthropicCalls.stream.mockReturnValue({
 				// eslint-disable-next-line require-yield -- throws before yielding, like a failed request
