@@ -397,6 +397,7 @@ export class OllamaModelsService {
 		return {
 			value: name,
 			label: this.formatLabel(m),
+			// eslint-disable-next-line no-restricted-syntax -- data tag stamping the provider onto models this service discovered
 			provider: 'ollama',
 			supportsVision: isVision,
 			...(contextWindow && { contextWindow }),

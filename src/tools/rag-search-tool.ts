@@ -229,6 +229,7 @@ export class RagSearchTool implements Tool {
 			// (web-fetch, the grounding tools, the RAG vault scanner): a transient
 			// 429/5xx here otherwise fails the tool call outright.
 			const chatModelForRagSynthesis =
+				// eslint-disable-next-line no-restricted-syntax -- RAG reads Gemini File Search stores; other providers have no store-backed RAG yet
 				featureProvider(plugin.settings, 'chat') === 'gemini' ? featureModel(plugin.settings, 'chat') : '';
 			const response = await executeWithRetry(
 				() =>

@@ -75,6 +75,7 @@ export function migrateToFeatureRouting(
 	const hasFeatures = rawData.features !== undefined && rawData.features !== null;
 	if (version >= 2 && hasFeatures) return false;
 
+	// eslint-disable-next-line no-restricted-syntax -- migration maps the legacy on-disk settings wire format; the literals are the historical keys being migrated, not new dispatch
 	const legacyProvider: ModelProvider = isValidProvider(rawData.provider) ? rawData.provider : 'gemini';
 	settings.defaultProvider = legacyProvider;
 
@@ -123,30 +124,50 @@ export function migrateToFeatureRouting(
 	// `ollamaModelName` existed, an Ollama-primary install's single model
 	// picker wrote to `chatModelName`, so that field holds an Ollama model
 	// (not a Gemini one) in that pre-migration shape.
+	// eslint-disable-next-line no-restricted-syntax -- migration maps the legacy on-disk settings wire format; the literals are the historical keys being migrated, not new dispatch
 	const chatModelNameIsActuallyOllama = rawData.ollamaModelName === undefined && rawData.provider === 'ollama';
 	if (chatModelNameIsActuallyOllama) {
+		// eslint-disable-next-line no-restricted-syntax -- migration maps the legacy on-disk settings wire format; the literals are the historical keys being migrated, not new dispatch
 		remember('ollama', 'chat', rawData.chatModelName);
+		// eslint-disable-next-line no-restricted-syntax -- migration maps the legacy on-disk settings wire format; the literals are the historical keys being migrated, not new dispatch
 		remember('ollama', 'rewrite', rawData.chatModelName);
+		// eslint-disable-next-line no-restricted-syntax -- migration maps the legacy on-disk settings wire format; the literals are the historical keys being migrated, not new dispatch
 		remember('ollama', 'webSearch', rawData.chatModelName);
 	} else {
+		// eslint-disable-next-line no-restricted-syntax -- migration maps the legacy on-disk settings wire format; the literals are the historical keys being migrated, not new dispatch
 		remember('gemini', 'chat', rawData.chatModelName);
+		// eslint-disable-next-line no-restricted-syntax -- migration maps the legacy on-disk settings wire format; the literals are the historical keys being migrated, not new dispatch
 		remember('gemini', 'rewrite', rawData.chatModelName);
+		// eslint-disable-next-line no-restricted-syntax -- migration maps the legacy on-disk settings wire format; the literals are the historical keys being migrated, not new dispatch
 		remember('gemini', 'webSearch', rawData.chatModelName);
+		// eslint-disable-next-line no-restricted-syntax -- migration maps the legacy on-disk settings wire format; the literals are the historical keys being migrated, not new dispatch
 		remember('ollama', 'chat', rawData.ollamaModelName);
+		// eslint-disable-next-line no-restricted-syntax -- migration maps the legacy on-disk settings wire format; the literals are the historical keys being migrated, not new dispatch
 		remember('ollama', 'rewrite', rawData.ollamaModelName);
+		// eslint-disable-next-line no-restricted-syntax -- migration maps the legacy on-disk settings wire format; the literals are the historical keys being migrated, not new dispatch
 		remember('ollama', 'webSearch', rawData.ollamaModelName);
 	}
+	// eslint-disable-next-line no-restricted-syntax -- migration maps the legacy on-disk settings wire format; the literals are the historical keys being migrated, not new dispatch
 	remember('gemini', 'summary', rawData.summaryModelName);
+	// eslint-disable-next-line no-restricted-syntax -- migration maps the legacy on-disk settings wire format; the literals are the historical keys being migrated, not new dispatch
 	remember('gemini', 'completions', rawData.completionsModelName);
+	// eslint-disable-next-line no-restricted-syntax -- migration maps the legacy on-disk settings wire format; the literals are the historical keys being migrated, not new dispatch
 	remember('gemini', 'imageGen', rawData.imageModelName);
 	// '' (inherit ollamaModelName) resolves at migration time, so the new store
 	// has no inherit sentinel.
+	// eslint-disable-next-line no-restricted-syntax -- migration maps the legacy on-disk settings wire format; the literals are the historical keys being migrated, not new dispatch
 	remember('ollama', 'summary', rawData.ollamaSummaryModelName || rawData.ollamaModelName);
+	// eslint-disable-next-line no-restricted-syntax -- migration maps the legacy on-disk settings wire format; the literals are the historical keys being migrated, not new dispatch
 	remember('ollama', 'completions', rawData.ollamaCompletionsModelName || rawData.ollamaModelName);
+	// eslint-disable-next-line no-restricted-syntax -- migration maps the legacy on-disk settings wire format; the literals are the historical keys being migrated, not new dispatch
 	remember('openai', 'chat', rawData.openaiModelName);
+	// eslint-disable-next-line no-restricted-syntax -- migration maps the legacy on-disk settings wire format; the literals are the historical keys being migrated, not new dispatch
 	remember('openai', 'rewrite', rawData.openaiModelName);
+	// eslint-disable-next-line no-restricted-syntax -- migration maps the legacy on-disk settings wire format; the literals are the historical keys being migrated, not new dispatch
 	remember('openai', 'webSearch', rawData.openaiModelName);
+	// eslint-disable-next-line no-restricted-syntax -- migration maps the legacy on-disk settings wire format; the literals are the historical keys being migrated, not new dispatch
 	remember('openai', 'summary', rawData.openaiSummaryModelName);
+	// eslint-disable-next-line no-restricted-syntax -- migration maps the legacy on-disk settings wire format; the literals are the historical keys being migrated, not new dispatch
 	remember('openai', 'completions', rawData.openaiCompletionsModelName);
 
 	// Step 3: seed the active model from memory.

@@ -117,6 +117,7 @@ function catalogModels(): GeminiModel[] {
 	return Object.entries(KNOWN_ANTHROPIC_MODELS).map(([id, meta]) => ({
 		value: id,
 		label: id,
+		// eslint-disable-next-line no-restricted-syntax -- data tag stamping the provider onto models this service discovered
 		provider: 'anthropic' as const,
 		supportsVision: true,
 		contextWindow: meta.contextWindow,

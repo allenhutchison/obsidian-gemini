@@ -49,7 +49,9 @@ export class ModelManager {
 	 * right models in each row (#704).
 	 */
 	async getAvailableModels(options: ModelUpdateOptions = {}, provider?: ModelProvider): Promise<GeminiModel[]> {
+		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
 		const target = provider ?? featureProvider(this.plugin.settings, 'chat') ?? 'gemini';
+		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
 		if (target === 'gemini') {
 			return this.listProvider.getTextModels();
 		}
@@ -62,7 +64,9 @@ export class ModelManager {
 	 * Get image-generation models for the provider serving that feature.
 	 */
 	async getImageGenerationModels(provider?: ModelProvider): Promise<GeminiModel[]> {
+		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
 		const target = provider ?? featureProvider(this.plugin.settings, 'imageGen') ?? 'gemini';
+		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
 		if (target === 'gemini') return this.listProvider.getImageModels();
 		return (await this.getProviderModelsService(target).getModels()).filter((m) => isModelEligibleForRole(m, 'image'));
 	}
@@ -78,10 +82,12 @@ export class ModelManager {
 		const providers = activeProviders(this.plugin.settings);
 		const models: GeminiModel[] = [];
 
+		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
 		if (providers.includes('gemini')) {
 			models.push(...this.listProvider.getModels());
 		}
 		for (const provider of providers) {
+			// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
 			if (provider === 'gemini') continue;
 			try {
 				models.push(...(await this.getProviderModelsService(provider).getModels(forceRefresh)));
@@ -104,9 +110,12 @@ export class ModelManager {
 	 * (everything but Gemini, whose list comes from `getListProvider()`).
 	 */
 	getProviderModelsService(
+		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
 		provider: Exclude<ModelProvider, 'gemini'>
 	): OllamaModelsService | OpenAIModelsService | AnthropicModelsService {
+		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
 		if (provider === 'ollama') return this.ollamaModelsService;
+		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
 		if (provider === 'openai') return this.openaiModelsService;
 		return this.anthropicModelsService;
 	}
@@ -147,6 +156,7 @@ export class ModelManager {
 		// configuration can resolve models for both at once.
 		this.updateGlobalModelsList(await this.collectActiveModels());
 
+		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
 		if (activeProviders(this.plugin.settings).includes('gemini')) {
 			// Start non-blocking remote fetch for updates
 			this.listProvider.startRemoteFetch();

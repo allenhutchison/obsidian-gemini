@@ -107,6 +107,7 @@ export class ContextManager {
 		// per-use-case routing (#704) a mixed configuration still needs it for
 		// token counting on the Gemini-served side. A fully local configuration
 		// leaves it null and falls back to the chars-per-token estimate.
+		// eslint-disable-next-line no-restricted-syntax -- char-per-token calibration and tool-policy checks keyed to the provider implementation
 		this.ai = isProviderActive(plugin.settings, 'gemini') ? createGoogleGenAI(plugin) : null;
 	}
 
@@ -243,6 +244,7 @@ export class ContextManager {
 	private async getInputTokenLimit(modelName: string): Promise<number> {
 		const provider = this.providerForContextModel(modelName);
 		const capabilities = getCapabilities(provider);
+		// eslint-disable-next-line no-restricted-syntax -- char-per-token calibration and tool-policy checks keyed to the provider implementation
 		if (provider !== 'ollama' || !modelName) {
 			return contextWindowForModel(modelName) ?? capabilities.defaultInputTokenLimit;
 		}

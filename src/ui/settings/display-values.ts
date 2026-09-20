@@ -97,6 +97,7 @@ export function providerCardDisplay(ctx: SettingsContext, p: ModelProvider): str
 
 /** The live list's label for a provider's model, or `undefined` when the list doesn't have it. */
 function listedModelLabel(provider: ModelProvider, model: string): string | undefined {
+	// eslint-disable-next-line no-restricted-syntax -- GEMINI_MODELS catalog data carries provider tags; matching against them, not dispatching
 	return GEMINI_MODELS.find((m) => m.value === model && (m.provider ?? 'gemini') === provider)?.label;
 }
 
@@ -173,6 +174,7 @@ export function modelOptions(ctx: SettingsContext, f: FeatureId): Record<string,
 	const wantsImage = f === 'imageGen';
 	const role = wantsImage ? 'image' : FEATURE_MODEL_ROLE[f];
 	const pool = GEMINI_MODELS.filter(
+		// eslint-disable-next-line no-restricted-syntax -- GEMINI_MODELS catalog data carries provider tags; matching against them, not dispatching
 		(m) => (m.provider ?? 'gemini') === provider && role !== null && isModelEligibleForRole(m, role)
 	);
 	const options: Record<string, string> = { '': defaultModelLabel(provider, f) };
@@ -195,6 +197,7 @@ export function isModelMissing(ctx: SettingsContext, f: FeatureId): boolean {
 	return !GEMINI_MODELS.some(
 		(m) =>
 			m.value === route.model &&
+			// eslint-disable-next-line no-restricted-syntax -- GEMINI_MODELS catalog data carries provider tags; matching against them, not dispatching
 			(m.provider ?? 'gemini') === provider &&
 			isModelEligibleForRole(m, wantsImage ? 'image' : (FEATURE_MODEL_ROLE[f] ?? 'chat'))
 	);

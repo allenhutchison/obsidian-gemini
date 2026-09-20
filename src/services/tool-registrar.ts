@@ -49,6 +49,7 @@ export class ToolRegistrar {
 			// provider alone isn't enough: a stale/hand-edited route can still
 			// say 'gemini' with no key configured, and the tool would register
 			// only to fail at call time. Require the key too, matching 'maps'.
+			// eslint-disable-next-line no-restricted-syntax -- per-provider tool wiring (web-search tool exists only for specific providers)
 			gate: (plugin) => featureProvider(plugin.settings, 'webSearch') === 'gemini' && hasGeminiKey(plugin),
 			getTools: () => import('../tools/web-tools').then((m) => m.getWebTools()),
 		},
@@ -62,6 +63,7 @@ export class ToolRegistrar {
 		{
 			name: 'deep-research',
 			// Same reasoning as 'web': require both the route and the key.
+			// eslint-disable-next-line no-restricted-syntax -- per-provider tool wiring (web-search tool exists only for specific providers)
 			gate: (plugin) => featureProvider(plugin.settings, 'deepResearch') === 'gemini' && hasGeminiKey(plugin),
 			getTools: () => import('../tools/web-tools').then((m) => m.getDeepResearchTools()),
 		},
