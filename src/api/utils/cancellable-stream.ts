@@ -2,11 +2,11 @@ import type { ModelResponse, StreamingModelResponse } from '../interfaces/model-
 
 /**
  * The shared cancellable-stream lifecycle behind every provider's
- * `generateStreamingResponse` (#1350).
+ * `generateStreamingResponse` (#1350, #1576).
  *
  * Every `ModelApi` implementation has to turn a provider SDK's async iterable
- * into the plugin's `{ complete, cancel }` pair, and all four used to hand-roll
- * the same scaffold: a `cancelled` flag, local accumulators, a
+ * into the plugin's `{ complete, cancel }` pair, and every one used to
+ * hand-roll the same scaffold: a `cancelled` flag, local accumulators, a
  * `for await (…) { if (cancelled) break; }`, a catch arm returning the partial
  * response on cancel, and the `{ complete, cancel }` return. Copies drifted —
  * one client duplicated its response literal across the success and cancelled
@@ -25,7 +25,13 @@ import type { ModelResponse, StreamingModelResponse } from '../interfaces/model-
  * `finalize` is the **single exit for both arms** — success, cancelled
  * mid-iteration, and cancelled-in-catch all return `finalize()` — which is what
  * makes the #1208 class of bug (two response literals drifting apart)
- * unrepresentable rather than merely fixed.
+ * unrepresentable rather than merely fixed. It may be async (`Promise`
+ * return): some transports (Anthropic) aggregate the authoritative response
+ * server-side and only expose it after the iterable ends, so the success arm
+ * awaits the SDK's aggregate while the cancelled arm returns the local
+ * partial. The branch lives *inside* `finalize`, keyed on the signal the
+ * client already holds — there is still exactly one `finalize` call per exit
+ * path, so the single-exit guarantee is unchanged.
  *
  * Kept a leaf module: provider clients import it; nothing may import the
  * clients back through it (the #1155 acyclic-graph rule).
@@ -35,7 +41,9 @@ import type { ModelResponse, StreamingModelResponse } from '../interfaces/model-
  * @param options.onChunk - Receives each decoded chunk. Errors it throws are
  *   treated like any stream error (caught; rethrown unless cancelled).
  * @param options.finalize - Builds the final `ModelResponse` from whatever the
- *   callbacks accumulated. Called exactly once, on every exit path.
+ *   callbacks accumulated. Called exactly once, on every exit path; may return
+ *   a promise (the completion awaits it). The success/cancelled branch, when
+ *   one is needed, lives inside it — see the doc above.
  * @param options.onCancel - Optional extra transport stop for SDKs that don't
  *   take a signal. Fired synchronously inside `cancel()`, after the signal is
  *   aborted. Best-effort: a throw here is swallowed like the SDK aborts it
@@ -48,7 +56,7 @@ import type { ModelResponse, StreamingModelResponse } from '../interfaces/model-
 export function runCancellableStream<TChunk>(options: {
 	start: (signal: AbortSignal) => Promise<AsyncIterable<TChunk>>;
 	onChunk: (chunk: TChunk) => void;
-	finalize: () => ModelResponse;
+	finalize: () => ModelResponse | Promise<ModelResponse>;
 	onCancel?: () => void;
 	onError?: (error: unknown) => void;
 }): StreamingModelResponse {

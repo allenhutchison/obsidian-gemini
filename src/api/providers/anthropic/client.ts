@@ -25,6 +25,8 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import type { BetaRawMessageStreamEvent } from '@anthropic-ai/sdk/resources/beta/messages/messages';
+import type { BetaMessageStream } from '@anthropic-ai/sdk/lib/BetaMessageStream';
 import {
 	ModelApi,
 	BaseModelRequest,
@@ -37,6 +39,7 @@ import {
 	InlineDataPart,
 	isExtendedRequest,
 } from '../../interfaces/model-api';
+import { runCancellableStream } from '../../utils/cancellable-stream';
 import { GeminiPrompts } from '../../../prompts';
 import type { ObsidianGemini } from '../../../types/plugin';
 import type { AnthropicClientConfig } from './config';
@@ -99,64 +102,53 @@ export class AnthropicClient implements ModelApi {
 		onChunk: StreamCallback
 	): StreamingModelResponse {
 		const model = request.model || this.config.model;
-
-		let cancelled = false;
-		// Threaded into the request from the start, so aborting is safe before,
-		// during, or after the awaits below.
-		const controller = new AbortController();
 		let accumulatedText = '';
 		let accumulatedThoughts = '';
-
-		const partialResult = (): ModelResponse => ({
-			markdown: accumulatedText,
-			rendered: '',
-			...(accumulatedThoughts && { thoughts: accumulatedThoughts }),
-		});
-
-		const complete = (async (): Promise<ModelResponse> => {
-			if (!model) {
-				throw new Error(t('provider.anthropic.noModelSelected'));
-			}
-
-			try {
+		// `start` receives the helper's signal and returns the SDK stream; both
+		// are captured for `finalize`, which runs after the loop exits and
+		// needs to branch on the signal and read the aggregate message.
+		let signal!: AbortSignal;
+		let stream: BetaMessageStream;
+		// The SDK aggregates the authoritative message (tool calls, usage) and
+		// only exposes it after the iterable ends, so the success arm awaits
+		// `finalMessage()` while the cancelled arm returns the local partial.
+		// The branch lives inside the single `finalize`, keyed on the signal —
+		// `cancel()` aborts the controller and sets the flag together, so the
+		// signal is authoritative (the same reading the Gemini and Ollama
+		// clients make inside their `start`).
+		return runCancellableStream<BetaRawMessageStreamEvent>({
+			start: async (helperSignal) => {
+				signal = helperSignal;
+				if (!model) {
+					throw new Error(t('provider.anthropic.noModelSelected'));
+				}
 				const params = await this.buildParams(model, request, MAX_TOKENS_STREAMING);
-				if (cancelled) return partialResult();
-
-				const stream = this.client.beta.messages.stream(params, { signal: controller.signal });
-				for await (const event of stream) {
-					if (cancelled) break;
-					if (event.type !== 'content_block_delta') continue;
-					if (event.delta.type === 'text_delta') {
-						accumulatedText += event.delta.text;
-						onChunk({ text: event.delta.text });
-					} else if (event.delta.type === 'thinking_delta') {
-						accumulatedThoughts += event.delta.thinking;
-						onChunk({ text: '', thought: event.delta.thinking });
-					}
-				}
-				if (cancelled) return partialResult();
-
-				return this.toModelResponse(await stream.finalMessage());
-			} catch (error) {
-				if (cancelled) {
-					return partialResult();
-				}
-				this.plugin?.logger.error('[AnthropicClient] Streaming error:', describeSdkApiError(error), error);
-				throw error;
-			}
-		})();
-
-		return {
-			complete,
-			cancel: () => {
-				cancelled = true;
-				try {
-					controller.abort();
-				} catch (err) {
-					this.plugin?.logger.debug('[AnthropicClient] Abort failed:', err);
+				stream = this.client.beta.messages.stream(params, { signal });
+				return stream;
+			},
+			onChunk: (event) => {
+				if (event.type !== 'content_block_delta') return;
+				if (event.delta.type === 'text_delta') {
+					accumulatedText += event.delta.text;
+					onChunk({ text: event.delta.text });
+				} else if (event.delta.type === 'thinking_delta') {
+					accumulatedThoughts += event.delta.thinking;
+					onChunk({ text: '', thought: event.delta.thinking });
 				}
 			},
-		};
+			finalize: async () => {
+				if (signal.aborted) {
+					return {
+						markdown: accumulatedText,
+						rendered: '',
+						...(accumulatedThoughts && { thoughts: accumulatedThoughts }),
+					};
+				}
+				return this.toModelResponse(await stream.finalMessage());
+			},
+			onError: (error) =>
+				this.plugin?.logger.error('[AnthropicClient] Streaming error:', describeSdkApiError(error), error),
+		});
 	}
 
 	/** Request body shared by the streaming and non-streaming paths. */

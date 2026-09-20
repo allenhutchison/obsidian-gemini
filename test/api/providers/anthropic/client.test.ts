@@ -439,6 +439,37 @@ describe('AnthropicClient', () => {
 			expect(mockLogger.error).not.toHaveBeenCalled();
 		});
 
+		it('cancel() aborts the signal threaded into messages.stream', async () => {
+			// The openai/client.test.ts pattern: the signal the client passes to
+			// the SDK must be the helper's own — assert it is observed aborted at
+			// the SDK boundary, so a regression that drops the threading fails
+			// here rather than silently degrading Stop to flag-only.
+			let captured!: AbortSignal;
+			let release!: () => void;
+			const gate = new Promise<void>((resolve) => (release = resolve));
+			anthropicCalls.stream.mockImplementation((_params: unknown, { signal }: { signal: AbortSignal }) => {
+				captured = signal;
+				return {
+					// eslint-disable-next-line require-yield -- blocks until cancelled, like a stalled read
+					async *[Symbol.asyncIterator]() {
+						await gate;
+					},
+					finalMessage: vi.fn(),
+				};
+			});
+
+			const streaming = client().generateStreamingResponse(extended(), () => {});
+			await vi.waitFor(() => expect(anthropicCalls.stream).toHaveBeenCalled());
+			expect(captured).toBeInstanceOf(AbortSignal);
+			expect(captured.aborted).toBe(false);
+
+			streaming.cancel();
+			release();
+
+			await streaming.complete;
+			expect(captured.aborted).toBe(true);
+		});
+
 		it('rejects with the stream error when not cancelled', async () => {
 			anthropicCalls.stream.mockReturnValue({
 				// eslint-disable-next-line require-yield -- throws before yielding, like a failed request
