@@ -334,6 +334,25 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	}
 
 	/**
+	 * The credential situation for whichever provider serves chat: the resolved
+	 * key (`''` when unset) and whether that provider needs one at all.
+	 *
+	 * Both `initAttemptFingerprint()` and `saveSettings`'s `hasCredentials`
+	 * need the same pair, and each used to fan out over the provider ids by
+	 * hand — two copies that had to agree, and that a new provider had to be
+	 * added to twice. The fan-out lives here instead.
+	 */
+	private chatCredentialState(): { apiKey: string; requiresApiKey: boolean } {
+		const chatProvider = this.settings.features.chat.provider;
+		const apiKey =
+			chatProvider === 'openai' ? this.openaiApiKey : chatProvider === 'anthropic' ? this.anthropicApiKey : this.apiKey;
+		return {
+			apiKey,
+			requiresApiKey: getCapabilities(chatProvider === 'none' ? null : chatProvider).requiresApiKey,
+		};
+	}
+
+	/**
 	 * The eligibility fingerprint `needsInit` compares against: the chat
 	 * provider, a non-secret token of the credential serving chat (so
 	 * replacing a rejected key is detected, not just adding/removing one),
@@ -342,11 +361,10 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	 */
 	private initAttemptFingerprint(): string {
 		const chatProvider = this.settings.features.chat.provider;
-		const activeChatApiKey =
-			chatProvider === 'openai' ? this.openaiApiKey : chatProvider === 'anthropic' ? this.anthropicApiKey : this.apiKey;
+		const { apiKey: activeChatApiKey, requiresApiKey } = this.chatCredentialState();
 		const credToken = activeChatApiKey
 			? ObsidianGemini.credentialToken(activeChatApiKey)
-			: getCapabilities(chatProvider === 'none' ? null : chatProvider).requiresApiKey
+			: requiresApiKey
 				? 'key-required-missing'
 				: 'none-required';
 		const baseUrl =
@@ -691,11 +709,8 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		// provider switch alone; other features routed to a cloud provider
 		// degrade gracefully without one rather than blocking init. The
 		// credential that must exist for init is the one serving chat.
-		const chatProvider = this.settings.features.chat.provider;
-		const activeChatApiKey =
-			chatProvider === 'openai' ? this.openaiApiKey : chatProvider === 'anthropic' ? this.anthropicApiKey : this.apiKey;
-		const hasCredentials =
-			!getCapabilities(chatProvider === 'none' ? null : chatProvider).requiresApiKey || !!activeChatApiKey;
+		const { apiKey: activeChatApiKey, requiresApiKey } = this.chatCredentialState();
+		const hasCredentials = !requiresApiKey || !!activeChatApiKey;
 		// needsInit additionally compares the eligibility fingerprint recorded
 		// after the last setup attempt: without it, a failed attempt on a
 		// keyless provider (hasCredentials stays true) would retry setup on
