@@ -16,6 +16,15 @@ describe('validateFeatureSlug', () => {
 		expect(validateFeatureSlug('   ')).toMatchObject({ valid: false, error: 'cannot be empty' });
 	});
 
+	it('rejects outer whitespace on an otherwise valid slug', () => {
+		// Callers use the original value as a file basename (createSkill builds
+		// the directory from the untrimmed name), so the validator must not
+		// silently trim it into compliance.
+		expect(valid(' daily-digest ')).toBe(false);
+		expect(valid('daily-digest ')).toBe(false);
+		expect(valid(' daily-digest', { requireLeadingLetter: true })).toBe(false);
+	});
+
 	it('rejects path separators and .. traversal', () => {
 		expect(valid('sub/dir')).toBe(false);
 		expect(valid('sub\\dir')).toBe(false);

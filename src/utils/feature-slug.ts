@@ -44,11 +44,15 @@ export function validateFeatureSlug(
 	raw: string,
 	options: { requireLeadingLetter?: boolean } = {}
 ): FeatureSlugValidation {
-	const slug = raw.trim();
-
-	if (!slug) {
+	if (!raw.trim()) {
 		return { valid: false, error: 'cannot be empty' };
 	}
+	// Whitespace-only is emptiness, but outer whitespace on an otherwise
+	// valid slug is a contract violation, not a trappable detail: callers use
+	// the original value as a file basename (e.g. createSkill builds the
+	// directory from the untrimmed name), so ' daily-digest ' must not pass.
+	const slug = raw;
+
 	if (slug.length > FEATURE_SLUG_MAX) {
 		return { valid: false, error: `must be at most ${FEATURE_SLUG_MAX} characters` };
 	}
