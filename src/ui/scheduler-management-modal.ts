@@ -5,7 +5,6 @@ import type {
 	TaskState,
 	ScheduledTasksState,
 } from '../services/scheduled-task-manager';
-import { DEFAULT_HEADLESS_MAX_ITERATIONS } from '../agent/agent-loop';
 import type { FeatureToolPolicy } from '../types/tool-policy';
 import { ManagementModalBase } from './components/management-modal-base';
 import { ToolPolicyEditor } from './components/tool-policy-editor';
@@ -303,43 +302,25 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 		const advDetails = formEl.createEl('details', { cls: 'gemini-scheduler-advanced' });
 		advDetails.createEl('summary', { text: t('scheduler.advancedOptions') });
 
-		new Setting(advDetails)
-			.setName(t('scheduler.modelOverrideSetting'))
-			.setDesc(t('scheduler.modelOverrideDesc'))
-			.addText((text) =>
-				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case -- example model id, shown verbatim
-					.setPlaceholder('gemini-2.0-flash')
-					.setValue(this.form.model)
-					.onChange((v) => {
-						this.form.model = v.trim();
-					})
-			);
-
-		new Setting(advDetails)
-			.setName(t('scheduler.outputPathSetting'))
-			.setDesc(
-				t('scheduler.outputPathDesc', {
-					defaultPath: `${this.plugin.scheduledTaskManager?.scheduledTasksFolder ?? '<state-folder>'}/Runs/<slug>/{date}.md`,
-				})
-			)
-			.addText((text) =>
-				text.setValue(this.form.outputPath).onChange((v) => {
-					this.form.outputPath = v.trim();
-				})
-			);
-
-		new Setting(advDetails)
-			.setName(t('scheduler.maxIterationsSetting'))
-			.setDesc(t('scheduler.maxIterationsDesc', { default: DEFAULT_HEADLESS_MAX_ITERATIONS }))
-			.addText((text) =>
-				text
-					.setPlaceholder(String(DEFAULT_HEADLESS_MAX_ITERATIONS))
-					.setValue(this.form.maxIterations)
-					.onChange((v) => {
-						this.form.maxIterations = v.trim();
-					})
-			);
+		this.addSharedAdvancedFields(advDetails, {
+			keyPrefix: 'scheduler',
+			modelPlaceholder: 'gemini-2.0-flash',
+			getModel: () => this.form.model,
+			setModel: (v) => {
+				this.form.model = v;
+			},
+			getOutputPath: () => this.form.outputPath,
+			setOutputPath: (v) => {
+				this.form.outputPath = v;
+			},
+			outputPathDescParams: {
+				defaultPath: `${this.plugin.scheduledTaskManager?.scheduledTasksFolder ?? '<state-folder>'}/Runs/<slug>/{date}.md`,
+			},
+			getMaxIterations: () => this.form.maxIterations,
+			setMaxIterations: (v) => {
+				this.form.maxIterations = v;
+			},
+		});
 
 		new Setting(advDetails)
 			.setName(t('scheduler.runIfMissedSetting'))
@@ -350,14 +331,13 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 				})
 			);
 
-		new Setting(advDetails)
-			.setName(t('scheduler.enabledSetting'))
-			.setDesc(t('scheduler.enabledDesc'))
-			.addToggle((toggle) =>
-				toggle.setValue(this.form.enabled).onChange((v) => {
-					this.form.enabled = v;
-				})
-			);
+		this.addEnabledToggle(advDetails, {
+			keyPrefix: 'scheduler',
+			getEnabled: () => this.form.enabled,
+			setEnabled: (v) => {
+				this.form.enabled = v;
+			},
+		});
 	}
 
 	// ── CRUD ─────────────────────────────────────────────────────────────────
@@ -383,15 +363,10 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 
 		// Blank means "use the default" (undefined). A non-blank value must be a
 		// positive integer — reject garbage rather than silently dropping it.
-		let maxIterations: number | undefined;
-		const rawMaxIterations = this.form.maxIterations.trim();
-		if (rawMaxIterations) {
-			const parsed = Number(rawMaxIterations);
-			if (!Number.isInteger(parsed) || parsed <= 0) {
-				new Notice(t('scheduler.invalidMaxIterations'));
-				return;
-			}
-			maxIterations = parsed;
+		const maxIterations = this.parseMaxIterationsField(this.form.maxIterations);
+		if (maxIterations === 'invalid') {
+			new Notice(t('scheduler.invalidMaxIterations'));
+			return;
 		}
 
 		const manager = this.plugin.scheduledTaskManager;
