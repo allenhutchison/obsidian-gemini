@@ -26,7 +26,7 @@ The easiest way to create a task is through the **Scheduler** UI:
 
 You can also create tasks manually by writing a markdown file directly:
 
-Create a markdown file inside `[state-folder]/Scheduled-Tasks/`. The filename (without `.md`) becomes the task's **slug** — used in output paths and the task monitor. The slug must be 1–64 characters of lowercase letters, digits, and single hyphens (no leading, trailing, or consecutive hyphens); the create form enforces this.
+Create a markdown file inside `[state-folder]/Scheduled-Tasks/`. The filename (without `.md`) becomes the task's **slug** — used in output paths and the task monitor. The slug must be 1–64 characters of lowercase ASCII letters, digits, and single hyphens (no leading, trailing, or consecutive hyphens); the create form enforces this.
 
 **Minimal example** — `gemini-scribe/Scheduled-Tasks/daily-summary.md`:
 

@@ -2414,7 +2414,7 @@ export const en = {
 	},
 	'component.managementModalBase.slugDesc': {
 		message:
-			'Lowercase identifier used as the filename and in output paths: lowercase letters, digits, and single hyphens (no leading/trailing or consecutive hyphens), 1–64 characters. Cannot be changed after creation.',
+			'Lowercase identifier used as the filename and in output paths: lowercase ASCII letters, digits, and single hyphens (no leading/trailing or consecutive hyphens), 1–64 characters. Cannot be changed after creation.',
 		context: 'Description below the slug field in the management modal create form.',
 	},
 	'component.managementModalBase.saveChanges': {

@@ -39,7 +39,7 @@ The modal has a list view (toggle / edit / delete / reset on each row) and a cre
 
 Clearing an optional field in the edit form removes it from the hook: empty the **Path glob**, **Model**, **Output path**, **Command id**, or **Max runs per hour** input (or untick **Focus file**) and the field is dropped from the definition file on save, restoring that field's default.
 
-You can also create hooks by hand-editing markdown files inside `[state-folder]/Hooks/`. The filename (without `.md`) becomes the hook's **slug**. The slug must be 1–64 characters of lowercase letters, digits, and single hyphens (no leading, trailing, or consecutive hyphens).
+You can also create hooks by hand-editing markdown files inside `[state-folder]/Hooks/`. The filename (without `.md`) becomes the hook's **slug**. The slug must be 1–64 characters of lowercase ASCII letters, digits, and single hyphens (no leading, trailing, or consecutive hyphens).
 
 **Minimal example** — `gemini-scribe/Hooks/summarize-on-save.md`:
 
