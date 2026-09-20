@@ -87,9 +87,10 @@ describe.each(DOCS)('provider docs sync: %s', (doc) => {
 	it('provider implementation-directory list names exactly the ModelProvider union', () => {
 		// `src/api/providers/{gemini,…}/` — the other hand-kept enumeration
 		// (the one that was stale in invariants.md before this guard existed).
-		// Anchored on the package path so an unrelated `{a,b}` token can't be
-		// picked up; the token must exist, or the check is vacuous.
-		const listLine = lines.find((line) => /providers\/\{[a-z,]+\}\//.test(line));
+		// Anchored on the full package path so an unrelated `{a,b}` token or a
+		// different `…/providers/{…}` path can't be picked up; the token must
+		// exist, or the check is vacuous.
+		const listLine = lines.find((line) => /src\/api\/providers\/\{[a-z,]+\}\//.test(line));
 		expect(listLine, `no 'src/api/providers/{…}/' token found in ${doc}`).toBeDefined();
 
 		const brace = /\{([a-z,]+)\}/.exec(listLine!.match(/providers\/\{[a-z,]+\}\//)![0])![1];
