@@ -1,6 +1,7 @@
 import { TFile, normalizePath } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { isPathInFolder } from '../utils/file-utils';
+import { validateFeatureSlug } from '../utils/feature-slug';
 import { FeatureToolPolicy } from '../types/tool-policy';
 import { formatToolPolicyYaml } from './feature-policy-yaml';
 import { yamlScalar } from './yaml-scalar';
@@ -337,6 +338,16 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 	async createTask(params: ScheduledTaskCreateParams): Promise<void> {
 		const slug = params.slug.trim();
 		if (!slug) throw new Error('Task slug cannot be empty');
+		// Same feature-slug contract as hooks (skills differ: leading letter).
+		// Defense-in-depth, not a live hole: the management modal sanitizes
+		// the field before it gets here. Validated at the write boundary so an
+		// invalid value from a programmatic caller can't escape the
+		// Scheduled-Tasks folder — normalizePath collapses separators but does
+		// not resolve `..` — and can't be persisted.
+		const slugCheck = validateFeatureSlug(slug);
+		if (!slugCheck.valid) {
+			throw new Error(`Task slug ${slugCheck.error}`);
+		}
 		if (this.tasks.has(slug)) throw new Error(`A task named "${slug}" already exists`);
 
 		// Validate schedule before touching the vault — computeNextRunAt throws on
@@ -520,6 +531,11 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 	}
 
 	protected parseDefinitionFile(file: TFile): Promise<ScheduledTask | null> {
+		// Deliberately permissive about the slug (#1485): validation is a
+		// create-path contract. Existing installs may hold definition files
+		// whose basename predates the rule (e.g. "My Daily Digest.md") —
+		// validating here would silently drop tasks users depend on. New
+		// creates go through validateFeatureSlug in createTask/create.
 		return this.parseTaskFile(file);
 	}
 
