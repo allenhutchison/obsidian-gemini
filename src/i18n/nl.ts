@@ -622,7 +622,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'command.createProject': 'Project maken',
 	'command.convertToProject': 'Notitie converteren naar project',
 	'command.openProjectSettings': 'Projectinstellingen openen',
-	'command.resumeProjectSession': 'Project-sessie hervatten',
+	'command.resumeProjectSession': 'Projectsessie hervatten',
 	'command.removeProject': 'Project verwijderen',
 	'command.rewriteSelection': 'Tekst herschrijven met AI',
 	'command.explainSelection': 'Selectie uitleggen met AI',
