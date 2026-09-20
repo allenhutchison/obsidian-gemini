@@ -2,7 +2,6 @@ import { Notice, Setting, setIcon } from 'obsidian';
 import type { Hook, HookAction, HookCreateParams, HookState, HookTrigger, HooksState } from '../services/hook-manager';
 import { DEFAULT_COOLDOWN_MS, DEFAULT_DEBOUNCE_MS } from '../services/hook-types';
 import type { FeatureToolPolicy } from '../types/tool-policy';
-import { DEFAULT_HEADLESS_MAX_ITERATIONS } from '../agent/agent-loop';
 import { ManagementModalBase } from './components/management-modal-base';
 import { ToolPolicyEditor } from './components/tool-policy-editor';
 import { getRawErrorMessage } from '../utils/error-utils';
@@ -364,42 +363,22 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 					})
 			);
 
-		new Setting(advDetails)
-			.setName(t('hooks.modelOverrideSetting'))
-			.setDesc(t('hooks.modelOverrideDesc'))
-			.addText((text) =>
-				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case -- example model id, shown verbatim
-					.setPlaceholder('gemini-2.5-flash-lite')
-					.setValue(this.form.model)
-					.onChange((v) => {
-						this.form.model = v.trim();
-					})
-			);
-
-		new Setting(advDetails)
-			.setName(t('hooks.maxIterationsSetting'))
-			.setDesc(t('hooks.maxIterationsDesc', { default: DEFAULT_HEADLESS_MAX_ITERATIONS }))
-			.addText((text) =>
-				text
-					.setPlaceholder(String(DEFAULT_HEADLESS_MAX_ITERATIONS))
-					.setValue(this.form.maxIterations)
-					.onChange((v) => {
-						this.form.maxIterations = v.trim();
-					})
-			);
-
-		new Setting(advDetails)
-			.setName(t('hooks.outputPathSetting'))
-			.setDesc(t('hooks.outputPathDesc'))
-			.addText((text) =>
-				text
-					.setPlaceholder('Hooks/Runs/{slug}/{date}.md')
-					.setValue(this.form.outputPath)
-					.onChange((v) => {
-						this.form.outputPath = v.trim();
-					})
-			);
+		this.addSharedAdvancedFields(advDetails, {
+			keyPrefix: 'hooks',
+			modelPlaceholder: 'gemini-2.5-flash-lite',
+			getModel: () => this.form.model,
+			setModel: (v) => {
+				this.form.model = v;
+			},
+			getOutputPath: () => this.form.outputPath,
+			setOutputPath: (v) => {
+				this.form.outputPath = v;
+			},
+			getMaxIterations: () => this.form.maxIterations,
+			setMaxIterations: (v) => {
+				this.form.maxIterations = v;
+			},
+		});
 
 		new Setting(advDetails)
 			.setName(t('hooks.desktopOnlySetting'))
@@ -410,14 +389,13 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 				})
 			);
 
-		new Setting(advDetails)
-			.setName(t('hooks.enabledSetting'))
-			.setDesc(t('hooks.enabledDesc'))
-			.addToggle((toggle) =>
-				toggle.setValue(this.form.enabled).onChange((v) => {
-					this.form.enabled = v;
-				})
-			);
+		this.addEnabledToggle(advDetails, {
+			keyPrefix: 'hooks',
+			getEnabled: () => this.form.enabled,
+			setEnabled: (v) => {
+				this.form.enabled = v;
+			},
+		});
 	}
 
 	// ── CRUD ─────────────────────────────────────────────────────────────────
@@ -445,15 +423,10 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 
 		// Blank means "use the default" (undefined). A non-blank value must be a
 		// positive integer — reject garbage rather than silently dropping it.
-		let maxIterations: number | undefined;
-		const rawMaxIterations = this.form.maxIterations.trim();
-		if (rawMaxIterations) {
-			const parsed = Number(rawMaxIterations);
-			if (!Number.isInteger(parsed) || parsed <= 0) {
-				new Notice(t('hooks.invalidMaxIterations'));
-				return;
-			}
-			maxIterations = parsed;
+		const maxIterations = this.parseMaxIterationsField(this.form.maxIterations);
+		if (maxIterations === 'invalid') {
+			new Notice(t('hooks.invalidMaxIterations'));
+			return;
 		}
 
 		const manager = this.plugin.hookManager;
