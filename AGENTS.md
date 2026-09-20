@@ -26,6 +26,7 @@ npm run lint         # Lint with ESLint (eslint-plugin-obsidianmd recommended pr
 npm run lint:fix     # Auto-fix ESLint violations where possible
 npm run lint:cycles  # Fail on circular imports (madge --circular over src/; baseline is 0 and CI's lint workflow enforces it)
 npm run knip         # Detect unused files, exports, types, and dependencies (configured in knip.json; CI's knip workflow enforces it, so a newly-dead export fails the PR — put intentional public surface in knip.json rather than re-arguing it per PR; every knip.json ignore carries its justification written next to it; nothing may mark an export reachable except a real caller — not an entry-point declaration, not a test-only import, not a JSDoc @public/@beta/@alias tag, which the no-tags-as-reachability ESLint rule fails (#1525))
+npm test             # Vitest suite — includes the provider-docs-sync guard (test/api/provider-docs-sync.test.ts): the provider pipeline diagram in AGENTS.md and .claude/guidelines/invariants.md must name exactly the ModelProvider union from src/api/providers/registry.ts, so adding a provider fails the PR until the diagrams are updated (#1567)
 npm run install:test-vault # Copy built artifacts into test vault. Target precedence: TEST_VAULT_PLUGIN_DIR (exact plugin folder, validated by id) > TEST_VAULT_DIR (vault root, scanned by id) > default ~/Obsidian/Test Vault
 npm run translate    # Regenerate AI translations in src/i18n/ (needs GOOGLE_API_KEY; not part of build/test — runs in its own `Update UI translations` workflow on en.ts changes, or manually)
 ```

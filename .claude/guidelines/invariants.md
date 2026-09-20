@@ -6,7 +6,7 @@ diff against. Breaking one of these is a correctness or architecture regression,
 ## API layer: Factory + Decorator, capability-routed
 
 ```text
-src/main.ts → ModelClientFactory.createFromPlugin() → GeminiClient | OllamaClient | OpenAIClient → RetryDecorator → ModelApi
+src/main.ts → ModelClientFactory.createFromPlugin() → GeminiClient | OllamaClient | OpenAIClient | AnthropicClient → RetryDecorator → ModelApi
 ```
 
 - Each call resolves its provider **independently** via `featureProvider(settings, featureId)` in the leaf module
@@ -14,7 +14,7 @@ src/main.ts → ModelClientFactory.createFromPlugin() → GeminiClient | OllamaC
   dense `features: Record<FeatureId, FeatureRoute>` table. `settings.defaultProvider` never serves a request: it
   only **seeds** entries missing at settings load (`sanitizeFeatureRoutes`), and otherwise feeds display/re-init
   helpers (`activeProviders`, `routingKey`). The factory
-  (`src/api/factory.ts`) instantiates a `GeminiClient`, `OllamaClient`, or `OpenAIClient` from the resolved provider,
+  (`src/api/factory.ts`) instantiates the `ModelApi` implementation the resolved provider names (`GeminiClient`, `OllamaClient`, `OpenAIClient`, `AnthropicClient`),
   wrapped by `RetryDecorator` (exponential backoff) for resilience.
 - **No silent provider substitution — unconditional.** A feature is served by exactly the provider stored in its
   route, or it is **off**: `featureProvider` returns `null` both for a `'none'` route and for a stored provider
@@ -24,7 +24,7 @@ src/main.ts → ModelClientFactory.createFromPlugin() → GeminiClient | OllamaC
   Substituting a cloud provider for a capability a local one lacks would send vault data somewhere the user never
   opted into.
 - All provider implementations conform to the `ModelApi` interface; provider-specific code stays encapsulated under
-  `src/api/providers/{gemini,ollama,openai}/`. Don't leak provider specifics upward: the capability matrix (which
+  `src/api/providers/{gemini,ollama,openai,anthropic}/`. Don't leak provider specifics upward: the capability matrix (which
   provider can serve which feature) lives in the leaf module `src/api/providers/registry.ts`, and the routing
   helpers in the leaf module `src/api/feature-routing.ts` — consume them instead of branching on provider name
   literals. `feature-routing` stays a leaf: `models.ts` imports _it_ (for `resolveFeatureModel`), never the
