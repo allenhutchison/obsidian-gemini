@@ -48,6 +48,7 @@ import { SIMPLE_TOOL_ID_PATTERN, ToolIdLedger } from '../tool-id-ledger';
 import type { ResolvedToolCall } from '../tool-id-ledger';
 import { describeSdkApiError } from '../../../utils/error-utils';
 import { t } from '../../../i18n';
+import type { ImageGenerationApi } from '../../interfaces/image-generation-api';
 
 type ChatMessage = OpenAI.ChatCompletionMessageParam;
 type ChatTool = OpenAI.ChatCompletionTool;
@@ -71,7 +72,7 @@ interface StreamingToolCallAccumulator {
 	arguments: string;
 }
 
-export class OpenAIClient implements ModelApi {
+export class OpenAIClient implements ModelApi, ImageGenerationApi {
 	/**
 	 * GPT-5.6-family reasoning models: `/v1/chat/completions` rejects function
 	 * tools for them unless `reasoning_effort` is 'none'. Matched by id (not
@@ -94,6 +95,24 @@ export class OpenAIClient implements ModelApi {
 			dangerouslyAllowBrowser: true,
 			maxRetries: 0,
 		});
+	}
+
+	/** Generate one PNG through the OpenAI Images API and return its base64 bytes. */
+	async generateImage(prompt: string, model: string): Promise<string> {
+		try {
+			if (!model) {
+				throw new Error(t('provider.openai.noModelSelected'));
+			}
+			const response = await this.client.images.generate({ model, prompt });
+			const image = response.data?.[0]?.b64_json;
+			if (!image) {
+				throw new Error(t('provider.openai.noImageData'));
+			}
+			return image;
+		} catch (error) {
+			this.plugin?.logger.error('[OpenAIClient] Error generating image:', describeSdkApiError(error), error);
+			throw error;
+		}
 	}
 
 	async generateModelResponse(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {

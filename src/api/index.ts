@@ -4,9 +4,7 @@
 
 // Interfaces
 export type { BaseModelRequest, ExtendedModelRequest } from './interfaces/model-api';
+export type { ImageGenerationApi } from './interfaces/image-generation-api';
 
 // Factory
 export { ModelClientFactory, ModelUseCase } from './factory';
-
-// Providers
-export { GeminiClient } from './providers/gemini';

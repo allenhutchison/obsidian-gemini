@@ -17,6 +17,7 @@ import { DEFAULT_OPENAI_BASE_URL, type OpenAIClientConfig } from './providers/op
 import { AnthropicClient } from './providers/anthropic/client';
 import type { AnthropicClientConfig } from './providers/anthropic/config';
 import { ModelApi } from './interfaces/model-api';
+import type { ImageGenerationApi } from './interfaces/image-generation-api';
 import { GeminiPrompts } from '../prompts';
 import { RetryDecorator } from './retry-decorator';
 import { resolveFeatureModel } from '../models';
@@ -55,6 +56,41 @@ export { ModelUseCase } from './model-use-case';
  * Factory for creating provider-appropriate ModelApi clients.
  */
 export class ModelClientFactory {
+	/**
+	 * Create the provider client serving the image-generation feature.
+	 *
+	 * This path is intentionally separate from ModelApi: image providers return
+	 * base64 image bytes rather than a conversational ModelResponse.
+	 */
+	static createImageGenerationClient(plugin: ObsidianGemini): ImageGenerationApi {
+		const provider = featureProvider(plugin.settings, 'imageGen');
+		if (!provider) {
+			const route = featureRoute(plugin.settings, 'imageGen');
+			const reason = route.provider === 'none' ? 'unconfigured' : 'unsupported';
+			throw new FeatureUnavailableError('imageGen', reason);
+		}
+
+		const prompts = new GeminiPrompts(plugin);
+		if (provider === 'openai') {
+			return new OpenAIClient(
+				{
+					apiKey: plugin.openaiApiKey,
+					baseUrl: plugin.settings.openaiBaseUrl || DEFAULT_OPENAI_BASE_URL,
+				},
+				prompts,
+				plugin
+			);
+		}
+
+		if (provider === 'gemini') {
+			return new GeminiClient({ apiKey: plugin.apiKey }, prompts, plugin);
+		}
+
+		// featureProvider currently makes this branch unreachable, but keep the
+		// factory total if the registry and implementation ever drift.
+		throw new FeatureUnavailableError('imageGen', 'unsupported');
+	}
+
 	/**
 	 * Create a ModelApi client from plugin settings
 	 *

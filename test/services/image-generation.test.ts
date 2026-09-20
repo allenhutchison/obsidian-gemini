@@ -25,10 +25,10 @@ vi.mock('obsidian', async () => ({
 }));
 
 vi.mock('../../src/api', () => ({
-	GeminiClient: vi.fn().mockImplementation(function () {
-		return { generateImage: mockGenerateImageBytes };
-	}),
-	ModelClientFactory: { createSummaryModel: vi.fn() },
+	ModelClientFactory: {
+		createImageGenerationClient: vi.fn(() => ({ generateImage: mockGenerateImageBytes })),
+		createSummaryModel: vi.fn(),
+	},
 }));
 
 vi.mock('../../src/prompts', () => ({

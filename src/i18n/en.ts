@@ -3067,6 +3067,10 @@ export const en = {
 		context:
 			'Error shown when an OpenAI-routed feature runs with no model configured. "settings" is Obsidian\'s settings window.',
 	},
+	'provider.openai.noImageData': {
+		message: 'OpenAI returned no image data.',
+		context: 'Error shown when an OpenAI image-generation response contains no base64-encoded image.',
+	},
 	'provider.unsupportedAttachment': {
 		message:
 			'{provider} only supports image attachments; received {mimeType}. Switch to the Gemini provider for PDF, audio, or video input.',

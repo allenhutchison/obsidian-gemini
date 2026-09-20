@@ -1,6 +1,6 @@
 import type { ObsidianGemini } from '../types/plugin';
 import { Notice, App, MarkdownView, Modal, Setting, TextAreaComponent, TFile, normalizePath } from 'obsidian';
-import { BaseModelRequest, GeminiClient, ModelClientFactory } from '../api';
+import { BaseModelRequest, type ImageGenerationApi, ModelClientFactory } from '../api';
 import { GeminiPrompts } from '../prompts';
 import { resolveFeatureModel } from '../models';
 import { getErrorMessage, getRawErrorMessageOr } from '../utils/error-utils';
@@ -10,19 +10,13 @@ import { STATE_SUBFOLDERS, stateFolderPath } from './state-folder';
 
 export class ImageGeneration {
 	private plugin: ObsidianGemini;
-	private client: GeminiClient;
+	private client: ImageGenerationApi;
 	private prompts: GeminiPrompts;
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 		this.prompts = new GeminiPrompts(plugin);
-		this.client = new GeminiClient(
-			{
-				apiKey: plugin.apiKey,
-			},
-			this.prompts,
-			plugin
-		);
+		this.client = ModelClientFactory.createImageGenerationClient(plugin);
 	}
 
 	/**

@@ -6,8 +6,9 @@ import { ExtendedModelRequest, ToolDefinition } from '../../../../src/api/interf
 // vitest hoists vi.mock to the top of the file; vi.hoisted() lets us share
 // fixtures with the factory while keeping initialization order safe.
 const { openaiCalls } = vi.hoisted(() => {
-	const openaiCalls: { create: Mock } = {
+	const openaiCalls: { create: Mock; generateImage: Mock } = {
 		create: vi.fn(),
+		generateImage: vi.fn(),
 	};
 	return { openaiCalls };
 });
@@ -21,6 +22,9 @@ vi.mock('openai', () => ({
 			completions: {
 				create: (...args: any[]) => openaiCalls.create(...args),
 			},
+		};
+		this.images = {
+			generate: (...args: any[]) => openaiCalls.generateImage(...args),
 		};
 	}),
 }));
@@ -56,9 +60,42 @@ describe('OpenAIClient', () => {
 
 	beforeEach(() => {
 		openaiCalls.create.mockReset();
+		openaiCalls.generateImage.mockReset();
 		mockLogger.error.mockReset();
 		mockLogger.warn.mockReset();
 		client = new OpenAIClient(baseConfig, undefined, buildPlugin());
+	});
+
+	describe('generateImage', () => {
+		it('returns base64 PNG data from the Images API', async () => {
+			openaiCalls.generateImage.mockResolvedValue({ data: [{ b64_json: 'encoded-png' }] });
+
+			await expect(client.generateImage('a watercolor lighthouse', 'gpt-image-2.5-flare')).resolves.toBe('encoded-png');
+			expect(openaiCalls.generateImage).toHaveBeenCalledWith({
+				model: 'gpt-image-2.5-flare',
+				prompt: 'a watercolor lighthouse',
+			});
+		});
+
+		it('rejects an Images API response without base64 data', async () => {
+			openaiCalls.generateImage.mockResolvedValue({ data: [{}] });
+
+			await expect(client.generateImage('a watercolor lighthouse', 'gpt-image-2.5-flare')).rejects.toThrow(
+				'OpenAI returned no image data.'
+			);
+			expect(mockLogger.error).toHaveBeenCalledWith(
+				'[OpenAIClient] Error generating image:',
+				expect.any(String),
+				expect.any(Error)
+			);
+		});
+
+		it('rejects before calling the API when no image model is available', async () => {
+			await expect(client.generateImage('a watercolor lighthouse', '')).rejects.toThrow(
+				'No OpenAI model selected. Choose a model in settings.'
+			);
+			expect(openaiCalls.generateImage).not.toHaveBeenCalled();
+		});
 	});
 
 	describe('generateModelResponse (BaseModelRequest)', () => {

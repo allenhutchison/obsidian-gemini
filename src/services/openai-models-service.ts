@@ -5,9 +5,10 @@ import { DEFAULT_OPENAI_BASE_URL } from '../api/providers/openai/config';
 import { CachedModelCatalog, joinBaseUrl, type CatalogEndpoint } from './remote-model-catalog';
 
 interface OpenAIModelMetadata {
-	contextWindow: number;
+	contextWindow?: number;
 	supportsVision: boolean;
 	defaultForRoles?: ModelRole[];
+	supportsImageGeneration?: boolean;
 }
 
 /**
@@ -34,6 +35,17 @@ const KNOWN_OPENAI_MODELS: Record<string, OpenAIModelMetadata> = {
 	'gpt-5.6-sol': { contextWindow: GPT56_INPUT_TOKEN_LIMIT, supportsVision: true, defaultForRoles: ['chat'] },
 	'gpt-5.6-terra': { contextWindow: GPT56_INPUT_TOKEN_LIMIT, supportsVision: true, defaultForRoles: ['summary'] },
 	'gpt-5.6-luna': { contextWindow: GPT56_INPUT_TOKEN_LIMIT, supportsVision: true, defaultForRoles: ['completions'] },
+	// Dedicated Images API models. Flare is the everyday default; Sunburst is
+	// available when editing precision and maximum fidelity matter more.
+	'gpt-image-2.5-flare': {
+		supportsVision: false,
+		defaultForRoles: ['image'],
+		supportsImageGeneration: true,
+	},
+	'gpt-image-2.5-sunburst': {
+		supportsVision: false,
+		supportsImageGeneration: true,
+	},
 };
 
 /**
@@ -171,7 +183,8 @@ export class OpenAIModelsService {
 			label: id,
 			provider: 'openai',
 			supportsVision: meta.supportsVision,
-			contextWindow: meta.contextWindow,
+			...(meta.contextWindow !== undefined && { contextWindow: meta.contextWindow }),
+			...(meta.supportsImageGeneration && { supportsImageGeneration: true }),
 			...(meta.defaultForRoles && { defaultForRoles: [...meta.defaultForRoles] }),
 		};
 	}

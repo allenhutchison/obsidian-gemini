@@ -147,7 +147,7 @@ Rows, grouped:
   the [Vault search index](#vault-search-index) page's own "Index this vault" toggle is off,
   even if a provider is routed.
 - **Image generation** (`features.imageGen`) — the `generate_image` tool and **Generate image**
-  command. Gemini only today.
+  command. Supported by Gemini and OpenAI; OpenAI uses its dedicated Images API.
 
 **Google Maps grounding is not a routed feature.** It is provider-bound to Gemini and listed
 under the Gemini card's "Includes" line — see [Provider-bound grounding](#provider-bound-grounding).

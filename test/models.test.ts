@@ -122,6 +122,27 @@ describe('getDefaultModelForRole', () => {
 		]);
 		expect(getDefaultModelForRole('summary')).toBe('gemini-2.5-flash-preview-04-17');
 	});
+
+	it('never falls back across the text/image model boundary', () => {
+		setTestModels([
+			{ value: 'openai-chat', label: 'OpenAI Chat', provider: 'openai' },
+			{
+				value: 'openai-image',
+				label: 'OpenAI Image',
+				provider: 'openai',
+				supportsImageGeneration: true,
+			},
+		]);
+
+		expect(getDefaultModelForRole('chat', 'openai')).toBe('openai-chat');
+		expect(getDefaultModelForRole('image', 'openai')).toBe('openai-image');
+	});
+
+	it('returns no image default when a provider only advertises text models', () => {
+		setTestModels([{ value: 'openai-chat', label: 'OpenAI Chat', provider: 'openai' }]);
+
+		expect(getDefaultModelForRole('image', 'openai')).toBe('');
+	});
 });
 
 describe('bundled model catalog', () => {
@@ -213,7 +234,12 @@ describe('getUpdatedFeatureRoutes', () => {
 			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
 			{ value: 'gemini-summary-default', label: 'Summary Default', defaultForRoles: ['summary'] },
 			{ value: 'gemini-completions-default', label: 'Completions Default', defaultForRoles: ['completions'] },
-			{ value: 'gemini-image-default', label: 'Image Default', defaultForRoles: ['image'] },
+			{
+				value: 'gemini-image-default',
+				label: 'Image Default',
+				defaultForRoles: ['image'],
+				supportsImageGeneration: true,
+			},
 			{ value: 'gemini-another-model', label: 'Another Model' },
 		]);
 	});
@@ -285,6 +311,16 @@ describe('getUpdatedFeatureRoutes', () => {
 		const result = getUpdatedFeatureRoutes(features, {});
 		expect(result.changed).toBe(false);
 		expect(result.features.chat.model).toBe('llama3.2');
+	});
+
+	it('clears an image model when the loaded provider catalog contains only text models', () => {
+		setTestModels([{ value: 'openai-chat', label: 'OpenAI Chat', provider: 'openai' }]);
+		const features = routes({ imageGen: { provider: 'openai', model: 'openai-chat' } });
+
+		const result = getUpdatedFeatureRoutes(features, {});
+
+		expect(result.changed).toBe(true);
+		expect(result.features.imageGen.model).toBe('');
 	});
 
 	it('reconciles providerModelMemory the same way, per provider', () => {

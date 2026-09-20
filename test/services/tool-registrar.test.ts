@@ -140,6 +140,14 @@ describe('ToolRegistrar', () => {
 			expect(mockRegistry.registerTool).not.toHaveBeenCalledWith(expect.objectContaining({ name: 'google_search' }));
 		});
 
+		it('registers image tools when imageGen is routed to openai', async () => {
+			mockPlugin.settings.features.imageGen = { provider: 'openai', model: 'gpt-image-2.5-flare' };
+
+			await registrar.registerAll(mockRegistry, mockLogger, mockPlugin);
+
+			expect(mockRegistry.registerTool).toHaveBeenCalledWith(expect.objectContaining({ name: 'generate_image' }));
+		});
+
 		it('skips cloud sources when routed to a provider that cannot serve them', async () => {
 			mockPlugin.settings.defaultProvider = 'gemini';
 			mockPlugin.settings.features = featuresAllOn('gemini');

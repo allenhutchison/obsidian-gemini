@@ -189,7 +189,13 @@ export function isModelMissing(ctx: SettingsContext, f: FeatureId): boolean {
 	const route = featureRoute(ctx.plugin.settings, f);
 	if (route.provider === 'none' || !route.model) return false;
 	const provider = route.provider;
-	return !GEMINI_MODELS.some((m) => m.value === route.model && (m.provider ?? 'gemini') === provider);
+	const wantsImage = f === 'imageGen';
+	return !GEMINI_MODELS.some(
+		(m) =>
+			m.value === route.model &&
+			(m.provider ?? 'gemini') === provider &&
+			Boolean(m.supportsImageGeneration) === wantsImage
+	);
 }
 
 /** Top-level tab's "Providers" row: every provider currently used, or serving as the default, in display order. */

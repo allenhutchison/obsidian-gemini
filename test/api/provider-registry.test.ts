@@ -67,11 +67,11 @@ describe('capability matrix', () => {
 		expect(caps.summary).toBe(true);
 		expect(caps.completions).toBe(true);
 		expect(caps.rewrite).toBe(true);
-		// Cloud-only features this phase doesn't implement for OpenAI.
+		// Provider-specific features not implemented for OpenAI.
 		expect(caps.webSearch).toBe(false);
 		expect(caps.deepResearch).toBe(false);
 		expect(caps.rag).toBe(false);
-		expect(caps.imageGen).toBe(false);
+		expect(caps.imageGen).toBe(true);
 		expect(caps.maps).toBe(false);
 		expect(caps.requiresApiKey).toBe(true);
 		expect(caps.nativeTokenCount).toBe(false);
@@ -106,7 +106,7 @@ describe('lookup helpers', () => {
 	it('providersSupporting lists candidates in display order', () => {
 		expect(providersSupporting('chat')).toEqual(['gemini', 'ollama', 'openai', 'anthropic']);
 		expect(providersSupporting('rag')).toEqual(['gemini']);
-		expect(providersSupporting('imageGen')).toEqual(['gemini']);
+		expect(providersSupporting('imageGen')).toEqual(['gemini', 'openai']);
 		expect(providersSupporting('deepResearch')).toEqual(['gemini']);
 	});
 
