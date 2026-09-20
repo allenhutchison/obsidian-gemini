@@ -68,6 +68,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Domyślny ({model})',
 	'settings.features.sameAsChat': 'Taki sam jak dla czatu',
 	'settings.features.modelMissing': 'Już niedostępny',
+	'settings.features.modelCapabilitiesUnknown': 'brak informacji o obsłudze obrazów',
 	'settings.features.off': 'Wył.',
 	'settings.features.chooseProvider': 'Wybierz dostawcę',
 	'settings.features.notConnected': 'nie połączono',
@@ -686,7 +687,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'component.managementModalBase.backToList': '← Powrót do listy',
 	'component.managementModalBase.slugName': 'Nazwa {label} (slug)',
 	'component.managementModalBase.slugDesc':
-		'Identyfikator pisany małymi literami, używany jako nazwa pliku i w ścieżkach wyjściowych. Nie można go zmienić po utworzeniu.',
+		'Identyfikator pisany małymi literami używany jako nazwa pliku oraz w ścieżkach wyjściowych: małe litery ASCII, cyfry i pojedyncze łączniki (bez łączników na początku, na końcu ani występujących po sobie), 1–64 znaków. Nie można zmienić po utworzeniu.',
 	'component.managementModalBase.saveChanges': 'Zapisz zmiany',
 	'component.managementModalBase.createEntity': 'Utwórz {label}',
 	'component.toolPolicyEditor.title': 'Dostęp do narzędzi',
@@ -845,6 +846,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 		'Wykonałem żądane działania, ale wystąpił problem z wygenerowaniem podsumowania. Operacje zakończyły się powodzeniem.',
 	'selection.emptyResponse': 'AI zwróciło pustą odpowiedź. Spróbuj ponownie.',
 	'provider.openai.noModelSelected': 'Nie wybrano modelu OpenAI. Wybierz model w ustawieniach.',
+	'provider.openai.noImageData': 'OpenAI nie zwróciło danych obrazu.',
 	'provider.unsupportedAttachment':
 		'{provider} obsługuje tylko załączniki w postaci obrazów; odebrano {mimeType}. Przełącz na dostawcę Gemini, aby używać plików PDF, audio lub wideo.',
 	'provider.anthropic.noModelSelected': 'Nie wybrano modelu Anthropic. Wybierz model w ustawieniach.',

@@ -68,6 +68,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Mặc định ({model})',
 	'settings.features.sameAsChat': 'Giống như trò chuyện',
 	'settings.features.modelMissing': 'Không còn khả dụng',
+	'settings.features.modelCapabilitiesUnknown': 'không có thông tin hỗ trợ hình ảnh',
 	'settings.features.off': 'Tắt',
 	'settings.features.chooseProvider': 'Chọn một nhà cung cấp',
 	'settings.features.notConnected': 'chưa kết nối',
@@ -682,7 +683,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'component.managementModalBase.backToList': '← Quay lại danh sách',
 	'component.managementModalBase.slugName': 'Tên {label} (slug)',
 	'component.managementModalBase.slugDesc':
-		'Mã định danh viết thường được sử dụng làm tên tệp và trong đường dẫn đầu ra. Không thể thay đổi sau khi tạo.',
+		'Định danh viết thường dùng làm tên tệp và trong đường dẫn đầu ra: chữ cái ASCII viết thường, chữ số và dấu gạch nối đơn (không có dấu gạch nối ở đầu/cuối hoặc liên tiếp), từ 1–64 ký tự. Không thể thay đổi sau khi tạo.',
 	'component.managementModalBase.saveChanges': 'Lưu thay đổi',
 	'component.managementModalBase.createEntity': 'Tạo {label}',
 	'component.toolPolicyEditor.title': 'Quyền truy cập công cụ',
@@ -838,6 +839,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 		'Tôi đã hoàn thành các hành động được yêu cầu nhưng gặp sự cố khi tạo bản tóm tắt. Các thao tác đã thành công.',
 	'selection.emptyResponse': 'AI đã trả về một phản hồi trống. Vui lòng thử lại.',
 	'provider.openai.noModelSelected': 'Chưa chọn mô hình OpenAI nào. Hãy chọn một mô hình trong phần cài đặt.',
+	'provider.openai.noImageData': 'OpenAI không trả về dữ liệu hình ảnh nào.',
 	'provider.unsupportedAttachment':
 		'{provider} chỉ hỗ trợ tệp đính kèm hình ảnh; đã nhận {mimeType}. Chuyển sang nhà cung cấp Gemini để dùng đầu vào là PDF, âm thanh hoặc video.',
 	'provider.anthropic.noModelSelected': 'Chưa chọn mô hình Anthropic nào. Hãy chọn một mô hình trong cài đặt.',

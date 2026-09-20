@@ -67,6 +67,7 @@ export const ptBR: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Padrão ({model})',
 	'settings.features.sameAsChat': 'Igual ao chat',
 	'settings.features.modelMissing': 'Não está mais disponível',
+	'settings.features.modelCapabilitiesUnknown': 'suporte a imagens não informado',
 	'settings.features.off': 'Desativado',
 	'settings.features.chooseProvider': 'Escolha um provedor',
 	'settings.features.notConnected': 'não conectado',
@@ -682,7 +683,7 @@ export const ptBR: Partial<Record<TranslationKey, string>> = {
 	'component.managementModalBase.backToList': '← Voltar para a lista',
 	'component.managementModalBase.slugName': 'Nome do {label} (slug)',
 	'component.managementModalBase.slugDesc':
-		'Identificador em letras minúsculas usado como nome do arquivo e nos caminhos de saída. Não pode ser alterado após a criação.',
+		'Identificador em letras minúsculas usado como nome de arquivo e em caminhos de saída: letras ASCII minúsculas, dígitos e hífens simples (sem hífens no início/fim ou consecutivos), 1–64 caracteres. Não pode ser alterado após a criação.',
 	'component.managementModalBase.saveChanges': 'Salvar alterações',
 	'component.managementModalBase.createEntity': 'Criar {label}',
 	'component.toolPolicyEditor.title': 'Acesso a ferramentas',
@@ -837,6 +838,7 @@ export const ptBR: Partial<Record<TranslationKey, string>> = {
 		'Concluí as ações solicitadas, mas tive problemas para gerar um resumo. As operações foram bem-sucedidas.',
 	'selection.emptyResponse': 'A IA retornou uma resposta vazia. Tente novamente.',
 	'provider.openai.noModelSelected': 'Nenhum modelo da OpenAI selecionado. Escolha um modelo nas configurações.',
+	'provider.openai.noImageData': 'A OpenAI não retornou dados de imagem.',
 	'provider.unsupportedAttachment':
 		'{provider} suporta apenas anexos de imagem; {mimeType} recebido. Alterne para o provedor Gemini para entrada de PDF, áudio ou vídeo.',
 	'provider.anthropic.noModelSelected': 'Nenhum modelo da Anthropic selecionado. Escolha um modelo nas configurações.',

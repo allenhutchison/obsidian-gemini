@@ -67,6 +67,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'За замовчуванням ({model})',
 	'settings.features.sameAsChat': 'Як у чаті',
 	'settings.features.modelMissing': 'Більше недоступна',
+	'settings.features.modelCapabilitiesUnknown': 'підтримка зображень не вказана',
 	'settings.features.off': 'Вимкнено',
 	'settings.features.chooseProvider': 'Виберіть провайдера',
 	'settings.features.notConnected': 'не підключено',
@@ -685,7 +686,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'component.managementModalBase.backToList': '← Назад до списку',
 	'component.managementModalBase.slugName': 'Назва {label} (slug)',
 	'component.managementModalBase.slugDesc':
-		"Ідентифікатор у нижньому регістрі, що використовується як ім'я файлу та в шляхах виводу. Не можна змінити після створення.",
+		'Ідентифікатор у нижньому регістрі, що використовується як назва файлу та у вихідних шляхах: малі літери ASCII, цифри й поодинокі дефіси (без початкових/кінцевих або послідовних дефісів), від 1 до 64 символів. Не можна змінити після створення.',
 	'component.managementModalBase.saveChanges': 'Зберегти зміни',
 	'component.managementModalBase.createEntity': 'Створити {label}',
 	'component.toolPolicyEditor.title': 'Доступ до інструментів',
@@ -842,6 +843,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 		'Я виконав(-ла) потрібні дії, але виникла проблема зі створенням підсумку. Самі операції завершилися успішно.',
 	'selection.emptyResponse': 'ШІ повернув порожню відповідь. Будь ласка, спробуйте знову.',
 	'provider.openai.noModelSelected': 'Модель OpenAI не вибрано. Виберіть модель у налаштуваннях.',
+	'provider.openai.noImageData': 'OpenAI не повернув даних зображення.',
 	'provider.unsupportedAttachment':
 		'{provider} підтримує лише вкладення-зображення; отримано {mimeType}. Перемкніться на постачальника Gemini для роботи з PDF, аудіо або відео.',
 	'provider.anthropic.noModelSelected': 'Не вибрано модель Anthropic. Оберіть модель у налаштуваннях.',

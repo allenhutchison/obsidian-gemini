@@ -67,6 +67,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Default ({model})',
 	'settings.features.sameAsChat': 'Sama seperti obrolan',
 	'settings.features.modelMissing': 'Tidak lagi tersedia',
+	'settings.features.modelCapabilitiesUnknown': 'dukungan gambar tidak dilaporkan',
 	'settings.features.off': 'Nonaktif',
 	'settings.features.chooseProvider': 'Pilih penyedia',
 	'settings.features.notConnected': 'tidak terhubung',
@@ -680,7 +681,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'component.managementModalBase.backToList': '← Kembali ke daftar',
 	'component.managementModalBase.slugName': 'Nama {label} (slug)',
 	'component.managementModalBase.slugDesc':
-		'Pengidentifikasi huruf kecil yang digunakan sebagai nama file dan jalur keluaran. Tidak dapat diubah setelah dibuat.',
+		'Pengidentifikasi huruf kecil yang digunakan sebagai nama berkas dan di jalur output: huruf ASCII kecil, angka, dan tanda hubung tunggal (tanpa tanda hubung di awal/akhir atau berurutan), 1–64 karakter. Tidak dapat diubah setelah dibuat.',
 	'component.managementModalBase.saveChanges': 'Simpan perubahan',
 	'component.managementModalBase.createEntity': 'Buat {label}',
 	'component.toolPolicyEditor.title': 'Akses alat',
@@ -835,6 +836,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 		'Saya telah menyelesaikan tindakan yang diminta tetapi kesulitan membuat ringkasan. Tindakan tersebut berhasil dilakukan.',
 	'selection.emptyResponse': 'AI mengembalikan respons kosong. Silakan coba lagi.',
 	'provider.openai.noModelSelected': 'Tidak ada model OpenAI yang dipilih. Pilih model di pengaturan.',
+	'provider.openai.noImageData': 'OpenAI tidak mengembalikan data gambar.',
 	'provider.unsupportedAttachment':
 		'{provider} hanya mendukung lampiran gambar; menerima {mimeType}. Beralih ke penyedia Gemini untuk input PDF, audio, atau video.',
 	'provider.anthropic.noModelSelected': 'Tidak ada model Anthropic yang dipilih. Pilih model di pengaturan.',

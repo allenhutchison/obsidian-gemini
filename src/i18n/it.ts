@@ -68,6 +68,7 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Predefinito ({model})',
 	'settings.features.sameAsChat': 'Uguale alla chat',
 	'settings.features.modelMissing': 'Non più disponibile',
+	'settings.features.modelCapabilitiesUnknown': 'supporto immagini non segnalato',
 	'settings.features.off': 'Disattivato',
 	'settings.features.chooseProvider': 'Scegli un provider',
 	'settings.features.notConnected': 'non connesso',
@@ -689,7 +690,7 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'component.managementModalBase.backToList': '← Torna alla lista',
 	'component.managementModalBase.slugName': 'Nome {label} (slug)',
 	'component.managementModalBase.slugDesc':
-		'Identificatore in minuscolo utilizzato come nome del file e nei percorsi di output. Non può essere modificato dopo la creazione.',
+		'Identificatore minuscolo utilizzato come nome file e nei percorsi di output: lettere ASCII minuscole, cifre e trattini singoli (nessun trattino iniziale/finale o consecutivo), da 1 a 64 caratteri. Non può essere modificato dopo la creazione.',
 	'component.managementModalBase.saveChanges': 'Salva modifiche',
 	'component.managementModalBase.createEntity': 'Crea {label}',
 	'component.toolPolicyEditor.title': 'Accesso agli strumenti',
@@ -847,6 +848,7 @@ export const it: Partial<Record<TranslationKey, string>> = {
 		'Ho completato le azioni richieste, ma si è verificato un problema nella generazione del riepilogo. Le operazioni sono riuscite.',
 	'selection.emptyResponse': "L'IA ha restituito una risposta vuota. Riprova.",
 	'provider.openai.noModelSelected': 'Nessun modello OpenAI selezionato. Scegli un modello nelle impostazioni.',
+	'provider.openai.noImageData': "OpenAI non ha restituito alcun dato dell'immagine.",
 	'provider.unsupportedAttachment':
 		'{provider} supporta solo allegati immagine; ricevuto {mimeType}. Passa al provider Gemini per file PDF, audio o video.',
 	'provider.anthropic.noModelSelected': 'Nessun modello Anthropic selezionato. Scegli un modello nelle impostazioni.',

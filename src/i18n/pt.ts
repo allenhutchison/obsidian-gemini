@@ -67,6 +67,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Predefinição ({model})',
 	'settings.features.sameAsChat': 'Igual ao chat',
 	'settings.features.modelMissing': 'Já não disponível',
+	'settings.features.modelCapabilitiesUnknown': 'suporte para imagens não reportado',
 	'settings.features.off': 'Desativado',
 	'settings.features.chooseProvider': 'Escolher um fornecedor',
 	'settings.features.notConnected': 'não ligado',
@@ -686,7 +687,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'component.managementModalBase.backToList': '← Voltar à lista',
 	'component.managementModalBase.slugName': 'Nome do {label} (slug)',
 	'component.managementModalBase.slugDesc':
-		'Identificador em minúsculas utilizado como nome do ficheiro e nos caminhos de saída. Não pode ser alterado após a criação.',
+		'Identificador em minúsculas utilizado como nome de ficheiro e em caminhos de saída: letras ASCII minúsculas, dígitos e hífenes simples (sem hífenes no início/fim ou consecutivos), 1–64 carateres. Não pode ser alterado após a criação.',
 	'component.managementModalBase.saveChanges': 'Guardar alterações',
 	'component.managementModalBase.createEntity': 'Criar {label}',
 	'component.toolPolicyEditor.title': 'Acesso a ferramentas',
@@ -842,6 +843,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 		'Concluí as ações solicitadas, mas tive problemas ao gerar um resumo. As operações foram bem-sucedidas.',
 	'selection.emptyResponse': 'A IA devolveu uma resposta vazia. Por favor, tente novamente.',
 	'provider.openai.noModelSelected': 'Nenhum modelo OpenAI selecionado. Escolha um modelo nas definições.',
+	'provider.openai.noImageData': 'A OpenAI não devolveu dados de imagem.',
 	'provider.unsupportedAttachment':
 		'O {provider} apenas suporta anexos de imagem; recebido {mimeType}. Mude para o fornecedor Gemini para entrada de PDF, áudio ou vídeo.',
 	'provider.anthropic.noModelSelected': 'Nenhum modelo Anthropic selecionado. Escolha um modelo nas definições.',

@@ -69,6 +69,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Par défaut ({model})',
 	'settings.features.sameAsChat': 'Identique au chat',
 	'settings.features.modelMissing': 'Plus disponible',
+	'settings.features.modelCapabilitiesUnknown': 'prise en charge des images non signalée',
 	'settings.features.off': 'Désactivé',
 	'settings.features.chooseProvider': 'Choisir un fournisseur',
 	'settings.features.notConnected': 'non connecté',
@@ -692,7 +693,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'component.managementModalBase.backToList': '← Retour à la liste',
 	'component.managementModalBase.slugName': 'Nom de {label} (slug)',
 	'component.managementModalBase.slugDesc':
-		'Identifiant en minuscules utilisé comme nom de fichier et dans les chemins de sortie. Ne peut pas être modifié après la création.',
+		'Identifiant en minuscules utilisé comme nom de fichier et dans les chemins de sortie : lettres ASCII minuscules, chiffres et tirets simples (aucun tiret au début, à la fin ou consécutif), 1 à 64 caractères. Ne peut pas être modifié après la création.',
 	'component.managementModalBase.saveChanges': 'Enregistrer les modifications',
 	'component.managementModalBase.createEntity': 'Créer {label}',
 	'component.toolPolicyEditor.title': 'Accès aux outils',
@@ -853,6 +854,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 		"J'ai effectué les actions demandées mais j'ai rencontré des difficultés pour générer un résumé. Les opérations ont réussi.",
 	'selection.emptyResponse': "L'IA a renvoyé une réponse vide. Veuillez réessayer.",
 	'provider.openai.noModelSelected': 'Aucun modèle OpenAI sélectionné. Choisissez un modèle dans les paramètres.',
+	'provider.openai.noImageData': "OpenAI n'a renvoyé aucune donnée d'image.",
 	'provider.unsupportedAttachment':
 		"{provider} ne prend en charge que les pièces jointes d'images ; {mimeType} reçu. Passez au fournisseur Gemini pour les fichiers PDF, audio ou vidéo.",
 	'provider.anthropic.noModelSelected': 'Aucun modèle Anthropic sélectionné. Choisissez un modèle dans les paramètres.',

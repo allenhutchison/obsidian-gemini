@@ -68,6 +68,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Varsayılan ({model})',
 	'settings.features.sameAsChat': 'Sohbet ile aynı',
 	'settings.features.modelMissing': 'Artık mevcut değil',
+	'settings.features.modelCapabilitiesUnknown': 'görsel desteği bildirilmedi',
 	'settings.features.off': 'Kapalı',
 	'settings.features.chooseProvider': 'Bir sağlayıcı seçin',
 	'settings.features.notConnected': 'bağlı değil',
@@ -687,7 +688,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'component.managementModalBase.backToList': '← Listeye geri dön',
 	'component.managementModalBase.slugName': '{label} adı (slug)',
 	'component.managementModalBase.slugDesc':
-		'Dosya adı ve çıktı yollarında kullanılan küçük harfli tanımlayıcı. Oluşturulduktan sonra değiştirilemez.',
+		'Dosya adı ve çıktı yollarında kullanılan küçük harfli tanımlayıcı: küçük ASCII harfleri, rakamlar ve tek tireler (başta/sonda veya ardışık tire olamaz), 1–64 karakter. Oluşturulduktan sonra değiştirilemez.',
 	'component.managementModalBase.saveChanges': 'Değişiklikleri kaydet',
 	'component.managementModalBase.createEntity': '{label} oluştur',
 	'component.toolPolicyEditor.title': 'Araç erişimi',
@@ -842,6 +843,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 		'İstenen eylemleri tamamladım ancak bir özet oluştururken sorun yaşadım. İşlemler başarılı oldu.',
 	'selection.emptyResponse': 'Yapay zeka boş bir yanıt döndürdü. Lütfen tekrar deneyin.',
 	'provider.openai.noModelSelected': 'Hiçbir OpenAI modeli seçilmedi. Ayarlardan bir model seçin.',
+	'provider.openai.noImageData': 'OpenAI hiçbir görsel verisi döndürmedi.',
 	'provider.unsupportedAttachment':
 		'{provider} yalnızca görsel eklerini destekler; {mimeType} alındı. PDF, ses veya video girdisi için Gemini sağlayıcısına geçin.',
 	'provider.anthropic.noModelSelected': 'Anthropic modeli seçilmedi. Ayarlardan bir model seçin.',

@@ -67,6 +67,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Výchozí ({model})',
 	'settings.features.sameAsChat': 'Stejný jako u chatu',
 	'settings.features.modelMissing': 'Již není k dispozici',
+	'settings.features.modelCapabilitiesUnknown': 'podpora obrázků neuvedena',
 	'settings.features.off': 'Vypnuto',
 	'settings.features.chooseProvider': 'Vyberte poskytovatele',
 	'settings.features.notConnected': 'nepřipojeno',
@@ -681,7 +682,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'component.managementModalBase.backToList': '← Zpět na seznam',
 	'component.managementModalBase.slugName': 'Název pro {label} (slug)',
 	'component.managementModalBase.slugDesc':
-		'Identifikátor malými písmeny použitý jako název souboru a ve výstupních cestách. Po vytvoření jej nelze změnit.',
+		'Identifikátor malými písmeny používaný jako název souboru a ve výstupních cestách: malá písmena ASCII, číslice a jednoduché pomlčky (žádné úvodní, koncové ani po sobě jdoucí pomlčky), 1–64 znaků. Po vytvoření jej nelze změnit.',
 	'component.managementModalBase.saveChanges': 'Uložit změny',
 	'component.managementModalBase.createEntity': 'Vytvořit {label}',
 	'component.toolPolicyEditor.title': 'Přístup k nástrojům',
@@ -838,6 +839,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 		'Dokončil jsem požadované akce, ale nepodařilo se vygenerovat shrnutí. Operace proběhly úspěšně.',
 	'selection.emptyResponse': 'AI vrátila prázdnou odpověď. Zkuste to prosím znovu.',
 	'provider.openai.noModelSelected': 'Není vybrán žádný model OpenAI. Vyberte model v nastavení.',
+	'provider.openai.noImageData': 'OpenAI nevrátila žádná obrazová data.',
 	'provider.unsupportedAttachment':
 		'{provider} podporuje pouze obrázkové přílohy; byl přijat typ {mimeType}. Pro vstup ve formátu PDF, zvuku nebo videa přepněte na poskytovatele Gemini.',
 	'provider.anthropic.noModelSelected': 'Není vybrán žádný model Anthropic. Vyberte model v nastavení.',

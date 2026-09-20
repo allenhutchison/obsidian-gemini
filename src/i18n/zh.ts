@@ -65,6 +65,7 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': '默认 ({model})',
 	'settings.features.sameAsChat': '与聊天相同',
 	'settings.features.modelMissing': '不再可用',
+	'settings.features.modelCapabilitiesUnknown': '未报告图像支持',
 	'settings.features.off': '关闭',
 	'settings.features.chooseProvider': '选择提供商',
 	'settings.features.notConnected': '未连接',
@@ -652,7 +653,8 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'component.managementModalBase.deleteFailed': '删除 "{slug}" 失败',
 	'component.managementModalBase.backToList': '← 返回列表',
 	'component.managementModalBase.slugName': '{label} 名称 (slug)',
-	'component.managementModalBase.slugDesc': '用作文件名和输出路径的小写标识符。创建后无法更改。',
+	'component.managementModalBase.slugDesc':
+		'用作文件名及输出路径的小写标识符：仅限小写 ASCII 字母、数字和单个连字符（首尾不得为连字符，且不可连续），1–64 个字符。创建后无法更改。',
 	'component.managementModalBase.saveChanges': '保存更改',
 	'component.managementModalBase.createEntity': '创建 {label}',
 	'component.toolPolicyEditor.title': '工具访问权限',
@@ -802,6 +804,7 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'agent.emptyResponseFallback.noTools': '我已完成请求的操作，但在生成摘要时遇到问题。操作已成功执行。',
 	'selection.emptyResponse': 'AI 返回了空响应。请重试。',
 	'provider.openai.noModelSelected': '未选择 OpenAI 模型。请在设置中选择一个模型。',
+	'provider.openai.noImageData': 'OpenAI 未返回图像数据。',
 	'provider.unsupportedAttachment':
 		'{provider} 仅支持图片附件；当前接收到的是 {mimeType}。如需输入 PDF、音频或视频，请切换至 Gemini 提供商。',
 	'provider.anthropic.noModelSelected': '未选择 Anthropic 模型。请在设置中选择一个模型。',
