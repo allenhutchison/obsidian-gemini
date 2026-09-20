@@ -71,6 +71,7 @@ describe('OpenAIModelsService', () => {
 				provider: 'openai',
 				supportsVision: false,
 				contextWindow: 128_000,
+				capabilitiesUnknown: true,
 			}),
 		]);
 	});

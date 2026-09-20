@@ -143,6 +143,20 @@ describe('getDefaultModelForRole', () => {
 
 		expect(getDefaultModelForRole('image', 'openai')).toBe('');
 	});
+
+	it('allows a compatible-endpoint model with unknown capabilities for text and image roles', () => {
+		setTestModels([
+			{
+				value: 'custom-compatible-model',
+				label: 'Custom Compatible Model',
+				provider: 'openai',
+				capabilitiesUnknown: true,
+			},
+		]);
+
+		expect(getDefaultModelForRole('chat', 'openai')).toBe('custom-compatible-model');
+		expect(getDefaultModelForRole('image', 'openai')).toBe('custom-compatible-model');
+	});
 });
 
 describe('bundled model catalog', () => {
@@ -176,6 +190,13 @@ describe('resolveFeatureModel', () => {
 	it('returns the stored model for a routed feature', () => {
 		const s: FeatureRoutingSlice = { features: routes({ chat: { provider: 'gemini', model: 'gemini-flash-lite' } }) };
 		expect(resolveFeatureModel(s, 'chat')).toBe('gemini-flash-lite');
+	});
+
+	it('returns a stored compatible-endpoint model for image generation', () => {
+		const s: FeatureRoutingSlice = {
+			features: routes({ imageGen: { provider: 'openai', model: 'custom-image-model' } }),
+		};
+		expect(resolveFeatureModel(s, 'imageGen')).toBe('custom-image-model');
 	});
 
 	it('falls back to getDefaultModelForRole when the stored model is ""', () => {
@@ -321,6 +342,23 @@ describe('getUpdatedFeatureRoutes', () => {
 
 		expect(result.changed).toBe(true);
 		expect(result.features.imageGen.model).toBe('');
+	});
+
+	it('preserves a compatible-endpoint model with unknown capabilities for image generation', () => {
+		setTestModels([
+			{
+				value: 'custom-image-model',
+				label: 'Custom Image Model',
+				provider: 'openai',
+				capabilitiesUnknown: true,
+			},
+		]);
+		const features = routes({ imageGen: { provider: 'openai', model: 'custom-image-model' } });
+
+		const result = getUpdatedFeatureRoutes(features, {});
+
+		expect(result.changed).toBe(false);
+		expect(result.features.imageGen.model).toBe('custom-image-model');
 	});
 
 	it('reconciles providerModelMemory the same way, per provider', () => {

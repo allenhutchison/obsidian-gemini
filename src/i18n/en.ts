@@ -271,6 +271,11 @@ export const en = {
 		context:
 			"Label appended to a model option that is stored in settings but no longer present in the provider's current model list.",
 	},
+	'settings.features.modelCapabilitiesUnknown': {
+		message: 'image support not reported',
+		context:
+			'Label appended to a compatible-server model in the image-generation picker when the server catalog does not report whether that model supports image generation.',
+	},
 	'settings.features.off': {
 		message: 'Off',
 		context: 'Displayed value for a Feature row that is deliberately not routed to any provider.',

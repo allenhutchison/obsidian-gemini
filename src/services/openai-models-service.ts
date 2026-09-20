@@ -9,6 +9,7 @@ interface OpenAIModelMetadata {
 	supportsVision: boolean;
 	defaultForRoles?: ModelRole[];
 	supportsImageGeneration?: boolean;
+	capabilitiesUnknown?: boolean;
 }
 
 /**
@@ -62,6 +63,7 @@ const SUPPORTED_OPENAI_HOSTED_MODELS = new Set(Object.keys(KNOWN_OPENAI_MODELS))
 const UNKNOWN_MODEL_DEFAULTS: OpenAIModelMetadata = {
 	contextWindow: 128_000,
 	supportsVision: false,
+	capabilitiesUnknown: true,
 };
 
 interface OpenAIModelListEntry {
@@ -185,6 +187,7 @@ export class OpenAIModelsService {
 			supportsVision: meta.supportsVision,
 			...(meta.contextWindow !== undefined && { contextWindow: meta.contextWindow }),
 			...(meta.supportsImageGeneration && { supportsImageGeneration: true }),
+			...(meta.capabilitiesUnknown && { capabilitiesUnknown: true }),
 			...(meta.defaultForRoles && { defaultForRoles: [...meta.defaultForRoles] }),
 		};
 	}

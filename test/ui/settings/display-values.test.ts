@@ -17,6 +17,12 @@ const MODELS: GeminiModel[] = [
 		defaultForRoles: ['image'],
 		supportsImageGeneration: true,
 	},
+	{
+		value: 'custom-compatible-model',
+		label: 'Custom Compatible Model',
+		provider: 'openai',
+		capabilitiesUnknown: true,
+	},
 ];
 
 function ctxWith(features: Partial<FeatureRoutes>, secrets: Record<string, string> = {}): SettingsContext {
@@ -74,11 +80,23 @@ describe('default model labels', () => {
 		expect(modelOptions(ctx, 'chat')).toEqual({
 			'': 'Default (GPT-5.6 Sol)',
 			'gpt-5.6-sol': 'GPT-5.6 Sol',
+			'custom-compatible-model': 'Custom Compatible Model',
 		});
 		expect(modelOptions(ctx, 'imageGen')).toEqual({
 			'': 'Default (GPT Image 2.5 Flare)',
 			'gpt-image-2.5-flare': 'GPT Image 2.5 Flare',
+			'custom-compatible-model': 'Custom Compatible Model (image support not reported)',
 		});
+	});
+
+	it('accepts a compatible-endpoint model selected for image generation', () => {
+		const ctx = ctxWith(
+			{ imageGen: { provider: 'openai', model: 'custom-compatible-model' } },
+			{ openaiApiKeySecretName: 'openai-key' }
+		);
+
+		expect(isModelMissing(ctx, 'imageGen')).toBe(false);
+		expect(featureRowDisplay(ctx, 'imageGen')).toBe('OpenAI · Custom Compatible Model');
 	});
 
 	it('marks a text model stored on image generation as missing', () => {

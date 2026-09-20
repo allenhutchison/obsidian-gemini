@@ -25,6 +25,8 @@ export interface GeminiModel {
 	label: string;
 	defaultForRoles?: ModelRole[];
 	supportsImageGeneration?: boolean;
+	/** The provider catalog reported no role capabilities, so the model may be selected for either text or image use. */
+	capabilitiesUnknown?: boolean;
 	maxTemperature?: number;
 	/** Provider that serves this model. Omitted entries are treated as 'gemini' for backward compat. */
 	provider?: ModelProvider;
@@ -84,15 +86,19 @@ function getModelProvider(model: GeminiModel): ModelProvider {
 	return model.provider ?? 'gemini';
 }
 
+/** Whether a model is eligible for a role without treating unknown capabilities as known text-only metadata. */
+export function isModelEligibleForRole(model: GeminiModel, role: ModelRole): boolean {
+	if (model.capabilitiesUnknown) return true;
+	return Boolean(model.supportsImageGeneration) === (role === 'image');
+}
+
 /**
  * Returns the default model value for a given role, scoped to a provider.
  * For Gemini, falls back to the first matching bundled model. For Ollama,
  * falls back to the first available model since we don't ship a curated list.
  */
 export function getDefaultModelForRole(role: ModelRole, provider: ModelProvider = 'gemini'): string {
-	const candidates = GEMINI_MODELS.filter(
-		(m) => getModelProvider(m) === provider && Boolean(m.supportsImageGeneration) === (role === 'image')
-	);
+	const candidates = GEMINI_MODELS.filter((m) => getModelProvider(m) === provider && isModelEligibleForRole(m, role));
 
 	const modelForRole = candidates.find((m) => m.defaultForRoles?.includes(role));
 	if (modelForRole) {
@@ -248,7 +254,7 @@ export function getUpdatedFeatureRoutes(
 	const modelValuesFor = (provider: ModelProvider, role: ModelRole): Set<string> =>
 		new Set(
 			providerModels(provider)
-				.filter((m) => Boolean(m.supportsImageGeneration) === (role === 'image'))
+				.filter((m) => isModelEligibleForRole(m, role))
 				.map((m) => m.value)
 		);
 

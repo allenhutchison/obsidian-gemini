@@ -1,6 +1,12 @@
 import type { ObsidianGemini } from '../types/plugin';
 import * as modelsModule from '../models';
-import { GeminiModel, ModelProvider, getUpdatedFeatureRoutes, DEFAULT_GEMINI_MODELS } from '../models';
+import {
+	GeminiModel,
+	ModelProvider,
+	getUpdatedFeatureRoutes,
+	DEFAULT_GEMINI_MODELS,
+	isModelEligibleForRole,
+} from '../models';
 import { activeProviders, featureProvider } from '../api/feature-routing';
 import type { ObsidianGeminiSettings } from '../types/settings';
 import { ModelListProvider, RefreshResult } from './model-list-provider';
@@ -47,8 +53,8 @@ export class ModelManager {
 		if (target === 'gemini') {
 			return this.listProvider.getTextModels();
 		}
-		return (await this.getProviderModelsService(target).getModels(options.forceRefresh)).filter(
-			(m) => m.supportsImageGeneration !== true
+		return (await this.getProviderModelsService(target).getModels(options.forceRefresh)).filter((m) =>
+			isModelEligibleForRole(m, 'chat')
 		);
 	}
 
@@ -58,7 +64,7 @@ export class ModelManager {
 	async getImageGenerationModels(provider?: ModelProvider): Promise<GeminiModel[]> {
 		const target = provider ?? featureProvider(this.plugin.settings, 'imageGen') ?? 'gemini';
 		if (target === 'gemini') return this.listProvider.getImageModels();
-		return (await this.getProviderModelsService(target).getModels()).filter((m) => m.supportsImageGeneration === true);
+		return (await this.getProviderModelsService(target).getModels()).filter((m) => isModelEligibleForRole(m, 'image'));
 	}
 
 	/**
