@@ -9,10 +9,11 @@
  * audit. This guard makes adding a fifth provider turn the docs red in the
  * same PR, locally, before anyone pushes (#1567).
  *
- * Deliberately narrow: only the `…Client | …Client` pipeline line is parsed.
- * Prose about behaviour (the no-silent-substitution rule, the routing model)
- * stays human-reviewed; package-path lists are described as "one package per
- * `ModelProvider` id" (#1566) so they don't need watching.
+ * Two enumerations are watched, the two the issue names: the
+ * `…Client | …Client` pipeline line and the `src/api/providers/{…}/`
+ * implementation-directory token (that list was stale in invariants.md until
+ * the guard landed). Prose about behaviour (the no-silent-substitution rule,
+ * the routing model) stays human-reviewed.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -68,13 +69,43 @@ describe.each(DOCS)('provider docs sync: %s', (doc) => {
 		const expected: string[] = [...PROVIDER_IDS];
 		const missing = expected.filter((id) => !found.includes(id));
 		const extra = found.filter((id) => !expected.includes(id));
+		const duplicated = found.filter((id, i) => found.indexOf(id) !== i);
 
-		if (missing.length > 0 || extra.length > 0) {
+		if (missing.length > 0 || extra.length > 0 || duplicated.length > 0) {
 			const parts = [
 				`pipeline diagram in ${doc} is stale`,
 				missing.length > 0 && `missing from docs: ${missing.join(', ')}`,
-				extra.length > 0 && `not a ModelProvider (or duplicated): ${extra.join(', ')}`,
+				extra.length > 0 && `not a ModelProvider: ${extra.join(', ')}`,
+				duplicated.length > 0 && `duplicated in diagram: ${[...new Set(duplicated)].join(', ')}`,
 				`diagram line: ${diagramLine?.trim()}`,
+			].filter(Boolean);
+			throw new Error(parts.join('; '));
+		}
+		expect(new Set(found)).toEqual(new Set(expected));
+	});
+
+	it('provider implementation-directory list names exactly the ModelProvider union', () => {
+		// `src/api/providers/{gemini,…}/` — the other hand-kept enumeration
+		// (the one that was stale in invariants.md before this guard existed).
+		// Anchored on the package path so an unrelated `{a,b}` token can't be
+		// picked up; the token must exist, or the check is vacuous.
+		const listLine = lines.find((line) => /providers\/\{[a-z,]+\}\//.test(line));
+		expect(listLine, `no 'src/api/providers/{…}/' token found in ${doc}`).toBeDefined();
+
+		const brace = /\{([a-z,]+)\}/.exec(listLine!.match(/providers\/\{[a-z,]+\}\//)![0])![1];
+		const found: string[] = brace.split(',').filter(Boolean);
+		const expected: string[] = [...PROVIDER_IDS];
+		const missing = expected.filter((id) => !found.includes(id));
+		const extra = found.filter((id) => !expected.includes(id));
+		const duplicated = found.filter((id, i) => found.indexOf(id) !== i);
+
+		if (missing.length > 0 || extra.length > 0 || duplicated.length > 0) {
+			const parts = [
+				`provider directory list in ${doc} is stale`,
+				missing.length > 0 && `missing from docs: ${missing.join(', ')}`,
+				extra.length > 0 && `not a ModelProvider: ${extra.join(', ')}`,
+				duplicated.length > 0 && `duplicated in list: ${[...new Set(duplicated)].join(', ')}`,
+				`list line: ${listLine?.trim()}`,
 			].filter(Boolean);
 			throw new Error(parts.join('; '));
 		}
