@@ -67,6 +67,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Standard ({model})',
 	'settings.features.sameAsChat': 'Samme som chat',
 	'settings.features.modelMissing': 'Ikke længere tilgængelig',
+	'settings.features.modelCapabilitiesUnknown': 'billedunderstøttelse ikke rapporteret',
 	'settings.features.off': 'Fra',
 	'settings.features.chooseProvider': 'Vælg en udbyder',
 	'settings.features.notConnected': 'ikke forbundet',
@@ -684,7 +685,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'component.managementModalBase.backToList': '← Tilbage til listen',
 	'component.managementModalBase.slugName': '{label}-navn (slug)',
 	'component.managementModalBase.slugDesc':
-		'Identifikator med små bogstaver, der bruges som filnavn og i outputstier. Kan ikke ændres efter oprettelse.',
+		'Identifikator med små bogstaver, der bruges som filnavn og i outputstier: små ASCII-bogstaver, tal og enkelte bindestreger (ingen foranstillede/efterstillede eller på hinanden følgende bindestreger), 1–64 tegn. Kan ikke ændres efter oprettelse.',
 	'component.managementModalBase.saveChanges': 'Gem ændringer',
 	'component.managementModalBase.createEntity': 'Opret {label}',
 	'component.toolPolicyEditor.title': 'Værktøjsadgang',
@@ -839,6 +840,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 		'Jeg fuldførte de ønskede handlinger, men havde problemer med at generere et resumé. Handlingerne lykkedes.',
 	'selection.emptyResponse': "AI'en returnerede et tomt svar. Prøv venligst igen.",
 	'provider.openai.noModelSelected': 'Ingen OpenAI-model valgt. Vælg en model i indstillingerne.',
+	'provider.openai.noImageData': 'OpenAI returnerede ingen billeddata.',
 	'provider.unsupportedAttachment':
 		'{provider} understøtter kun billedvedhæftninger; modtog {mimeType}. Skift til Gemini-udbyderen for PDF-, lyd- eller videoinput.',
 	'provider.anthropic.noModelSelected': 'Ingen Anthropic-model valgt. Vælg en model i indstillinger.',

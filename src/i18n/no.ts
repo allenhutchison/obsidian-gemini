@@ -68,6 +68,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Standard ({model})',
 	'settings.features.sameAsChat': 'Samme som chat',
 	'settings.features.modelMissing': 'Ikke lenger tilgjengelig',
+	'settings.features.modelCapabilitiesUnknown': 'bildestøtte ikke rapportert',
 	'settings.features.off': 'Av',
 	'settings.features.chooseProvider': 'Velg en leverandør',
 	'settings.features.notConnected': 'ikke tilkoblet',
@@ -681,7 +682,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'component.managementModalBase.backToList': '← Tilbake til listen',
 	'component.managementModalBase.slugName': '{label}-navn (slug)',
 	'component.managementModalBase.slugDesc':
-		'Identifikator med små bokstaver som brukes som filnavn og i utdatabane. Kan ikke endres etter opprettelse.',
+		'Identifikator med små bokstaver som brukes som filnavn og i utdatastier: små ASCII-bokstaver, sifre og enkle bindestreker (ingen innledende/avsluttende eller etterfølgende bindestreker), 1–64 tegn. Kan ikke endres etter opprettelse.',
 	'component.managementModalBase.saveChanges': 'Lagre endringer',
 	'component.managementModalBase.createEntity': 'Opprett {label}',
 	'component.toolPolicyEditor.title': 'Verktøytilgang',
@@ -836,6 +837,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 		'Jeg fullførte de forespurte handlingene, men hadde problemer med å generere et sammendrag. Handlingene var vellykkede.',
 	'selection.emptyResponse': 'AI-en returnerte et tomt svar. Prøv igjen.',
 	'provider.openai.noModelSelected': 'Ingen OpenAI-modell er valgt. Velg en modell i innstillingene.',
+	'provider.openai.noImageData': 'OpenAI returnerte ingen bildedata.',
 	'provider.unsupportedAttachment':
 		'{provider} støtter bare bildevedlegg; mottok {mimeType}. Bytt til Gemini-leverandøren for PDF-, lyd- eller videoinndata.',
 	'provider.anthropic.noModelSelected': 'Ingen Anthropic-modell er valgt. Velg en modell i innstillinger.',

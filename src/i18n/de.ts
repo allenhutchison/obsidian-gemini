@@ -69,6 +69,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Standard ({model})',
 	'settings.features.sameAsChat': 'Wie Chat',
 	'settings.features.modelMissing': 'Nicht mehr verfügbar',
+	'settings.features.modelCapabilitiesUnknown': 'Bildunterstützung nicht gemeldet',
 	'settings.features.off': 'Aus',
 	'settings.features.chooseProvider': 'Anbieter auswählen',
 	'settings.features.notConnected': 'nicht verbunden',
@@ -692,7 +693,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'component.managementModalBase.backToList': '← Zurück zur Liste',
 	'component.managementModalBase.slugName': '{label}-Name (Slug)',
 	'component.managementModalBase.slugDesc':
-		'In Kleinbuchstaben geschriebener Bezeichner, der als Dateiname und in Ausgabepfaden verwendet wird. Kann nach der Erstellung nicht mehr geändert werden.',
+		'Kleingeschriebener Bezeichner, der als Dateiname und in Ausgabepfaden verwendet wird: ASCII-Kleinbuchstaben, Ziffern und einzelne Bindestriche (keine führenden/nachgestellten oder aufeinanderfolgenden Bindestriche), 1–64 Zeichen. Kann nach der Erstellung nicht mehr geändert werden.',
 	'component.managementModalBase.saveChanges': 'Änderungen speichern',
 	'component.managementModalBase.createEntity': '{label} erstellen',
 	'component.toolPolicyEditor.title': 'Tool-Zugriff',
@@ -848,6 +849,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 		'Ich habe die angeforderten Aktionen ausgeführt, hatte jedoch Probleme beim Erstellen einer Zusammenfassung. Die Vorgänge waren erfolgreich.',
 	'selection.emptyResponse': 'Die KI hat eine leere Antwort zurückgegeben. Bitte versuchen Sie es erneut.',
 	'provider.openai.noModelSelected': 'Kein OpenAI-Modell ausgewählt. Wählen Sie ein Modell in den Einstellungen.',
+	'provider.openai.noImageData': 'OpenAI hat keine Bilddaten zurückgegeben.',
 	'provider.unsupportedAttachment':
 		'{provider} unterstützt nur Bildanhänge; {mimeType} empfangen. Wechseln Sie zum Gemini-Provider für PDF-, Audio- oder Video-Eingaben.',
 	'provider.anthropic.noModelSelected': 'Kein Anthropic-Modell ausgewählt. Wähle ein Modell in den Einstellungen.',

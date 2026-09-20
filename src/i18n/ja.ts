@@ -67,6 +67,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'デフォルト ({model})',
 	'settings.features.sameAsChat': 'チャットと同じ',
 	'settings.features.modelMissing': '利用不可',
+	'settings.features.modelCapabilitiesUnknown': '画像サポート未報告',
 	'settings.features.off': 'オフ',
 	'settings.features.chooseProvider': 'プロバイダーを選択',
 	'settings.features.notConnected': '未接続',
@@ -684,7 +685,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'component.managementModalBase.backToList': '← リストに戻る',
 	'component.managementModalBase.slugName': '{label} 名 (スラッグ)',
 	'component.managementModalBase.slugDesc':
-		'ファイル名および出力パスとして使用される小文字の識別子。作成後に変更することはできません。',
+		'ファイル名および出力パスに使用される小文字の識別子: 半角英小文字、数字、単一のハイフン（先頭・末尾および連続ハイフンは不可）、1〜64文字。作成後は変更できません。',
 	'component.managementModalBase.saveChanges': '変更を保存',
 	'component.managementModalBase.createEntity': '{label} を作成',
 	'component.toolPolicyEditor.title': 'ツールアクセス',
@@ -839,6 +840,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 		'リクエストされたアクションを完了しましたが、要約の生成に問題が発生しました。操作自体は正常に完了しています。',
 	'selection.emptyResponse': 'AIから空の応答が返されました。もう一度お試しください。',
 	'provider.openai.noModelSelected': 'OpenAIモデルが選択されていません。設定でモデルを選択してください。',
+	'provider.openai.noImageData': 'OpenAIから画像データが返されませんでした。',
 	'provider.unsupportedAttachment':
 		'{provider}は画像の添付のみに対応しています（受信した形式: {mimeType}）。PDF、音声、動画を入力するにはGeminiプロバイダーに切り替えてください。',
 	'provider.anthropic.noModelSelected': 'Anthropicモデルが選択されていません。設定でモデルを選択してください。',

@@ -65,6 +65,7 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': '預設 ({model})',
 	'settings.features.sameAsChat': '與聊天相同',
 	'settings.features.modelMissing': '已無法使用',
+	'settings.features.modelCapabilitiesUnknown': '未回報圖片支援',
 	'settings.features.off': '關閉',
 	'settings.features.chooseProvider': '選擇提供者',
 	'settings.features.notConnected': '未連線',
@@ -652,7 +653,8 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'component.managementModalBase.deleteFailed': '刪除「{slug}」失敗',
 	'component.managementModalBase.backToList': '← 返回列表',
 	'component.managementModalBase.slugName': '{label} 名稱 (slug)',
-	'component.managementModalBase.slugDesc': '用作檔案名稱與輸出路徑的小寫識別碼。建立後即無法變更。',
+	'component.managementModalBase.slugDesc':
+		'用於檔案名稱與輸出路徑的小寫識別碼：可使用小寫 ASCII 字母、數字及單一連字號（開頭與結尾不可為連字號，亦不可連續使用），長度為 1–64 個字元。建立後即無法變更。',
 	'component.managementModalBase.saveChanges': '儲存變更',
 	'component.managementModalBase.createEntity': '建立 {label}',
 	'component.toolPolicyEditor.title': '工具存取權限',
@@ -803,6 +805,7 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'agent.emptyResponseFallback.noTools': '我已完成請求的操作，但在產生摘要時發生問題。操作本身已順利完成。',
 	'selection.emptyResponse': 'AI 回傳了空白內容。請再試一次。',
 	'provider.openai.noModelSelected': '尚未選擇 OpenAI 模型。請至設定中選擇模型。',
+	'provider.openai.noImageData': 'OpenAI 未回傳圖片資料。',
 	'provider.unsupportedAttachment':
 		'{provider} 僅支援圖片附件；接收到的格式為 {mimeType}。如需輸入 PDF、音訊或影片，請切換至 Gemini 提供者。',
 	'provider.anthropic.noModelSelected': '未選取 Anthropic 模型。請在設定中選擇模型。',

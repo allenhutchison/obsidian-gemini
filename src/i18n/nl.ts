@@ -67,6 +67,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Standaard ({model})',
 	'settings.features.sameAsChat': 'Hetzelfde als chat',
 	'settings.features.modelMissing': 'Niet meer beschikbaar',
+	'settings.features.modelCapabilitiesUnknown': 'afbeeldingsondersteuning niet gemeld',
 	'settings.features.off': 'Uit',
 	'settings.features.chooseProvider': 'Kies een provider',
 	'settings.features.notConnected': 'niet verbonden',
@@ -688,7 +689,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'component.managementModalBase.backToList': '← Terug naar lijst',
 	'component.managementModalBase.slugName': '{label}-naam (slug)',
 	'component.managementModalBase.slugDesc':
-		'Kleine letters identificatie gebruikt als bestandsnaam en in uitvoerpaden. Kan na aanmaak niet meer worden gewijzigd.',
+		'Identifier in kleine letters gebruikt als bestandsnaam en in uitvoerpaden: kleine ASCII-letters, cijfers en enkele koppeltekens (geen begin-, eind- of opeenvolgende koppeltekens), 1–64 tekens. Kan na aanmaken niet meer worden gewijzigd.',
 	'component.managementModalBase.saveChanges': 'Wijzigingen opslaan',
 	'component.managementModalBase.createEntity': '{label} aanmaken',
 	'component.toolPolicyEditor.title': 'Toegang tot tools',
@@ -843,6 +844,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 		'Ik heb de gevraagde acties voltooid, maar had moeite met het genereren van een samenvatting. De bewerkingen zijn geslaagd.',
 	'selection.emptyResponse': 'De AI gaf een leeg antwoord terug. Probeer het opnieuw.',
 	'provider.openai.noModelSelected': 'Geen OpenAI-model geselecteerd. Kies een model in de instellingen.',
+	'provider.openai.noImageData': 'OpenAI heeft geen afbeeldingsgegevens geretourneerd.',
 	'provider.unsupportedAttachment':
 		'{provider} ondersteunt alleen afbeeldingsbijlagen; {mimeType} ontvangen. Schakel over naar de Gemini-provider voor PDF-, audio- of video-invoer.',
 	'provider.anthropic.noModelSelected': 'Geen Anthropic-model geselecteerd. Kies een model in de instellingen.',

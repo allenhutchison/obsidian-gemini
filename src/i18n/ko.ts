@@ -65,6 +65,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': '기본값 ({model})',
 	'settings.features.sameAsChat': '채팅과 동일',
 	'settings.features.modelMissing': '더 이상 사용할 수 없음',
+	'settings.features.modelCapabilitiesUnknown': '이미지 지원 여부 미보고',
 	'settings.features.off': '사용 안 함',
 	'settings.features.chooseProvider': '제공자 선택',
 	'settings.features.notConnected': '연결되지 않음',
@@ -673,7 +674,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'component.managementModalBase.backToList': '← 목록으로 돌아가기',
 	'component.managementModalBase.slugName': '{label} 이름 (slug)',
 	'component.managementModalBase.slugDesc':
-		'파일 이름 및 출력 경로에 사용되는 소문자 식별자입니다. 생성 후에는 변경할 수 없습니다.',
+		'파일명 및 출력 경로에 사용되는 소문자 식별자: ASCII 소문자, 숫자, 단일 하이픈(시작/끝 또는 연속 하이픈 불가), 1~64자. 생성 후에는 변경할 수 없습니다.',
 	'component.managementModalBase.saveChanges': '변경 사항 저장',
 	'component.managementModalBase.createEntity': '{label} 생성',
 	'component.toolPolicyEditor.title': '도구 액세스',
@@ -828,6 +829,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 		'요청하신 작업을 완료했으나 요약을 생성하는 데 문제가 발생했습니다. 작업 자체는 성공적으로 완료되었습니다.',
 	'selection.emptyResponse': 'AI가 빈 응답을 반환했습니다. 다시 시도해 주세요.',
 	'provider.openai.noModelSelected': '선택된 OpenAI 모델이 없습니다. 설정에서 모델을 선택하세요.',
+	'provider.openai.noImageData': 'OpenAI에서 이미지 데이터를 반환하지 않았습니다.',
 	'provider.unsupportedAttachment':
 		'{provider}에서는 이미지 첨부 파일만 지원합니다({mimeType} 수신됨). PDF, 오디오 또는 비디오를 입력하려면 Gemini 제공자로 전환하세요.',
 	'provider.anthropic.noModelSelected': '선택된 Anthropic 모델이 없습니다. 설정에서 모델을 선택하세요.',

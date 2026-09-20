@@ -67,6 +67,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'По умолчанию ({model})',
 	'settings.features.sameAsChat': 'Как в чате',
 	'settings.features.modelMissing': 'Больше недоступно',
+	'settings.features.modelCapabilitiesUnknown': 'поддержка изображений не указана',
 	'settings.features.off': 'Отключено',
 	'settings.features.chooseProvider': 'Выберите провайдера',
 	'settings.features.notConnected': 'не подключено',
@@ -687,7 +688,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'component.managementModalBase.backToList': '← Назад к списку',
 	'component.managementModalBase.slugName': 'Имя {label} (slug)',
 	'component.managementModalBase.slugDesc':
-		'Идентификатор в нижнем регистре, используемый в качестве имени файла и в путях вывода. Не может быть изменен после создания.',
+		'Идентификатор в нижнем регистре, используемый в качестве имени файла и в путях вывода: строчные буквы ASCII, цифры и одиночные дефисы (без дефисов в начале, в конце или подряд), от 1 до 64 символов. Нельзя изменить после создания.',
 	'component.managementModalBase.saveChanges': 'Сохранить изменения',
 	'component.managementModalBase.createEntity': 'Создать {label}',
 	'component.toolPolicyEditor.title': 'Доступ к инструментам',
@@ -844,6 +845,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 		'Я выполнил запрошенные действия, но не смог составить сводку. Операции завершились успешно.',
 	'selection.emptyResponse': 'ИИ вернул пустой ответ. Пожалуйста, попробуйте снова.',
 	'provider.openai.noModelSelected': 'Модель OpenAI не выбрана. Выберите модель в настройках.',
+	'provider.openai.noImageData': 'OpenAI не вернул данные изображения.',
 	'provider.unsupportedAttachment':
 		'{provider} поддерживает только вложения изображений; получено: {mimeType}. Переключитесь на провайдера Gemini для работы с PDF, аудио или видео.',
 	'provider.anthropic.noModelSelected': 'Модель Anthropic не выбрана. Выберите модель в настройках.',
