@@ -27,10 +27,9 @@ export interface SkillMetadata {
  */
 export type { SkillSummary } from './skill-types';
 import type { SkillSummary } from './skill-types';
+import { FEATURE_SLUG_MAX, validateFeatureSlug } from '../utils/feature-slug';
 
-/** Regex for validating skill names per the agentskills.io spec */
-const SKILL_NAME_REGEX = /^[a-z][a-z0-9-]*[a-z0-9]$|^[a-z]$/;
-const SKILL_NAME_MAX_LENGTH = 64;
+const SKILL_NAME_MAX_LENGTH = FEATURE_SLUG_MAX;
 const SKILL_MD_FILENAME = SKILL_FILENAME;
 
 /**
@@ -444,11 +443,14 @@ export class SkillManager {
 			return { valid: false, error: `Skill name must be ${SKILL_NAME_MAX_LENGTH} characters or fewer` };
 		}
 
-		if (name.includes('--')) {
-			return { valid: false, error: 'Skill name must not contain consecutive hyphens (--)' };
-		}
-
-		if (!SKILL_NAME_REGEX.test(name)) {
+		// Shared feature-slug contract with the agentskills.io narrowing:
+		// skills must start with a lowercase letter (`2fa-cleanup` is a valid
+		// hook slug but not a valid skill name).
+		const result = validateFeatureSlug(name, { requireLeadingLetter: true });
+		if (!result.valid) {
+			if (result.error === 'must not contain consecutive hyphens') {
+				return { valid: false, error: 'Skill name must not contain consecutive hyphens (--)' };
+			}
 			return {
 				valid: false,
 				error:

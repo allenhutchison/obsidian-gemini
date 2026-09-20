@@ -11,6 +11,7 @@ import type {
 	HookTrigger,
 	HookUpdateParams,
 } from './hook-types';
+import { validateFeatureSlug } from '../utils/feature-slug';
 import {
 	mergeHookFields,
 	missingRequiredHookFields,
@@ -51,20 +52,24 @@ export type {
 } from './hook-types';
 export { renderPrompt } from './hook-types';
 
-// Hook slugs become file basenames inside `Hooks/`, so we mirror the same
-// constraints the skills system uses: lowercase ASCII letters/digits/hyphens,
-// 1–64 chars, no leading/trailing or consecutive hyphens.
-const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const SLUG_MIN = 1;
-const SLUG_MAX = 64;
-
+// Hook slugs become file basenames inside `Hooks/`, so they follow the shared
+// feature-slug contract (src/utils/feature-slug.ts): lowercase ASCII
+// letters/digits/hyphens, 1–64 chars, no leading/trailing or consecutive
+// hyphens, no path separators. Hooks deliberately do NOT require a leading
+// letter — `2fa-cleanup` is legal here, though it would be an invalid skill
+// name (the skills system follows the agentskills.io spec, which anchors on
+// a leading letter). The predicate is shared; the divergence is that
+// module's parameter.
 function validateSlug(raw: string): string {
 	const slug = raw.trim();
-	if (slug.length < SLUG_MIN) throw new Error('Hook slug cannot be empty');
-	if (slug.length > SLUG_MAX) throw new Error(`Hook slug must be at most ${SLUG_MAX} characters`);
-	if (!SLUG_PATTERN.test(slug)) {
+	const result = validateFeatureSlug(slug);
+	if (!result.valid) {
+		// The leaf reports the first failing rule; the hook messages keep
+		// their historical wording (the pre-shared-contract strings).
 		throw new Error(
-			'Hook slug must be lowercase letters, digits, and hyphens only (no leading/trailing or consecutive hyphens)'
+			result.error === 'cannot be empty'
+				? 'Hook slug cannot be empty'
+				: 'Hook slug must be lowercase letters, digits, and hyphens only (no leading/trailing or consecutive hyphens)'
 		);
 	}
 	return slug;
@@ -591,6 +596,9 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 	// ── Discovery / parsing ─────────────────────────────────────────────────
 
 	protected async parseDefinitionFile(file: TFile): Promise<Hook | null> {
+		// Deliberately permissive about the slug (#1485): validation is a
+		// create-path contract (validateSlug runs in createHook/updateHook);
+		// existing on-disk files keep loading regardless of their basename.
 		const frontmatter = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter;
 		if (!frontmatter) return null;
 

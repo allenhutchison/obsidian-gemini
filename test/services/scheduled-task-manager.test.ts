@@ -1273,6 +1273,57 @@ describe('ScheduledTaskManager', () => {
 			);
 		});
 
+		it('rejects a separator-bearing slug before vault.create', async () => {
+			// #1485: a slug becomes a file basename. normalizePath collapses
+			// separators but does not resolve `..`, so an unchecked slug could
+			// land the definition file — and the derived Runs/<slug>/ output
+			// path — outside Scheduled-Tasks/. The modal sanitizes input before
+			// it reaches the manager, so this is defense-in-depth against a
+			// programmatic caller.
+			const plugin = createMockPlugin();
+			plugin.app.vault.create = vi.fn().mockResolvedValue(undefined);
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			for (const slug of ['sub/dir', '..', 'sub\\dir']) {
+				await expect(manager.createTask({ slug, schedule: 'daily', prompt: 'x' })).rejects.toThrow(/slug/);
+			}
+			expect(plugin.app.vault.create).not.toHaveBeenCalled();
+		});
+
+		it('rejects hyphen-rule violations before vault.create', async () => {
+			const plugin = createMockPlugin();
+			plugin.app.vault.create = vi.fn().mockResolvedValue(undefined);
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			for (const slug of ['-hidden', 'hidden-', 'a--b', 'My Slug']) {
+				await expect(manager.createTask({ slug, schedule: 'daily', prompt: 'x' })).rejects.toThrow(/slug/);
+			}
+			expect(plugin.app.vault.create).not.toHaveBeenCalled();
+		});
+
+		it('still parses a permissive on-disk task file whose slug the create path would reject', async () => {
+			// Back-compat pin for #1485: validation is create-path only.
+			// parseTaskFile stays permissive so an existing
+			// Scheduled-Tasks/My Daily Digest.md keeps loading and running
+			// instead of being silently dropped.
+			const plugin = createMockPlugin();
+			plugin.app.vault.getMarkdownFiles.mockReturnValue([
+				{ path: 'gemini-scribe/Scheduled-Tasks/My Daily Digest.md', basename: 'My Daily Digest' },
+			]);
+			plugin.app.metadataCache.getFileCache.mockReturnValue({
+				frontmatter: { schedule: 'daily' },
+			});
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Prompt.');
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			const tasks = manager.getTasks();
+			expect(tasks).toHaveLength(1);
+			expect(tasks[0].slug).toBe('My Daily Digest');
+		});
+
 		it('serialized content includes toolPolicy block when policy is set', async () => {
 			const plugin = createMockPlugin();
 			plugin.app.vault.create = vi.fn().mockResolvedValue(undefined);
