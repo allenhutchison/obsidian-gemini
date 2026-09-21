@@ -1,7 +1,7 @@
-import { Notice, setIcon, App } from 'obsidian';
+import { Notice, setIcon, App, TFile } from 'obsidian';
 import { getActiveChatModel } from '../../models';
 import type { Content } from '@google/genai';
-import { ChatSession } from '../../types/agent';
+import { ChatSession, type PerTurnContext } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import { ToolExecutionContext } from '../../tools/types';
 import { ExtendedModelRequest, ModelApi, ModelResponse, StreamChunk } from '../../api/interfaces/model-api';
@@ -64,6 +64,24 @@ export async function loadProjectInstructions(
 		plugin.logger.error('Error loading project instructions:', error);
 		return undefined;
 	}
+}
+
+/**
+ * Everything `dispatchResponse` needs to run one model turn: the request, the
+ * byte-stable `perTurn` fields threaded through to `handleToolCalls`, the
+ * resolved model API, and the turn-scoped message/history that plan mode may
+ * have rewritten.
+ */
+interface TurnRequest {
+	request: ExtendedModelRequest;
+	messageToSend: string;
+	historyToSend: Content[];
+	perTurn: PerTurnContext;
+	modelApi: ModelApi;
+	modelName: string;
+	customPrompt: CustomPrompt | undefined;
+	/** True when plan mode rejected/emptied the plan — the turn ends silently. */
+	aborted: boolean;
 }
 
 /**
@@ -266,7 +284,6 @@ export class AgentViewSend {
 
 		const userInput = this.ctx.getUserInput();
 		const shelf = this.ctx.getShelf();
-		const sendButton = this.ctx.getSendButton();
 
 		// Get message text directly from input (no chips to process)
 		const rawMessage = userInput.innerText?.trim() || '';
@@ -275,81 +292,23 @@ export class AgentViewSend {
 		const attachments = shelf.getPendingAttachments();
 		if (!rawMessage && shelfTextFiles.length === 0 && attachments.length === 0) return;
 
-		// Prepend a per-turn time preamble. This is written into both the
-		// outgoing model message and the persisted history entry so replay is
-		// bit-identical. The UI render path strips it before display. Freezing
-		// the timestamp here (rather than at write time) lets Gemini's implicit
-		// prefix cache align across tool-loop iterations within the turn and
-		// across session resumes.
-		const turnTimestamp = new Date();
-		const turnPreamble = buildTurnPreamble(formatLocalTimestamp(turnTimestamp));
-		const message = turnPreamble + rawMessage;
-		const formattedMessage = message;
+		// Capture and freeze the per-turn data, persist attachments, clear the input
+		const { turnTimestamp, message, savedAttachments } = await this.captureTurnInput(userInput, attachments);
 
-		// Mark binary shelf items as sent
-		shelf.markBinarySent();
-
-		// Save attachments to vault (skip those already saved, e.g. from drag-drop)
-		const savedAttachments = await this.persistAttachments(attachments);
-
-		// Clear input
-		userInput.innerHTML = '';
-
-		// Set execution state and change button to "Stop"
-		this.isExecuting = true;
-		this.cancellationRequested = false;
-		sendButton.empty();
-		setIcon(sendButton, 'square');
-		sendButton.addClass('gemini-agent-stop-btn');
-		sendButton.disabled = false; // Re-enable so user can click stop
-		sendButton.setAttribute('aria-label', t('agent.input.stopAria'));
-		this.turnToolCallCount = 0;
+		// Set execution state, swap to Stop button, emit turnStart, show progress bar
+		this.beginExecutionUi();
 
 		// Emit turnStart hook
 		await this.ctx.plugin.agentEventBus?.emit('turnStart', {
 			session: turnSession,
-			userMessage: formattedMessage,
+			userMessage: message,
 		});
 
 		// Show progress bar
 		this.ctx.progress.show(t('agent.progress.thinking'), 'thinking');
 
 		// Build message with attachment previews for display
-		let displayMessage = formattedMessage;
-		if (savedAttachments.length > 0) {
-			const imagePaths: string[] = [];
-			const otherPaths: { path: string; label: string }[] = [];
-
-			for (const { attachment, path } of savedAttachments) {
-				const mimeType = attachment.mimeType || '';
-				if (mimeType.startsWith('image/')) {
-					imagePaths.push(path);
-				} else {
-					let label = 'Attachment';
-					if (mimeType.startsWith('audio/')) label = 'Audio';
-					else if (mimeType.startsWith('video/')) label = 'Video';
-					else if (mimeType === 'application/pdf') label = 'PDF';
-					otherPaths.push({ path, label });
-				}
-			}
-
-			const parts: string[] = [];
-
-			if (imagePaths.length > 0) {
-				const imageLinks = imagePaths.map((path) => `![[${path}]]`).join('\n');
-				const contextNote = `\n> [!info] Image Source\n> ${imagePaths.map((p) => `\`${p}\``).join('\n> ')}`;
-				parts.push(imageLinks + contextNote);
-			}
-
-			if (otherPaths.length > 0) {
-				const contextNote = `> [!info] Attachment Source\n> ${otherPaths.map((o) => `\`${o.path}\` (${o.label})`).join('\n> ')}`;
-				parts.push(contextNote);
-			}
-
-			if (parts.length > 0) {
-				displayMessage = displayMessage + '\n\n' + parts.join('\n\n');
-			}
-		}
+		const displayMessage = this.buildDisplayMessage(message, savedAttachments);
 
 		// Display user message with formatted version (includes markdown links and images)
 		const userEntry: GeminiConversationEntry = {
@@ -361,346 +320,21 @@ export class AgentViewSend {
 		await this.ctx.displayMessage(userEntry);
 
 		try {
-			// Get all context files from the shelf (persistent text files + folder contents)
-			const allContextFiles = shelf.getTextFiles();
-
-			// Snapshot pre-turn history BEFORE saving user message to avoid duplication
-			const conversationHistory = await this.ctx.plugin.sessionHistory.getHistoryForSession(currentSession);
-
-			// Save user message to history once, before the API call.
-			// Tools use in-memory updatedHistory, not the file, so early save is safe.
-			// Pass the frozen turn timestamp so the persisted `| Time |` row matches
-			// the preamble the model saw — required for cache alignment on resume.
-			await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, userEntry, turnTimestamp);
-
-			// Build context for AI request including mentioned files
-			const contextInfo = await this.ctx.plugin.gfile.buildFileContext(
-				allContextFiles,
-				true // renderContent
-			);
-
-			// Load custom prompt if session has one configured
-			let customPrompt: CustomPrompt | undefined;
-			if (currentSession?.modelConfig?.promptTemplate) {
-				try {
-					// Use the promptManager to robustly load the custom prompt
-					const loadedPrompt = await this.ctx.plugin.promptManager.loadPromptFromFile(
-						currentSession.modelConfig.promptTemplate
-					);
-					if (loadedPrompt) {
-						customPrompt = loadedPrompt;
-					} else {
-						this.ctx.plugin.logger.warn(
-							'Custom prompt file not found or failed to load:',
-							currentSession.modelConfig.promptTemplate
-						);
-					}
-				} catch (error) {
-					this.ctx.plugin.logger.error('Error loading custom prompt:', error);
-				}
-			}
-			// Load project instructions if session is linked to a project. The
-			// discovery-scope statement (#1506) is folded in so it rides the
-			// byte-stable `projectInstructions` PerTurnContext threading — the
-			// scope rule reaches the model on every model call for free.
-			const projectInstructions = await loadProjectInstructions(this.ctx.plugin, currentSession?.projectPath);
-
-			// Add context file note if shelf has text files
-			let additionalInstructions = '';
-
-			// Add context file note if shelf has text files
-			if (shelfTextFiles.length > 0) {
-				const fileList = shelfTextFiles.map((f) => `- [[${f.path}|${f.basename}]]`).join('\n');
-				additionalInstructions += `\n\nCONTEXT FILES: The following files have been added to this conversation as context:
-${fileList}
-
-When referring to these files in tool calls, use the FULL PATH (the part before | in the wikilinks above).
-The content of these files is included in the context below.`;
-			}
-
-			// Add attachment path information if attachments were saved
-			if (savedAttachments.length > 0) {
-				const pathList = savedAttachments.map(({ path }) => `- ${path}`).join('\n');
-				additionalInstructions += `\n\nATTACHMENTS: The user has attached ${savedAttachments.length} file(s) to this message. They have been saved to the vault at these paths:
-${pathList}
-To embed images in a note, use the wikilink format: ![[path/to/image.png]]
-To reference an attachment in your response, use the path shown above.`;
-			}
-
-			// Add context information if available
-			if (contextInfo) {
-				additionalInstructions += `\n\n${contextInfo}`;
-			}
-
-			// Get available tools for this session
-			// Set project root path for scoped tool discovery
-			const activeProject = currentSession?.projectPath
-				? await this.ctx.plugin.projectManager?.getProject(currentSession.projectPath)
-				: null;
-
-			const toolContext: ToolExecutionContext = {
-				plugin: this.ctx.plugin,
-				session: currentSession,
-				projectRootPath: activeProject?.rootPath,
-				featureToolPolicy: activeProject?.config.toolPolicy,
-			};
-			const availableTools = this.ctx.plugin.toolRegistry.getEnabledTools(toolContext);
-			this.ctx.plugin.logger.log('Available tools from registry:', availableTools);
-			this.ctx.plugin.logger.log('Number of tools:', availableTools.length);
-			this.ctx.plugin.logger.log(
-				'Tool names:',
-				availableTools.map((t) => t.name)
+			// Assemble the full turn request: history snapshot, context files, prompts,
+			// compaction, and the model API for this session.
+			const turn = await this.assembleTurnRequest(
+				turnSession,
+				turnTimestamp,
+				message,
+				userEntry,
+				shelfTextFiles,
+				attachments,
+				savedAttachments
 			);
 
 			try {
-				// Get model config from session or use defaults
-				const modelConfig = currentSession?.modelConfig || {};
-				const modelName = modelConfig.model || getActiveChatModel(this.ctx.plugin.settings);
-
-				// beginTurn() is now handled by the turnStart event bus subscriber
-
-				// Prepare history through context manager (may compact if over threshold)
-				const compactionResult = await this.ctx.plugin.contextManager.prepareHistory(conversationHistory, modelName);
-
-				// If compaction occurred, show notification and save summary to transcript
-				if (compactionResult.wasCompacted && compactionResult.summaryText) {
-					// Force-set the lower post-compaction token count (bypasses high-water mark)
-					this.ctx.plugin.contextManager.setUsageMetadata({
-						promptTokenCount: compactionResult.estimatedTokens,
-						totalTokenCount: compactionResult.estimatedTokens,
-					});
-					await this.ctx.updateTokenUsage();
-
-					const compactionEntry = buildCompactionEntry(compactionResult.summaryText, modelName);
-					await this.ctx.displayMessage(compactionEntry);
-					await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, compactionEntry);
-					this.ctx.plugin.logger.log(
-						`[AgentView] Context compacted: ${compactionResult.estimatedTokens} tokens remaining`
-					);
-				}
-
-				// Per-turn fields that must stay byte-stable across the initial
-				// model call AND every follow-up/retry inside the agent loop.
-				// Threaded through to handleToolCalls below so the system prompt
-				// rebuilt on each tool-loop iteration is identical to the one
-				// the model saw on the initial call (correctness + cache).
-				const perTurn = {
-					perTurnContext: additionalInstructions,
-					projectInstructions,
-					projectSkills: activeProject?.config.skills,
-					sessionStartedAt: formatLocalTimestamp(currentSession.created),
-				};
-
-				let request: ExtendedModelRequest = {
-					kind: 'extended',
-					userMessage: message,
-					conversationHistory: compactionResult.compactedHistory,
-					model: modelName,
-					prompt: '', // Unused in agent pipeline — perTurnContext carries context instead
-					perTurnContext: perTurn.perTurnContext,
-					customPrompt: customPrompt,
-					projectInstructions: perTurn.projectInstructions,
-					projectSkills: perTurn.projectSkills,
-					renderContent: false, // We already rendered content above
-					availableTools: availableTools,
-					sessionStartedAt: perTurn.sessionStartedAt,
-					inlineAttachments: attachments.map((a: InlineAttachment) => ({ base64: a.base64, mimeType: a.mimeType })),
-				};
-
-				// Create model API for this session
-				const modelApi = AgentFactory.createAgentModel(this.ctx.plugin, currentSession);
-
-				// Plan mode: ask for a plan first, await user approval, then execute with tools
-				let messageToSend = message;
-				let historyToSend = compactionResult.compactedHistory;
-				if (this.isPlanModeActive) {
-					let planResult: { proceedMessage: string; updatedHistory: Content[] } | null = null;
-					try {
-						planResult = await this.conductPlanApproval(
-							modelApi,
-							request,
-							currentSession,
-							compactionResult.compactedHistory
-						);
-					} finally {
-						this.setPlanModeActive(false);
-					}
-					if (!planResult) {
-						// Plan rejected or empty — abort this turn
-						this.ctx.progress.hide();
-						return;
-					}
-					messageToSend = planResult.proceedMessage;
-					historyToSend = planResult.updatedHistory;
-					request = { ...request, userMessage: messageToSend, conversationHistory: historyToSend };
-				}
-
-				// Streaming is always used when the provider client supports it.
-				if (modelApi.generateStreamingResponse) {
-					// Use streaming API with tool support
-					let modelMessageContainer: HTMLElement | null = null;
-					let accumulatedMarkdown = '';
-					let accumulatedThoughts = '';
-					let progressUpdated = false;
-
-					const streamResponse = modelApi.generateStreamingResponse(request, (chunk) => {
-						// Handle thought content - show in progress bar
-						if (chunk.thought) {
-							const chunkPreview = chunk.thought.length > 100 ? chunk.thought.substring(0, 100) + '...' : chunk.thought;
-							this.ctx.plugin.logger.debug(`[AgentView] Received thought chunk: ${chunkPreview}`);
-							accumulatedThoughts += chunk.thought;
-
-							// Update the expandable thinking section
-							this.ctx.progress.updateThought(accumulatedThoughts);
-						}
-
-						// Handle text content
-						if (chunk.text) {
-							accumulatedMarkdown += chunk.text;
-
-							// Update progress to streaming state when first text chunk arrives
-							if (!progressUpdated) {
-								this.ctx.progress.update(t('agent.progress.generating'), 'streaming');
-								progressUpdated = true;
-							}
-
-							// Create or update the model message container
-							if (!modelMessageContainer) {
-								// First chunk - create the container
-								modelMessageContainer = this.ctx.messages.createStreamingMessageContainer('model');
-								// Fire-and-forget: async markdown render of the streamed chunk (unchanged behavior).
-								void this.ctx.messages.updateStreamingMessage(modelMessageContainer, chunk.text);
-							} else {
-								// Update existing container with new chunk
-								// Fire-and-forget: async markdown render of the streamed chunk (unchanged behavior).
-								void this.ctx.messages.updateStreamingMessage(modelMessageContainer, chunk.text);
-								// Use debounced scroll to avoid stuttering
-								this.ctx.messages.debouncedScrollToBottom();
-							}
-						}
-					});
-
-					// Store the streaming response for potential cancellation
-					this.currentStreamingResponse = streamResponse;
-
-					try {
-						const response = await streamResponse.complete;
-						this.currentStreamingResponse = null;
-
-						await this.emitUsageMetadata(response, modelName, 'Streaming');
-
-						// Model reasoning for this turn — prefer the completed response's
-						// thoughts; fall back to whatever streamed into the progress bar.
-						const turnThoughts = response.thoughts?.trim()
-							? response.thoughts
-							: accumulatedThoughts.trim() || undefined;
-
-						// Check if the model requested tool calls
-						if (response.toolCalls && response.toolCalls.length > 0) {
-							// User message already saved early in sendMessage()
-
-							// If there was any streamed text before tool calls, finalize it
-							const hadPartialText = !!(modelMessageContainer && accumulatedMarkdown.trim());
-							if (hadPartialText) {
-								const aiEntry: GeminiConversationEntry = {
-									role: 'model',
-									message: accumulatedMarkdown,
-									notePath: '',
-									created_at: new Date(),
-									model: modelName,
-									...(turnThoughts ? { thoughts: turnThoughts } : {}),
-								};
-								await this.ctx.messages.finalizeStreamingMessage(
-									modelMessageContainer!,
-									accumulatedMarkdown,
-									aiEntry,
-									currentSession
-								);
-
-								// Save partial response to history before executing tools
-								await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, aiEntry);
-							}
-
-							// Pre-tool reasoning with no accompanying text is handed to the
-							// tool handler, which renders it as the first row of the tool
-							// group (interleaved with the tools) and persists it.
-							await this.ctx.tools.handleToolCalls(
-								response.toolCalls,
-								messageToSend,
-								historyToSend,
-								userEntry,
-								customPrompt,
-								perTurn,
-								hadPartialText ? undefined : turnThoughts
-							);
-						} else {
-							// Normal response without tool calls — shared three-way finalize
-							// with a streaming-specific render step: finalize the live
-							// container for answer text (display the reasoning entry when
-							// there's no answer), then scroll to the bottom.
-							await this.finalizeNoToolCallResponse(
-								response,
-								turnThoughts,
-								modelName,
-								currentSession,
-								async (entry, reasoningOnly) => {
-									if (reasoningOnly) {
-										await this.ctx.messages.displayMessage(entry, currentSession);
-									} else if (modelMessageContainer) {
-										// Finalize the streaming message with proper rendering
-										await this.ctx.messages.finalizeStreamingMessage(
-											modelMessageContainer,
-											entry.message,
-											entry,
-											currentSession
-										);
-									}
-									// Ensure we're scrolled to bottom after streaming completes
-									this.ctx.messages.scrollToBottom();
-								}
-							);
-						}
-					} catch (error) {
-						this.currentStreamingResponse = null;
-						// Hide progress bar on error
-						this.ctx.progress.hide();
-						throw error;
-					}
-				} else {
-					// Fall back to non-streaming API
-					this.ctx.plugin.logger.log('Agent view using non-streaming API');
-					const response = await modelApi.generateModelResponse(request);
-
-					await this.emitUsageMetadata(response, modelName, 'Non-streaming');
-
-					// Update progress to show response received
-					this.ctx.progress.update(t('agent.progress.processing'), 'waiting');
-
-					// Model reasoning for this turn (non-streaming exposes it directly).
-					const turnThoughts = response.thoughts?.trim() ? response.thoughts : undefined;
-
-					// Check if the model requested tool calls
-					if (response.toolCalls && response.toolCalls.length > 0) {
-						// Pre-tool reasoning is handed to the tool handler, which renders
-						// it as the first row of the tool group and persists it.
-						await this.ctx.tools.handleToolCalls(
-							response.toolCalls,
-							messageToSend,
-							historyToSend,
-							userEntry,
-							customPrompt,
-							perTurn,
-							turnThoughts
-						);
-					} else {
-						// Normal response without tool calls — shared three-way finalize
-						// with the non-streaming render step (plain displayMessage, no
-						// scroll) for both the answer and reasoning-only cases.
-						await this.finalizeNoToolCallResponse(response, turnThoughts, modelName, currentSession, async (entry) => {
-							await this.ctx.displayMessage(entry);
-						});
-					}
-				}
+				// Dispatch the response: streaming or non-streaming, with or without tool calls
+				await this.dispatchResponse(turn, turnSession, userEntry);
 			} catch (error) {
 				// Hide progress bar on error
 				this.ctx.progress.hide();
@@ -731,6 +365,542 @@ To reference an attachment in your response, use the path shown above.`;
 
 			// Always update token usage display after any message completion
 			await this.ctx.updateTokenUsage();
+		}
+	}
+
+	/**
+	 * Capture and freeze the per-turn data: the frozen turn timestamp and time
+	 * preamble, the outgoing message text, and the persisted attachments. Also
+	 * clears the input.
+	 *
+	 * The frozen turn timestamp and preamble must NOT be split from their
+	 * consumers: the timestamp is threaded to `addEntryToSession` so the
+	 * persisted `| Time |` row matches the preamble the model saw, and the
+	 * preamble rides the message text into the outgoing request. Freezing here
+	 * (rather than at write time) keeps Gemini's implicit prefix cache aligned
+	 * across tool-loop iterations within the turn and across session resumes.
+	 * Written into both the outgoing model message and the persisted history
+	 * entry so replay is bit-identical; the UI render path strips it.
+	 *
+	 * @returns The frozen timestamp, the preamble-prefixed message, and the
+	 *   successfully persisted attachments.
+	 */
+	private async captureTurnInput(
+		userInput: HTMLDivElement,
+		attachments: InlineAttachment[]
+	): Promise<{
+		turnTimestamp: Date;
+		message: string;
+		savedAttachments: Array<{ attachment: InlineAttachment; path: string }>;
+	}> {
+		const rawMessage = userInput.innerText?.trim() || '';
+
+		// Prepend a per-turn time preamble. This is written into both the
+		// outgoing model message and the persisted history entry so replay is
+		// bit-identical. The UI render path strips it before display. Freezing
+		// the timestamp here (rather than at write time) lets Gemini's implicit
+		// prefix cache align across tool-loop iterations within the turn and
+		// across session resumes.
+		const turnTimestamp = new Date();
+		const turnPreamble = buildTurnPreamble(formatLocalTimestamp(turnTimestamp));
+		const message = turnPreamble + rawMessage;
+
+		// Mark binary shelf items as sent
+		this.ctx.getShelf().markBinarySent();
+
+		// Save attachments to vault (skip those already saved, e.g. from drag-drop)
+		const savedAttachments = await this.persistAttachments(attachments);
+
+		// Clear input
+		userInput.innerHTML = '';
+
+		return { turnTimestamp, message, savedAttachments };
+	}
+
+	/**
+	 * Set the executing state and transition the send button to "Stop".
+	 * Called once per turn, after the turn input has been captured.
+	 */
+	private beginExecutionUi(): void {
+		this.isExecuting = true;
+		this.cancellationRequested = false;
+		const sendButton = this.ctx.getSendButton();
+		sendButton.empty();
+		setIcon(sendButton, 'square');
+		sendButton.addClass('gemini-agent-stop-btn');
+		sendButton.disabled = false; // Re-enable so user can click stop
+		sendButton.setAttribute('aria-label', t('agent.input.stopAria'));
+		this.turnToolCallCount = 0;
+	}
+
+	/**
+	 * Build the display message with attachment previews. The display copy
+	 * appends image embeds and attachment-source callouts to the preamble-
+	 * prefixed message; the model-facing text stays unpolluted.
+	 *
+	 * @param message The preamble-prefixed outgoing message.
+	 * @param savedAttachments The successfully persisted attachments.
+	 * @returns The display message, with previews appended when attachments exist.
+	 */
+	private buildDisplayMessage(
+		message: string,
+		savedAttachments: Array<{ attachment: InlineAttachment; path: string }>
+	): string {
+		if (savedAttachments.length === 0) return message;
+
+		const imagePaths: string[] = [];
+		const otherPaths: { path: string; label: string }[] = [];
+
+		for (const { attachment, path } of savedAttachments) {
+			const mimeType = attachment.mimeType || '';
+			if (mimeType.startsWith('image/')) {
+				imagePaths.push(path);
+			} else {
+				let label = 'Attachment';
+				if (mimeType.startsWith('audio/')) label = 'Audio';
+				else if (mimeType.startsWith('video/')) label = 'Video';
+				else if (mimeType === 'application/pdf') label = 'PDF';
+				otherPaths.push({ path, label });
+			}
+		}
+
+		const parts: string[] = [];
+
+		if (imagePaths.length > 0) {
+			const imageLinks = imagePaths.map((path) => `![[${path}]]`).join('\n');
+			const contextNote = `\n> [!info] Image Source\n> ${imagePaths.map((p) => `\`${p}\``).join('\n> ')}`;
+			parts.push(imageLinks + contextNote);
+		}
+
+		if (otherPaths.length > 0) {
+			const contextNote = `> [!info] Attachment Source\n> ${otherPaths.map((o) => `\`${o.path}\` (${o.label})`).join('\n> ')}`;
+			parts.push(contextNote);
+		}
+
+		if (parts.length > 0) {
+			return message + '\n\n' + parts.join('\n\n');
+		}
+		return message;
+	}
+
+	/**
+	 * Assemble the full turn request: history snapshot, user entry persistence,
+	 * context files, prompts, compaction, plan-mode approval, and the model API.
+	 *
+	 * Returns the `TurnRequest` consumed by `dispatchResponse`. The frozen turn
+	 * timestamp is threaded into `addEntryToSession` here so the persisted
+	 * `| Time |` row matches the preamble the model saw (cache alignment on
+	 * resume); it must stay paired with `captureTurnInput`'s freeze.
+	 */
+	private async assembleTurnRequest(
+		currentSession: ChatSession,
+		turnTimestamp: Date,
+		message: string,
+		userEntry: GeminiConversationEntry,
+		shelfTextFiles: TFile[],
+		attachments: InlineAttachment[],
+		savedAttachments: Array<{ attachment: InlineAttachment; path: string }>
+	): Promise<TurnRequest> {
+		// Snapshot pre-turn history BEFORE saving user message to avoid duplication
+		const conversationHistory = await this.ctx.plugin.sessionHistory.getHistoryForSession(currentSession);
+
+		// Save user message to history once, before the API call.
+		// Tools use in-memory updatedHistory, not the file, so early save is safe.
+		// Pass the frozen turn timestamp so the persisted `| Time |` row matches
+		// the preamble the model saw — required for cache alignment on resume.
+		await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, userEntry, turnTimestamp);
+
+		// Get all context files from the shelf (persistent text files + folder contents)
+		const allContextFiles = shelfTextFiles;
+
+		// Build context for AI request including mentioned files
+		const contextInfo = await this.ctx.plugin.gfile.buildFileContext(
+			allContextFiles,
+			true // renderContent
+		);
+
+		// Load custom prompt if session has one configured
+		let customPrompt: CustomPrompt | undefined;
+		if (currentSession?.modelConfig?.promptTemplate) {
+			try {
+				// Use the promptManager to robustly load the custom prompt
+				const loadedPrompt = await this.ctx.plugin.promptManager.loadPromptFromFile(
+					currentSession.modelConfig.promptTemplate
+				);
+				if (loadedPrompt) {
+					customPrompt = loadedPrompt;
+				} else {
+					this.ctx.plugin.logger.warn(
+						'Custom prompt file not found or failed to load:',
+						currentSession.modelConfig.promptTemplate
+					);
+				}
+			} catch (error) {
+				this.ctx.plugin.logger.error('Error loading custom prompt:', error);
+			}
+		}
+		// Load project instructions if session is linked to a project. The
+		// discovery-scope statement (#1506) is folded in so it rides the
+		// byte-stable `projectInstructions` PerTurnContext threading — the
+		// scope rule reaches the model on every model call for free.
+		const projectInstructions = await loadProjectInstructions(this.ctx.plugin, currentSession?.projectPath);
+
+		// Build the per-turn context notes (context files, attachments, rendered content)
+		const additionalInstructions = this.buildAdditionalInstructions(shelfTextFiles, savedAttachments, contextInfo);
+
+		// Get available tools for this session
+		// Set project root path for scoped tool discovery
+		const activeProject = currentSession?.projectPath
+			? await this.ctx.plugin.projectManager?.getProject(currentSession.projectPath)
+			: null;
+
+		const toolContext: ToolExecutionContext = {
+			plugin: this.ctx.plugin,
+			session: currentSession,
+			projectRootPath: activeProject?.rootPath,
+			featureToolPolicy: activeProject?.config.toolPolicy,
+		};
+		const availableTools = this.ctx.plugin.toolRegistry.getEnabledTools(toolContext);
+		this.ctx.plugin.logger.log('Available tools from registry:', availableTools);
+		this.ctx.plugin.logger.log('Number of tools:', availableTools.length);
+		this.ctx.plugin.logger.log(
+			'Tool names:',
+			availableTools.map((t) => t.name)
+		);
+
+		// Get model config from session or use defaults
+		const modelConfig = currentSession?.modelConfig || {};
+		const modelName = modelConfig.model || getActiveChatModel(this.ctx.plugin.settings);
+
+		// beginTurn() is now handled by the turnStart event bus subscriber
+
+		// Prepare history through context manager (may compact if over threshold)
+		const compactionResult = await this.ctx.plugin.contextManager.prepareHistory(conversationHistory, modelName);
+
+		// If compaction occurred, show notification and save summary to transcript
+		if (compactionResult.wasCompacted && compactionResult.summaryText) {
+			// Force-set the lower post-compaction token count (bypasses high-water mark)
+			this.ctx.plugin.contextManager.setUsageMetadata({
+				promptTokenCount: compactionResult.estimatedTokens,
+				totalTokenCount: compactionResult.estimatedTokens,
+			});
+			await this.ctx.updateTokenUsage();
+
+			const compactionEntry = buildCompactionEntry(compactionResult.summaryText, modelName);
+			await this.ctx.displayMessage(compactionEntry);
+			await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, compactionEntry);
+			this.ctx.plugin.logger.log(`[AgentView] Context compacted: ${compactionResult.estimatedTokens} tokens remaining`);
+		}
+
+		// Per-turn fields that must stay byte-stable across the initial
+		// model call AND every follow-up/retry inside the agent loop.
+		// Threaded through to handleToolCalls below so the system prompt
+		// rebuilt on each tool-loop iteration is identical to the one
+		// the model saw on the initial call (correctness + cache).
+		const perTurn = {
+			perTurnContext: additionalInstructions,
+			projectInstructions,
+			projectSkills: activeProject?.config.skills,
+			sessionStartedAt: formatLocalTimestamp(currentSession.created),
+		};
+
+		const request: ExtendedModelRequest = {
+			kind: 'extended',
+			userMessage: message,
+			conversationHistory: compactionResult.compactedHistory,
+			model: modelName,
+			prompt: '', // Unused in agent pipeline — perTurnContext carries context instead
+			perTurnContext: perTurn.perTurnContext,
+			customPrompt: customPrompt,
+			projectInstructions: perTurn.projectInstructions,
+			projectSkills: perTurn.projectSkills,
+			renderContent: false, // We already rendered content above
+			availableTools: availableTools,
+			sessionStartedAt: perTurn.sessionStartedAt,
+			inlineAttachments: attachments.map((a: InlineAttachment) => ({ base64: a.base64, mimeType: a.mimeType })),
+		};
+
+		// Create model API for this session
+		const modelApi = AgentFactory.createAgentModel(this.ctx.plugin, currentSession);
+
+		// Plan mode: ask for a plan first, await user approval, then execute with tools
+		let messageToSend = message;
+		let historyToSend = compactionResult.compactedHistory;
+		if (this.isPlanModeActive) {
+			let planResult: { proceedMessage: string; updatedHistory: Content[] } | null = null;
+			try {
+				planResult = await this.conductPlanApproval(
+					modelApi,
+					request,
+					currentSession,
+					compactionResult.compactedHistory
+				);
+			} finally {
+				this.setPlanModeActive(false);
+			}
+			if (!planResult) {
+				// Plan rejected or empty — abort this turn
+				this.ctx.progress.hide();
+				return {
+					request,
+					messageToSend: message,
+					historyToSend: compactionResult.compactedHistory,
+					perTurn,
+					modelApi,
+					modelName,
+					customPrompt,
+					aborted: true,
+				};
+			}
+			messageToSend = planResult.proceedMessage;
+			historyToSend = planResult.updatedHistory;
+			const updatedRequest = { ...request, userMessage: messageToSend, conversationHistory: historyToSend };
+			return {
+				request: updatedRequest,
+				messageToSend,
+				historyToSend,
+				perTurn,
+				modelApi,
+				modelName,
+				customPrompt,
+				aborted: false,
+			};
+		}
+
+		return {
+			request,
+			messageToSend,
+			historyToSend,
+			perTurn,
+			modelApi,
+			modelName,
+			customPrompt,
+			aborted: false,
+		};
+	}
+
+	/**
+	 * Build the per-turn context notes appended to the system instruction:
+	 * context files from the shelf, persisted attachment paths, and rendered
+	 * file contents.
+	 */
+	private buildAdditionalInstructions(
+		shelfTextFiles: TFile[],
+		savedAttachments: Array<{ attachment: InlineAttachment; path: string }>,
+		contextInfo: string | null
+	): string {
+		let additionalInstructions = '';
+
+		// Add context file note if shelf has text files
+		if (shelfTextFiles.length > 0) {
+			const fileList = shelfTextFiles.map((f) => `- [[${f.path}|${f.basename}]]`).join('\n');
+			additionalInstructions += `\n\nCONTEXT FILES: The following files have been added to this conversation as context:
+${fileList}
+
+When referring to these files in tool calls, use the FULL PATH (the part before | in the wikilinks above).
+The content of these files is included in the context below.`;
+		}
+
+		// Add attachment path information if attachments were saved
+		if (savedAttachments.length > 0) {
+			const pathList = savedAttachments.map(({ path }) => `- ${path}`).join('\n');
+			additionalInstructions += `\n\nATTACHMENTS: The user has attached ${savedAttachments.length} file(s) to this message. They have been saved to the vault at these paths:
+${pathList}
+To embed images in a note, use the wikilink format: ![[path/to/image.png]]
+To reference an attachment in your response, use the path shown above.`;
+		}
+
+		// Add context information if available
+		if (contextInfo) {
+			additionalInstructions += `\n\n${contextInfo}`;
+		}
+
+		return additionalInstructions;
+	}
+
+	/**
+	 * Dispatch the assembled turn request to the model: streaming when the
+	 * provider client supports it, non-streaming otherwise; route to
+	 * `handleToolCalls` or the no-tool-call finalize in both arms.
+	 *
+	 * The `perTurn` fields must stay byte-stable across the initial model call
+	 * and every follow-up/retry inside the agent loop — threaded through to
+	 * `handleToolCalls` so the system prompt rebuilt on each tool-loop iteration
+	 * is identical to the one the model saw on the initial call (correctness +
+	 * cache).
+	 */
+	private async dispatchResponse(
+		turn: TurnRequest,
+		currentSession: ChatSession,
+		userEntry: GeminiConversationEntry
+	): Promise<void> {
+		if (turn.aborted) return;
+
+		const { request, messageToSend, historyToSend, perTurn, modelApi, modelName, customPrompt } = turn;
+
+		// Streaming is always used when the provider client supports it.
+		if (modelApi.generateStreamingResponse) {
+			// Use streaming API with tool support
+			let modelMessageContainer: HTMLElement | null = null;
+			let accumulatedMarkdown = '';
+			let accumulatedThoughts = '';
+			let progressUpdated = false;
+
+			const streamResponse = modelApi.generateStreamingResponse(request, (chunk) => {
+				// Handle thought content - show in progress bar
+				if (chunk.thought) {
+					const chunkPreview = chunk.thought.length > 100 ? chunk.thought.substring(0, 100) + '...' : chunk.thought;
+					this.ctx.plugin.logger.debug(`[AgentView] Received thought chunk: ${chunkPreview}`);
+					accumulatedThoughts += chunk.thought;
+
+					// Update the expandable thinking section
+					this.ctx.progress.updateThought(accumulatedThoughts);
+				}
+
+				// Handle text content
+				if (chunk.text) {
+					accumulatedMarkdown += chunk.text;
+
+					// Update progress to streaming state when first text chunk arrives
+					if (!progressUpdated) {
+						this.ctx.progress.update(t('agent.progress.generating'), 'streaming');
+						progressUpdated = true;
+					}
+
+					// Create or update the model message container
+					if (!modelMessageContainer) {
+						// First chunk - create the container
+						modelMessageContainer = this.ctx.messages.createStreamingMessageContainer('model');
+						// Fire-and-forget: async markdown render of the streamed chunk (unchanged behavior).
+						void this.ctx.messages.updateStreamingMessage(modelMessageContainer, chunk.text);
+					} else {
+						// Update existing container with new chunk
+						// Fire-and-forget: async markdown render of the streamed chunk (unchanged behavior).
+						void this.ctx.messages.updateStreamingMessage(modelMessageContainer, chunk.text);
+						// Use debounced scroll to avoid stuttering
+						this.ctx.messages.debouncedScrollToBottom();
+					}
+				}
+			});
+
+			// Store the streaming response for potential cancellation
+			this.currentStreamingResponse = streamResponse;
+
+			try {
+				const response = await streamResponse.complete;
+				this.currentStreamingResponse = null;
+
+				await this.emitUsageMetadata(response, modelName, 'Streaming');
+
+				// Model reasoning for this turn — prefer the completed response's
+				// thoughts; fall back to whatever streamed into the progress bar.
+				const turnThoughts = response.thoughts?.trim() ? response.thoughts : accumulatedThoughts.trim() || undefined;
+
+				// Check if the model requested tool calls
+				if (response.toolCalls && response.toolCalls.length > 0) {
+					// User message already saved early in sendMessage()
+
+					// If there was any streamed text before tool calls, finalize it
+					const hadPartialText = !!(modelMessageContainer && accumulatedMarkdown.trim());
+					if (hadPartialText) {
+						const aiEntry: GeminiConversationEntry = {
+							role: 'model',
+							message: accumulatedMarkdown,
+							notePath: '',
+							created_at: new Date(),
+							model: modelName,
+							...(turnThoughts ? { thoughts: turnThoughts } : {}),
+						};
+						await this.ctx.messages.finalizeStreamingMessage(
+							modelMessageContainer!,
+							accumulatedMarkdown,
+							aiEntry,
+							currentSession
+						);
+
+						// Save partial response to history before executing tools
+						await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, aiEntry);
+					}
+
+					// Pre-tool reasoning with no accompanying text is handed to the
+					// tool handler, which renders it as the first row of the tool
+					// group (interleaved with the tools) and persists it.
+					await this.ctx.tools.handleToolCalls(
+						response.toolCalls,
+						messageToSend,
+						historyToSend,
+						userEntry,
+						customPrompt,
+						perTurn,
+						hadPartialText ? undefined : turnThoughts
+					);
+				} else {
+					// Normal response without tool calls — shared three-way finalize
+					// with a streaming-specific render step: finalize the live
+					// container for answer text (display the reasoning entry when
+					// there's no answer), then scroll to the bottom.
+					await this.finalizeNoToolCallResponse(
+						response,
+						turnThoughts,
+						modelName,
+						currentSession,
+						async (entry, reasoningOnly) => {
+							if (reasoningOnly) {
+								await this.ctx.messages.displayMessage(entry, currentSession);
+							} else if (modelMessageContainer) {
+								// Finalize the streaming message with proper rendering
+								await this.ctx.messages.finalizeStreamingMessage(
+									modelMessageContainer,
+									entry.message,
+									entry,
+									currentSession
+								);
+							}
+							// Ensure we're scrolled to bottom after streaming completes
+							this.ctx.messages.scrollToBottom();
+						}
+					);
+				}
+			} catch (error) {
+				this.currentStreamingResponse = null;
+				// Hide progress bar on error
+				this.ctx.progress.hide();
+				throw error;
+			}
+		} else {
+			// Fall back to non-streaming API
+			this.ctx.plugin.logger.log('Agent view using non-streaming API');
+			const response = await modelApi.generateModelResponse(request);
+
+			await this.emitUsageMetadata(response, modelName, 'Non-streaming');
+
+			// Update progress to show response received
+			this.ctx.progress.update(t('agent.progress.processing'), 'waiting');
+
+			// Model reasoning for this turn (non-streaming exposes it directly).
+			const turnThoughts = response.thoughts?.trim() ? response.thoughts : undefined;
+
+			// Check if the model requested tool calls
+			if (response.toolCalls && response.toolCalls.length > 0) {
+				// Pre-tool reasoning is handed to the tool handler, which renders
+				// it as the first row of the tool group and persists it.
+				await this.ctx.tools.handleToolCalls(
+					response.toolCalls,
+					messageToSend,
+					historyToSend,
+					userEntry,
+					customPrompt,
+					perTurn,
+					turnThoughts
+				);
+			} else {
+				// Normal response without tool calls — shared three-way finalize
+				// with the non-streaming render step (plain displayMessage, no
+				// scroll) for both the answer and reasoning-only cases.
+				await this.finalizeNoToolCallResponse(response, turnThoughts, modelName, currentSession, async (entry) => {
+					await this.ctx.displayMessage(entry);
+				});
+			}
 		}
 	}
 
