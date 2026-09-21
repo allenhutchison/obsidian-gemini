@@ -36,10 +36,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Always succeeds (advisory): the scan itself exits 0 and the report is
-      # uploaded for triage. To flip this to a blocking gate, change `run` to
-      # propagate the script's exit code once the noise rate is acceptable —
-      # the script already separates candidates from suppression.
+      # Always succeeds (advisory): the scan exits 0 unconditionally and the
+      # report is uploaded for triage. To flip this to a blocking gate, TWO
+      # changes are needed: the scanner must return a nonzero exit status when
+      # candidates exist (scripts/check-unread-fields.mjs currently always
+      # exits 0), and this step must propagate that exit code once the noise
+      # rate is acceptable.
       - name: Scan for unread wiring fields
         run: npm run check:fields
 
