@@ -264,7 +264,7 @@ function countReads(name, sources) {
 		const isAssignmentTarget = isSimpleAssignmentTarget;
 		const visit = (node) => {
 			if (ts.isPropertyAccessExpression(node) && node.name.text === name) {
-				if (!isAssignmentTarget(node)) reads++;
+				if (!isAssignmentTarget(node) && !isInsideDestructuringTarget(node)) reads++;
 				return;
 			}
 			if (
@@ -272,7 +272,8 @@ function countReads(name, sources) {
 				node.argumentExpression &&
 				ts.isStringLiteral(node.argumentExpression) &&
 				node.argumentExpression.text === name &&
-				!isAssignmentTarget(node)
+				!isAssignmentTarget(node) &&
+				!isInsideDestructuringTarget(node)
 			) {
 				reads++;
 				return;
