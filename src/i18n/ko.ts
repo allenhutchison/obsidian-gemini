@@ -821,6 +821,8 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': '거절',
 	'agent.planMode.rejectedNotice': '계획이 거절되었습니다.',
 	'agent.planMode.proceedMessage': '승인된 계획을 진행합니다.',
+	'agent.toolFailedStop':
+		'도구 호출이 실패하여 에이전트가 중지되었습니다 ({tool}). 문제를 해결한 후 다시 시도하거나, 도구 오류가 발생해도 계속 진행하려면 "도구 실패 시 에이전트 중지" 설정을 끄세요.',
 	'agent.loopAborted':
 		'에이전트가 동일한 도구 호출을 계속 반복했습니다(루프 감지기가 {count}회 작동함). 무한 루프를 방지하기 위해 이번 턴을 중단합니다. 요청을 다시 작성하거나 새 세션을 시작해 보세요.',
 	'agent.emptyResponseFallback.withTools':

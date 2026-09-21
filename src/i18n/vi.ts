@@ -831,6 +831,8 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Từ chối',
 	'agent.planMode.rejectedNotice': 'Đã từ chối kế hoạch.',
 	'agent.planMode.proceedMessage': 'Tiếp tục với kế hoạch đã được phê duyệt.',
+	'agent.toolFailedStop':
+		'Agent đã dừng vì lệnh gọi công cụ bị lỗi ({tool}). Hãy khắc phục sự cố và thử lại, hoặc tắt "Dừng agent khi công cụ gặp lỗi" để tiếp tục khi gặp lỗi công cụ.',
 	'agent.loopAborted':
 		'Agent liên tục thử lại cùng một lệnh gọi công cụ (bộ phát hiện lặp đã kích hoạt {count} lần). Đang dừng lượt này để tránh vòng lặp vô hạn. Hãy thử diễn đạt lại yêu cầu hoặc bắt đầu một phiên mới.',
 	'agent.emptyResponseFallback.withTools':

@@ -835,6 +835,8 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Rejeitar',
 	'agent.planMode.rejectedNotice': 'Plano rejeitado.',
 	'agent.planMode.proceedMessage': 'Proceder com o plano aprovado.',
+	'agent.toolFailedStop':
+		'O agente parou porque uma chamada de ferramenta falhou ({tool}). Corrija o problema e tente novamente, ou desative "Parar o agente quando uma ferramenta falhar" para continuar apesar de erros de ferramentas.',
 	'agent.loopAborted':
 		'O agente continuou a tentar a mesma chamada de ferramenta (o detetor de ciclos disparou {count} vezes). A interromper este turno para evitar um ciclo infinito. Tente reformular o seu pedido ou iniciar uma nova sessão.',
 	'agent.emptyResponseFallback.withTools':

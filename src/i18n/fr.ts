@@ -846,6 +846,8 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Rejeter',
 	'agent.planMode.rejectedNotice': 'Plan rejeté.',
 	'agent.planMode.proceedMessage': 'Poursuivre avec le plan approuvé.',
+	'agent.toolFailedStop':
+		"L'agent s'est arrêté car un appel d'outil a échoué ({tool}). Corrigez le problème et réessayez, ou désactivez « Arrêter l'agent lorsqu'un outil échoue » pour continuer malgré les erreurs d'outil.",
 	'agent.loopAborted':
 		"L'agent a continué de répéter le même appel d'outil (le détecteur de boucle s'est déclenché {count} fois). Arrêt de ce tour pour éviter une boucle infinie. Essayez de reformuler votre demande ou de démarrer une nouvelle session.",
 	'agent.emptyResponseFallback.withTools':

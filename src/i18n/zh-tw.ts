@@ -798,6 +798,8 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': '拒絕',
 	'agent.planMode.rejectedNotice': '計畫已拒絕。',
 	'agent.planMode.proceedMessage': '繼續執行已核准的計畫。',
+	'agent.toolFailedStop':
+		'Agent 已停止，因為工具呼叫失敗 ({tool})。請修正問題並重試，或關閉「工具失敗時停止 Agent」以略過工具錯誤繼續執行。',
 	'agent.loopAborted':
 		'Agent 持續重試相同的工具呼叫（迴圈偵測器已觸發 {count} 次）。為避免無限迴圈已中止此回合。請嘗試換個方式描述您的請求，或開啟新的對話。',
 	'agent.emptyResponseFallback.withTools':

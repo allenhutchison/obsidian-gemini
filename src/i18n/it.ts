@@ -840,6 +840,8 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Rifiuta',
 	'agent.planMode.rejectedNotice': 'Piano rifiutato.',
 	'agent.planMode.proceedMessage': 'Procedi con il piano approvato.',
+	'agent.toolFailedStop':
+		'L\'agente si è interrotto perché una chiamata allo strumento è fallita ({tool}). Risolvi il problema e riprova, oppure disattiva "Interrompi l\'agente quando uno strumento fallisce" per proseguire oltre gli errori degli strumenti.',
 	'agent.loopAborted':
 		"L'agente ha continuato a riprovare la stessa chiamata allo strumento (il rilevatore di loop è scattato {count} volte). Interruzione del turno per evitare un loop infinito. Prova a riformulare la richiesta o ad avviare una nuova sessione.",
 	'agent.emptyResponseFallback.withTools':

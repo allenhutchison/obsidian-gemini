@@ -841,6 +841,8 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Ablehnen',
 	'agent.planMode.rejectedNotice': 'Plan abgelehnt.',
 	'agent.planMode.proceedMessage': 'Mit dem genehmigten Plan fortfahren.',
+	'agent.toolFailedStop':
+		'Der Agent wurde angehalten, da ein Tool-Aufruf fehlgeschlagen ist ({tool}). Behebe das Problem und versuche es erneut oder deaktiviere "Agent anhalten, wenn ein Tool fehlschlägt", um trotz Tool-Fehlern fortzufahren.',
 	'agent.loopAborted':
 		'Der Agent hat denselben Tool-Aufruf wiederholt versucht (Schleifenerkennung wurde {count}-mal ausgelöst). Dieser Durchgang wurde abgebrochen, um eine Endlosschleife zu verhindern. Versuchen Sie, Ihre Anfrage umzuformulieren oder eine neue Sitzung zu starten.',
 	'agent.emptyResponseFallback.withTools':
