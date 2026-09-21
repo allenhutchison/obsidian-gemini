@@ -12,6 +12,7 @@
  */
 export interface UsageMetadata {
 	promptTokenCount?: number;
+	// wiring:keep — serialized into the usage payload shown to the model and the token-usage display; no dedicated code reader (promptTokenCount drives the context calibration)
 	candidatesTokenCount?: number;
 	totalTokenCount?: number;
 	/**
