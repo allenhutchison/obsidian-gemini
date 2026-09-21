@@ -385,6 +385,33 @@ export class AgentLoop {
 				return this.loopAbortedResult(updatedHistory, iterations, loopFireCount);
 			}
 
+			// stopOnToolError (default true): end the turn when a tool call in
+			// the batch failed instead of feeding the failure back and letting
+			// the model keep going. The failure is already recorded in the
+			// results and history below — the caller sees it and can retry.
+			// Restores the pre-#1388 semantics whose only reader was removed in
+			// the same change that extracted the batch wrapper (#1388, #1563).
+			const stopOnToolError = plugin.settings.stopOnToolError !== false;
+			// Loop-detector fires are excluded: they have their own escalation
+			// (the AGENT_LOOP_ABORT_THRESHOLD check above), and letting this
+			// setting absorb them would replace the count-based abort with a
+			// first-failure abort.
+			if (stopOnToolError && toolResults.some((tr) => !tr.result.success && !tr.result.loopDetected)) {
+				plugin.logger.warn('[AgentLoop] Ending turn: a tool call failed and stopOnToolError is enabled');
+				const updatedHistory = buildToolHistoryTurns({
+					conversationHistory,
+					userMessage,
+					perTurnContext,
+					toolCalls: currentToolCalls,
+					toolResults,
+				});
+				return this.makeResult({
+					markdown: t('agent.toolFailedStop', { tool: toolResults.find((tr) => !tr.result.success)?.toolName ?? '' }),
+					history: updatedHistory,
+					iterations,
+				});
+			}
+
 			// Emit toolChainComplete so subscribers (accessed-files tracker, etc.) see this batch.
 			await this.safeEmit(plugin, 'toolChainComplete', {
 				session,
@@ -733,6 +760,20 @@ export class AgentLoop {
 					sourceIndex,
 					...(toolCall.id && { id: toolCall.id }),
 				});
+
+				// stopOnToolError (default true): a failed tool call ends the
+				// execution chain — remaining calls in this batch do not run.
+				// The post-batch check below then ends the turn. Restores the
+				// pre-#1388 semantics whose only reader was removed in the same
+				// change (#1388, #1563; restored by #1469).
+				//
+				// Loop-detector fires are excluded — they escalate via the
+				// AGENT_LOOP_ABORT_THRESHOLD check above, and this setting
+				// absorbing them would replace the count-based abort with a
+				// first-failure abort.
+				if (result.success === false && !result.loopDetected && plugin.settings.stopOnToolError !== false) {
+					break;
+				}
 			} catch (error) {
 				plugin.logger.error(`[AgentLoop] Tool execution error for ${toolCall.name}:`, error);
 				await this.safeHook('onToolCounted', plugin, () => hooks?.onToolCounted?.());
@@ -748,6 +789,11 @@ export class AgentLoop {
 					sourceIndex,
 					...(toolCall.id && { id: toolCall.id }),
 				});
+
+				// Same stopOnToolError end-of-chain rule for thrown errors.
+				if (plugin.settings.stopOnToolError !== false) {
+					break;
+				}
 			}
 		}
 
