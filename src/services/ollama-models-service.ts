@@ -68,8 +68,6 @@ interface OllamaTagsModel {
 	 */
 	remote_host?: string;
 	/** The upstream model name the cloud entry proxies to. */
-	// wiring:keep — SDK wire shape: parsed from the Ollama Cloud tag JSON; carried for the cloud-name display path
-	remote_model?: string;
 	details?: {
 		parameter_size?: string;
 		family?: string;
