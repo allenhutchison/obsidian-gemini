@@ -572,7 +572,15 @@ describe('RagVaultScanner', () => {
 
 			await scanner.indexVault(progressCallback);
 
-			expect(progressCallback).toHaveBeenCalledWith(expect.objectContaining({}));
+			// The completion payload carries the equal current/total counts and
+			// the human-readable result summary.
+			expect(progressCallback).toHaveBeenCalledWith(
+				expect.objectContaining({
+					current: 5,
+					total: 5,
+					message: expect.stringContaining('Indexed'),
+				})
+			);
 		});
 	});
 
