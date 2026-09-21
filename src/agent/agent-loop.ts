@@ -406,7 +406,9 @@ export class AgentLoop {
 					toolResults,
 				});
 				return this.makeResult({
-					markdown: t('agent.toolFailedStop', { tool: toolResults.find((tr) => !tr.result.success)?.toolName ?? '' }),
+					markdown: t('agent.toolFailedStop', {
+						tool: toolResults.find((tr) => !tr.result.success && !tr.result.loopDetected)?.toolName ?? '',
+					}),
 					history: updatedHistory,
 					iterations,
 				});
