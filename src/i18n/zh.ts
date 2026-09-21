@@ -798,6 +798,8 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': '拒绝',
 	'agent.planMode.rejectedNotice': '计划已拒绝。',
 	'agent.planMode.proceedMessage': '继续执行已批准的计划。',
+	'agent.toolFailedStop':
+		'Agent 因工具调用失败（{tool}）而停止。请修复该问题后重试，或关闭“工具失败时停止 Agent”以忽略工具错误继续运行。',
 	'agent.loopAborted':
 		'Agent 持续重试同一个工具调用（循环检测器已触发 {count} 次）。为避免陷入死循环，已终止本轮交互。请尝试重新描述您的请求或开启新会话。',
 	'agent.emptyResponseFallback.withTools': '我已完成请求的操作（{tools}），但在生成摘要时遇到问题。操作已成功执行。',

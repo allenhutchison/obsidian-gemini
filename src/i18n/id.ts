@@ -828,6 +828,8 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Tolak',
 	'agent.planMode.rejectedNotice': 'Rencana ditolak.',
 	'agent.planMode.proceedMessage': 'Lanjutkan dengan rencana yang disetujui.',
+	'agent.toolFailedStop':
+		'Agen berhenti karena pemanggilan alat gagal ({tool}). Perbaiki masalah tersebut dan coba lagi, atau nonaktifkan "Hentikan agen saat alat gagal" untuk tetap melanjutkan saat terjadi kesalahan alat.',
 	'agent.loopAborted':
 		'Agen terus mencoba ulang pemanggilan alat yang sama (pendeteksi loop terpicu {count} kali). Menghentikan giliran ini untuk mencegah loop tanpa akhir. Coba ubah kalimat permintaan Anda atau mulai sesi baru.',
 	'agent.emptyResponseFallback.withTools':

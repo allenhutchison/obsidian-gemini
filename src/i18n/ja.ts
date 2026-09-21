@@ -832,6 +832,8 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': '却下',
 	'agent.planMode.rejectedNotice': '計画が却下されました。',
 	'agent.planMode.proceedMessage': '承認された計画を進めてください。',
+	'agent.toolFailedStop':
+		'ツール呼び出しに失敗したため（{tool}）、エージェントが停止しました。問題を解決して再試行するか、「ツール失敗時にエージェントを停止」をオフにしてエラー発生時も続行できるようにしてください。',
 	'agent.loopAborted':
 		'エージェントが同じツールの呼び出しを繰り返しました（ループ検出が{count}回作動）。無限ループを防ぐため、このターンを中断します。リクエストの表現を変えるか、新しいセッションを開始してください。',
 	'agent.emptyResponseFallback.withTools':

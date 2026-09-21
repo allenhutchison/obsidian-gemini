@@ -831,6 +831,8 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Odmítnout',
 	'agent.planMode.rejectedNotice': 'Plán byl odmítnut.',
 	'agent.planMode.proceedMessage': 'Pokračovat se schváleným plánem.',
+	'agent.toolFailedStop':
+		'Agent se zastavil, protože selhalo volání nástroje ({tool}). Opravte problém a zkuste to znovu, nebo vypněte možnost "Zastavit agenta při selhání nástroje", chcete-li pokračovat i přes chyby nástrojů.',
 	'agent.loopAborted':
 		'Agent opakovaně prováděl stejné volání nástroje (detektor smyčky se aktivoval {count}krát). Tento krok byl zastaven, aby se předešlo nekonečné smyčce. Zkuste přeformulovat svůj požadavek nebo zahájit novou relaci.',
 	'agent.emptyResponseFallback.withTools':

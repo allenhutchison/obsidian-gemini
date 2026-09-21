@@ -832,6 +832,8 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Afvis',
 	'agent.planMode.rejectedNotice': 'Plan afvist.',
 	'agent.planMode.proceedMessage': 'Fortsæt med den godkendte plan.',
+	'agent.toolFailedStop':
+		'Agenten stoppede, fordi et værktøjskald fejlede ({tool}). Løs problemet og prøv igen, eller slå "Stop agenten, når et værktøj fejler" fra for at fortsætte på trods af værktøjsfejl.',
 	'agent.loopAborted':
 		'Agenten blev ved med at prøve det samme værktøjskald (løkkedetektoren blev udløst {count} gange). Stopper denne tur for at forhindre en uendelig løkke. Prøv at omformulere din anmodning eller starte en ny session.',
 	'agent.emptyResponseFallback.withTools':

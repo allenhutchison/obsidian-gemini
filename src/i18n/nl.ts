@@ -836,6 +836,8 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Afwijzen',
 	'agent.planMode.rejectedNotice': 'Plan afgewezen.',
 	'agent.planMode.proceedMessage': 'Ga verder met het goedgekeurde plan.',
+	'agent.toolFailedStop':
+		'De agent is gestopt omdat een tool-aanroep is mislukt ({tool}). Los het probleem op en probeer het opnieuw, of schakel "Stop de agent wanneer een tool mislukt" uit om door te gaan na toolfouten.',
 	'agent.loopAborted':
 		'De agent bleef dezelfde toolaanroep herhalen (loop-detector is {count} keer geactiveerd). Deze beurt is gestopt om een oneindige lus te voorkomen. Probeer je verzoek anders te formuleren of start een nieuwe sessie.',
 	'agent.emptyResponseFallback.withTools':

@@ -840,6 +840,8 @@ export const es: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Rechazar',
 	'agent.planMode.rejectedNotice': 'Plan rechazado.',
 	'agent.planMode.proceedMessage': 'Proceder con el plan aprobado.',
+	'agent.toolFailedStop':
+		'El agente se detuvo porque falló una llamada a una herramienta ({tool}). Corrige el problema y vuelve a intentarlo, o desactiva "Detener el agente cuando falla una herramienta" para continuar a pesar de los errores de las herramientas.',
 	'agent.loopAborted':
 		'El agente siguió reintentando la misma llamada a la herramienta (el detector de bucles se activó {count} veces). Se detiene este turno para evitar un bucle infinito. Intenta reformular tu solicitud o iniciar una nueva sesión.',
 	'agent.emptyResponseFallback.withTools':

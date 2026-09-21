@@ -838,6 +838,8 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Odrzuć',
 	'agent.planMode.rejectedNotice': 'Plan odrzucony.',
 	'agent.planMode.proceedMessage': 'Kontynuuj zgodnie z zatwierdzonym planem.',
+	'agent.toolFailedStop':
+		'Agent zatrzymał się, ponieważ wywołanie narzędzia nie powiodło się ({tool}). Rozwiąż problem i ponów próbę lub wyłącz opcję "Zatrzymaj agenta, gdy narzędzie zawiedzie", aby kontynuować mimo błędów narzędzi.',
 	'agent.loopAborted':
 		'Agent ponawiał tę samą próbę wywołania narzędzia (detektor pętli zadziałał {count} razy). Przerywam tę turę, aby zapobiec zapętleniu. Spróbuj inaczej sformułować zapytanie lub rozpocząć nową sesję.',
 	'agent.emptyResponseFallback.withTools':

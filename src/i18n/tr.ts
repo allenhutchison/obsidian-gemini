@@ -835,6 +835,8 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'agent.planMode.rejectBtn': 'Reddet',
 	'agent.planMode.rejectedNotice': 'Plan reddedildi.',
 	'agent.planMode.proceedMessage': 'Onaylanan planla devam et.',
+	'agent.toolFailedStop':
+		'Aracı, bir araç çağrısı başarısız olduğu için durdu ({tool}). Sorunu düzeltip tekrar deneyin veya araç hatalarına rağmen devam etmek için "Bir araç başarısız olduğunda aracıyı durdur" seçeneğini kapatın.',
 	'agent.loopAborted':
 		'Ajan aynı araç çağrısını tekrarlamaya devam etti (döngü algılayıcı {count} kez tetiklendi). Sonsuz döngüyü engellemek için bu tur durduruluyor. İsteğinizi yeniden ifade etmeyi veya yeni bir oturum başlatmayı deneyin.',
 	'agent.emptyResponseFallback.withTools':
