@@ -80,13 +80,12 @@ const testSources = new Map(testFiles.map((f) => [f, parse(f)]));
 function isSuppressed(member) {
 	const source = member.getSourceFile();
 	const text = source.getFullText();
-	// Comments immediately preceding the member (its leading trivia range).
+	// Comments immediately preceding the member (its leading trivia range) —
+	// single-line comments above the member ARE leading trivia, so this is
+	// the documented suppression position. No wider search: a `wiring:keep`
+	// further back belongs to an earlier field and must not suppress this one.
 	const leading = text.slice(member.getFullStart(), member.getStart());
-	if (leading.includes(KEEP_MARKER)) return true;
-	// Also allow the comment on the line above outside leading trivia
-	// (single-line comments are leading trivia, so this is belt-and-braces).
-	const beforeStart = text.slice(Math.max(0, member.getFullStart() - 160), member.getFullStart());
-	return beforeStart.includes(KEEP_MARKER);
+	return leading.includes(KEEP_MARKER);
 }
 
 /**
@@ -183,28 +182,45 @@ function countReads(name, sources) {
 	let reads = 0;
 	for (const source of sources.values()) {
 		const emitsThisName = anyFileEmits;
+		// An access that is the left operand of a simple assignment is a write,
+		// not a read (`object.name = v`); a compound assignment (`+=`) still
+		// reads the previous value, so it counts. Guards every access branch
+		// below.
+		const isSimpleAssignmentTarget = (node) => {
+			const p = node.parent;
+			return !!p && ts.isBinaryExpression(p) && p.left === node && p.operatorToken.getText() === '=';
+		};
+		const isAssignmentTarget = isSimpleAssignmentTarget;
 		const visit = (node) => {
 			if (ts.isPropertyAccessExpression(node) && node.name.text === name) {
-				reads++;
+				if (!isAssignmentTarget(node)) reads++;
 				return;
 			}
 			if (
 				ts.isElementAccessExpression(node) &&
 				node.argumentExpression &&
 				ts.isStringLiteral(node.argumentExpression) &&
-				node.argumentExpression.text === name
+				node.argumentExpression.text === name &&
+				!isAssignmentTarget(node)
 			) {
 				reads++;
 				return;
 			}
 			if (ts.isBindingElement(node)) {
-				// `{ name }` — property name implicit, bound name matches
-				if (!node.propertyName && ts.isIdentifier(node.name) && node.name.text === name) {
-					reads++;
-					return;
-				}
-				// `{ name: alias }` — explicit property name matches
-				if (node.propertyName && ts.isIdentifier(node.propertyName) && node.propertyName.text === name) {
+				// The property name being bound, in whatever static form:
+				// `{ name }` (implicit identifier), `{ 'name': alias }`
+				// (string-literal key), `{ ['name']: alias }` (computed static
+				// string key).
+				const propertyNameText = node.propertyName
+					? ts.isIdentifier(node.propertyName) || ts.isStringLiteral(node.propertyName)
+						? node.propertyName.text
+						: ts.isComputedPropertyName(node.propertyName) && ts.isStringLiteral(node.propertyName.expression)
+							? node.propertyName.expression.text
+							: undefined
+					: ts.isIdentifier(node.name)
+						? node.name.text
+						: undefined;
+				if (propertyNameText === name) {
 					reads++;
 					return;
 				}
@@ -258,16 +274,15 @@ for (const field of fields) {
 
 if (candidates.length === 0) {
 	console.log('No unread fields found.');
-	process.exit(0);
+} else {
+	console.log(`Unread-field candidates: ${candidates.length}\n`);
+	for (const c of candidates) {
+		console.log(`  ${c.rel}:${c.line}  ${c.typeName}.${c.name}`);
+	}
+	console.log(
+		`\nAdvisory: these are write-only candidates, not proven dead. Suppress a genuinely write-only field with '${KEEP_MARKER}' in a comment on its declaration line.`
+	);
 }
-
-console.log(`Unread-field candidates: ${candidates.length}\n`);
-for (const c of candidates) {
-	console.log(`  ${c.rel}:${c.line}  ${c.typeName}.${c.name}`);
-}
-console.log(
-	`\nAdvisory: these are write-only candidates, not proven dead. Suppress a genuinely write-only field with '${KEEP_MARKER}' in a comment on its declaration line.`
-);
 
 // Persist the report for the workflow artifact (always — even when empty —
 // so `if-no-files-found` never hides a genuinely clean run).
