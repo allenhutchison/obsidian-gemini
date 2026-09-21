@@ -183,6 +183,7 @@ export class OpenAIModelsService {
 		return {
 			value: id,
 			label: id,
+			// eslint-disable-next-line no-restricted-syntax -- data tag stamping the provider onto models this service discovered
 			provider: 'openai',
 			supportsVision: meta.supportsVision,
 			...(meta.contextWindow !== undefined && { contextWindow: meta.contextWindow }),

@@ -63,6 +63,7 @@ export class ModelListProvider {
 	 *      on airplane mode too, not just Ollama.
 	 */
 	startRemoteFetch(): void {
+		// eslint-disable-next-line no-restricted-syntax -- Gemini-only list surface; the other providers route through their own services
 		if (!isProviderActive(this.plugin.settings, 'gemini')) {
 			this.plugin.logger.debug('[ModelListProvider] Skipping remote fetch (no use case is routed to Gemini)');
 			return;
@@ -93,6 +94,7 @@ export class ModelListProvider {
 	 * can show the message.
 	 */
 	async refresh(): Promise<RefreshResult> {
+		// eslint-disable-next-line no-restricted-syntax -- Gemini-only list surface; the other providers route through their own services
 		if (!isProviderActive(this.plugin.settings, 'gemini')) {
 			this.plugin.logger.debug('[ModelListProvider] refresh skipped (no use case is routed to Gemini)');
 			return { fetched: false, modelCount: this.getModels().length, skippedReason: 'provider' };

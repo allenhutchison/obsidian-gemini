@@ -136,6 +136,42 @@ const PATH_CONTAINMENT_RULE = {
 	],
 };
 
+// #1317: non-provider modules branch on the provider-name string literals
+// ('gemini' / 'ollama' / 'openai' / 'anthropic') instead of asking the
+// provider registry (`getCapabilities`, `featureProvider`,
+// `PROVIDERS`/`PROVIDER_IDS` in src/api/providers/registry.ts), so every new
+// provider requires hand-editing a ladder in a module with no business
+// knowing which providers exist. The audit fixed or filed this pattern three
+// times in 90 days (#1287, #1307, the #1308/#703 backlog); prose in
+// invariants.md kept being violated, so the prose rule is now enforced.
+//
+// The selector matches string *literals* only — comparisons and data tags —
+// which is exactly the leak; `ModelProvider`-typed values and type positions
+// do not match (a `Literal` in a type annotation is not walked). Exempted
+// outright: the modules that own provider identity (see the override block
+// below). Existing violations carry line-scoped inline disables with reasons
+// — the same policy PATH_CONTAINMENT_RULE documents — so every file stays
+// guarded against the *next* literal, and each exemption states why it is
+// legitimate; as #1308/#703 clear sites, their disables go with them.
+//
+// NOTE for `no-restricted-syntax` disables: `eslint-disable-next-line
+// no-restricted-syntax -- <reason>` suppresses this rule AND
+// PATH_CONTAINMENT_RULE together (one rule id, several selectors). That is
+// deliberate — a disable is per-rule, not per-selector — but it means a
+// disable added for a provider literal also masks the path-containment
+// selectors on that line. None of the existing sites overlap; keep it that
+// way, or scope the exemption to its own rule id instead.
+const PROVIDER_LITERAL_RULE = {
+	'no-restricted-syntax': [
+		'error',
+		{
+			selector: "Literal[value='gemini'], Literal[value='ollama'], Literal[value='openai'], Literal[value='anthropic']",
+			message:
+				"Don't branch on a provider-name literal: ask the provider registry (getCapabilities/featureProvider/PROVIDER_IDS from src/api/providers/registry.ts) instead, so a new provider doesn't require hand-editing this ladder. If this site legitimately owns provider identity, add an eslint-disable-next-line with a reason explaining why.",
+		},
+	],
+};
+
 // #1525: knip honours `@public` / `@beta` JSDoc tags as a built-in exemption — a tagged
 // export is reported as used without any reachability check (its `isAlwaysIgnored`
 // short-circuits before the caller search), so dead surface lands and stays green on the
@@ -267,9 +303,38 @@ export default defineConfig([
 		rules: {
 			...SOFTENED_TS_RULES,
 			...PERVASIVE_OBSIDIANMD_RULES_TODO,
-			...PATH_CONTAINMENT_RULE,
+			...SOFTENED_TS_RULES,
+			...PERVASIVE_OBSIDIANMD_RULES_TODO,
+			// One rule id, several selector groups: the two PATH_CONTAINMENT
+			// selectors and the PROVIDER_LITERAL selector share
+			// `no-restricted-syntax`, so a single line disable with a reason
+			// suppresses exactly the selectors at that site (see the NOTE on
+			// PROVIDER_LITERAL_RULE).
+			'no-restricted-syntax': [
+				...PATH_CONTAINMENT_RULE['no-restricted-syntax'],
+				...PROVIDER_LITERAL_RULE['no-restricted-syntax'],
+			],
 			'local/no-tags-as-reachability': 'error',
 		},
+	},
+	{
+		// The modules that legitimately own provider identity (#1317): the
+		// provider packages themselves, the designated dispatch point, the
+		// routing leaf, the model catalog, and the type unions. Everything
+		// else under src/ must ask the registry rather than branch on the
+		// string literals; existing sites carry line-scoped disables with
+		// reasons, deleted as #1308/#703 clear them.
+		files: [
+			'src/api/providers/**',
+			'src/api/factory.ts',
+			'src/api/provider-routing.ts',
+			'src/api/feature-routing.ts',
+			'src/api/provider-credentials.ts',
+			'src/api/provider-status.ts',
+			'src/models.ts',
+			'src/types/**',
+		],
+		rules: { 'no-restricted-syntax': 'off' },
 	},
 	{
 		// `file-utils.ts` owns `isPathInFolder` and the write-path policy built on

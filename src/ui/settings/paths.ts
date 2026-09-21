@@ -110,6 +110,7 @@ function parseFeatureKey(key: string): { feature: FeatureId; field: 'provider' |
 /** Whether a model value is present in the live list for the given provider. */
 function modelExistsForProvider(model: string, provider: ModelProvider): boolean {
 	if (!model) return false;
+	// eslint-disable-next-line no-restricted-syntax -- settings-key map for provider-specific setting keys; historical keys, not dispatch
 	return GEMINI_MODELS.some((m) => m.value === model && (m.provider ?? 'gemini') === provider);
 }
 
@@ -185,11 +186,17 @@ const writeHistoryFolder: SettingWriter = async (plugin, _key, value) => {
 
 /** Which provider card's model count needs invalidating when a given credential/base-URL path changes. */
 const CREDENTIAL_PATH_PROVIDER: Record<string, ModelProvider> = {
+	// eslint-disable-next-line no-restricted-syntax -- settings-key map for provider-specific setting keys; historical keys, not dispatch
 	apiKeySecretName: 'gemini',
+	// eslint-disable-next-line no-restricted-syntax -- settings-key map for provider-specific setting keys; historical keys, not dispatch
 	customBaseUrl: 'gemini',
+	// eslint-disable-next-line no-restricted-syntax -- settings-key map for provider-specific setting keys; historical keys, not dispatch
 	openaiApiKeySecretName: 'openai',
+	// eslint-disable-next-line no-restricted-syntax -- settings-key map for provider-specific setting keys; historical keys, not dispatch
 	openaiBaseUrl: 'openai',
+	// eslint-disable-next-line no-restricted-syntax -- settings-key map for provider-specific setting keys; historical keys, not dispatch
 	ollamaBaseUrl: 'ollama',
+	// eslint-disable-next-line no-restricted-syntax -- settings-key map for provider-specific setting keys; historical keys, not dispatch
 	anthropicApiKeySecretName: 'anthropic',
 };
 

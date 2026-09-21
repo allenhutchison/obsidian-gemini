@@ -347,6 +347,7 @@ export function getErrorMessage(error: unknown): string {
 			// either the Ollama keyword or a real `host:11434` endpoint shape.
 			const looksLikeOllamaEndpoint =
 				/(?:^|[\s(/])(?:https?:\/\/)?(?:localhost|127\.0\.0\.1|\[::1\]|[\w.-]+):11434\b/.test(messageLower);
+			// eslint-disable-next-line no-restricted-syntax -- matches Ollama error TEXT, not provider identity — message classification, not dispatch
 			if (messageLower.includes('ollama') || looksLikeOllamaEndpoint) {
 				return t('error.ollamaUnreachable');
 			}

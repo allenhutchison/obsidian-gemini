@@ -32,7 +32,9 @@ export function getApiKeyErrorMessage(params: ApiKeyErrorMessageParams): string 
 		return t('notice.main.ollamaUnreachable', { url: params.ollamaBaseUrl });
 	}
 	if (!params.apiKeySecretName) {
+		// eslint-disable-next-line no-restricted-syntax -- init error copy is per-provider by design (user-facing setup instructions)
 		if (params.provider === 'openai') return t('notice.main.noApiKeyOpenai');
+		// eslint-disable-next-line no-restricted-syntax -- init error copy is per-provider by design (user-facing setup instructions)
 		if (params.provider === 'anthropic') return t('notice.main.noApiKeyAnthropic');
 		return t('notice.main.noApiKey');
 	}

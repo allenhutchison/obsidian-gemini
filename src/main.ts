@@ -64,18 +64,27 @@ export type { ObsidianGeminiSettings, RagIndexingSettings } from './types/settin
 import type { ObsidianGemini as ObsidianGeminiApi } from './types/plugin';
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
+	// eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
 	defaultProvider: 'gemini',
 	// Every feature defaults to Gemini with '' ("use the provider's default
 	// model for this feature's role"), resolved at request time against the
 	// *live* model list rather than frozen here at module-load time.
 	features: {
+		// eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
 		chat: { provider: 'gemini', model: '' },
+		// eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
 		summary: { provider: 'gemini', model: '' },
+		// eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
 		completions: { provider: 'gemini', model: '' },
+		// eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
 		rewrite: { provider: 'gemini', model: '' },
+		// eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
 		webSearch: { provider: 'gemini', model: '' },
+		// eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
 		deepResearch: { provider: 'gemini', model: '' },
+		// eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
 		rag: { provider: 'gemini', model: '' },
+		// eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
 		imageGen: { provider: 'gemini', model: '' },
 	},
 	providerModelMemory: {},
@@ -345,6 +354,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	private chatCredentialState(): { apiKey: string; requiresApiKey: boolean } {
 		const chatProvider = this.settings.features.chat.provider;
 		const apiKey =
+			// eslint-disable-next-line no-restricted-syntax -- credential plumbing predating the registry; cleared as #1308/#703 land
 			chatProvider === 'openai' ? this.openaiApiKey : chatProvider === 'anthropic' ? this.anthropicApiKey : this.apiKey;
 		return {
 			apiKey,
@@ -368,11 +378,14 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 				? 'key-required-missing'
 				: 'none-required';
 		const baseUrl =
+			// eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
 			chatProvider === 'openai'
 				? this.settings.openaiBaseUrl
-				: chatProvider === 'anthropic'
+				: // eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
+					chatProvider === 'anthropic'
 					? undefined
-					: chatProvider === 'ollama'
+					: // eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
+						chatProvider === 'ollama'
 						? this.settings.ollamaBaseUrl
 						: this.settings.customBaseUrl;
 		return `${chatProvider}:${credToken}:${baseUrl ?? ''}`;
@@ -695,14 +708,17 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		// URL edit is a no-op for an all-Gemini install and vice versa.
 		const ollamaUrlChanged =
 			this.isGeminiInitialized &&
+			// eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
 			isProviderActive(this.settings, 'ollama') &&
 			this.previousOllamaBaseUrl !== this.settings.ollamaBaseUrl;
 		const customBaseUrlChanged =
 			this.isGeminiInitialized &&
+			// eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
 			isProviderActive(this.settings, 'gemini') &&
 			this.previousCustomBaseUrl !== this.settings.customBaseUrl;
 		const openaiBaseUrlChanged =
 			this.isGeminiInitialized &&
+			// eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
 			isProviderActive(this.settings, 'openai') &&
 			this.previousOpenaiBaseUrl !== this.settings.openaiBaseUrl;
 		// A chat provider that needs no key (Ollama) can initialize on the
