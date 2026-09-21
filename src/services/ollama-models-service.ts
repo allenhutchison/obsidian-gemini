@@ -56,6 +56,8 @@ interface OllamaTagsModel {
 	name: string;
 	model?: string;
 	size?: number;
+	// wiring:keep
+	// wiring:keep — SDK wire shape: parsed from the Ollama /api/tags JSON, consumed by the client that serializes it onward
 	modified_at?: string;
 	/**
 	 * Present only on Ollama Cloud entries (e.g. `https://ollama.com`), which are
@@ -66,6 +68,7 @@ interface OllamaTagsModel {
 	 */
 	remote_host?: string;
 	/** The upstream model name the cloud entry proxies to. */
+	// wiring:keep — SDK wire shape: parsed from the Ollama Cloud tag JSON; carried for the cloud-name display path
 	remote_model?: string;
 	details?: {
 		parameter_size?: string;

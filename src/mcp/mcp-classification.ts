@@ -11,9 +11,12 @@ import { ToolClassification } from '../types/tool-policy';
  * MCP client.
  */
 export interface MCPToolAnnotations {
+	// wiring:keep — deliberately write-only: the #1449 trust policy honors only destructiveHint; this hint is declared to document the MCP spec shape
 	readOnlyHint?: boolean;
 	destructiveHint?: boolean;
+	// wiring:keep — deliberately write-only: carried verbatim from the MCP spec, not honored (see classificationFromAnnotations)
 	idempotentHint?: boolean;
+	// wiring:keep — deliberately write-only: carried verbatim from the MCP spec, not honored (see classificationFromAnnotations)
 	openWorldHint?: boolean;
 }
 
