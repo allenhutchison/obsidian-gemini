@@ -3046,6 +3046,13 @@ export const en = {
 	// src/api/providers/). These reach the user as a rendered chat message, a modal body, or a
 	// thrown Error surfaced through the notice path — unlike the model-facing summarization and
 	// tool-prompt strings in the same modules, which deliberately stay English.
+	'agent.toolFailedStop': {
+		message:
+			'The agent stopped because a tool call failed ({tool}). Fix the issue and retry, or turn off "Stop the agent when a tool fails" to keep going past tool errors.',
+		context:
+			'Notice when the stopOnToolError setting ends a turn after a failed tool call. {tool} is the failed tool name.',
+	},
+
 	'agent.loopAborted': {
 		message:
 			'The agent kept retrying the same tool call (loop detector fired {count} times). Stopping this turn to prevent a runaway loop. Try rephrasing your request or starting a new session.',

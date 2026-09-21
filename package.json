@@ -16,6 +16,7 @@
 		"lint:fix": "eslint . --fix",
 		"lint:actions": "node scripts/check-action-pins.mjs",
 		"lint:cycles": "madge --circular --extensions ts src",
+		"check:fields": "node scripts/check-unread-fields.mjs",
 		"knip": "knip",
 		"install:test-vault": "node scripts/install-test-vault.mjs",
 		"translate": "node scripts/translate.mjs",

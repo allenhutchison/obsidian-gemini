@@ -102,6 +102,7 @@ export interface VaultFileEntry {
 	path: string;
 	type: 'file' | 'folder';
 	size: number | undefined;
+	// wiring:keep — serialized into the directory-listing tool result the model consumes (JSON payload; no code reader by design)
 	modified: number | undefined;
 }
 

@@ -28,7 +28,6 @@ export interface IndexProgress {
 	current: number;
 	total: number;
 	currentFile?: string;
-	phase: 'scanning' | 'indexing' | 'complete' | 'error';
 	message?: string;
 }
 

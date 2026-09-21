@@ -911,7 +911,7 @@ describe('AgentLoop', () => {
 	});
 
 	describe('error handling', () => {
-		test('tool throw is captured as a failed result and the loop continues', async () => {
+		test('a tool throw ends the chain and the turn (stopOnToolError default)', async () => {
 			const plugin = buildPlugin();
 			plugin.toolExecutionEngine.executeTool = vi
 				.fn()
@@ -928,8 +928,12 @@ describe('AgentLoop', () => {
 				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
 			});
 
-			expect(result.markdown).toBe('done despite error');
-			expect(plugin.toolExecutionEngine.executeTool).toHaveBeenCalledTimes(2);
+			// Restored #1469 finding: the setting defaults to true, so the first
+			// failed tool ends the chain — the second tool in the batch does not
+			// run, and no follow-up request is scheduled.
+			expect(plugin.toolExecutionEngine.executeTool).toHaveBeenCalledTimes(1);
+			expect(result.markdown).toContain('stopped because a tool call failed');
+			expect(result.markdown).toContain('a');
 			expect(plugin.logger.error).toHaveBeenCalledWith(
 				expect.stringContaining('[AgentLoop] Tool execution error'),
 				expect.any(Error)
@@ -1580,17 +1584,41 @@ describe('AgentLoop', () => {
 			expect(plugin.toolExecutionEngine.executeTool).toHaveBeenCalledTimes(3);
 		});
 
-		test('does not abort when only non-loop failures occur', async () => {
+		test('loop-detector failures are not absorbed by stopOnToolError', async () => {
 			const plugin = buildPlugin();
-			// Regular failures without the loopDetected flag must not escalate.
-			plugin.toolExecutionEngine.executeTool = vi.fn().mockResolvedValue({ success: false, error: 'generic failure' });
+			// Loop-detector failures are the detector's own axis: they must not be
+			// absorbed by stopOnToolError, or the count-based abort above would
+			// degrade into a first-failure abort.
+			plugin.toolExecutionEngine.executeTool = vi
+				.fn()
+				.mockResolvedValue({ success: false, loopDetected: true, error: 'Execution loop detected' });
 
+			const session = buildSession();
+			const api = {
+				generateModelResponse: vi.fn().mockResolvedValue(toolResponse([tc('read_file', { path: 'a' })])),
+			} as any;
+
+			const loop = new AgentLoop();
+			const result = await loop.run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
+			});
+
+			expect(result.loopAborted).toBe(true);
+			expect(result.markdown).toMatch(/loop detector fired/i);
+		});
+
+		test('stopOnToolError: false keeps going past failures (the configurable path)', async () => {
+			const plugin = buildPlugin({ settings: { stopOnToolError: false } });
+			plugin.toolExecutionEngine.executeTool = vi.fn().mockResolvedValue({ success: false, error: 'generic failure' });
 			const session = buildSession();
 			const api = makeScriptedModelApi([textResponse('recovered')]);
 
 			const loop = new AgentLoop();
 			const result = await loop.run({
-				initialResponse: toolResponse([tc('read_file'), tc('read_file'), tc('read_file'), tc('read_file')]),
+				initialResponse: toolResponse([tc('read_file', { path: 'a' }), tc('read_file', { path: 'b' })]),
 				initialUserMessage: 'q',
 				initialHistory: [],
 				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
@@ -1598,6 +1626,7 @@ describe('AgentLoop', () => {
 
 			expect(result.loopAborted).toBe(false);
 			expect(result.markdown).toBe('recovered');
+			expect(plugin.toolExecutionEngine.executeTool).toHaveBeenCalledTimes(2);
 		});
 	});
 });

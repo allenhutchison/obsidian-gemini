@@ -460,7 +460,6 @@ export class RagVaultScanner {
 						progressCallback?.({
 							current: 0,
 							total: event.totalFiles || 0,
-							phase: 'scanning',
 							message: `Found ${event.totalFiles} files to index`,
 						});
 					} else if (event.type === 'file_start') {
@@ -491,7 +490,6 @@ export class RagVaultScanner {
 							current: (event.completedFiles || 0) + (event.skippedFiles || 0),
 							total: event.totalFiles || 0,
 							currentFile: event.currentFile,
-							phase: 'indexing',
 						});
 						this.callbacks.onUpdateStatusBar();
 					} else if (event.type === 'file_skipped') {
@@ -545,7 +543,6 @@ export class RagVaultScanner {
 						progressCallback?.({
 							current: event.totalFiles || 0,
 							total: event.totalFiles || 0,
-							phase: 'complete',
 							message: `Indexed ${result.indexed}, skipped ${result.skipped}, failed ${result.failed}`,
 						});
 					}

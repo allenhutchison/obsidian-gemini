@@ -536,7 +536,7 @@ describe('RagVaultScanner', () => {
 	// ── Progress tracking callbacks ──────────────────────────────────────
 
 	describe('progress tracking callbacks', () => {
-		it('should call progressCallback with scanning phase on start event', async () => {
+		it('should call progressCallback with progress state on start event', async () => {
 			const progressCallback = vi.fn();
 			const callbacks = createMockCallbacks();
 			const fileUploader = {
@@ -554,12 +554,11 @@ describe('RagVaultScanner', () => {
 				expect.objectContaining({
 					current: 0,
 					total: 10,
-					phase: 'scanning',
 				})
 			);
 		});
 
-		it('should call progressCallback with complete phase on complete event', async () => {
+		it('should call progressCallback on complete event', async () => {
 			const progressCallback = vi.fn();
 			const callbacks = createMockCallbacks();
 			const fileUploader = {
@@ -573,9 +572,13 @@ describe('RagVaultScanner', () => {
 
 			await scanner.indexVault(progressCallback);
 
+			// The completion payload carries the equal current/total counts and
+			// the human-readable result summary.
 			expect(progressCallback).toHaveBeenCalledWith(
 				expect.objectContaining({
-					phase: 'complete',
+					current: 5,
+					total: 5,
+					message: expect.stringContaining('Indexed'),
 				})
 			);
 		});
@@ -681,7 +684,6 @@ describe('RagVaultScanner', () => {
 					current: 1,
 					total: 2,
 					currentFile: 'note.md',
-					phase: 'indexing',
 				})
 			);
 			expect(callbacks.onUpdateStatusBar).toHaveBeenCalled();
@@ -1281,7 +1283,7 @@ describe('RagVaultScanner', () => {
 	// ── complete event clears currentFile ─────────────────────────────────
 
 	describe('complete event', () => {
-		it('should clear currentFile and invoke progressCallback with complete phase', async () => {
+		it('should clear currentFile and invoke progressCallback on complete event', async () => {
 			const progressCallback = vi.fn();
 			const callbacks = createMockCallbacks();
 			const fileUploader = {
@@ -1305,7 +1307,6 @@ describe('RagVaultScanner', () => {
 
 			expect(progressCallback).toHaveBeenCalledWith(
 				expect.objectContaining({
-					phase: 'complete',
 					message: expect.stringContaining('Indexed 1'),
 				})
 			);
