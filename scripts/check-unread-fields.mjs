@@ -151,6 +151,77 @@ function fileEmitsEventName(source, name) {
 	return found;
 }
 
+/**
+ * Whether an access sits inside a destructuring pattern that is the
+ * left-hand side of an assignment — e.g. `state.phase` in
+ * `({ phase: state.phase } = input)`. Such an access is an assignment
+ * target (a write), not a read. Walks up through binding containers:
+ * access → PropertyAssignment (the binding's value) → ObjectBindingPattern
+ * → BindingElement → ObjectBindingPattern/ArrayBindingPattern → … until an
+ * AssignmentExpression whose left side is that pattern. A pattern feeding a
+ * variable declaration or a function parameter is NOT an assignment target
+ * — its contents are reads.
+ */
+function isInsideDestructuringTarget(node) {
+	let current = node.parent;
+	while (current) {
+		// Two assignment-pattern shapes:
+		//  - declared destructuring `const { phase: x } = input` —
+		//    BindingElement/ObjectBindingPattern (a pattern can't assign to a
+		//    member, so this form is never a target)
+		//  - assignment destructuring `({ phase: state.phase } = input)` —
+		//    the left side is a plain ObjectLiteralExpression; only when that
+		//    object sits on the LEFT of `=` is it a pattern, and its members
+		//    are assignment targets.
+		if (ts.isObjectLiteralExpression(current)) {
+			const parent = current.parent;
+			if (
+				parent &&
+				ts.isBinaryExpression(parent) &&
+				parent.left === current &&
+				parent.operatorToken.getText() === '='
+			) {
+				return true;
+			}
+			// A nested object/array literal inside an outer assignment pattern:
+			// keep walking outward — the outer pattern decides.
+			current = current.parent;
+			continue;
+		}
+		if (ts.isBindingElement(current) || ts.isObjectBindingPattern(current) || ts.isArrayBindingPattern(current)) {
+			// Declared destructuring: walk to the container. A chain topping out
+			// at a VariableDeclaration/Parameter is a declaration (reads); a
+			// BinaryExpression '=' with the pattern on the left is a target.
+			let container = current.parent;
+			while (container) {
+				if (ts.isVariableDeclaration(container) || ts.isParameter(container)) return false;
+				if (ts.isBinaryExpression(container) && container.operatorToken.getText() === '=') {
+					return container.left === current || isAncestorOf(container.left, current);
+				}
+				container = container.parent;
+			}
+			return false;
+		}
+		current = current.parent;
+	}
+	return false;
+}
+
+/** Whether `ancestor` contains `node` somewhere in its subtree. */
+function isAncestorOf(ancestor, node) {
+	let found = false;
+	const visit = (n) => {
+		if (found) return;
+		if (n === node) {
+			found = true;
+			return;
+		}
+		ts.forEachChild(n, visit);
+	};
+	ts.forEachChild(ancestor, visit);
+	return found;
+}
+
 /** Whether ANY scanned file emits `name` as an event (emit('<name>', ...)). */
 function anyFileEmitsEvent(sources, name) {
 	for (const source of sources.values()) {
