@@ -1,0 +1,52 @@
+name: Unread-field report
+
+# #1469: advisory scan for interface fields declared and written but never
+# read anywhere (per-field reachability — what knip deliberately does not
+# model). Deliberately NON-blocking for one release, per the maintainer's
+# call on the issue: the scanner's known false-positive shapes are handled
+# (destructuring, bracket access, event-map keys consumed via emit literals,
+# `wiring:keep` suppression), but the residual rate is measured here before
+# the check is flipped to a gate alongside lint:cycles and knip.
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+permissions:
+  contents: read
+
+jobs:
+  unread-fields:
+    name: Unread-field reachability report
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Always succeeds (advisory): the scan itself exits 0 and the report is
+      # uploaded for triage. To flip this to a blocking gate, change `run` to
+      # propagate the script's exit code once the noise rate is acceptable —
+      # the script already separates candidates from suppression.
+      - name: Scan for unread wiring fields
+        run: npm run check:fields
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: unread-field-report
+          path: unread-fields-report.txt
+          if-no-files-found: ignore
