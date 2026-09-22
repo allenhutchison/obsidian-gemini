@@ -249,7 +249,7 @@ describe('runHeadlessAgentTurn', () => {
 
 			const result = await runHeadlessAgentTurn(createMockPlugin(), makeSpec(), () => false);
 
-			expect(result).toBe('Straight answer.');
+			expect(result).toEqual({ text: 'Straight answer.', notice: undefined });
 			expect(mockAgentLoopRun).not.toHaveBeenCalled();
 		});
 
@@ -262,7 +262,7 @@ describe('runHeadlessAgentTurn', () => {
 
 			// Empty string, not undefined — callers distinguish "cancelled"
 			// (undefined) from "ran but produced nothing" (empty).
-			expect(result).toBe('');
+			expect(result).toEqual({ text: '', notice: undefined });
 		});
 	});
 
@@ -279,7 +279,7 @@ describe('runHeadlessAgentTurn', () => {
 
 			const result = await runHeadlessAgentTurn(plugin, makeSpec(), () => false);
 
-			expect(result).toBe('Loop answer.');
+			expect(result).toEqual({ text: 'Loop answer.', notice: undefined });
 			expect(mockAgentLoopRun).toHaveBeenCalledWith(
 				expect.objectContaining({
 					initialUserMessage: '[preamble] Write a daily summary.',
@@ -337,6 +337,29 @@ describe('runHeadlessAgentTurn', () => {
 					() => false
 				)
 			).rejects.toThrow('[HookRunner] Hook "my-hook" exhausted');
+		});
+
+		it.each([
+			['fellBack', { fellBack: true, loopAborted: false } as const],
+			['loopAborted', { fellBack: false, loopAborted: true } as const],
+			['both flags', { fellBack: true, loopAborted: true } as const],
+		])('surfaces %s as a notice on the result', async (_label, flags) => {
+			mockAgentLoopRun.mockResolvedValue({
+				...successfulLoopResult('Loop notice text.'),
+				...flags,
+			});
+
+			const result = await runHeadlessAgentTurn(createMockPlugin(), makeSpec(), () => false);
+
+			expect(result).toEqual({ text: 'Loop notice text.', notice: flags });
+		});
+
+		it('omits the notice for a clean terminal answer', async () => {
+			mockAgentLoopRun.mockResolvedValue(successfulLoopResult('Real answer.'));
+
+			const result = await runHeadlessAgentTurn(createMockPlugin(), makeSpec(), () => false);
+
+			expect(result?.notice).toBeUndefined();
 		});
 	});
 

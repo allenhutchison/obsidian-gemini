@@ -1,6 +1,6 @@
 import type { ObsidianGemini } from '../types/plugin';
 import type { ScheduledTask } from './scheduled-tasks/types';
-import { resolveOutputPath, writeHeadlessOutput } from './headless-run-output';
+import { resolveOutputPath, writeHeadlessOutput, markIncompleteOutput } from './headless-run-output';
 import { formatLocalDate } from '../utils/format-utils';
 import { runHeadlessAgentTurn } from './headless-agent-turn';
 
@@ -19,7 +19,7 @@ export class ScheduledTaskRunner {
 	) {}
 
 	async run(isCancelled: () => boolean): Promise<string | undefined> {
-		const finalText = await runHeadlessAgentTurn(
+		const turn = await runHeadlessAgentTurn(
 			this.plugin,
 			{
 				sessionLabel: `Scheduled: ${this.task.slug}`,
@@ -35,11 +35,11 @@ export class ScheduledTaskRunner {
 		);
 
 		// `undefined` means the run was cancelled mid-turn — nothing to write.
-		if (finalText === undefined) return undefined;
+		if (turn === undefined) return undefined;
 
 		if (isCancelled()) return undefined;
 
-		if (!finalText) {
+		if (!turn.text) {
 			throw new Error(`[ScheduledTaskRunner] Task "${this.task.slug}" produced no response`);
 		}
 
@@ -52,12 +52,18 @@ export class ScheduledTaskRunner {
 		});
 		// Use JSON.stringify for YAML quoted scalars — guards against quotes or
 		// backslashes in the slug or ISO timestamp breaking the frontmatter.
-		const header = `---\nscheduled_task: ${JSON.stringify(this.task.slug)}\nran_at: ${JSON.stringify(new Date().toISOString())}\n---\n\n`;
+		let header = `---\nscheduled_task: ${JSON.stringify(this.task.slug)}\nran_at: ${JSON.stringify(new Date().toISOString())}\n---\n\n`;
+		let content = turn.text;
+		// A loop-generated notice (empty-twice fallback or loop-detector abort)
+		// must never read as the run's real result — mark the note instead (#1268).
+		if (turn.notice) {
+			({ header, content } = markIncompleteOutput(header, content, turn.notice));
+		}
 		await writeHeadlessOutput({
 			vault: this.plugin.app.vault,
 			outputPath,
 			header,
-			content: finalText,
+			content,
 			folderLabel: 'scheduled task output folder',
 			logger: this.plugin.logger,
 		});

@@ -265,6 +265,38 @@ describe('ScheduledTaskRunner', () => {
 		expect(plugin.app.vault.create).not.toHaveBeenCalled();
 	});
 
+	// #1268: a loop-generated notice (loop-detector abort, or the empty-twice
+	// fallback) must never read as the run's real result — the note is still
+	// written for debugging, but marked incomplete.
+	it.each([
+		['loopAborted', { fellBack: false, loopAborted: true }, 'tool-loop detector aborted the turn'],
+		['fellBack', { fellBack: true, loopAborted: false }, 'the model returned an empty response twice'],
+	])(
+		'marks the output note incomplete on %s instead of persisting the notice as the result',
+		async (_label, flags, causeText) => {
+			const toolCalls = [{ name: 'list_files', arguments: { path: '/' } }];
+			(ModelClientFactory.createChatModel as Mock).mockReturnValue(createMockModelApi('', toolCalls));
+			mockAgentLoopRun.mockResolvedValue({
+				...successfulLoopResult('Loop-detector aborted after 3 fires.'),
+				...flags,
+			});
+
+			const vaultFiles: Record<string, string> = {};
+			const plugin = createMockPlugin(vaultFiles);
+			const runner = new ScheduledTaskRunner(plugin, makeTask());
+
+			const outputPath = await runner.run(() => false);
+
+			expect(outputPath).toBe('gemini-scribe/Scheduled-Tasks/Runs/test-task/2026-04-18.md');
+			const written = (plugin.app.vault.create as Mock).mock.calls[0][1] as string;
+			expect(written).toMatch(/incomplete: true/);
+			expect(written).toContain(causeText);
+			expect(written).toContain('Loop-detector aborted after 3 fires.');
+			// The notice text lands after the callout — never mistaken for the answer.
+			expect(written.indexOf('incomplete: true')).toBeLessThan(written.indexOf('Loop-detector aborted after 3 fires.'));
+		}
+	);
+
 	it('throws after MAX_TOOL_ITERATIONS without a text response', async () => {
 		const toolCalls = [{ name: 'list_files', arguments: { path: '/' } }];
 		(ModelClientFactory.createChatModel as Mock).mockReturnValue(createMockModelApi('', toolCalls));
