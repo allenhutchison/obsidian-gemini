@@ -1,4 +1,15 @@
 {
+	"4.12.0": {
+		"title": "🔌 Gemini Scribe 4.12.0 - Multi-Provider, Per-Feature Routing & Settings Redesign",
+		"highlights": [
+			"🌍 Anthropic (Claude) and OpenAI-compatible providers — two new providers join the roster alongside Gemini and Ollama: Anthropic Claude models and any OpenAI-compatible endpoint (custom base URL + API key), each with full streaming, tool calling, and PDF support (#1532, #1286)",
+			"🖼️ OpenAI image generation — image generation now works on OpenAI models too; pick a provider per feature in the new Features settings page (#1583, #1266)",
+			"⚙️ Settings redesign — the settings page is rebuilt around a feature routing table (chat, summaries, completions, rewrite, web search, deep research, RAG, and image generation each route to their own provider and model) and provider connection cards (#1508, #1266)",
+			"🧠 Reasoning in the UI — model thinking shows as collapsible Reasoning rows interleaved with tool activity, reasoning tokens are surfaced in the token readout, and thoughts persist to session history (#1437, #1441, #1269)",
+			"🛡️ Hardened agent runs — tool results stay paired with their calls in replayed turns, the first loop-detector fire now shows a user notice, retry backoff is interruptible, and cancellation aborts the underlying streaming transport (#1561, #1537, #1453, #1349)"
+		],
+		"details": "4.12.0 is the multi-provider release. Anthropic (Claude) and OpenAI-compatible endpoints join Gemini and Ollama as first-class providers, and a redesigned settings page gives every feature — chat, summaries, completions, rewrite, web search, deep research, RAG, and image generation — its own provider and model routing. Image generation gained an OpenAI backend, Gemma models joined the weekly model catalog, and the attachment pipeline (drop, paste, @-mention) now shares one binary path with a corrected 20 MB budget that accounts for rasterized images. Long-running agent work got steadier: tool results are always paired with their calls in replayed history, tool-call correlation ids survive into function responses, the loop detector surfaces a notice on its first fire, retry backoff yields to cancellation, and cancelled streams abort the transport. Session management fixes cover inline delete confirmation, collision-safe renames shared between auto-label and manual edits, and proper release of headless and deleted sessions. MCP tool classification now derives from the server's destructiveHint, the global window-timer patch is gone, and project discovery tools treat the project root as a hard scope. Mobile loads again on iOS < 16.4, and Gemini 2.5 compatibility is restored on both API paths."
+	},
 	"4.11.0": {
 		"title": "🎨 Gemini Scribe 4.11.0 - Design System, Plan Mode & Smarter Agent Runs",
 		"highlights": [

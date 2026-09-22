@@ -11,11 +11,25 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 >
 > Then route each feature to a provider on the **Features** page. See the [provider capability matrix](docs/reference/provider-capabilities.md) for what's supported on each.
 
-## What's New in v4.11.0
+## What's New in v4.12.0
 
-**🎨 Gemini Scribe 4.11.0 - Design System, Plan Mode & Smarter Agent Runs**
+**🔌 Gemini Scribe 4.12.0 - Multi-Provider, Per-Feature Routing & Settings Redesign**
 
-_A large feature release — a full visual refresh plus smarter, more responsive agent runs:_
+_The multi-provider release — two new providers, per-feature routing, and a rebuilt settings page:_
+
+- **🌍 Anthropic (Claude) and OpenAI-compatible providers** - Two new providers join the roster alongside Gemini and Ollama: Anthropic Claude models and any OpenAI-compatible endpoint (custom base URL + API key), each with full streaming, tool calling, and PDF support. (#1532, #1286)
+- **🖼️ OpenAI image generation** - Image generation now works on OpenAI models too; pick a provider per feature in the new Features settings page. (#1583, #1266)
+- **⚙️ Settings redesign** - The settings page is rebuilt around a feature routing table — chat, summaries, completions, rewrite, web search, deep research, RAG, and image generation each route to their own provider and model — plus provider connection cards. (#1508, #1266)
+- **🧠 Reasoning in the UI** - Model thinking shows as collapsible Reasoning rows interleaved with tool activity, reasoning tokens are surfaced in the token readout, and thoughts persist to session history. (#1437, #1441, #1269)
+- **🛡️ Hardened agent runs** - Tool results stay paired with their calls in replayed turns, the first loop-detector fire now shows a user notice, retry backoff is interruptible, and cancellation aborts the underlying streaming transport. (#1561, #1537, #1453, #1349)
+- **🗂️ Session management polish** - Session delete uses an inline row confirm instead of a native dialog, renames are collision-safe and shared between auto-label and manual edits, and headless/deleted sessions are properly released. (#1280, #1423, #1221, #1476)
+- **📎 Attachment pipeline unification** - Drop, paste, and @-mention share one binary attachment path, with the 20 MB budget held against rasterized images everywhere. (#1412, #1434)
+- **🔌 MCP correctness** - Tool classification now derives from the server's `destructiveHint`, and the global window-timer patch is gone. (#1456, #1446)
+- **📱 Mobile fix** - Removed a regex lookbehind that crashed plugin load on iOS < 16.4. (#1257)
+- **🐛 Fixes** - Gemini 2.5 compatibility restored on both API paths (#1222); interactions-only models (Gemini Omni) route correctly (#1225); project discovery tools treat the project root as a hard scope (#1520); scheduled-task lifecycle writes no longer go stale (#1462); RAG search retries like every other call site (#1429); and the dropped-file vault-root check is folder-boundary anchored (#1489).
+- **🔧 Under the hood** - A coverage floor now guards the test suite with an auto-ratcheting threshold, the two remaining Tier-1 oversized methods (`sendMessage`, `AgentLoop.run`) are decomposed, and provider encapsulation is lint-enforced. (#1595, #1593, #1588)
+
+**Previous Updates (v4.11.0):**
 
 - **🎨 Design system overhaul** - A refreshed visual identity built on a new theme-adaptive design-token layer: a signature Gemini accent (bold user message bubbles, a gradient send button, and a brand mark), a unified elevation/shadow scale, a gradient progress bar across all states, motion polish, and consistent icon sizing — adapting cleanly to light, dark, and custom themes. (#1090, #1104, #1107, #1109, #1110, #1112)
 - **📋 Plan Mode (opt-in)** - A new toggle in the agent view (and a command) that has the agent lay out its plan before it starts acting, shown as a "Plan" pill; leave it off for the usual direct execution. (#1046)
