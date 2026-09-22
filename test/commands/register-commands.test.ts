@@ -240,8 +240,8 @@ describe('registerCommands', () => {
 				expect(plugin.checkInitialized).toHaveBeenCalled();
 				// The gate must stop the command *before* its first action.
 				expect(plugin.activateAgentView).not.toHaveBeenCalled();
-				expect((plugin).agentView?.createNewSession).not.toHaveBeenCalled();
-				expect((plugin).imageGeneration.promptForImageDescription).not.toHaveBeenCalled();
+				expect(plugin.agentView?.createNewSession).not.toHaveBeenCalled();
+				expect(plugin.imageGeneration.promptForImageDescription).not.toHaveBeenCalled();
 				expect(refreshGeminiModelList).not.toHaveBeenCalled();
 			}
 		);
