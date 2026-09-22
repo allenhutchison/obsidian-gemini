@@ -837,6 +837,41 @@ describe('HookRunner agent-task: cancelled during loop', () => {
 	});
 });
 
+// ─── Agent-task: notice runs are marked incomplete (#1268) ───────────────────
+
+describe('HookRunner agent-task: notice runs marked incomplete', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it.each([
+		['loopAborted', { fellBack: false, loopAborted: true }, 'tool-loop detector aborted the turn'],
+		['fellBack', { fellBack: true, loopAborted: false }, 'the model returned an empty response twice'],
+	])('marks the output note incomplete on %s', async (_label, flags, causeText) => {
+		const generateModelResponse = vi.fn().mockResolvedValue({
+			markdown: '',
+			toolCalls: [{ name: 'some_tool', arguments: {} }],
+		});
+		(ModelClientFactory.createChatModel as any).mockReturnValue({ generateModelResponse });
+		mockAgentLoopRun.mockResolvedValue({
+			...successfulLoopResult('Loop notice text.'),
+			...flags,
+		});
+
+		const plugin = createMockPlugin();
+		const hook = makeHook();
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		const outputPath = await runner.run();
+
+		expect(outputPath).toBeDefined();
+		const written = plugin.__create.mock.calls[0][1] as string;
+		expect(written).toMatch(/incomplete: true/);
+		expect(written).toContain(causeText);
+		expect(written).toContain('Loop notice text.');
+	});
+});
+
 // ─── Agent-task: model override ──────────────────────────────────────────────
 
 describe('HookRunner agent-task: model override', () => {

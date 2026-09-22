@@ -166,6 +166,25 @@ ran_at: '2026-04-18T08:00:00.000Z'
 
 The `{date}` placeholder in `outputPath` is replaced with the local date (`YYYY-MM-DD`), so each run produces a separate file by default.
 
+### Incomplete runs
+
+If a run ends abnormally — the model returned an empty response twice, or the tool-loop detector aborted the turn — the output file is still written (so the attempt is debuggable) but it is **marked** so it can never be mistaken for a real result:
+
+```markdown
+---
+scheduled_task: 'daily-summary'
+ran_at: '2026-04-18T08:00:00.000Z'
+incomplete: true
+---
+
+> [!warning] Incomplete run
+> This output was written by an automated run that did not complete normally: …
+
+<loop notice text>
+```
+
+A note without the `incomplete` key is a normal, successful run. Hook output notes (an `agent-task` hook with an `outputPath`) use the same marking.
+
 ## Error Handling and Pausing
 
 If a task fails **3 consecutive times**, the scheduler automatically pauses it to prevent runaway retries. The task monitor shows it with a `paused` badge and displays the last error.

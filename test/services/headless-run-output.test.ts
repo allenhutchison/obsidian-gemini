@@ -5,6 +5,7 @@ import {
 	resolveTimestampPath,
 	isAlreadyExistsError,
 	writeHeadlessOutput,
+	markIncompleteOutput,
 } from '../../src/services/headless-run-output';
 
 // normalizePath here mirrors the real helper closely enough for path assertions
@@ -253,5 +254,38 @@ describe('writeHeadlessOutput — retry (hook shape)', () => {
 				retry,
 			})
 		).rejects.toThrow(/\[HookRunner\] Failed to write hook output after 9 attempts/);
+	});
+});
+
+describe('markIncompleteOutput', () => {
+	const header = '---\nscheduled_task: "t"\nran_at: "2026-09-21"\n---\n\n';
+
+	it('inserts incomplete: true into the frontmatter and prepends the warning callout', () => {
+		const { header: marked, content } = markIncompleteOutput(header, 'Loop notice.', { loopAborted: true });
+
+		expect(marked).toBe('---\nscheduled_task: "t"\nran_at: "2026-09-21"\nincomplete: true\n---\n\n');
+		expect(content).toMatch(/^> \[!warning\] Incomplete run\n/);
+		expect(content).toContain('tool-loop detector aborted the turn');
+		expect(content).toContain('Loop notice.');
+	});
+
+	it('names the empty-twice cause for fellBack', () => {
+		const { content } = markIncompleteOutput(header, 'x', { fellBack: true });
+
+		expect(content).toContain('the model returned an empty response twice');
+	});
+
+	it('joins both causes when both flags are set', () => {
+		const { header: marked, content } = markIncompleteOutput(header, 'x', { fellBack: true, loopAborted: true });
+
+		expect(marked).toContain('incomplete: true');
+		expect(content).toContain('empty response twice and the tool-loop detector aborted');
+	});
+
+	it('leaves the body text after the callout untouched', () => {
+		const body = '## Notice\nExecuted tools: read_file';
+		const { content } = markIncompleteOutput(header, body, { fellBack: true });
+
+		expect(content.endsWith(body)).toBe(true);
 	});
 });

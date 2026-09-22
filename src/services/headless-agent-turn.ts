@@ -55,9 +55,34 @@ export interface HeadlessAgentTurnSpec {
 }
 
 /**
+ * Result of one headless agent turn. `text` is the final markdown; `notice`
+ * is set when that text is a loop-generated user-facing message rather than a
+ * model answer, carrying the flags that produced it.
+ *
+ * The `AgentLoopResult` contract marks both `fellBack` and `loopAborted`
+ * markdown as "display but do not persist as a model response" — headless
+ * callers cannot render a notice, so the output writer marks the note
+ * `incomplete: true` (see `markIncompleteOutput`) instead of leaving the
+ * notice indistinguishable from a real result (#1268).
+ */
+export interface HeadlessTurnResult {
+	/** Final response text (a real answer, or the notice text when `notice` is set). */
+	text: string;
+	/** Present when `text` is a notice, not a model answer. */
+	notice?: {
+		/** Even the retry returned empty — `text` lists the executed tools. */
+		fellBack?: boolean;
+		/** The tool-loop detector aborted the turn after its threshold. */
+		loopAborted?: boolean;
+	};
+}
+
+/**
  * Drive one headless agent turn to completion.
  *
- * @returns the final response text, or `undefined` if the run was cancelled.
+ * @returns the final response text plus a `notice` descriptor when the text is
+ *          a loop-generated notice rather than a model answer (see
+ *          {@link HeadlessTurnResult}), or `undefined` if the run was cancelled.
  * @throws if agent services are not initialised, or if the tool-iteration
  *         budget is exhausted without producing a response.
  */
@@ -65,7 +90,7 @@ export async function runHeadlessAgentTurn(
 	plugin: ObsidianGemini,
 	spec: HeadlessAgentTurnSpec,
 	isCancelled: () => boolean
-): Promise<string | undefined> {
+): Promise<HeadlessTurnResult | undefined> {
 	if (!plugin.sessionManager || !plugin.toolRegistry || !plugin.toolExecutionEngine) {
 		throw new Error(`${spec.logPrefix} Agent services not initialised`);
 	}
@@ -126,7 +151,7 @@ export async function runHeadlessAgentTurn(
 		if (isCancelled()) return undefined;
 
 		if (!initialResponse.toolCalls?.length) {
-			return initialResponse.markdown ?? '';
+			return { text: initialResponse.markdown ?? '' };
 		}
 
 		// Per-run override falls back to the shared headless default when unset.
@@ -162,7 +187,13 @@ export async function runHeadlessAgentTurn(
 			);
 		}
 
-		return result.markdown;
+		// Surface the loop's notice flags so callers can mark the output as
+		// incomplete rather than persisting a notice as the run's result (#1268).
+		const notice =
+			result.fellBack || result.loopAborted
+				? { fellBack: result.fellBack, loopAborted: result.loopAborted }
+				: undefined;
+		return { text: result.markdown, notice };
 	} finally {
 		// The temporary session never escapes this turn, even on cancellation or failure.
 		plugin.sessionManager.releaseSession(session.id);

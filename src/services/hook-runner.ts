@@ -1,6 +1,6 @@
 import { App, TFile } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
-import { resolveOutputPath, writeHeadlessOutput } from './headless-run-output';
+import { resolveOutputPath, writeHeadlessOutput, markIncompleteOutput } from './headless-run-output';
 import { formatLocalDate } from '../utils/format-utils';
 import { GeminiSummary } from '../summary';
 import { SelectionRewriter } from '../rewrite-selection';
@@ -45,7 +45,7 @@ export class HookRunner {
 	private async runAgentTask(isCancelled: () => boolean): Promise<string | undefined> {
 		const { hook } = this.ctx;
 
-		const finalText = await runHeadlessAgentTurn(
+		const turn = await runHeadlessAgentTurn(
 			this.plugin,
 			{
 				sessionLabel: `Hook: ${hook.slug}`,
@@ -65,14 +65,14 @@ export class HookRunner {
 		);
 
 		// `undefined` means the run was cancelled mid-turn — nothing to write.
-		if (finalText === undefined) return undefined;
+		if (turn === undefined) return undefined;
 
 		if (isCancelled()) return undefined;
 		if (!hook.outputPath) return undefined;
-		if (!finalText) return undefined;
+		if (!turn.text) return undefined;
 
 		const outputPath = this.resolveOutputPath();
-		await this.writeOutput(outputPath, finalText);
+		await this.writeOutput(outputPath, turn.text, turn.notice);
 		return outputPath;
 	}
 
@@ -205,13 +205,24 @@ export class HookRunner {
 		});
 	}
 
-	private async writeOutput(outputPath: string, content: string): Promise<void> {
+	private async writeOutput(
+		outputPath: string,
+		content: string,
+		notice?: { fellBack?: boolean; loopAborted?: boolean }
+	): Promise<void> {
 		const ranAt = new Date().toISOString();
-		const header =
+		let header =
 			`---\nhook: ${JSON.stringify(this.ctx.hook.slug)}\n` +
 			`triggered_by: ${JSON.stringify(this.ctx.filePath)}\n` +
 			`trigger: ${JSON.stringify(this.ctx.trigger)}\n` +
 			`ran_at: ${JSON.stringify(ranAt)}\n---\n\n`;
+		let body = content;
+
+		// A loop-generated notice (empty-twice fallback or loop-detector abort)
+		// must never read as the run's real result — mark the note instead (#1268).
+		if (notice) {
+			({ header, content: body } = markIncompleteOutput(header, body, notice));
+		}
 
 		// Two concurrent hook fires can independently choose the same candidate
 		// path (resolve-unique + vault.create is non-atomic), so use the shared
@@ -221,7 +232,7 @@ export class HookRunner {
 			vault: this.plugin.app.vault,
 			outputPath,
 			header,
-			content,
+			content: body,
 			folderLabel: 'hook output folder',
 			logger: this.plugin.logger,
 			retry: { limit: 8, label: '[HookRunner]', outputNoun: 'hook output' },
