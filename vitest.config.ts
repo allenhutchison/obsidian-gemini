@@ -33,6 +33,20 @@ export default defineConfig({
 			reportsDirectory: './coverage',
 			include: ['src/**/*.ts'],
 			exclude: ['src/**/*.d.ts', 'src/**/*.test.ts', 'src/**/*.spec.ts', 'src/services/generated-help-references.ts'],
+			// Coverage floor (#1262 slice 4): baseline measured 2026-09-21 on
+			// master at 73.56/73.17/71.00/71.96 after covering the remaining
+			// high-value modules, floored to the measured values. `autoUpdate`
+			// ratchets these up automatically when a full run beats them; a
+			// legitimate drop (e.g. a dead-code sweep) is fixed by editing the
+			// number in the same PR, with the reason in the PR body — one
+			// reviewed line, not a bypass.
+			thresholds: {
+				lines: 73.56,
+				statements: 73.17,
+				branches: 71,
+				functions: 71.96,
+				autoUpdate: true,
+			},
 		},
 	},
 	resolve: {

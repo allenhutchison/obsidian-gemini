@@ -37,6 +37,7 @@ npm run translate    # Regenerate AI translations in src/i18n/ (needs GOOGLE_API
 ### Testing
 
 - Run single test: `npm test -- path/to/test.ts`
+- **Coverage floor**: `npm test -- --coverage` enforces thresholds in `vitest.config.ts` (baseline 73.56/73.17/71.00/71.96 for lines/statements/branches/functions; see the `thresholds` comment there). CI fails when coverage falls below the floor. `autoUpdate` ratchets the numbers up automatically on full runs; a legitimate drop (e.g. a dead-code sweep) is fixed by editing the number in the same PR, with the reason in the PR body — same convention as `.console-baseline`.
 - Manual integration: `npm run eval` drives the eval harness against a real Obsidian instance to validate agent toolchains before shipping (see `evals/README.md` and the **eval-harness** skill)
 - **Typecheck test files before pushing test changes**: the CI lint job runs `npm run typecheck:test` (`tsc --project tsconfig.test.json`), which type-checks the `test/` tree and catches errors the production build misses — `npm run build` uses `tsc -skipLibCheck` and excludes tests. A green local `npm run build` does **not** guarantee CI passes; run `npm run typecheck:test` too. (Classic trap: an expression-bodied arrow like `(t) => arr.push(t)` returns `number`, not `void`, and only the test typecheck flags it.)
 
