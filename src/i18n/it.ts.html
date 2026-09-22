@@ -1,0 +1,3250 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for src/i18n/it.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/i18n</a> it.ts</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>1/1</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/0</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/0</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>1/1</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line high'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a>
+<a name='L149'></a><a href='#L149'>149</a>
+<a name='L150'></a><a href='#L150'>150</a>
+<a name='L151'></a><a href='#L151'>151</a>
+<a name='L152'></a><a href='#L152'>152</a>
+<a name='L153'></a><a href='#L153'>153</a>
+<a name='L154'></a><a href='#L154'>154</a>
+<a name='L155'></a><a href='#L155'>155</a>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a>
+<a name='L158'></a><a href='#L158'>158</a>
+<a name='L159'></a><a href='#L159'>159</a>
+<a name='L160'></a><a href='#L160'>160</a>
+<a name='L161'></a><a href='#L161'>161</a>
+<a name='L162'></a><a href='#L162'>162</a>
+<a name='L163'></a><a href='#L163'>163</a>
+<a name='L164'></a><a href='#L164'>164</a>
+<a name='L165'></a><a href='#L165'>165</a>
+<a name='L166'></a><a href='#L166'>166</a>
+<a name='L167'></a><a href='#L167'>167</a>
+<a name='L168'></a><a href='#L168'>168</a>
+<a name='L169'></a><a href='#L169'>169</a>
+<a name='L170'></a><a href='#L170'>170</a>
+<a name='L171'></a><a href='#L171'>171</a>
+<a name='L172'></a><a href='#L172'>172</a>
+<a name='L173'></a><a href='#L173'>173</a>
+<a name='L174'></a><a href='#L174'>174</a>
+<a name='L175'></a><a href='#L175'>175</a>
+<a name='L176'></a><a href='#L176'>176</a>
+<a name='L177'></a><a href='#L177'>177</a>
+<a name='L178'></a><a href='#L178'>178</a>
+<a name='L179'></a><a href='#L179'>179</a>
+<a name='L180'></a><a href='#L180'>180</a>
+<a name='L181'></a><a href='#L181'>181</a>
+<a name='L182'></a><a href='#L182'>182</a>
+<a name='L183'></a><a href='#L183'>183</a>
+<a name='L184'></a><a href='#L184'>184</a>
+<a name='L185'></a><a href='#L185'>185</a>
+<a name='L186'></a><a href='#L186'>186</a>
+<a name='L187'></a><a href='#L187'>187</a>
+<a name='L188'></a><a href='#L188'>188</a>
+<a name='L189'></a><a href='#L189'>189</a>
+<a name='L190'></a><a href='#L190'>190</a>
+<a name='L191'></a><a href='#L191'>191</a>
+<a name='L192'></a><a href='#L192'>192</a>
+<a name='L193'></a><a href='#L193'>193</a>
+<a name='L194'></a><a href='#L194'>194</a>
+<a name='L195'></a><a href='#L195'>195</a>
+<a name='L196'></a><a href='#L196'>196</a>
+<a name='L197'></a><a href='#L197'>197</a>
+<a name='L198'></a><a href='#L198'>198</a>
+<a name='L199'></a><a href='#L199'>199</a>
+<a name='L200'></a><a href='#L200'>200</a>
+<a name='L201'></a><a href='#L201'>201</a>
+<a name='L202'></a><a href='#L202'>202</a>
+<a name='L203'></a><a href='#L203'>203</a>
+<a name='L204'></a><a href='#L204'>204</a>
+<a name='L205'></a><a href='#L205'>205</a>
+<a name='L206'></a><a href='#L206'>206</a>
+<a name='L207'></a><a href='#L207'>207</a>
+<a name='L208'></a><a href='#L208'>208</a>
+<a name='L209'></a><a href='#L209'>209</a>
+<a name='L210'></a><a href='#L210'>210</a>
+<a name='L211'></a><a href='#L211'>211</a>
+<a name='L212'></a><a href='#L212'>212</a>
+<a name='L213'></a><a href='#L213'>213</a>
+<a name='L214'></a><a href='#L214'>214</a>
+<a name='L215'></a><a href='#L215'>215</a>
+<a name='L216'></a><a href='#L216'>216</a>
+<a name='L217'></a><a href='#L217'>217</a>
+<a name='L218'></a><a href='#L218'>218</a>
+<a name='L219'></a><a href='#L219'>219</a>
+<a name='L220'></a><a href='#L220'>220</a>
+<a name='L221'></a><a href='#L221'>221</a>
+<a name='L222'></a><a href='#L222'>222</a>
+<a name='L223'></a><a href='#L223'>223</a>
+<a name='L224'></a><a href='#L224'>224</a>
+<a name='L225'></a><a href='#L225'>225</a>
+<a name='L226'></a><a href='#L226'>226</a>
+<a name='L227'></a><a href='#L227'>227</a>
+<a name='L228'></a><a href='#L228'>228</a>
+<a name='L229'></a><a href='#L229'>229</a>
+<a name='L230'></a><a href='#L230'>230</a>
+<a name='L231'></a><a href='#L231'>231</a>
+<a name='L232'></a><a href='#L232'>232</a>
+<a name='L233'></a><a href='#L233'>233</a>
+<a name='L234'></a><a href='#L234'>234</a>
+<a name='L235'></a><a href='#L235'>235</a>
+<a name='L236'></a><a href='#L236'>236</a>
+<a name='L237'></a><a href='#L237'>237</a>
+<a name='L238'></a><a href='#L238'>238</a>
+<a name='L239'></a><a href='#L239'>239</a>
+<a name='L240'></a><a href='#L240'>240</a>
+<a name='L241'></a><a href='#L241'>241</a>
+<a name='L242'></a><a href='#L242'>242</a>
+<a name='L243'></a><a href='#L243'>243</a>
+<a name='L244'></a><a href='#L244'>244</a>
+<a name='L245'></a><a href='#L245'>245</a>
+<a name='L246'></a><a href='#L246'>246</a>
+<a name='L247'></a><a href='#L247'>247</a>
+<a name='L248'></a><a href='#L248'>248</a>
+<a name='L249'></a><a href='#L249'>249</a>
+<a name='L250'></a><a href='#L250'>250</a>
+<a name='L251'></a><a href='#L251'>251</a>
+<a name='L252'></a><a href='#L252'>252</a>
+<a name='L253'></a><a href='#L253'>253</a>
+<a name='L254'></a><a href='#L254'>254</a>
+<a name='L255'></a><a href='#L255'>255</a>
+<a name='L256'></a><a href='#L256'>256</a>
+<a name='L257'></a><a href='#L257'>257</a>
+<a name='L258'></a><a href='#L258'>258</a>
+<a name='L259'></a><a href='#L259'>259</a>
+<a name='L260'></a><a href='#L260'>260</a>
+<a name='L261'></a><a href='#L261'>261</a>
+<a name='L262'></a><a href='#L262'>262</a>
+<a name='L263'></a><a href='#L263'>263</a>
+<a name='L264'></a><a href='#L264'>264</a>
+<a name='L265'></a><a href='#L265'>265</a>
+<a name='L266'></a><a href='#L266'>266</a>
+<a name='L267'></a><a href='#L267'>267</a>
+<a name='L268'></a><a href='#L268'>268</a>
+<a name='L269'></a><a href='#L269'>269</a>
+<a name='L270'></a><a href='#L270'>270</a>
+<a name='L271'></a><a href='#L271'>271</a>
+<a name='L272'></a><a href='#L272'>272</a>
+<a name='L273'></a><a href='#L273'>273</a>
+<a name='L274'></a><a href='#L274'>274</a>
+<a name='L275'></a><a href='#L275'>275</a>
+<a name='L276'></a><a href='#L276'>276</a>
+<a name='L277'></a><a href='#L277'>277</a>
+<a name='L278'></a><a href='#L278'>278</a>
+<a name='L279'></a><a href='#L279'>279</a>
+<a name='L280'></a><a href='#L280'>280</a>
+<a name='L281'></a><a href='#L281'>281</a>
+<a name='L282'></a><a href='#L282'>282</a>
+<a name='L283'></a><a href='#L283'>283</a>
+<a name='L284'></a><a href='#L284'>284</a>
+<a name='L285'></a><a href='#L285'>285</a>
+<a name='L286'></a><a href='#L286'>286</a>
+<a name='L287'></a><a href='#L287'>287</a>
+<a name='L288'></a><a href='#L288'>288</a>
+<a name='L289'></a><a href='#L289'>289</a>
+<a name='L290'></a><a href='#L290'>290</a>
+<a name='L291'></a><a href='#L291'>291</a>
+<a name='L292'></a><a href='#L292'>292</a>
+<a name='L293'></a><a href='#L293'>293</a>
+<a name='L294'></a><a href='#L294'>294</a>
+<a name='L295'></a><a href='#L295'>295</a>
+<a name='L296'></a><a href='#L296'>296</a>
+<a name='L297'></a><a href='#L297'>297</a>
+<a name='L298'></a><a href='#L298'>298</a>
+<a name='L299'></a><a href='#L299'>299</a>
+<a name='L300'></a><a href='#L300'>300</a>
+<a name='L301'></a><a href='#L301'>301</a>
+<a name='L302'></a><a href='#L302'>302</a>
+<a name='L303'></a><a href='#L303'>303</a>
+<a name='L304'></a><a href='#L304'>304</a>
+<a name='L305'></a><a href='#L305'>305</a>
+<a name='L306'></a><a href='#L306'>306</a>
+<a name='L307'></a><a href='#L307'>307</a>
+<a name='L308'></a><a href='#L308'>308</a>
+<a name='L309'></a><a href='#L309'>309</a>
+<a name='L310'></a><a href='#L310'>310</a>
+<a name='L311'></a><a href='#L311'>311</a>
+<a name='L312'></a><a href='#L312'>312</a>
+<a name='L313'></a><a href='#L313'>313</a>
+<a name='L314'></a><a href='#L314'>314</a>
+<a name='L315'></a><a href='#L315'>315</a>
+<a name='L316'></a><a href='#L316'>316</a>
+<a name='L317'></a><a href='#L317'>317</a>
+<a name='L318'></a><a href='#L318'>318</a>
+<a name='L319'></a><a href='#L319'>319</a>
+<a name='L320'></a><a href='#L320'>320</a>
+<a name='L321'></a><a href='#L321'>321</a>
+<a name='L322'></a><a href='#L322'>322</a>
+<a name='L323'></a><a href='#L323'>323</a>
+<a name='L324'></a><a href='#L324'>324</a>
+<a name='L325'></a><a href='#L325'>325</a>
+<a name='L326'></a><a href='#L326'>326</a>
+<a name='L327'></a><a href='#L327'>327</a>
+<a name='L328'></a><a href='#L328'>328</a>
+<a name='L329'></a><a href='#L329'>329</a>
+<a name='L330'></a><a href='#L330'>330</a>
+<a name='L331'></a><a href='#L331'>331</a>
+<a name='L332'></a><a href='#L332'>332</a>
+<a name='L333'></a><a href='#L333'>333</a>
+<a name='L334'></a><a href='#L334'>334</a>
+<a name='L335'></a><a href='#L335'>335</a>
+<a name='L336'></a><a href='#L336'>336</a>
+<a name='L337'></a><a href='#L337'>337</a>
+<a name='L338'></a><a href='#L338'>338</a>
+<a name='L339'></a><a href='#L339'>339</a>
+<a name='L340'></a><a href='#L340'>340</a>
+<a name='L341'></a><a href='#L341'>341</a>
+<a name='L342'></a><a href='#L342'>342</a>
+<a name='L343'></a><a href='#L343'>343</a>
+<a name='L344'></a><a href='#L344'>344</a>
+<a name='L345'></a><a href='#L345'>345</a>
+<a name='L346'></a><a href='#L346'>346</a>
+<a name='L347'></a><a href='#L347'>347</a>
+<a name='L348'></a><a href='#L348'>348</a>
+<a name='L349'></a><a href='#L349'>349</a>
+<a name='L350'></a><a href='#L350'>350</a>
+<a name='L351'></a><a href='#L351'>351</a>
+<a name='L352'></a><a href='#L352'>352</a>
+<a name='L353'></a><a href='#L353'>353</a>
+<a name='L354'></a><a href='#L354'>354</a>
+<a name='L355'></a><a href='#L355'>355</a>
+<a name='L356'></a><a href='#L356'>356</a>
+<a name='L357'></a><a href='#L357'>357</a>
+<a name='L358'></a><a href='#L358'>358</a>
+<a name='L359'></a><a href='#L359'>359</a>
+<a name='L360'></a><a href='#L360'>360</a>
+<a name='L361'></a><a href='#L361'>361</a>
+<a name='L362'></a><a href='#L362'>362</a>
+<a name='L363'></a><a href='#L363'>363</a>
+<a name='L364'></a><a href='#L364'>364</a>
+<a name='L365'></a><a href='#L365'>365</a>
+<a name='L366'></a><a href='#L366'>366</a>
+<a name='L367'></a><a href='#L367'>367</a>
+<a name='L368'></a><a href='#L368'>368</a>
+<a name='L369'></a><a href='#L369'>369</a>
+<a name='L370'></a><a href='#L370'>370</a>
+<a name='L371'></a><a href='#L371'>371</a>
+<a name='L372'></a><a href='#L372'>372</a>
+<a name='L373'></a><a href='#L373'>373</a>
+<a name='L374'></a><a href='#L374'>374</a>
+<a name='L375'></a><a href='#L375'>375</a>
+<a name='L376'></a><a href='#L376'>376</a>
+<a name='L377'></a><a href='#L377'>377</a>
+<a name='L378'></a><a href='#L378'>378</a>
+<a name='L379'></a><a href='#L379'>379</a>
+<a name='L380'></a><a href='#L380'>380</a>
+<a name='L381'></a><a href='#L381'>381</a>
+<a name='L382'></a><a href='#L382'>382</a>
+<a name='L383'></a><a href='#L383'>383</a>
+<a name='L384'></a><a href='#L384'>384</a>
+<a name='L385'></a><a href='#L385'>385</a>
+<a name='L386'></a><a href='#L386'>386</a>
+<a name='L387'></a><a href='#L387'>387</a>
+<a name='L388'></a><a href='#L388'>388</a>
+<a name='L389'></a><a href='#L389'>389</a>
+<a name='L390'></a><a href='#L390'>390</a>
+<a name='L391'></a><a href='#L391'>391</a>
+<a name='L392'></a><a href='#L392'>392</a>
+<a name='L393'></a><a href='#L393'>393</a>
+<a name='L394'></a><a href='#L394'>394</a>
+<a name='L395'></a><a href='#L395'>395</a>
+<a name='L396'></a><a href='#L396'>396</a>
+<a name='L397'></a><a href='#L397'>397</a>
+<a name='L398'></a><a href='#L398'>398</a>
+<a name='L399'></a><a href='#L399'>399</a>
+<a name='L400'></a><a href='#L400'>400</a>
+<a name='L401'></a><a href='#L401'>401</a>
+<a name='L402'></a><a href='#L402'>402</a>
+<a name='L403'></a><a href='#L403'>403</a>
+<a name='L404'></a><a href='#L404'>404</a>
+<a name='L405'></a><a href='#L405'>405</a>
+<a name='L406'></a><a href='#L406'>406</a>
+<a name='L407'></a><a href='#L407'>407</a>
+<a name='L408'></a><a href='#L408'>408</a>
+<a name='L409'></a><a href='#L409'>409</a>
+<a name='L410'></a><a href='#L410'>410</a>
+<a name='L411'></a><a href='#L411'>411</a>
+<a name='L412'></a><a href='#L412'>412</a>
+<a name='L413'></a><a href='#L413'>413</a>
+<a name='L414'></a><a href='#L414'>414</a>
+<a name='L415'></a><a href='#L415'>415</a>
+<a name='L416'></a><a href='#L416'>416</a>
+<a name='L417'></a><a href='#L417'>417</a>
+<a name='L418'></a><a href='#L418'>418</a>
+<a name='L419'></a><a href='#L419'>419</a>
+<a name='L420'></a><a href='#L420'>420</a>
+<a name='L421'></a><a href='#L421'>421</a>
+<a name='L422'></a><a href='#L422'>422</a>
+<a name='L423'></a><a href='#L423'>423</a>
+<a name='L424'></a><a href='#L424'>424</a>
+<a name='L425'></a><a href='#L425'>425</a>
+<a name='L426'></a><a href='#L426'>426</a>
+<a name='L427'></a><a href='#L427'>427</a>
+<a name='L428'></a><a href='#L428'>428</a>
+<a name='L429'></a><a href='#L429'>429</a>
+<a name='L430'></a><a href='#L430'>430</a>
+<a name='L431'></a><a href='#L431'>431</a>
+<a name='L432'></a><a href='#L432'>432</a>
+<a name='L433'></a><a href='#L433'>433</a>
+<a name='L434'></a><a href='#L434'>434</a>
+<a name='L435'></a><a href='#L435'>435</a>
+<a name='L436'></a><a href='#L436'>436</a>
+<a name='L437'></a><a href='#L437'>437</a>
+<a name='L438'></a><a href='#L438'>438</a>
+<a name='L439'></a><a href='#L439'>439</a>
+<a name='L440'></a><a href='#L440'>440</a>
+<a name='L441'></a><a href='#L441'>441</a>
+<a name='L442'></a><a href='#L442'>442</a>
+<a name='L443'></a><a href='#L443'>443</a>
+<a name='L444'></a><a href='#L444'>444</a>
+<a name='L445'></a><a href='#L445'>445</a>
+<a name='L446'></a><a href='#L446'>446</a>
+<a name='L447'></a><a href='#L447'>447</a>
+<a name='L448'></a><a href='#L448'>448</a>
+<a name='L449'></a><a href='#L449'>449</a>
+<a name='L450'></a><a href='#L450'>450</a>
+<a name='L451'></a><a href='#L451'>451</a>
+<a name='L452'></a><a href='#L452'>452</a>
+<a name='L453'></a><a href='#L453'>453</a>
+<a name='L454'></a><a href='#L454'>454</a>
+<a name='L455'></a><a href='#L455'>455</a>
+<a name='L456'></a><a href='#L456'>456</a>
+<a name='L457'></a><a href='#L457'>457</a>
+<a name='L458'></a><a href='#L458'>458</a>
+<a name='L459'></a><a href='#L459'>459</a>
+<a name='L460'></a><a href='#L460'>460</a>
+<a name='L461'></a><a href='#L461'>461</a>
+<a name='L462'></a><a href='#L462'>462</a>
+<a name='L463'></a><a href='#L463'>463</a>
+<a name='L464'></a><a href='#L464'>464</a>
+<a name='L465'></a><a href='#L465'>465</a>
+<a name='L466'></a><a href='#L466'>466</a>
+<a name='L467'></a><a href='#L467'>467</a>
+<a name='L468'></a><a href='#L468'>468</a>
+<a name='L469'></a><a href='#L469'>469</a>
+<a name='L470'></a><a href='#L470'>470</a>
+<a name='L471'></a><a href='#L471'>471</a>
+<a name='L472'></a><a href='#L472'>472</a>
+<a name='L473'></a><a href='#L473'>473</a>
+<a name='L474'></a><a href='#L474'>474</a>
+<a name='L475'></a><a href='#L475'>475</a>
+<a name='L476'></a><a href='#L476'>476</a>
+<a name='L477'></a><a href='#L477'>477</a>
+<a name='L478'></a><a href='#L478'>478</a>
+<a name='L479'></a><a href='#L479'>479</a>
+<a name='L480'></a><a href='#L480'>480</a>
+<a name='L481'></a><a href='#L481'>481</a>
+<a name='L482'></a><a href='#L482'>482</a>
+<a name='L483'></a><a href='#L483'>483</a>
+<a name='L484'></a><a href='#L484'>484</a>
+<a name='L485'></a><a href='#L485'>485</a>
+<a name='L486'></a><a href='#L486'>486</a>
+<a name='L487'></a><a href='#L487'>487</a>
+<a name='L488'></a><a href='#L488'>488</a>
+<a name='L489'></a><a href='#L489'>489</a>
+<a name='L490'></a><a href='#L490'>490</a>
+<a name='L491'></a><a href='#L491'>491</a>
+<a name='L492'></a><a href='#L492'>492</a>
+<a name='L493'></a><a href='#L493'>493</a>
+<a name='L494'></a><a href='#L494'>494</a>
+<a name='L495'></a><a href='#L495'>495</a>
+<a name='L496'></a><a href='#L496'>496</a>
+<a name='L497'></a><a href='#L497'>497</a>
+<a name='L498'></a><a href='#L498'>498</a>
+<a name='L499'></a><a href='#L499'>499</a>
+<a name='L500'></a><a href='#L500'>500</a>
+<a name='L501'></a><a href='#L501'>501</a>
+<a name='L502'></a><a href='#L502'>502</a>
+<a name='L503'></a><a href='#L503'>503</a>
+<a name='L504'></a><a href='#L504'>504</a>
+<a name='L505'></a><a href='#L505'>505</a>
+<a name='L506'></a><a href='#L506'>506</a>
+<a name='L507'></a><a href='#L507'>507</a>
+<a name='L508'></a><a href='#L508'>508</a>
+<a name='L509'></a><a href='#L509'>509</a>
+<a name='L510'></a><a href='#L510'>510</a>
+<a name='L511'></a><a href='#L511'>511</a>
+<a name='L512'></a><a href='#L512'>512</a>
+<a name='L513'></a><a href='#L513'>513</a>
+<a name='L514'></a><a href='#L514'>514</a>
+<a name='L515'></a><a href='#L515'>515</a>
+<a name='L516'></a><a href='#L516'>516</a>
+<a name='L517'></a><a href='#L517'>517</a>
+<a name='L518'></a><a href='#L518'>518</a>
+<a name='L519'></a><a href='#L519'>519</a>
+<a name='L520'></a><a href='#L520'>520</a>
+<a name='L521'></a><a href='#L521'>521</a>
+<a name='L522'></a><a href='#L522'>522</a>
+<a name='L523'></a><a href='#L523'>523</a>
+<a name='L524'></a><a href='#L524'>524</a>
+<a name='L525'></a><a href='#L525'>525</a>
+<a name='L526'></a><a href='#L526'>526</a>
+<a name='L527'></a><a href='#L527'>527</a>
+<a name='L528'></a><a href='#L528'>528</a>
+<a name='L529'></a><a href='#L529'>529</a>
+<a name='L530'></a><a href='#L530'>530</a>
+<a name='L531'></a><a href='#L531'>531</a>
+<a name='L532'></a><a href='#L532'>532</a>
+<a name='L533'></a><a href='#L533'>533</a>
+<a name='L534'></a><a href='#L534'>534</a>
+<a name='L535'></a><a href='#L535'>535</a>
+<a name='L536'></a><a href='#L536'>536</a>
+<a name='L537'></a><a href='#L537'>537</a>
+<a name='L538'></a><a href='#L538'>538</a>
+<a name='L539'></a><a href='#L539'>539</a>
+<a name='L540'></a><a href='#L540'>540</a>
+<a name='L541'></a><a href='#L541'>541</a>
+<a name='L542'></a><a href='#L542'>542</a>
+<a name='L543'></a><a href='#L543'>543</a>
+<a name='L544'></a><a href='#L544'>544</a>
+<a name='L545'></a><a href='#L545'>545</a>
+<a name='L546'></a><a href='#L546'>546</a>
+<a name='L547'></a><a href='#L547'>547</a>
+<a name='L548'></a><a href='#L548'>548</a>
+<a name='L549'></a><a href='#L549'>549</a>
+<a name='L550'></a><a href='#L550'>550</a>
+<a name='L551'></a><a href='#L551'>551</a>
+<a name='L552'></a><a href='#L552'>552</a>
+<a name='L553'></a><a href='#L553'>553</a>
+<a name='L554'></a><a href='#L554'>554</a>
+<a name='L555'></a><a href='#L555'>555</a>
+<a name='L556'></a><a href='#L556'>556</a>
+<a name='L557'></a><a href='#L557'>557</a>
+<a name='L558'></a><a href='#L558'>558</a>
+<a name='L559'></a><a href='#L559'>559</a>
+<a name='L560'></a><a href='#L560'>560</a>
+<a name='L561'></a><a href='#L561'>561</a>
+<a name='L562'></a><a href='#L562'>562</a>
+<a name='L563'></a><a href='#L563'>563</a>
+<a name='L564'></a><a href='#L564'>564</a>
+<a name='L565'></a><a href='#L565'>565</a>
+<a name='L566'></a><a href='#L566'>566</a>
+<a name='L567'></a><a href='#L567'>567</a>
+<a name='L568'></a><a href='#L568'>568</a>
+<a name='L569'></a><a href='#L569'>569</a>
+<a name='L570'></a><a href='#L570'>570</a>
+<a name='L571'></a><a href='#L571'>571</a>
+<a name='L572'></a><a href='#L572'>572</a>
+<a name='L573'></a><a href='#L573'>573</a>
+<a name='L574'></a><a href='#L574'>574</a>
+<a name='L575'></a><a href='#L575'>575</a>
+<a name='L576'></a><a href='#L576'>576</a>
+<a name='L577'></a><a href='#L577'>577</a>
+<a name='L578'></a><a href='#L578'>578</a>
+<a name='L579'></a><a href='#L579'>579</a>
+<a name='L580'></a><a href='#L580'>580</a>
+<a name='L581'></a><a href='#L581'>581</a>
+<a name='L582'></a><a href='#L582'>582</a>
+<a name='L583'></a><a href='#L583'>583</a>
+<a name='L584'></a><a href='#L584'>584</a>
+<a name='L585'></a><a href='#L585'>585</a>
+<a name='L586'></a><a href='#L586'>586</a>
+<a name='L587'></a><a href='#L587'>587</a>
+<a name='L588'></a><a href='#L588'>588</a>
+<a name='L589'></a><a href='#L589'>589</a>
+<a name='L590'></a><a href='#L590'>590</a>
+<a name='L591'></a><a href='#L591'>591</a>
+<a name='L592'></a><a href='#L592'>592</a>
+<a name='L593'></a><a href='#L593'>593</a>
+<a name='L594'></a><a href='#L594'>594</a>
+<a name='L595'></a><a href='#L595'>595</a>
+<a name='L596'></a><a href='#L596'>596</a>
+<a name='L597'></a><a href='#L597'>597</a>
+<a name='L598'></a><a href='#L598'>598</a>
+<a name='L599'></a><a href='#L599'>599</a>
+<a name='L600'></a><a href='#L600'>600</a>
+<a name='L601'></a><a href='#L601'>601</a>
+<a name='L602'></a><a href='#L602'>602</a>
+<a name='L603'></a><a href='#L603'>603</a>
+<a name='L604'></a><a href='#L604'>604</a>
+<a name='L605'></a><a href='#L605'>605</a>
+<a name='L606'></a><a href='#L606'>606</a>
+<a name='L607'></a><a href='#L607'>607</a>
+<a name='L608'></a><a href='#L608'>608</a>
+<a name='L609'></a><a href='#L609'>609</a>
+<a name='L610'></a><a href='#L610'>610</a>
+<a name='L611'></a><a href='#L611'>611</a>
+<a name='L612'></a><a href='#L612'>612</a>
+<a name='L613'></a><a href='#L613'>613</a>
+<a name='L614'></a><a href='#L614'>614</a>
+<a name='L615'></a><a href='#L615'>615</a>
+<a name='L616'></a><a href='#L616'>616</a>
+<a name='L617'></a><a href='#L617'>617</a>
+<a name='L618'></a><a href='#L618'>618</a>
+<a name='L619'></a><a href='#L619'>619</a>
+<a name='L620'></a><a href='#L620'>620</a>
+<a name='L621'></a><a href='#L621'>621</a>
+<a name='L622'></a><a href='#L622'>622</a>
+<a name='L623'></a><a href='#L623'>623</a>
+<a name='L624'></a><a href='#L624'>624</a>
+<a name='L625'></a><a href='#L625'>625</a>
+<a name='L626'></a><a href='#L626'>626</a>
+<a name='L627'></a><a href='#L627'>627</a>
+<a name='L628'></a><a href='#L628'>628</a>
+<a name='L629'></a><a href='#L629'>629</a>
+<a name='L630'></a><a href='#L630'>630</a>
+<a name='L631'></a><a href='#L631'>631</a>
+<a name='L632'></a><a href='#L632'>632</a>
+<a name='L633'></a><a href='#L633'>633</a>
+<a name='L634'></a><a href='#L634'>634</a>
+<a name='L635'></a><a href='#L635'>635</a>
+<a name='L636'></a><a href='#L636'>636</a>
+<a name='L637'></a><a href='#L637'>637</a>
+<a name='L638'></a><a href='#L638'>638</a>
+<a name='L639'></a><a href='#L639'>639</a>
+<a name='L640'></a><a href='#L640'>640</a>
+<a name='L641'></a><a href='#L641'>641</a>
+<a name='L642'></a><a href='#L642'>642</a>
+<a name='L643'></a><a href='#L643'>643</a>
+<a name='L644'></a><a href='#L644'>644</a>
+<a name='L645'></a><a href='#L645'>645</a>
+<a name='L646'></a><a href='#L646'>646</a>
+<a name='L647'></a><a href='#L647'>647</a>
+<a name='L648'></a><a href='#L648'>648</a>
+<a name='L649'></a><a href='#L649'>649</a>
+<a name='L650'></a><a href='#L650'>650</a>
+<a name='L651'></a><a href='#L651'>651</a>
+<a name='L652'></a><a href='#L652'>652</a>
+<a name='L653'></a><a href='#L653'>653</a>
+<a name='L654'></a><a href='#L654'>654</a>
+<a name='L655'></a><a href='#L655'>655</a>
+<a name='L656'></a><a href='#L656'>656</a>
+<a name='L657'></a><a href='#L657'>657</a>
+<a name='L658'></a><a href='#L658'>658</a>
+<a name='L659'></a><a href='#L659'>659</a>
+<a name='L660'></a><a href='#L660'>660</a>
+<a name='L661'></a><a href='#L661'>661</a>
+<a name='L662'></a><a href='#L662'>662</a>
+<a name='L663'></a><a href='#L663'>663</a>
+<a name='L664'></a><a href='#L664'>664</a>
+<a name='L665'></a><a href='#L665'>665</a>
+<a name='L666'></a><a href='#L666'>666</a>
+<a name='L667'></a><a href='#L667'>667</a>
+<a name='L668'></a><a href='#L668'>668</a>
+<a name='L669'></a><a href='#L669'>669</a>
+<a name='L670'></a><a href='#L670'>670</a>
+<a name='L671'></a><a href='#L671'>671</a>
+<a name='L672'></a><a href='#L672'>672</a>
+<a name='L673'></a><a href='#L673'>673</a>
+<a name='L674'></a><a href='#L674'>674</a>
+<a name='L675'></a><a href='#L675'>675</a>
+<a name='L676'></a><a href='#L676'>676</a>
+<a name='L677'></a><a href='#L677'>677</a>
+<a name='L678'></a><a href='#L678'>678</a>
+<a name='L679'></a><a href='#L679'>679</a>
+<a name='L680'></a><a href='#L680'>680</a>
+<a name='L681'></a><a href='#L681'>681</a>
+<a name='L682'></a><a href='#L682'>682</a>
+<a name='L683'></a><a href='#L683'>683</a>
+<a name='L684'></a><a href='#L684'>684</a>
+<a name='L685'></a><a href='#L685'>685</a>
+<a name='L686'></a><a href='#L686'>686</a>
+<a name='L687'></a><a href='#L687'>687</a>
+<a name='L688'></a><a href='#L688'>688</a>
+<a name='L689'></a><a href='#L689'>689</a>
+<a name='L690'></a><a href='#L690'>690</a>
+<a name='L691'></a><a href='#L691'>691</a>
+<a name='L692'></a><a href='#L692'>692</a>
+<a name='L693'></a><a href='#L693'>693</a>
+<a name='L694'></a><a href='#L694'>694</a>
+<a name='L695'></a><a href='#L695'>695</a>
+<a name='L696'></a><a href='#L696'>696</a>
+<a name='L697'></a><a href='#L697'>697</a>
+<a name='L698'></a><a href='#L698'>698</a>
+<a name='L699'></a><a href='#L699'>699</a>
+<a name='L700'></a><a href='#L700'>700</a>
+<a name='L701'></a><a href='#L701'>701</a>
+<a name='L702'></a><a href='#L702'>702</a>
+<a name='L703'></a><a href='#L703'>703</a>
+<a name='L704'></a><a href='#L704'>704</a>
+<a name='L705'></a><a href='#L705'>705</a>
+<a name='L706'></a><a href='#L706'>706</a>
+<a name='L707'></a><a href='#L707'>707</a>
+<a name='L708'></a><a href='#L708'>708</a>
+<a name='L709'></a><a href='#L709'>709</a>
+<a name='L710'></a><a href='#L710'>710</a>
+<a name='L711'></a><a href='#L711'>711</a>
+<a name='L712'></a><a href='#L712'>712</a>
+<a name='L713'></a><a href='#L713'>713</a>
+<a name='L714'></a><a href='#L714'>714</a>
+<a name='L715'></a><a href='#L715'>715</a>
+<a name='L716'></a><a href='#L716'>716</a>
+<a name='L717'></a><a href='#L717'>717</a>
+<a name='L718'></a><a href='#L718'>718</a>
+<a name='L719'></a><a href='#L719'>719</a>
+<a name='L720'></a><a href='#L720'>720</a>
+<a name='L721'></a><a href='#L721'>721</a>
+<a name='L722'></a><a href='#L722'>722</a>
+<a name='L723'></a><a href='#L723'>723</a>
+<a name='L724'></a><a href='#L724'>724</a>
+<a name='L725'></a><a href='#L725'>725</a>
+<a name='L726'></a><a href='#L726'>726</a>
+<a name='L727'></a><a href='#L727'>727</a>
+<a name='L728'></a><a href='#L728'>728</a>
+<a name='L729'></a><a href='#L729'>729</a>
+<a name='L730'></a><a href='#L730'>730</a>
+<a name='L731'></a><a href='#L731'>731</a>
+<a name='L732'></a><a href='#L732'>732</a>
+<a name='L733'></a><a href='#L733'>733</a>
+<a name='L734'></a><a href='#L734'>734</a>
+<a name='L735'></a><a href='#L735'>735</a>
+<a name='L736'></a><a href='#L736'>736</a>
+<a name='L737'></a><a href='#L737'>737</a>
+<a name='L738'></a><a href='#L738'>738</a>
+<a name='L739'></a><a href='#L739'>739</a>
+<a name='L740'></a><a href='#L740'>740</a>
+<a name='L741'></a><a href='#L741'>741</a>
+<a name='L742'></a><a href='#L742'>742</a>
+<a name='L743'></a><a href='#L743'>743</a>
+<a name='L744'></a><a href='#L744'>744</a>
+<a name='L745'></a><a href='#L745'>745</a>
+<a name='L746'></a><a href='#L746'>746</a>
+<a name='L747'></a><a href='#L747'>747</a>
+<a name='L748'></a><a href='#L748'>748</a>
+<a name='L749'></a><a href='#L749'>749</a>
+<a name='L750'></a><a href='#L750'>750</a>
+<a name='L751'></a><a href='#L751'>751</a>
+<a name='L752'></a><a href='#L752'>752</a>
+<a name='L753'></a><a href='#L753'>753</a>
+<a name='L754'></a><a href='#L754'>754</a>
+<a name='L755'></a><a href='#L755'>755</a>
+<a name='L756'></a><a href='#L756'>756</a>
+<a name='L757'></a><a href='#L757'>757</a>
+<a name='L758'></a><a href='#L758'>758</a>
+<a name='L759'></a><a href='#L759'>759</a>
+<a name='L760'></a><a href='#L760'>760</a>
+<a name='L761'></a><a href='#L761'>761</a>
+<a name='L762'></a><a href='#L762'>762</a>
+<a name='L763'></a><a href='#L763'>763</a>
+<a name='L764'></a><a href='#L764'>764</a>
+<a name='L765'></a><a href='#L765'>765</a>
+<a name='L766'></a><a href='#L766'>766</a>
+<a name='L767'></a><a href='#L767'>767</a>
+<a name='L768'></a><a href='#L768'>768</a>
+<a name='L769'></a><a href='#L769'>769</a>
+<a name='L770'></a><a href='#L770'>770</a>
+<a name='L771'></a><a href='#L771'>771</a>
+<a name='L772'></a><a href='#L772'>772</a>
+<a name='L773'></a><a href='#L773'>773</a>
+<a name='L774'></a><a href='#L774'>774</a>
+<a name='L775'></a><a href='#L775'>775</a>
+<a name='L776'></a><a href='#L776'>776</a>
+<a name='L777'></a><a href='#L777'>777</a>
+<a name='L778'></a><a href='#L778'>778</a>
+<a name='L779'></a><a href='#L779'>779</a>
+<a name='L780'></a><a href='#L780'>780</a>
+<a name='L781'></a><a href='#L781'>781</a>
+<a name='L782'></a><a href='#L782'>782</a>
+<a name='L783'></a><a href='#L783'>783</a>
+<a name='L784'></a><a href='#L784'>784</a>
+<a name='L785'></a><a href='#L785'>785</a>
+<a name='L786'></a><a href='#L786'>786</a>
+<a name='L787'></a><a href='#L787'>787</a>
+<a name='L788'></a><a href='#L788'>788</a>
+<a name='L789'></a><a href='#L789'>789</a>
+<a name='L790'></a><a href='#L790'>790</a>
+<a name='L791'></a><a href='#L791'>791</a>
+<a name='L792'></a><a href='#L792'>792</a>
+<a name='L793'></a><a href='#L793'>793</a>
+<a name='L794'></a><a href='#L794'>794</a>
+<a name='L795'></a><a href='#L795'>795</a>
+<a name='L796'></a><a href='#L796'>796</a>
+<a name='L797'></a><a href='#L797'>797</a>
+<a name='L798'></a><a href='#L798'>798</a>
+<a name='L799'></a><a href='#L799'>799</a>
+<a name='L800'></a><a href='#L800'>800</a>
+<a name='L801'></a><a href='#L801'>801</a>
+<a name='L802'></a><a href='#L802'>802</a>
+<a name='L803'></a><a href='#L803'>803</a>
+<a name='L804'></a><a href='#L804'>804</a>
+<a name='L805'></a><a href='#L805'>805</a>
+<a name='L806'></a><a href='#L806'>806</a>
+<a name='L807'></a><a href='#L807'>807</a>
+<a name='L808'></a><a href='#L808'>808</a>
+<a name='L809'></a><a href='#L809'>809</a>
+<a name='L810'></a><a href='#L810'>810</a>
+<a name='L811'></a><a href='#L811'>811</a>
+<a name='L812'></a><a href='#L812'>812</a>
+<a name='L813'></a><a href='#L813'>813</a>
+<a name='L814'></a><a href='#L814'>814</a>
+<a name='L815'></a><a href='#L815'>815</a>
+<a name='L816'></a><a href='#L816'>816</a>
+<a name='L817'></a><a href='#L817'>817</a>
+<a name='L818'></a><a href='#L818'>818</a>
+<a name='L819'></a><a href='#L819'>819</a>
+<a name='L820'></a><a href='#L820'>820</a>
+<a name='L821'></a><a href='#L821'>821</a>
+<a name='L822'></a><a href='#L822'>822</a>
+<a name='L823'></a><a href='#L823'>823</a>
+<a name='L824'></a><a href='#L824'>824</a>
+<a name='L825'></a><a href='#L825'>825</a>
+<a name='L826'></a><a href='#L826'>826</a>
+<a name='L827'></a><a href='#L827'>827</a>
+<a name='L828'></a><a href='#L828'>828</a>
+<a name='L829'></a><a href='#L829'>829</a>
+<a name='L830'></a><a href='#L830'>830</a>
+<a name='L831'></a><a href='#L831'>831</a>
+<a name='L832'></a><a href='#L832'>832</a>
+<a name='L833'></a><a href='#L833'>833</a>
+<a name='L834'></a><a href='#L834'>834</a>
+<a name='L835'></a><a href='#L835'>835</a>
+<a name='L836'></a><a href='#L836'>836</a>
+<a name='L837'></a><a href='#L837'>837</a>
+<a name='L838'></a><a href='#L838'>838</a>
+<a name='L839'></a><a href='#L839'>839</a>
+<a name='L840'></a><a href='#L840'>840</a>
+<a name='L841'></a><a href='#L841'>841</a>
+<a name='L842'></a><a href='#L842'>842</a>
+<a name='L843'></a><a href='#L843'>843</a>
+<a name='L844'></a><a href='#L844'>844</a>
+<a name='L845'></a><a href='#L845'>845</a>
+<a name='L846'></a><a href='#L846'>846</a>
+<a name='L847'></a><a href='#L847'>847</a>
+<a name='L848'></a><a href='#L848'>848</a>
+<a name='L849'></a><a href='#L849'>849</a>
+<a name='L850'></a><a href='#L850'>850</a>
+<a name='L851'></a><a href='#L851'>851</a>
+<a name='L852'></a><a href='#L852'>852</a>
+<a name='L853'></a><a href='#L853'>853</a>
+<a name='L854'></a><a href='#L854'>854</a>
+<a name='L855'></a><a href='#L855'>855</a>
+<a name='L856'></a><a href='#L856'>856</a>
+<a name='L857'></a><a href='#L857'>857</a>
+<a name='L858'></a><a href='#L858'>858</a>
+<a name='L859'></a><a href='#L859'>859</a>
+<a name='L860'></a><a href='#L860'>860</a>
+<a name='L861'></a><a href='#L861'>861</a>
+<a name='L862'></a><a href='#L862'>862</a>
+<a name='L863'></a><a href='#L863'>863</a>
+<a name='L864'></a><a href='#L864'>864</a>
+<a name='L865'></a><a href='#L865'>865</a>
+<a name='L866'></a><a href='#L866'>866</a>
+<a name='L867'></a><a href='#L867'>867</a>
+<a name='L868'></a><a href='#L868'>868</a>
+<a name='L869'></a><a href='#L869'>869</a>
+<a name='L870'></a><a href='#L870'>870</a>
+<a name='L871'></a><a href='#L871'>871</a>
+<a name='L872'></a><a href='#L872'>872</a>
+<a name='L873'></a><a href='#L873'>873</a>
+<a name='L874'></a><a href='#L874'>874</a>
+<a name='L875'></a><a href='#L875'>875</a>
+<a name='L876'></a><a href='#L876'>876</a>
+<a name='L877'></a><a href='#L877'>877</a>
+<a name='L878'></a><a href='#L878'>878</a>
+<a name='L879'></a><a href='#L879'>879</a>
+<a name='L880'></a><a href='#L880'>880</a>
+<a name='L881'></a><a href='#L881'>881</a>
+<a name='L882'></a><a href='#L882'>882</a>
+<a name='L883'></a><a href='#L883'>883</a>
+<a name='L884'></a><a href='#L884'>884</a>
+<a name='L885'></a><a href='#L885'>885</a>
+<a name='L886'></a><a href='#L886'>886</a>
+<a name='L887'></a><a href='#L887'>887</a>
+<a name='L888'></a><a href='#L888'>888</a>
+<a name='L889'></a><a href='#L889'>889</a>
+<a name='L890'></a><a href='#L890'>890</a>
+<a name='L891'></a><a href='#L891'>891</a>
+<a name='L892'></a><a href='#L892'>892</a>
+<a name='L893'></a><a href='#L893'>893</a>
+<a name='L894'></a><a href='#L894'>894</a>
+<a name='L895'></a><a href='#L895'>895</a>
+<a name='L896'></a><a href='#L896'>896</a>
+<a name='L897'></a><a href='#L897'>897</a>
+<a name='L898'></a><a href='#L898'>898</a>
+<a name='L899'></a><a href='#L899'>899</a>
+<a name='L900'></a><a href='#L900'>900</a>
+<a name='L901'></a><a href='#L901'>901</a>
+<a name='L902'></a><a href='#L902'>902</a>
+<a name='L903'></a><a href='#L903'>903</a>
+<a name='L904'></a><a href='#L904'>904</a>
+<a name='L905'></a><a href='#L905'>905</a>
+<a name='L906'></a><a href='#L906'>906</a>
+<a name='L907'></a><a href='#L907'>907</a>
+<a name='L908'></a><a href='#L908'>908</a>
+<a name='L909'></a><a href='#L909'>909</a>
+<a name='L910'></a><a href='#L910'>910</a>
+<a name='L911'></a><a href='#L911'>911</a>
+<a name='L912'></a><a href='#L912'>912</a>
+<a name='L913'></a><a href='#L913'>913</a>
+<a name='L914'></a><a href='#L914'>914</a>
+<a name='L915'></a><a href='#L915'>915</a>
+<a name='L916'></a><a href='#L916'>916</a>
+<a name='L917'></a><a href='#L917'>917</a>
+<a name='L918'></a><a href='#L918'>918</a>
+<a name='L919'></a><a href='#L919'>919</a>
+<a name='L920'></a><a href='#L920'>920</a>
+<a name='L921'></a><a href='#L921'>921</a>
+<a name='L922'></a><a href='#L922'>922</a>
+<a name='L923'></a><a href='#L923'>923</a>
+<a name='L924'></a><a href='#L924'>924</a>
+<a name='L925'></a><a href='#L925'>925</a>
+<a name='L926'></a><a href='#L926'>926</a>
+<a name='L927'></a><a href='#L927'>927</a>
+<a name='L928'></a><a href='#L928'>928</a>
+<a name='L929'></a><a href='#L929'>929</a>
+<a name='L930'></a><a href='#L930'>930</a>
+<a name='L931'></a><a href='#L931'>931</a>
+<a name='L932'></a><a href='#L932'>932</a>
+<a name='L933'></a><a href='#L933'>933</a>
+<a name='L934'></a><a href='#L934'>934</a>
+<a name='L935'></a><a href='#L935'>935</a>
+<a name='L936'></a><a href='#L936'>936</a>
+<a name='L937'></a><a href='#L937'>937</a>
+<a name='L938'></a><a href='#L938'>938</a>
+<a name='L939'></a><a href='#L939'>939</a>
+<a name='L940'></a><a href='#L940'>940</a>
+<a name='L941'></a><a href='#L941'>941</a>
+<a name='L942'></a><a href='#L942'>942</a>
+<a name='L943'></a><a href='#L943'>943</a>
+<a name='L944'></a><a href='#L944'>944</a>
+<a name='L945'></a><a href='#L945'>945</a>
+<a name='L946'></a><a href='#L946'>946</a>
+<a name='L947'></a><a href='#L947'>947</a>
+<a name='L948'></a><a href='#L948'>948</a>
+<a name='L949'></a><a href='#L949'>949</a>
+<a name='L950'></a><a href='#L950'>950</a>
+<a name='L951'></a><a href='#L951'>951</a>
+<a name='L952'></a><a href='#L952'>952</a>
+<a name='L953'></a><a href='#L953'>953</a>
+<a name='L954'></a><a href='#L954'>954</a>
+<a name='L955'></a><a href='#L955'>955</a>
+<a name='L956'></a><a href='#L956'>956</a>
+<a name='L957'></a><a href='#L957'>957</a>
+<a name='L958'></a><a href='#L958'>958</a>
+<a name='L959'></a><a href='#L959'>959</a>
+<a name='L960'></a><a href='#L960'>960</a>
+<a name='L961'></a><a href='#L961'>961</a>
+<a name='L962'></a><a href='#L962'>962</a>
+<a name='L963'></a><a href='#L963'>963</a>
+<a name='L964'></a><a href='#L964'>964</a>
+<a name='L965'></a><a href='#L965'>965</a>
+<a name='L966'></a><a href='#L966'>966</a>
+<a name='L967'></a><a href='#L967'>967</a>
+<a name='L968'></a><a href='#L968'>968</a>
+<a name='L969'></a><a href='#L969'>969</a>
+<a name='L970'></a><a href='#L970'>970</a>
+<a name='L971'></a><a href='#L971'>971</a>
+<a name='L972'></a><a href='#L972'>972</a>
+<a name='L973'></a><a href='#L973'>973</a>
+<a name='L974'></a><a href='#L974'>974</a>
+<a name='L975'></a><a href='#L975'>975</a>
+<a name='L976'></a><a href='#L976'>976</a>
+<a name='L977'></a><a href='#L977'>977</a>
+<a name='L978'></a><a href='#L978'>978</a>
+<a name='L979'></a><a href='#L979'>979</a>
+<a name='L980'></a><a href='#L980'>980</a>
+<a name='L981'></a><a href='#L981'>981</a>
+<a name='L982'></a><a href='#L982'>982</a>
+<a name='L983'></a><a href='#L983'>983</a>
+<a name='L984'></a><a href='#L984'>984</a>
+<a name='L985'></a><a href='#L985'>985</a>
+<a name='L986'></a><a href='#L986'>986</a>
+<a name='L987'></a><a href='#L987'>987</a>
+<a name='L988'></a><a href='#L988'>988</a>
+<a name='L989'></a><a href='#L989'>989</a>
+<a name='L990'></a><a href='#L990'>990</a>
+<a name='L991'></a><a href='#L991'>991</a>
+<a name='L992'></a><a href='#L992'>992</a>
+<a name='L993'></a><a href='#L993'>993</a>
+<a name='L994'></a><a href='#L994'>994</a>
+<a name='L995'></a><a href='#L995'>995</a>
+<a name='L996'></a><a href='#L996'>996</a>
+<a name='L997'></a><a href='#L997'>997</a>
+<a name='L998'></a><a href='#L998'>998</a>
+<a name='L999'></a><a href='#L999'>999</a>
+<a name='L1000'></a><a href='#L1000'>1000</a>
+<a name='L1001'></a><a href='#L1001'>1001</a>
+<a name='L1002'></a><a href='#L1002'>1002</a>
+<a name='L1003'></a><a href='#L1003'>1003</a>
+<a name='L1004'></a><a href='#L1004'>1004</a>
+<a name='L1005'></a><a href='#L1005'>1005</a>
+<a name='L1006'></a><a href='#L1006'>1006</a>
+<a name='L1007'></a><a href='#L1007'>1007</a>
+<a name='L1008'></a><a href='#L1008'>1008</a>
+<a name='L1009'></a><a href='#L1009'>1009</a>
+<a name='L1010'></a><a href='#L1010'>1010</a>
+<a name='L1011'></a><a href='#L1011'>1011</a>
+<a name='L1012'></a><a href='#L1012'>1012</a>
+<a name='L1013'></a><a href='#L1013'>1013</a>
+<a name='L1014'></a><a href='#L1014'>1014</a>
+<a name='L1015'></a><a href='#L1015'>1015</a>
+<a name='L1016'></a><a href='#L1016'>1016</a>
+<a name='L1017'></a><a href='#L1017'>1017</a>
+<a name='L1018'></a><a href='#L1018'>1018</a>
+<a name='L1019'></a><a href='#L1019'>1019</a>
+<a name='L1020'></a><a href='#L1020'>1020</a>
+<a name='L1021'></a><a href='#L1021'>1021</a>
+<a name='L1022'></a><a href='#L1022'>1022</a>
+<a name='L1023'></a><a href='#L1023'>1023</a>
+<a name='L1024'></a><a href='#L1024'>1024</a>
+<a name='L1025'></a><a href='#L1025'>1025</a>
+<a name='L1026'></a><a href='#L1026'>1026</a>
+<a name='L1027'></a><a href='#L1027'>1027</a>
+<a name='L1028'></a><a href='#L1028'>1028</a>
+<a name='L1029'></a><a href='#L1029'>1029</a>
+<a name='L1030'></a><a href='#L1030'>1030</a>
+<a name='L1031'></a><a href='#L1031'>1031</a>
+<a name='L1032'></a><a href='#L1032'>1032</a>
+<a name='L1033'></a><a href='#L1033'>1033</a>
+<a name='L1034'></a><a href='#L1034'>1034</a>
+<a name='L1035'></a><a href='#L1035'>1035</a>
+<a name='L1036'></a><a href='#L1036'>1036</a>
+<a name='L1037'></a><a href='#L1037'>1037</a>
+<a name='L1038'></a><a href='#L1038'>1038</a>
+<a name='L1039'></a><a href='#L1039'>1039</a>
+<a name='L1040'></a><a href='#L1040'>1040</a>
+<a name='L1041'></a><a href='#L1041'>1041</a>
+<a name='L1042'></a><a href='#L1042'>1042</a>
+<a name='L1043'></a><a href='#L1043'>1043</a>
+<a name='L1044'></a><a href='#L1044'>1044</a>
+<a name='L1045'></a><a href='#L1045'>1045</a>
+<a name='L1046'></a><a href='#L1046'>1046</a>
+<a name='L1047'></a><a href='#L1047'>1047</a>
+<a name='L1048'></a><a href='#L1048'>1048</a>
+<a name='L1049'></a><a href='#L1049'>1049</a>
+<a name='L1050'></a><a href='#L1050'>1050</a>
+<a name='L1051'></a><a href='#L1051'>1051</a>
+<a name='L1052'></a><a href='#L1052'>1052</a>
+<a name='L1053'></a><a href='#L1053'>1053</a>
+<a name='L1054'></a><a href='#L1054'>1054</a>
+<a name='L1055'></a><a href='#L1055'>1055</a>
+<a name='L1056'></a><a href='#L1056'>1056</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">117x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// AI-generated translations — created by `npm run translate` (scripts/translate.mjs).
+// Hand-refinements are welcome and PRESERVED: a key is only regenerated when its
+// English source string in src/i18n/en.ts changes (tracked in translation-state.json).
+import type { TranslationKey } from './en';
+&nbsp;
+export const it: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
+	'agent.empty.title': 'Inizia una conversazione',
+	'agent.empty.description': 'Il tuo assistente IA in grado di lavorare attivamente con il tuo vault.',
+	'agent.empty.capabilitiesTitle': "Cosa può fare l'agente?",
+	'agent.empty.capability.search': 'Cercare e leggere file nel tuo vault',
+	'agent.empty.capability.organize': 'Creare, modificare e organizzare le note',
+	'agent.empty.capability.web': 'Cercare sul web e recuperare informazioni',
+	'agent.empty.capability.multiStep': 'Eseguire attività in più passaggi in modo autonomo',
+	'agent.empty.docsLink': '📖 Scopri di più sulla modalità agente',
+	'agent.empty.docsLinkAria': 'Apri la documentazione della modalità agente in una nuova scheda',
+	'agent.empty.docsOpenFailed': 'Impossibile aprire la documentazione. Verifica le impostazioni del browser.',
+	'agent.empty.updateContext': 'Aggiorna il contesto del vault',
+	'agent.empty.updateContextDesc': 'Aggiorna la mia comprensione del tuo vault',
+	'agent.empty.initContext': 'Inizializza il contesto del vault',
+	'agent.empty.initContextDesc': "Aiutami a comprendere la struttura e l'organizzazione del tuo vault",
+	'agent.empty.initContextFailed': 'Impossibile inizializzare il contesto del vault',
+	'agent.empty.recentSessions': 'Sessioni recenti:',
+	'agent.empty.examplesHeader': 'Prova questi esempi:',
+	'i18n.aiTranslatedNotice':
+		"La traduzione di questa interfaccia è generata dall'IA. Le PR di miglioramento sono benvenute.",
+	'settings.general.providerOptionGemini': 'Google Gemini (cloud)',
+	'settings.general.providerOptionOllama': 'Ollama',
+	'settings.general.providerOptionOpenai': 'OpenAI (cloud)',
+	'settings.general.providerOptionAnthropic': 'Anthropic (cloud)',
+	'settings.general.modelListUpdated': 'Elenco dei modelli aggiornato: {count} modelli.',
+	'settings.general.modelListUpdatedSingular': 'Elenco dei modelli aggiornato: {count} modello.',
+	'settings.general.refreshSkippedOffline': 'Ignorato: offline',
+	'settings.general.refreshSkippedNotGemini': 'Ignorato: nessuna funzionalità è impostata per usare Gemini',
+	'settings.general.refreshModelListFailed': "Impossibile aggiornare l'elenco dei modelli: {error}",
+	'settings.main.groupChat': 'Chat',
+	'settings.main.groupVault': 'Vault',
+	'settings.main.groupAutomation': 'Automazione',
+	'settings.main.providersName': 'Provider',
+	'settings.main.yourNameName': 'Il tuo nome',
+	'settings.main.yourNameDesc':
+		"Il tuo nome usato nelle istruzioni di sistema per consentire all'IA di rivolgersi a te di persona nelle conversazioni.",
+	'settings.main.keepSessionHistoryName': 'Mantieni la cronologia delle sessioni',
+	'settings.main.keepSessionHistoryDesc':
+		"Salva le sessioni di chat dell'agente come file markdown nel tuo vault. Le sessioni vengono salvate in Agent-Sessions/ con titoli generati automaticamente.",
+	'settings.main.reviewDiffName': 'Rivedi il diff prima di scrivere i file',
+	'settings.main.reviewDiffDesc':
+		"Apri automaticamente una vista diff quando l'agente propone modifiche ai file, invece di richiedere un clic.",
+	'settings.main.vaultSearchIndexName': 'Indice di ricerca del vault',
+	'settings.main.pluginFolderName': 'Cartella del plugin',
+	'settings.main.pluginFolderDesc':
+		"Cartella in cui sono memorizzati i dati del plugin. Le sessioni dell'agente risiedono in Agent-Sessions/, i prompt personalizzati in Prompts/, gli hook in Hooks/, lo stato delle attività pianificate in Scheduled-Tasks/.",
+	'settings.main.scheduledTasksName': 'Attività pianificate',
+	'settings.main.lifecycleHooksName': 'Hook del ciclo di vita',
+	'settings.main.mcpServersName': 'Server MCP',
+	'settings.main.toolPermissionsName': 'Autorizzazioni degli strumenti',
+	'settings.main.advancedName': 'Avanzate',
+	'settings.main.documentationName': 'Documentazione',
+	'settings.main.documentationDesc': 'Visualizza la documentazione completa e le guide del plugin',
+	'settings.features.pageName': 'Funzionalità',
+	'settings.features.groupText': 'Testo',
+	'settings.features.groupTextDesc': 'Chat e agente, riassunti, completamenti e riscrittura.',
+	'settings.features.groupWeb': 'Web e ricerca',
+	'settings.features.groupWebDesc': 'Ricerca web, deep research e indice di ricerca del vault.',
+	'settings.features.groupMedia': 'Media',
+	'settings.features.provider': 'Provider',
+	'settings.features.model': 'Modello',
+	'settings.features.modelDefault': 'Predefinito per questo provider',
+	'settings.features.modelDefaultNamed': 'Predefinito ({model})',
+	'settings.features.sameAsChat': 'Uguale alla chat',
+	'settings.features.modelMissing': 'Non più disponibile',
+	'settings.features.modelCapabilitiesUnknown': 'supporto immagini non segnalato',
+	'settings.features.off': 'Disattivato',
+	'settings.features.chooseProvider': 'Scegli un provider',
+	'settings.features.notConnected': 'non connesso',
+	'settings.features.deepResearchAgent': 'Agente Deep Research',
+	'settings.features.fileSearch': 'Google File Search',
+	'settings.features.label.chat': 'Chat e agente',
+	'settings.features.label.summary': 'Riassunti',
+	'settings.features.label.completions': 'Completamenti',
+	'settings.features.label.rewrite': 'Riscrittura',
+	'settings.features.label.webSearch': 'Ricerca web',
+	'settings.features.label.deepResearch': 'Deep research',
+	'settings.features.label.rag': 'Indice di ricerca del vault',
+	'settings.features.label.imageGen': 'Generazione immagini',
+	'explainPrompt.placeholder': 'Seleziona un prompt per spiegare la selezione...',
+	'ragCleanup.title': "Eliminare l'indice del vault?",
+	'ragCleanup.body': "L'indice del tuo vault è memorizzato in Google Cloud. Vuoi eliminarlo?",
+	'ragCleanup.keepNote': 'Se conservi i dati, la riattivazione sarà più rapida.',
+	'ragCleanup.deleteWarning':
+		'⚠️ Se elimini, questa azione è permanente e non può essere annullata. Tutti i dati indicizzati verranno rimossi definitivamente da Google Cloud e dovrai reindicizzare tutti i file.',
+	'ragCleanup.keepButton': 'Conserva i dati',
+	'ragCleanup.deleteButton': 'Elimina permanentemente',
+	'yolo.title': 'Abilitare la modalità YOLO?',
+	'yolo.description':
+		"La modalità YOLO consente all'agente IA di eseguire tutti gli strumenti senza alcuna conferma — inclusi la creazione, la modifica, l'eliminazione e lo spostamento di file, nonché le chiamate API esterne.",
+	'yolo.warning':
+		"⚠️ Questo concede all'IA l'accesso completo e non supervisionato al tuo vault e ai servizi esterni. Non è possibile annullare le operazioni distruttive.",
+	'yolo.trustNote':
+		'Abilita questa opzione solo se ti fidi completamente del modello IA e ne comprendi le potenziali conseguenze.',
+	'yolo.cancelButton': 'Annulla',
+	'yolo.enableButton': 'Abilita modalità YOLO',
+	'rewrite.titleFile': 'Riscrivi intero file',
+	'rewrite.titleSelection': 'Riscrivi testo selezionato',
+	'rewrite.fileContentLabel': 'Contenuto del file:',
+	'rewrite.selectedTextLabel': 'Testo selezionato:',
+	'rewrite.instructionsLabel': 'Istruzioni:',
+	'rewrite.placeholderFile':
+		"Come vorresti riscrivere questo file?\n\nEsempi:\n• Rendilo più conciso\n• Correggi la grammatica e l'ortografia ovunque\n• Convertilo in un formato diverso\n• Riorganizza la struttura\n• Migliora la chiarezza e la leggibilità",
+	'rewrite.placeholderSelection':
+		"Come vorresti riscrivere questo testo?\n\nEsempi:\n• Rendilo più conciso\n• Correggi la grammatica e l'ortografia\n• Rendilo più formale/informale\n• Espandilo con maggiori dettagli\n• Semplifica il linguaggio",
+	'rewrite.submitButton': 'Riscrivi',
+	'catchUp.title': 'Esecuzioni pianificate mancate',
+	'catchUp.description':
+		'Le seguenti attività erano pianificate per essere eseguite mentre Obsidian era chiuso. Scegli quali eseguire ora.',
+	'catchUp.runAllButton': 'Esegui tutte',
+	'catchUp.skipAllButton': 'Salta tutte',
+	'catchUp.runAllFailed': 'Impossibile eseguire alcune attività — controlla i log per i dettagli.',
+	'catchUp.skipAllFailed': 'Impossibile saltare alcune attività — controlla i log per i dettagli.',
+	'catchUp.empty': 'Nessuna esecuzione in sospeso.',
+	'catchUp.missedAge': 'persa {age}',
+	'catchUp.runButton': 'Esegui',
+	'catchUp.skipButton': 'Salta',
+	'catchUp.runFailed': 'Impossibile eseguire "{slug}" — controlla i log per i dettagli.',
+	'catchUp.skipFailed': 'Impossibile saltare "{slug}" — controlla i log per i dettagli.',
+	'catchUp.minutesAgo': '{count}m fa',
+	'catchUp.hoursAgo': '{count}h fa',
+	'catchUp.daysAgo': '{count}g fa',
+	'ragResume.title': "Riprendere l'indicizzazione?",
+	'ragResume.body':
+		"Un'operazione di indicizzazione precedente è stata interrotta. Vuoi riprenderla o iniziare da capo?",
+	'ragResume.filesIndexedLabel': 'File indicizzati:',
+	'ragResume.interruptedLabel': 'Interrotta:',
+	'ragResume.lastFileLabel': 'Ultimo file:',
+	'ragResume.resumeNote': 'La ripresa continuerà da dove avevi interrotto, saltando i file già indicizzati.',
+	'ragResume.resumeButton': 'Riprendi',
+	'ragResume.startFreshButton': 'Ricomincia da capo',
+	'updateNotice.versionInfo': 'Aggiornato alla versione {version}',
+	'updateNotice.whatsNew': 'Novità:',
+	'updateNotice.genericTitle': '🎉 Gemini Scribe aggiornato!',
+	'updateNotice.genericMessage':
+		'Grazie per aver utilizzato Gemini Scribe! Questo aggiornamento include miglioramenti e correzioni di bug.',
+	'updateNotice.getStartedButton': 'Inizia',
+	'updateNotice.releaseNotesLink': '📖 Visualizza le note di rilascio complete',
+	'vaultAnalysis.title': '🔍 Analisi del vault in corso',
+	'vaultAnalysis.description': 'Generazione del contesto per AGENTS.md in corso...',
+	'vaultAnalysis.initializing': 'Inizializzazione in corso...',
+	'vaultAnalysis.complete': 'Analisi completata!',
+	'selectionResponse.title': "Risposta dell'IA",
+	'selectionResponse.selectedTextLabel': 'Testo selezionato',
+	'selectionResponse.generating': 'Generazione della risposta in corso...',
+	'selectionResponse.insertButton': 'Inserisci come callout',
+	'selectionResponse.copyButton': 'Copia',
+	'selectionResponse.closeButton': 'Chiudi',
+	'selectionResponse.errorPrefix': 'Errore: {error}',
+	'selectionResponse.insertedNotice': 'Risposta inserita come callout',
+	'selectionResponse.clipboardUnavailable': 'Appunti non disponibili',
+	'selectionResponse.copiedNotice': 'Risposta copiata negli appunti',
+	'selectionResponse.unknownError': 'Errore sconosciuto',
+	'selectionResponse.copyFailed': 'Copia non riuscita: {message}',
+	'selectionResponse.askTitle': 'Chiedi sulla selezione',
+	'selectionResponse.askSelectedTextLabel': 'Testo selezionato:',
+	'selectionResponse.questionLabel': 'La tua domanda:',
+	'selectionResponse.questionPlaceholder': 'Cosa vorresti sapere su questo testo?',
+	'selectionResponse.askButton': 'Chiedi',
+	'ragProgress.title': 'Indicizzazione del vault',
+	'ragProgress.currentFileLabel': 'In elaborazione:',
+	'ragProgress.elapsedLabel': 'Tempo trascorso:',
+	'ragProgress.estimatedLabel': 'Tempo stimato:',
+	'ragProgress.backgroundButton': 'Esegui in background',
+	'ragProgress.cancelButton': 'Annulla',
+	'ragProgress.cancelling': 'Annullamento in corso...',
+	'ragProgress.scanning': 'Scansione del vault in corso...',
+	'ragProgress.filesIndexed': '{count} file indicizzati',
+	'ragProgress.filesSkipped': '{count} file ignorati (non modificati)',
+	'ragProgress.filesFailed': '{count} file non riusciti',
+	'ragProgress.remaining': '{duration} rimanenti',
+	'ragProgress.calculating': 'Calcolo in corso...',
+	'ragProgress.titleFailed': 'Indicizzazione non riuscita',
+	'ragProgress.titleComplete': 'Indicizzazione completata',
+	'ragProgress.closeButton': 'Chiudi',
+	'mcpServer.titleAdd': 'Aggiungi server MCP',
+	'mcpServer.titleEdit': 'Modifica server MCP',
+	'mcpServer.nameSetting': 'Nome del server',
+	'mcpServer.nameDesc': 'Un nome descrittivo univoco per questo server',
+	'mcpServer.namePlaceholder': 'es. filesystem',
+	'mcpServer.transportSetting': 'Trasporto',
+	'mcpServer.transportDesc': 'Come connettersi al server: processo locale (stdio) o URL remoto (HTTP)',
+	'mcpServer.transportStdio': 'Stdio (processo locale)',
+	'mcpServer.transportHttp': 'HTTP (server remoto)',
+	'mcpServer.urlSetting': 'URL del server',
+	'mcpServer.urlDesc': "L'endpoint HTTP del server MCP",
+	'mcpServer.urlPlaceholder': 'es. http://localhost:3000/mcp',
+	'mcpServer.oauthSetting': 'Credenziali OAuth',
+	'mcpServer.oauthDesc': 'Il server ha token OAuth memorizzati',
+	'mcpServer.oauthClearButton': 'Cancella credenziali',
+	'mcpServer.oauthClearedNotice': 'Credenziali OAuth cancellate. Sarà necessario autorizzare nuovamente.',
+	'mcpServer.commandSetting': 'Comando',
+	'mcpServer.commandDesc': 'Il comando per avviare il processo del server MCP',
+	'mcpServer.commandPlaceholder': 'es. npx, python, /usr/local/bin/mcp-server',
+	'mcpServer.argsSetting': 'Argomenti',
+	'mcpServer.argsDesc': 'Argomenti del comando, uno per riga',
+	'mcpServer.argsPlaceholder': 'es.,\n-y\n@modelcontextprotocol/server-filesystem\n/path/to/folder',
+	'mcpServer.envSetting': "Variabili d'ambiente",
+	'mcpServer.envDesc':
+		'Coppie KEY=VALUE opzionali, una per riga. I valori sono memorizzati nel portachiavi del sistema operativo, non in chiaro.',
+	'mcpServer.envPlaceholder': 'es. API_KEY=abc123',
+	'mcpServer.enabledSetting': 'Abilitato',
+	'mcpServer.enabledDesc': 'Connetti a questo server al caricamento del plugin',
+	'mcpServer.testSetting': 'Testa connessione',
+	'mcpServer.testDesc': 'Connettiti temporaneamente per scoprire gli strumenti disponibili',
+	'mcpServer.testButton': 'Testa connessione',
+	'mcpServer.urlRequiredFirst': 'Inserisci prima un URL',
+	'mcpServer.commandRequiredFirst': 'Inserisci prima un comando',
+	'mcpServer.connecting': 'Connessione in corso...',
+	'mcpServer.connectingDesc': 'Connessione al server in corso...',
+	'mcpServer.connectedDesc': 'Connessione riuscita! Trovato/i {count} strumento/i.',
+	'mcpServer.connectionFailedDesc': 'Connessione non riuscita: {message}',
+	'mcpServer.cancelButton': 'Annulla',
+	'mcpServer.saveButton': 'Salva',
+	'mcpServer.nameRequired': 'Il nome del server è richiesto',
+	'mcpServer.urlRequired': "L'URL del server è richiesto per il trasporto HTTP",
+	'mcpServer.invalidUrl': 'Formato URL non valido',
+	'mcpServer.commandRequired': 'Il comando è richiesto per il trasporto stdio',
+	'mcpServer.envStoreFailed': "Impossibile memorizzare le variabili d'ambiente",
+	'mcpServer.discoveredToolsTitle': 'Strumenti rilevati',
+	'mcpServer.discoveredToolsDesc':
+		'Questi strumenti sono stati rilevati sul server. Gestisci i loro permessi nelle impostazioni dei permessi degli strumenti.',
+	'ragStatus.title': "Stato dell'indice RAG",
+	'ragStatus.tabOverview': 'Panoramica',
+	'ragStatus.tabFiles': 'File ({count})',
+	'ragStatus.tabFailures': 'Errori ({count})',
+	'ragStatus.statusLabel': 'Stato',
+	'ragStatus.filesIndexedLabel': 'File indicizzati',
+	'ragStatus.pendingLabel': 'In attesa',
+	'ragStatus.changeSingular': '{count} modifica',
+	'ragStatus.changePlural': '{count} modifiche',
+	'ragStatus.failedLabel': 'Non riusciti',
+	'ragStatus.fileSingular': '{count} file',
+	'ragStatus.filePlural': '{count} file',
+	'ragStatus.lastSyncLabel': 'Ultima sincronizzazione',
+	'ragStatus.storeLabel': 'Store',
+	'ragStatus.syncNowButton': 'Sincronizza ora',
+	'ragStatus.syncTooltipPending': 'Elabora le modifiche in attesa ora',
+	'ragStatus.syncTooltipNone': 'Nessuna modifica in attesa',
+	'ragStatus.syncing': 'Sincronizzazione in corso...',
+	'ragStatus.syncFailed': 'Sincronizzazione non riuscita: {message}',
+	'ragStatus.reindexButton': 'Riscansiona il vault',
+	'ragStatus.settingsButton': 'Impostazioni',
+	'ragStatus.searchPlaceholder': 'Cerca file...',
+	'ragStatus.noFilesIndexed': 'Nessun file ancora indicizzato',
+	'ragStatus.noSearchMatches': 'Nessun file corrisponde alla ricerca',
+	'ragStatus.showAllFiles': 'Mostra tutti i {count} file',
+	'ragStatus.noFailures': 'Nessun errore registrato',
+	'ragStatus.statusReady': 'Pronto',
+	'ragStatus.statusIndexing': 'Indicizzazione in corso...',
+	'ragStatus.statusError': 'Errore',
+	'ragStatus.statusPaused': 'In pausa',
+	'ragStatus.statusDisabled': 'Disattivato',
+	'ragStatus.statusRateLimited': 'Limite di frequenza raggiunto',
+	'ragStatus.statusUnknown': 'Sconosciuto',
+	'time.justNow': 'Poco fa',
+	'time.minuteAgoSingular': '{count} minuto fa',
+	'time.minutesAgoPlural': '{count} minuti fa',
+	'time.hourAgoSingular': '{count} ora fa',
+	'time.hoursAgoPlural': '{count} ore fa',
+	'time.dayAgoSingular': '{count} giorno fa',
+	'time.daysAgoPlural': '{count} giorni fa',
+	'scheduler.presetOnce': 'Una volta',
+	'scheduler.presetDaily': 'Giornaliero (ogni 24h)',
+	'scheduler.presetDailyAt': "Giornaliero a un'ora specifica",
+	'scheduler.presetWeekly': 'Settimanale (ogni 7g)',
+	'scheduler.presetWeeklyDays': 'Settimanale in giorni e ore specifici',
+	'scheduler.presetCustom': 'Intervallo personalizzato',
+	'scheduler.daySun': 'Dom',
+	'scheduler.dayMon': 'Lun',
+	'scheduler.dayTue': 'Mar',
+	'scheduler.dayWed': 'Mer',
+	'scheduler.dayThu': 'Gio',
+	'scheduler.dayFri': 'Ven',
+	'scheduler.daySat': 'Sab',
+	'scheduler.entityLabel': 'attività',
+	'scheduler.entityLabelPlural': 'Attività pianificate',
+	'scheduler.newTaskButton': 'Nuova attività',
+	'scheduler.emptyText': 'Nessuna attività pianificata.',
+	'scheduler.emptyHint':
+		'Crea la tua prima attività per automatizzare i prompt AI ricorrenti — riepiloghi giornalieri, report settimanali e altro ancora.',
+	'scheduler.deleteTitle': 'Elimina attività',
+	'scheduler.deleteHint': 'I file di output delle esecuzioni in Scheduled-Tasks/Runs/ non verranno eliminati.',
+	'scheduler.slugPlaceholder': 'es. daily-summary',
+	'scheduler.formTitleEdit': 'Modifica: {slug}',
+	'scheduler.formTitleNew': 'Nuova attività pianificata',
+	'scheduler.badgeDisabled': '{schedule} · disattivata',
+	'scheduler.badgePaused': '{schedule} · in pausa',
+	'scheduler.onceComplete': 'Una volta — completata',
+	'scheduler.nextRun': 'Prossima: {time}',
+	'scheduler.lastRun': 'Ultima: {time}',
+	'scheduler.enableButton': 'Abilita',
+	'scheduler.disableButton': 'Disabilita',
+	'scheduler.enableTooltip': 'Abilita questa attività',
+	'scheduler.disableTooltip': 'Disabilita questa attività',
+	'scheduler.toggleFailed': 'Impossibile attivare/disattivare "{slug}"',
+	'scheduler.resetButton': 'Reimposta',
+	'scheduler.resetTooltip': 'Cancella lo stato di errore e riabilita',
+	'scheduler.runNowButton': 'Esegui ora',
+	'scheduler.running': 'In esecuzione...',
+	'scheduler.submitted': 'Inviata',
+	'scheduler.runFailed': 'Impossibile eseguire "{slug}"',
+	'scheduler.editButton': 'Modifica',
+	'scheduler.deleteButton': 'Elimina',
+	'scheduler.scheduleSetting': 'Pianificazione',
+	'scheduler.scheduleDesc': "Ogni quanto tempo deve essere eseguita l'attività.",
+	'scheduler.customIntervalPlaceholder': 'es. 30m o 2h',
+	'scheduler.toolAccessTitle': 'Accesso agli strumenti',
+	'scheduler.toolAccessDesc': 'Se ereditata, questa attività utilizza la politica globale degli strumenti del plugin.',
+	'scheduler.promptSetting': 'Prompt',
+	'scheduler.promptDesc':
+		"L'istruzione inviata all'IA a ogni esecuzione. Supporta lo stesso markdown che useresti nella chat dell'agente.",
+	'scheduler.promptPlaceholder': 'Scrivi qui il tuo prompt...',
+	'scheduler.advancedOptions': 'Opzioni avanzate',
+	'scheduler.modelOverrideSetting': 'Sostituzione modello',
+	'scheduler.modelOverrideDesc':
+		'Sostituisci il modello di chat del plugin per questa attività (es. gemini-2.0-flash). Lascia vuoto per utilizzare quello predefinito.',
+	'scheduler.outputPathSetting': 'Percorso di output',
+	'scheduler.outputPathDesc':
+		'Dove scrivere i risultati. Supporta i segnaposto {slug} e {date}. Predefinito: {defaultPath}',
+	'scheduler.maxIterationsSetting': 'Iterazioni massime dello strumento',
+	'scheduler.maxIterationsDesc':
+		"Limite ai lotti di chiamate agli strumenti dell'agente per esecuzione. Aumentalo per attività lunghe a più passaggi che raggiungono il limite. Lascia vuoto per il valore predefinito ({default}).",
+	'scheduler.runIfMissedSetting': 'Esegui se saltata',
+	'scheduler.runIfMissedDesc':
+		'Se Obsidian era chiuso quando questa attività era programmata, mostrala nella finestra di approvazione del recupero al prossimo avvio.',
+	'scheduler.enabledSetting': 'Abilitato',
+	'scheduler.enabledDesc': "Disabilita per mettere in pausa l'attività senza eliminarla.",
+	'scheduler.invalidSchedule':
+		"Inserisci una pianificazione valida. L'intervallo personalizzato richiede 30m o 2h. Giornaliero a un'ora e Settimanale in determinati giorni a un'ora richiedono entrambi un formato HH:MM valido (e Settimanale richiede almeno un giorno).",
+	'scheduler.emptyPrompt': 'Il prompt non può essere vuoto.',
+	'scheduler.emptySlug': "Il nome dell'attività non può essere vuoto.",
+	'scheduler.invalidMaxIterations':
+		'Le iterazioni massime dello strumento devono essere un numero intero positivo, o vuoto per il valore predefinito.',
+	'scheduler.managerUnavailable': 'Gestore delle attività pianificate non disponibile.',
+	'scheduler.taskUpdated': 'Attività "{slug}" aggiornata',
+	'scheduler.taskCreated': 'Attività "{slug}" creata',
+	'scheduler.saveFailed': "Salvataggio dell'attività non riuscito: {message}",
+	'hooks.triggerFileModified': 'File modificato (salvataggio)',
+	'hooks.triggerFileCreated': 'File creato',
+	'hooks.triggerFileDeleted': 'File eliminato',
+	'hooks.triggerFileRenamed': 'File rinominato/spostato',
+	'hooks.actionAgentTask': "Attività dell'agente",
+	'hooks.actionSummarize': 'Riassumi file',
+	'hooks.actionRewrite': 'Riscrivi file',
+	'hooks.actionCommand': 'Esegui comando',
+	'hooks.entityLabel': 'hook',
+	'hooks.entityLabelPlural': 'Hook del ciclo di vita',
+	'hooks.newHookButton': 'Nuovo hook',
+	'hooks.emptyText': 'Ancora nessun hook.',
+	'hooks.emptyHint':
+		"Gli hook eseguono un agente IA in risposta agli eventi del vault: salvataggi, creazioni, eliminazioni e ridenominazioni di file. Crea il tuo primo hook per riassumere al salvataggio, indicizzare nuovi allegati o eseguire un'abilità su determinate note.",
+	'hooks.deleteTitle': 'Elimina hook',
+	'hooks.deleteHint': 'I file di output in Hooks/Runs/ non vengono eliminati.',
+	'hooks.slugPlaceholder': 'es. summarize-on-save',
+	'hooks.formTitleEdit': 'Modifica hook: {slug}',
+	'hooks.formTitleNew': 'Nuovo hook',
+	'hooks.disabledBannerTitle': 'Gli hook del ciclo di vita sono disabilitati.',
+	'hooks.disabledBannerHint':
+		'Abilita "Lifecycle hooks" nelle impostazioni del plugin prima che qualsiasi hook possa attivarsi. Puoi comunque creare definizioni qui mentre sono disabilitati — non verranno eseguiti finché non attivi la funzionalità.',
+	'hooks.badgeDisabled': '{badge} · disabilitato',
+	'hooks.badgePaused': '{badge} · in pausa',
+	'hooks.globMeta': 'Glob: {glob}',
+	'hooks.lastFired': 'Ultima esecuzione: {time}',
+	'hooks.enableButton': 'Abilita',
+	'hooks.disableButton': 'Disabilita',
+	'hooks.toggleFailed': 'Impossibile attivare/disattivare "{slug}"',
+	'hooks.resetButton': 'Ripristina',
+	'hooks.resetTooltip': 'Cancella lo stato di pausa',
+	'hooks.editButton': 'Modifica',
+	'hooks.deleteButton': 'Elimina',
+	'hooks.triggerSetting': 'Trigger',
+	'hooks.triggerDesc': "L'evento del vault che avvia questo hook.",
+	'hooks.actionSetting': 'Azione',
+	'hooks.actionDesc': 'Cosa fa questo hook a ogni avvio.',
+	'hooks.pathGlobSetting': 'Glob del percorso (opzionale)',
+	'hooks.pathGlobDesc':
+		'Limita gli avvii ai percorsi che corrispondono a questo glob. Esempi: Daily/**/*.md, Notes/*.md. Lascia vuoto per qualsiasi percorso.',
+	'hooks.commandIdSetting': 'ID comando',
+	'hooks.commandIdDesc':
+		'ID della tavolozza dei comandi da eseguire. Esempi: editor:save-file, gemini-scribe:summarize-active-file. Visualizza gli ID dei comandi tramite Impostazioni → Scorciatoie (apri la console per sviluppatori con Ctrl+Shift+I per ispezionare gli ID).',
+	'hooks.focusFileSetting': "Metti a fuoco il file di attivazione prima dell'invio",
+	'hooks.focusFileDesc':
+		"Quando attivo, il file di attivazione viene aperto nell'area di lavoro prima dell'esecuzione del comando — utile per i comandi limitati all'editor. Quando disattivato, il comando viene eseguito su qualsiasi file sia attualmente attivo. Disattivato per impostazione predefinita.",
+	'hooks.toolAccessTitle': 'Accesso agli strumenti',
+	'hooks.toolAccessDesc': 'Se ereditato, questo hook utilizza la politica globale degli strumenti del plugin.',
+	'hooks.promptSetting': 'Prompt',
+	'hooks.promptDesc':
+		"Istruzione inviata all'IA a ogni avvio. Variabili disponibili: {{filePath}}, {{fileName}}, {{trigger}}, {{oldPath}}.",
+	'hooks.promptPlaceholder': 'es. Riassumi le modifiche in {{filePath}}.',
+	'hooks.advancedOptions': 'Opzioni avanzate',
+	'hooks.debounceSetting': 'Debounce (ms)',
+	'hooks.debounceDesc': 'Unisci eventi rapidi per lo stesso file. Predefinito: {default}.',
+	'hooks.cooldownSetting': 'Cooldown (ms)',
+	'hooks.cooldownDesc':
+		'Dopo il completamento di un avvio, sopprime ulteriori eventi sullo stesso (hook, file) per questa finestra temporale. Predefinito: {default}.',
+	'hooks.maxRunsSetting': "Esecuzioni massime all'ora",
+	'hooks.maxRunsDesc': 'Limite a finestra scorrevole su tutti i file. 0 (predefinito) significa illimitato.',
+	'hooks.skillsSetting': 'Abilità (separate da virgola)',
+	'hooks.skillsDesc': 'Slug delle abilità da pre-attivare. Vuoto = eredita tutte le abilità disponibili.',
+	'hooks.modelOverrideSetting': 'Sostituzione modello',
+	'hooks.modelOverrideDesc':
+		'Sostituisci il modello di chat del plugin per questo hook. Lascia vuoto per utilizzare quello predefinito.',
+	'hooks.maxIterationsSetting': 'Iterazioni massime dello strumento',
+	'hooks.maxIterationsDesc':
+		"Limite sui lotti di chiamate agli strumenti dell'agente per avvio (solo agent-task). Aumentalo per hook lunghi a più passaggi che raggiungono il limite. Lascia vuoto per il valore predefinito ({default}).",
+	'hooks.outputPathSetting': 'Percorso di output (opzionale)',
+	'hooks.outputPathDesc':
+		"Dove scrivere la risposta dell'agente. Supporta {slug}, {date}, {fileName}. Lascia vuoto per non scrivere alcun file.",
+	'hooks.desktopOnlySetting': 'Solo desktop',
+	'hooks.desktopOnlyDesc':
+		"Salta questo hook sulle piattaforme mobili. Le esecuzioni dell'agente headless possono essere pesanti sui telefoni.",
+	'hooks.enabledSetting': 'Abilitato',
+	'hooks.enabledDesc': "Disabilita per mettere in pausa l'hook senza eliminarlo.",
+	'hooks.emptyPrompt': 'Il prompt non può essere vuoto per questa azione.',
+	'hooks.emptyCommandId': 'L\'ID comando non può essere vuoto per l\'azione "command".',
+	'hooks.emptySlug': "Il nome dell'hook non può essere vuoto.",
+	'hooks.invalidMaxIterations':
+		'Le iterazioni massime dello strumento devono essere un numero intero positivo, o vuoto per il valore predefinito.',
+	'hooks.managerUnavailable': 'Gestore degli hook non disponibile.',
+	'hooks.hookUpdated': 'Hook "{slug}" aggiornato',
+	'hooks.hookCreated': 'Hook "{slug}" creato',
+	'hooks.saveFailed': "Impossibile salvare l'hook: {message}",
+	'backgroundTasks.tabTasks': 'Attività in background',
+	'backgroundTasks.tabRag': 'RAG',
+	'backgroundTasks.managerUnavailable': 'Gestore delle attività in background non disponibile.',
+	'backgroundTasks.empty':
+		'Ancora nessuna attività in background. Le operazioni a lungo termine come la ricerca approfondita e la generazione di immagini appariranno qui.',
+	'backgroundTasks.runningHeader': 'In esecuzione',
+	'backgroundTasks.runningHeaderCount': 'In esecuzione ({count})',
+	'backgroundTasks.moreRunning': '+ altre {count} attività in esecuzione',
+	'backgroundTasks.recentHeader': 'Recenti',
+	'backgroundTasks.clearButton': 'Cancella',
+	'backgroundTasks.openResult': 'Apri risultato',
+	'backgroundTasks.cancelButton': 'Annulla',
+	'backgroundTasks.durationSeconds': '{count}s',
+	'backgroundTasks.durationMinutes': '{count}m',
+	'backgroundTasks.startedWithDuration': 'Avviato {time} · {duration}',
+	'backgroundTasks.started': 'Avviato {time}',
+	'backgroundTasks.ragDisabled': "L'indicizzazione RAG non è abilitata. Abilitala in Impostazioni → Gemini Scribe.",
+	'backgroundTasks.openFileAria': 'Apri {path}',
+	'backgroundTasks.indexingComplete':
+		'Scansione completata: {indexed} indicizzati nuovamente, {skipped} non modificati',
+	'backgroundTasks.indexingFailed': 'Indicizzazione RAG non riuscita: {message}',
+	'ragProgress.durationHours': '{hours}h {minutes}m {seconds}s',
+	'ragProgress.durationMinutes': '{minutes}m {seconds}s',
+	'ragProgress.durationSeconds': '{seconds}s',
+	'agent.view.displayName': 'Modalità agente',
+	'agent.view.noSkills': 'Nessuna abilità disponibile',
+	'agent.view.noActiveSession': 'Nessuna sessione attiva',
+	'agent.tokens.usage': 'Token: ~{used} / {limit} ({percent}%)',
+	'agent.tokens.usageCached': 'Token: ~{used} / {limit} ({percent}%) · {cached}% in cache',
+	'agent.tokens.usageThoughts': 'Token: ~{used} / {limit} ({percent}%) · {thoughts} di ragionamento',
+	'agent.tokens.usageCachedThoughts':
+		'Token: ~{used} / {limit} ({percent}%) · {cached}% in cache · {thoughts} di ragionamento',
+	'agent.empty.example.findTagged': 'Trova tutte le note con tag #important',
+	'agent.empty.example.weeklySummary': 'Crea un riepilogo settimanale delle mie note di riunione',
+	'agent.empty.example.research': 'Fai ricerche sui metodi di produttività e crea note',
+	'agent.empty.example.organize': 'Organizza le mie note di ricerca per argomento',
+	'agent.message.roleUser': 'Tu',
+	'agent.message.roleSystem': 'Sistema',
+	'agent.message.roleAgent': 'Agente',
+	'agent.message.toolPrefix': 'Strumento: {name}',
+	'agent.message.toolSuccess': 'Riuscito',
+	'agent.message.toolFailed': 'Non riuscito',
+	'agent.message.copied': 'Messaggio copiato negli appunti.',
+	'agent.message.copyFailed':
+		'Impossibile copiare il messaggio negli appunti. Prova a selezionarlo e copiarlo manualmente.',
+	'agent.message.reasoning': 'Ragionamento',
+	'agent.confirm.title': 'Autorizzazione richiesta',
+	'agent.confirm.parameters': 'Parametri:',
+	'agent.confirm.allow': 'Consenti',
+	'agent.confirm.cancel': 'Annulla',
+	'agent.confirm.dontAskAgain': 'Non chiedere più per questa sessione',
+	'agent.confirm.previewFile': 'Anteprima file',
+	'agent.confirm.viewChanges': 'Visualizza modifiche',
+	'agent.confirm.granted': 'Autorizzazione concessa: {name} è stato consentito',
+	'agent.confirm.denied': 'Permesso negato: {name} è stato annullato',
+	'agent.toolCategory.readOnly': 'Sola lettura',
+	'agent.toolCategory.vaultOperations': 'Operazione vault',
+	'agent.toolCategory.external': 'Esterno',
+	'agent.toolCategory.web': 'Accesso web',
+	'agent.toolCategory.memory': 'Memoria',
+	'agent.toolCategory.deepResearch': 'Deep Research',
+	'agent.header.loading': 'Caricamento...',
+	'agent.header.loadingProjectTooltip': 'Caricamento progetto...',
+	'agent.header.tooltipModel': 'Modello: {value}',
+	'agent.header.tooltipPrompt': 'Prompt: {value}',
+	'agent.header.promptBadgeFallback': 'Personalizzato',
+	'agent.header.menuAria': 'Menu sessione',
+	'agent.header.projectTooltip': 'Progetto: {name}\n{path}',
+	'agent.header.linkProjectTooltip': 'Fai clic per collegare un progetto',
+	'agent.project.none': 'Nessun progetto',
+	'agent.menu.newSession': 'Nuova sessione',
+	'agent.menu.browseSessions': 'Sfoglia sessioni',
+	'agent.menu.switchProject': 'Cambia progetto',
+	'agent.menu.linkProject': 'Collega progetto',
+	'agent.menu.sessionSettings': 'Impostazioni sessione',
+	'agent.input.placeholder': "Invia un messaggio all'agente... (@ file, / abilità)",
+	'agent.input.sendAria': "Invia messaggio all'agente",
+	'agent.input.stopAria': "Interrompi esecuzione dell'agente",
+	'agent.input.pasteFailed':
+		'Impossibile incollare nella finestra popout. Prova a incollare nella finestra principale.',
+	'agent.attachments.droppedExcluded': 'I file trascinati sono stati esclusi (file di sistema o di plugin)',
+	'agent.attachments.attachFailed': 'Impossibile allegare {name}',
+	'agent.attachments.textFileAddedOne': '1 file di testo aggiunto al contesto',
+	'agent.attachments.textFilesAdded': '{count} file di testo aggiunti al contesto',
+	'agent.attachments.fileAttachedOne': '1 file allegato',
+	'agent.attachments.filesAttached': '{count} file allegati',
+	'agent.attachments.skippedSizeOne': 'Saltato 1 file (supera il limite cumulativo di 20MB): {files}',
+	'agent.attachments.skippedSize': 'Saltati {count} file (superano il limite cumulativo di 20MB): {files}',
+	'agent.attachments.skippedUnsupportedOne': 'Saltato tipo di file non supportato: {exts}',
+	'agent.attachments.skippedUnsupported': 'Saltati tipi di file non supportati: {exts}',
+	'agent.attachments.unsupportedImageFormat': 'Formato immagine non supportato. Utilizza PNG, JPEG, GIF o WebP.',
+	'agent.attachments.sizeLimitReached':
+		'Limite di dimensione degli allegati (20 MB) raggiunto. Alcune immagini sono state saltate.',
+	'agent.attachments.imageAttachFailed': "Impossibile allegare l'immagine",
+	'agent.attachments.imageAttachedOne': 'Immagine allegata',
+	'agent.attachments.imagesAttached': '{count} immagini allegate',
+	'agent.attachments.imagesSkippedUnsupportedHint':
+		'{count} immagine/i saltata/e: formato non supportato. Utilizza PNG, JPEG, GIF o WebP.',
+	'agent.attachments.imagesSkippedUnsupported': '{count} immagine/i saltata/e: formato non supportato.',
+	'agent.attachments.saveFailedOne':
+		"Impossibile salvare l'allegato #{nums} nel vault. Verrà comunque inviato all'IA ma non sarà memorizzato localmente.",
+	'agent.attachments.saveFailed':
+		"Impossibile salvare gli allegati #{nums} nel vault. Verranno comunque inviati all'IA ma non saranno memorizzati localmente.",
+	'agent.attachments.fileTooLarge': 'File troppo grande: {name} supera il limite cumulativo di 20MB per gli allegati',
+	'agent.attachments.attached': 'Allegato {name}',
+	'agent.progress.thinking': 'Pensando...',
+	'agent.progress.thinkingWithBudget': '{thinking} ({remaining} rimanenti)',
+	'agent.progress.generating': 'Generazione della risposta...',
+	'agent.progress.processing': 'Elaborazione della risposta...',
+	'agent.progress.elapsedAria': 'Tempo trascorso',
+	'agent.send.emptyResponse':
+		'Il modello ha restituito una risposta vuota. Questo potrebbe accadere con i modelli di ragionamento. Prova a riformulare la domanda.',
+	'agent.send.cancelled': "Esecuzione dell'agente annullata",
+	'agent.loop.notice': 'L\'agente sta ripetendo la stessa chiamata a "{tool}" — potrebbe essere bloccato.',
+	'agent.planMode.approved': 'Approvato',
+	'agent.session.createFailed': "Impossibile creare la sessione dell'agente",
+	'agent.session.loadFailed': 'Impossibile caricare la sessione',
+	'agent.shelf.attachmentFallback': 'Allegato',
+	'agent.shelf.pinnedAria': 'Incluso in ogni messaggio',
+	'agent.shelf.removeAria': 'Rimuovi',
+	'agent.tools.copySectionAria': 'Copia {section}',
+	'agent.tools.failedDefault': 'Esecuzione dello strumento non riuscita (nessun messaggio di errore fornito)',
+	'agent.tools.completedDefault': 'Operazione completata con successo',
+	'agent.tools.running': 'Esecuzione degli strumenti in corso... ({done} di {total})',
+	'agent.tools.runningBadge': 'In esecuzione',
+	'agent.tools.completedOne': '1 strumento completato',
+	'agent.tools.completedMany': '{count} strumenti completati',
+	'agent.tools.completedOneFailed': '1 strumento completato — {failed} falliti',
+	'agent.tools.completedManyFailed': '{count} strumenti completati — {failed} falliti',
+	'agent.tools.permissionGranted': 'Autorizzazione concessa: {name}',
+	'agent.tools.runningStatus': 'In esecuzione...',
+	'agent.tools.completedStatus': 'Completato',
+	'agent.tools.failedStatus': 'Fallito',
+	'agent.tools.parametersHeader': 'Parametri',
+	'agent.tools.resultHeader': 'Risultato',
+	'agent.tools.truncatedSuffix': '... (troncato)',
+	'agent.tools.showFullContent': 'Mostra contenuto completo',
+	'agent.tools.noResults': 'Nessun risultato trovato',
+	'agent.tools.moreItems': '... e altri {count}',
+	'agent.tools.answerHeader': 'Risposta:',
+	'agent.tools.sourcesHeader': 'Fonti:',
+	'agent.tools.generatedImageHeader': 'Immagine generata:',
+	'agent.tools.imagePreviewFailed': "Impossibile caricare l'anteprima dell'immagine",
+	'agent.tools.generatedImageAlt': 'Immagine generata',
+	'agent.tools.pathLabel': 'Percorso:',
+	'agent.tools.wikilinkLabel': 'Wikilink:',
+	'agent.tools.copyButton': 'Copia',
+	'agent.tools.copiedButton': 'Copiato!',
+	'agent.tools.imageSavedTo': 'Immagine salvata in: {path}',
+	'agent.tools.fileLabel': 'File:',
+	'agent.diff.previewTitle': 'Anteprima: {path}',
+	'agent.diff.reviewTitle': 'Rivedi modifiche: {path}',
+	'agent.diff.displayName': 'Vista differenze',
+	'agent.diff.newFileBadge': '(nuovo file)',
+	'agent.diff.approve': 'Approva',
+	'agent.diff.cancel': 'Annulla',
+	'agent.fileMention.placeholder': 'Seleziona un file o una cartella da menzionare...',
+	'agent.skillMention.placeholder': "Seleziona un'abilità da attivare...",
+	'agent.projectPicker.title': 'Cambia progetto',
+	'agent.projectPicker.noProjectDesc': "Usa l'ambito predefinito dell'intero vault",
+	'agent.projectPicker.empty': 'Nessun progetto trovato. Crea una nota con il tag gemini-scribe/project per iniziare.',
+	'agent.projectPicker.vaultRoot': '(radice del vault)',
+	'agent.sessionList.title': 'Sessioni agente',
+	'agent.sessionList.empty': "Nessuna sessione dell'agente trovata",
+	'agent.sessionList.loadFailed': "Impossibile caricare le sessioni dell'agente",
+	'agent.sessionList.filterLabel': 'Progetto:',
+	'agent.sessionList.filterAll': 'Tutti i progetti',
+	'agent.sessionList.noFilterMatch': 'Nessuna sessione corrisponde al filtro selezionato',
+	'agent.sessionList.fileCountOne': '1 file',
+	'agent.sessionList.fileCount': '{count} file',
+	'agent.sessionList.openTooltip': 'Apri sessione',
+	'agent.sessionList.deleteTooltip': 'Elimina sessione',
+	'agent.sessionList.deleteConfirm': 'Eliminare la sessione "{title}"?',
+	'agent.sessionList.deleteConfirmAction': 'Elimina',
+	'agent.sessionList.deleteCancel': 'Annulla',
+	'agent.sessionList.deleted': 'Sessione "{title}" eliminata',
+	'agent.sessionList.deleteFailed': 'Impossibile eliminare la sessione',
+	'agent.sessionSettings.model': 'Modello',
+	'agent.sessionSettings.modelDesc': 'Seleziona il modello IA per questa sessione',
+	'agent.sessionSettings.useDefault': 'Usa predefinito',
+	'agent.sessionSettings.resetToDefault': 'Ripristina predefinito',
+	'agent.sessionSettings.promptTemplate': 'Modello di prompt',
+	'agent.sessionSettings.promptTemplateDesc': 'Seleziona un modello di prompt personalizzato per questa sessione',
+	'agent.sessionSettings.useDefaultPrompt': 'Usa prompt predefinito',
+	'agent.sessionSettings.info':
+		'Queste impostazioni sostituiscono i valori predefiniti globali solo per questa sessione. Le modifiche vengono salvate automaticamente.',
+	'command.openAgentView': 'Apri chat Gemini',
+	'command.refreshModelList': "Aggiorna l'elenco dei modelli",
+	'command.viewBackgroundTasks': 'Visualizza attività in background',
+	'command.openScheduler': 'Apri pianificatore',
+	'command.newScheduledTask': 'Nuova attività pianificata',
+	'command.openHookManager': 'Apri gestore hook',
+	'command.newHook': 'Nuovo hook del ciclo di vita',
+	'command.viewScheduledTasks': 'Visualizza attività pianificate',
+	'command.switchProject': 'Cambia progetto',
+	'command.createProject': 'Crea progetto',
+	'command.convertToProject': 'Converti nota in progetto',
+	'command.openProjectSettings': 'Apri impostazioni progetto',
+	'command.resumeProjectSession': 'Riprendi sessione del progetto',
+	'command.removeProject': 'Rimuovi progetto',
+	'command.rewriteSelection': "Riscrivi testo con l'IA",
+	'command.explainSelection': "Spiega selezione con l'IA",
+	'command.askSelection': 'Chiedi informazioni sulla selezione',
+	'command.viewReleaseNotes': 'Visualizza note di rilascio',
+	'command.generateImage': 'Genera immagine',
+	'command.ragPause': 'Sospendi sincronizzazione RAG',
+	'command.ragResume': 'Riprendi sincronizzazione RAG',
+	'command.ragStatus': 'Mostra stato RAG',
+	'command.newSession': 'Nuova sessione agente',
+	'command.browseSessions': 'Sfoglia sessioni agente',
+	'command.linkProject': 'Collega progetto alla sessione agente',
+	'command.sessionSettings': 'Impostazioni sessione agente',
+	'command.togglePlanMode': 'Attiva/disattiva Modalità Piano',
+	'ribbon.agentMode': 'Gemini Scribe: Modalità agente',
+	'menu.main.rewriteText': 'Gemini Scribe: Riscrivi testo...',
+	'menu.main.askQuestion': 'Gemini Scribe: Fai una domanda...',
+	'menu.main.applyPrompt': 'Gemini Scribe: Applica prompt...',
+	'notice.main.initFailedFix':
+		'Inizializzazione di Gemini Scribe non riuscita: {error}. Apri Impostazioni → Gemini Scribe per risolvere.',
+	'notice.main.ollamaUnreachable':
+		"Impossibile raggiungere Ollama su {url}. Assicurati che il daemon di Ollama sia in esecuzione e che l'URL di base sia corretto in Impostazioni → Gemini Scribe.",
+	'notice.main.noApiKey':
+		'Nessuna chiave API Gemini configurata. Apri Impostazioni → Gemini Scribe per aggiungerne una. Ottieni una chiave gratuita su aistudio.google.com/apikey',
+	'notice.main.noApiKeyOpenai':
+		'Nessuna chiave API OpenAI configurata. Apri Impostazioni → Gemini Scribe per aggiungerne una. Ottieni una chiave su platform.openai.com/api-keys',
+	'notice.main.noApiKeyAnthropic':
+		'Nessuna chiave API Anthropic configurata. Apri Impostazioni → Gemini Scribe per aggiungerne una. Ottieni una chiave su platform.claude.com/settings/keys',
+	'notice.main.apiKeyRetrieveFailed':
+		"Impossibile recuperare la chiave API dall'archivio sicuro. Prova a reinserirla in Impostazioni → Gemini Scribe → Provider → Google Gemini → Chiave API.",
+	'notice.main.initFailedConsole':
+		'Inizializzazione di Gemini Scribe non riuscita: {error}. Controlla la console per i dettagli.',
+	'notice.main.projectCreated': 'Progetto creato: {path}',
+	'notice.main.projectCreateFailed': 'Impossibile creare il progetto',
+	'notice.main.convertedToProject': 'Convertito in progetto: {name}',
+	'notice.main.convertToProjectFailed': 'Impossibile convertire la nota in progetto',
+	'notice.main.noProjectsFound': 'Nessun progetto trovato',
+	'notice.main.noSessionsForProject': 'Nessuna sessione trovata per il progetto: {name}',
+	'notice.main.resumeProjectSessionFailed': 'Impossibile riprendere la sessione del progetto',
+	'notice.main.projectRemoved': 'Stato di progetto rimosso da: {name}',
+	'notice.main.projectRemoveFailed': 'Impossibile rimuovere lo stato di progetto',
+	'notice.main.selectTextFirst': 'Seleziona prima del testo',
+	'notice.main.imageGenUnavailableProvider':
+		'Nessun provider è configurato per la generazione di immagini. Scegline uno in Impostazioni → Gemini Scribe → Funzionalità → Generazione immagini.',
+	'notice.main.imageGenUnavailable': 'La generazione di immagini non è disponibile.',
+	'notice.main.ragUnavailableProvider':
+		"Nessun provider è configurato per l'indice di ricerca del vault. Scegline uno in Impostazioni → Gemini Scribe → Vault → Indice di ricerca del vault.",
+	'notice.main.ragNotEnabled': "L'indicizzazione RAG non è abilitata",
+	'notice.main.ragAlreadyPaused': 'La sincronizzazione RAG è già in pausa',
+	'notice.main.ragCannotPauseWhileIndexing': "Impossibile mettere in pausa mentre l'indicizzazione è in corso",
+	'notice.main.ragPaused': 'Sincronizzazione RAG in pausa',
+	'notice.main.ragNotPaused': 'La sincronizzazione RAG non è in pausa',
+	'notice.main.ragResumed': 'Sincronizzazione RAG ripresa',
+	'notice.main.readyToUse': "Gemini Scribe è ora pronto all'uso!",
+	'component.managementModalBase.managerUnavailable': 'Gestore di {label} non disponibile.',
+	'component.managementModalBase.deleteConfirm':
+		'Eliminare "{slug}"? Questo rimuoverà permanentemente il file di definizione di {label}.',
+	'component.managementModalBase.cancel': 'Annulla',
+	'component.managementModalBase.delete': 'Elimina',
+	'component.managementModalBase.deleting': 'Eliminazione in corso...',
+	'component.managementModalBase.deleted': '{label} "{slug}" eliminato',
+	'component.managementModalBase.deleteFailed': 'Impossibile eliminare "{slug}"',
+	'component.managementModalBase.backToList': '← Torna alla lista',
+	'component.managementModalBase.slugName': 'Nome {label} (slug)',
+	'component.managementModalBase.slugDesc':
+		'Identificatore minuscolo utilizzato come nome file e nei percorsi di output: lettere ASCII minuscole, cifre e trattini singoli (nessun trattino iniziale/finale o consecutivo), da 1 a 64 caratteri. Non può essere modificato dopo la creazione.',
+	'component.managementModalBase.saveChanges': 'Salva modifiche',
+	'component.managementModalBase.createEntity': 'Crea {label}',
+	'component.toolPolicyEditor.title': 'Accesso agli strumenti',
+	'component.toolPolicyEditor.inheritGlobal': 'Eredita la politica degli strumenti globale del plugin',
+	'component.toolPolicyEditor.presetLabel': 'Preset:',
+	'component.toolPolicyEditor.noPreset': '(nessun preset — usa preset globale)',
+	'component.toolPolicyEditor.perToolOverrides': 'Eccezioni per strumento',
+	'component.toolPolicyEditor.noToolsRegistered': 'Nessuno strumento registrato.',
+	'component.toolPolicyEditor.inheritOption': '(eredita)',
+	'notice.backgroundTask.failed': 'Attività in background non riuscita: {label}\n{error}',
+	'notice.backgroundTask.complete': '✓ {label} completato.',
+	'notice.backgroundTask.openResult': 'Apri risultato',
+	'notice.rag.resuming': "Indicizzazione RAG: Ripresa dell'indicizzazione interrotta...",
+	'notice.rag.startingFresh': 'Indicizzazione RAG: Avvio da zero...',
+	'notice.rag.indexingComplete': 'Scansione completata: {indexed} indicizzati nuovamente, {skipped} non modificati',
+	'notice.rag.indexingFailed': 'Indicizzazione RAG non riuscita: {error}',
+	'notice.rag.startFreshFailed': 'Indicizzazione RAG: Impossibile avviare da zero: {error}',
+	'notice.rag.initFailed':
+		"Impossibile inizializzare l'indice di ricerca del vault. Controlla la console per i dettagli.",
+	'notice.rag.startingInitial': "Indicizzazione RAG: Avvio dell'indicizzazione iniziale del vault...",
+	'notice.rag.indexingSummary': 'Indicizzazione RAG: {indexed} indicizzati, {skipped} non modificati',
+	'notice.rag.syncingPending': 'Indice RAG: Sincronizzazione modifiche in sospeso...',
+	'notice.rag.uiError': 'Errore interfaccia indicizzazione RAG: {error}',
+	'notice.selection.noSelection': 'Seleziona prima del testo',
+	'notice.selection.noPrompts':
+		'Nessun prompt di azione di selezione trovato. Crea dei prompt con il tag "gemini-scribe/selection-prompt".',
+	'notice.image.noActiveNote': 'Nessuna nota attiva. Apri prima una nota.',
+	'notice.image.submitted': "Generazione dell'immagine inviata — puoi continuare a lavorare.",
+	'notice.image.generating': "Generazione dell'immagine in corso...",
+	'notice.image.inserted': 'Immagine generata e inserita con successo!',
+	'notice.image.generateFailed': "Impossibile generare l'immagine: {error}",
+	'notice.image.savedManualInsert': 'Immagine salvata ({reason}). Wikilink: {wikilink}',
+	'notice.image.reasonNoteClosed': 'la nota non è più aperta',
+	'notice.image.reasonCursorInvalid': 'la posizione del cursore non è più valida',
+	'notice.image.promptGenerated': "Prompt generato! Sentiti libero di modificarlo prima di generare l'immagine.",
+	'notice.image.promptFailed': 'Impossibile generare il prompt: {error}',
+	'notice.vaultAnalysis.parseFailed':
+		"Impossibile analizzare la risposta dell'IA. Controlla la console per i dettagli.",
+	'notice.vaultAnalysis.created': 'Contesto del vault creato con successo!',
+	'notice.vaultAnalysis.updated': 'Contesto del vault aggiornato con successo!',
+	'notice.vaultAnalysis.initFailed': 'Impossibile inizializzare AGENTS.md. Controlla la console per i dettagli.',
+	'notice.mcp.authorizing': 'MCP: Autorizzazione di "{name}" in corso — controlla il browser',
+	'notice.fileUtils.createFolderFailed': 'Gemini Scribe: Impossibile creare la cartella "{path}"{label}: {message}',
+	'notice.prompt.nameEmpty': 'Il nome del prompt non può essere vuoto',
+	'notice.prompt.nameInvalid':
+		'Nome del prompt non valido. Usa caratteri alfanumerici, spazi, trattini o trattini bassi.',
+	'notice.prompt.alreadyExists': 'Un file di prompt denominato "{fileName}" esiste già.',
+	'notice.prompt.created': 'Nuovo prompt personalizzato creato: {name}',
+	'notice.prompt.createFileFailed': 'Impossibile creare il file del prompt',
+	'notice.prompt.createFailed': 'Impossibile creare il nuovo prompt personalizzato',
+	'notice.summary.noActiveFile': 'Nessun file attivo da riassumere. Apri prima un file markdown.',
+	'notice.summary.success': 'Sommario aggiunto al frontmatter con successo!',
+	'notice.summary.failed': 'Impossibile generare il sommario: {error}',
+	'notice.completions.enabled': 'I completamenti di Gemini Scribe sono ora abilitati.',
+	'notice.completions.disabled': 'I completamenti di Gemini Scribe sono ora disabilitati.',
+	'tool.confirm.createSkill': 'Crea nuova abilità "{name}":\n\n{description}',
+	'tool.confirm.editSkillNoFields': 'Modifica abilità "{name}": nessun campo valido fornito',
+	'tool.confirm.editSkillDescription': 'Modifica abilità "{name}": aggiornamento della descrizione',
+	'tool.confirm.editSkillContent': 'Modifica abilità "{name}": aggiornamento del contenuto',
+	'tool.confirm.editSkillBoth': 'Modifica abilità "{name}": aggiornamento di descrizione e contenuto',
+	'tool.confirm.generateImage':
+		'Generare un\'immagine con il prompt: "{prompt}"?\n\nQuesto creerà un nuovo file immagine nel tuo vault.',
+	'tool.confirm.generateImageDestination': 'Destinazione: {path}',
+	'tool.confirm.deepResearchVaultOnly': 'Esegui ricerca approfondita su: "{topic}" utilizzando solo le note del vault',
+	'tool.confirm.deepResearchWebOnly': 'Esegui ricerca approfondita su: "{topic}" utilizzando solo la ricerca web',
+	'tool.confirm.deepResearchVaultAndWeb': 'Esegui ricerca approfondita su: "{topic}" utilizzando vault e web',
+	'tool.confirm.updateFrontmatter': 'Aggiorna frontmatter in {path}: imposta "{key}" su "{value}"',
+	'tool.confirm.appendFile': 'Aggiungi contenuto in coda al file: {path}\n\nAnteprima del contenuto:\n{preview}',
+	'tool.confirm.addMemory': 'Aggiungi quanto segue alla memoria di AGENTS.md:\n\n{preview}',
+	'tool.confirm.writeFileSummary': 'Scrivi nel file: {path}\n\n{summary}',
+	'tool.confirm.writeFile': 'Scrivi contenuto nel file: {path}\n\nAnteprima del contenuto:\n{preview}',
+	'tool.confirm.deleteFile':
+		'Elimina file o cartella: {path}\n\nQuesta operazione segue l\'impostazione "File eliminati" di Obsidian (sposta nel cestino di sistema, nella cartella .trash del vault o eliminazione permanente).',
+	'tool.confirm.createFolder': 'Crea cartella: {path}',
+	'tool.confirm.moveFile': 'Sposta file o cartella da: {source}\nA: {target}',
+	'modal.generateImage.title': 'Genera immagine',
+	'modal.generateImage.descriptionName': "Descrizione dell'immagine",
+	'modal.generateImage.descriptionDesc': "Descrivi l'immagine che desideri generare",
+	'modal.generateImage.placeholder': 'Un paesaggio sereno con montagne e un lago...',
+	'modal.generateImage.suggestName': 'Genera prompt dalla pagina corrente',
+	'modal.generateImage.suggestDesc':
+		"Lascia che l'IA suggerisca un prompt per l'immagine in base al contenuto di questa pagina",
+	'modal.generateImage.suggestButton': 'Genera prompt dalla pagina',
+	'modal.generateImage.generateButton': 'Genera immagine',
+	'modal.generateImage.cancelButton': 'Annulla',
+	'modal.generateImage.generatingButton': 'Generazione in corso...',
+	'modal.promptName.title': 'Crea nuovo prompt personalizzato',
+	'modal.promptName.label': 'Nome del prompt:',
+	'modal.promptName.placeholder': 'Inserisci un nome per il tuo prompt personalizzato...',
+	'modal.promptName.cancel': 'Annulla',
+	'modal.promptName.create': 'Crea',
+	'modal.vaultAnalysis.stepCollect': 'Raccolta delle informazioni del vault',
+	'modal.vaultAnalysis.stepAnalyze': 'Analisi con {model}',
+	'modal.vaultAnalysis.stepParse': 'Elaborazione dei risultati',
+	'modal.vaultAnalysis.stepRender': 'Rendering del template',
+	'modal.vaultAnalysis.stepWrite': 'Scrittura di AGENTS.md',
+	'modal.vaultAnalysis.stepExamples': 'Generazione dei prompt di esempio',
+	'modal.vaultAnalysis.stepSaveExamples': 'Salvataggio dei prompt di esempio',
+	'modal.vaultAnalysis.statusAnalyzing': 'Analisi della struttura del vault...',
+	'modal.vaultAnalysis.statusGenerating': 'Generazione del contesto del vault con {model}...',
+	'modal.vaultAnalysis.statusProcessing': 'Elaborazione della risposta...',
+	'modal.vaultAnalysis.statusRendering': 'Rendering del contenuto...',
+	'modal.vaultAnalysis.statusWriting': 'Scrittura di AGENTS.md...',
+	'modal.vaultAnalysis.statusExamples': 'Generazione dei prompt di esempio con {model}...',
+	'modal.vaultAnalysis.statusSavingExamples': 'Salvataggio dei prompt di esempio...',
+	'modal.vaultAnalysis.parseFailedStep': "Impossibile analizzare la risposta dell'IA",
+	'modal.vaultAnalysis.unknownError': 'Errore sconosciuto',
+	'statusbar.background.oneTask': '1 attività',
+	'statusbar.background.taskCount': '{count} attività',
+	'statusbar.background.runningOne': '1 attività in background in esecuzione — clicca per visualizzare',
+	'statusbar.background.runningMany': '{count} attività in background in esecuzione — clicca per visualizzare',
+	'statusbar.background.missedOne': '1 esecuzione pianificata persa — clicca per esaminare',
+	'statusbar.background.missedMany': '{count} esecuzioni pianificate perse — clicca per esaminare',
+	'statusbar.background.ragIndexing': 'RAG: indicizzazione{progress}',
+	'statusbar.background.ragPaused': 'RAG: in pausa ({count} file indicizzati)',
+	'statusbar.background.ragError': 'RAG: errore — controlla le impostazioni',
+	'statusbar.background.ragRateLimited': 'RAG: limitato ({seconds}s)',
+	'statusbar.rag.indexed': 'Indice RAG: {count} file indicizzati',
+	'statusbar.rag.uploading': 'Indice RAG: Caricamento di {current}/{total}...',
+	'statusbar.rag.indexing': 'Indice RAG: Indicizzazione in corso...',
+	'statusbar.rag.error': 'Indice RAG: Errore - clicca per i dettagli',
+	'statusbar.rag.paused': 'Indice RAG: In pausa',
+	'statusbar.rag.rateLimited': 'Indice RAG: Limite di frequenza raggiunto - attesa di {seconds}s',
+	'toolPolicy.preset.readOnly': 'Solo lettura',
+	'toolPolicy.preset.cautious': 'Prudente (predefinito)',
+	'toolPolicy.preset.editMode': 'Modalità modifica',
+	'toolPolicy.preset.yolo': 'Modalità YOLO',
+	'toolPolicy.preset.custom': 'Personalizzato',
+	'toolPolicy.permission.deny': 'Nega',
+	'toolPolicy.permission.askUser': "Chiedi all'utente",
+	'toolPolicy.permission.approve': 'Approva',
+	'toolPolicy.classification.read': 'Strumenti di lettura',
+	'toolPolicy.classification.write': 'Strumenti di scrittura',
+	'toolPolicy.classification.destructive': 'Strumenti distruttivi',
+	'toolPolicy.classification.external': 'Strumenti esterni',
+	'command.summarizeActiveFile': 'Riassumi file attivo',
+	'command.toggleCompletions': 'Attiva/disattiva completamenti',
+	'command.createCustomPrompt': 'Crea nuovo prompt personalizzato',
+	'notice.rewrite.rewritingSelection': 'Riscrittura del testo selezionato...',
+	'notice.rewrite.selectionDone': 'Testo riscritto con successo',
+	'notice.rewrite.rewritingFile': "Riscrittura dell'intero file...",
+	'notice.rewrite.fileDone': 'File riscritto con successo',
+	'agent.planMode.toggleAria': "Attiva/disattiva Modalità Piano — esamina un piano prima che l'agente lo esegua",
+	'agent.planMode.label': 'Piano',
+	'agent.planMode.headerLabel': 'Agente (Piano)',
+	'agent.planMode.approveBtn': 'Approva ed esegui',
+	'agent.planMode.rejectBtn': 'Rifiuta',
+	'agent.planMode.rejectedNotice': 'Piano rifiutato.',
+	'agent.planMode.proceedMessage': 'Procedi con il piano approvato.',
+	'agent.toolFailedStop':
+		'L\'agente si è interrotto perché una chiamata allo strumento è fallita ({tool}). Risolvi il problema e riprova, oppure disattiva "Interrompi l\'agente quando uno strumento fallisce" per proseguire oltre gli errori degli strumenti.',
+	'agent.loopAborted':
+		"L'agente ha continuato a riprovare la stessa chiamata allo strumento (il rilevatore di loop è scattato {count} volte). Interruzione del turno per evitare un loop infinito. Prova a riformulare la richiesta o ad avviare una nuova sessione.",
+	'agent.emptyResponseFallback.withTools':
+		'Ho completato le azioni richieste ({tools}), ma si è verificato un problema nella generazione del riepilogo. Le operazioni sono riuscite.',
+	'agent.emptyResponseFallback.noTools':
+		'Ho completato le azioni richieste, ma si è verificato un problema nella generazione del riepilogo. Le operazioni sono riuscite.',
+	'selection.emptyResponse': "L'IA ha restituito una risposta vuota. Riprova.",
+	'provider.openai.noModelSelected': 'Nessun modello OpenAI selezionato. Scegli un modello nelle impostazioni.',
+	'provider.openai.noImageData': "OpenAI non ha restituito alcun dato dell'immagine.",
+	'provider.unsupportedAttachment':
+		'{provider} supporta solo allegati immagine; ricevuto {mimeType}. Passa al provider Gemini per file PDF, audio o video.',
+	'provider.anthropic.noModelSelected': 'Nessun modello Anthropic selezionato. Scegli un modello nelle impostazioni.',
+	'provider.unsupportedAttachmentPdf':
+		"{provider} supporta solo allegati di tipo immagine e PDF; ricevuto {mimeType}. Passa al provider Gemini per l'input audio o video.",
+	'provider.unsupportedAttachmentInHistory':
+		"{provider} supporta solo allegati di tipo immagine; la cronologia della conversazione contiene {mimeType}. Passa al provider Gemini per l'input PDF, audio o video.",
+	'provider.unsupportedAttachmentInHistoryPdf':
+		"{provider} supporta solo allegati di tipo immagine e PDF; la cronologia della conversazione contiene {mimeType}. Passa al provider Gemini per l'input audio o video.",
+	'provider.gemini.noImageData': 'Nessun dato immagine nella risposta. Il modello potrebbe aver restituito solo testo.',
+	'error.unknown': 'Si è verificato un errore sconosciuto',
+	'error.openaiInvalidKey': 'Chiave API OpenAI non valida. Verifica la chiave API in Impostazioni → Gemini Scribe.',
+	'error.anthropicInvalidKey':
+		'Chiave API Anthropic non valida. Controlla la chiave API in Impostazioni → Gemini Scribe.',
+	'error.modelNotOnEndpoint':
+		"Modello non disponibile su questo endpoint. Verifica le impostazioni del modello o l'URL di base configurato.",
+	'error.serverUnreachable':
+		"Impossibile connettersi al server del modello. Se hai configurato un URL di base personalizzato (LM Studio, MLX, ecc.), assicurati che il server sia attivo e che l'URL di base nelle impostazioni sia corretto.",
+	'error.invalidApiKey': 'Chiave API non valida. Verifica le credenziali del fornitore del modello nelle impostazioni.',
+	'error.authFailed':
+		'Autenticazione non riuscita. Verifica le credenziali del fornitore del modello e che il tuo account abbia accesso a questo modello.',
+	'error.quotaExhausted':
+		'Quota del piano gratuito esaurita per questo modello. Prova a passare a un modello diverso (ad es. Gemini Flash) o abilita la fatturazione in Google AI Studio.',
+	'error.rateLimit': 'Limite di richieste API superato. Attendi un momento e riprova.',
+	'error.ollamaModelNotPulled': 'Modello Ollama non scaricato. Esegui: ollama pull {model}',
+	'error.modelNotAvailable': 'Il modello selezionato non è disponibile. Verifica le impostazioni del modello.',
+	'error.ollamaUnreachable':
+		"Impossibile connettersi al daemon di Ollama. Assicurati che `ollama serve` sia in esecuzione e che l'URL di base nelle impostazioni sia corretto.",
+	'error.network': "Errore di rete: impossibile raggiungere l'API del modello. Verifica la tua connessione.",
+	'error.timeout': "Richiesta scaduta. L'API ha impiegato troppo tempo per rispondere. Riprova.",
+	'error.serviceUnavailable': "L'API del modello è temporaneamente non disponibile. Riprova più tardi.",
+	'error.safetyBlocked': 'Il contenuto è stato bloccato dai filtri di sicurezza. Riformula la tua richiesta.',
+	'error.tokenLimit':
+		'La richiesta supera il limite di token. Riduci la lunghezza del messaggio o della cronologia della conversazione.',
+	'error.apiPrefix': 'Errore API: {message}',
+	'error.communicationFailed': "Si è verificato un errore durante la comunicazione con l'API del modello",
+	'error.unknownCommunication': "Si è verificato un errore sconosciuto durante la comunicazione con l'API del modello",
+	'error.http.badRequest': 'Richiesta errata: la richiesta API non è valida. Verifica il messaggio e riprova.',
+	'error.http.unauthorized':
+		'Autenticazione non riuscita: chiave API non valida. Verifica le credenziali del fornitore del modello nelle impostazioni.',
+	'error.http.forbidden':
+		"Accesso negato: il fornitore del modello ha negato l'accesso a questo modello o funzionalità.",
+	'error.http.notFound':
+		'Modello non trovato: il modello selezionato non è disponibile. Verifica le impostazioni del modello.',
+	'error.http.rateLimit': 'Limite di richieste superato: troppe richieste. Attendi un momento e riprova.',
+	'error.http.serverError': "Errore del server: l'API del modello ha riscontrato un errore interno. Riprova più tardi.",
+	'error.http.serviceUnavailable':
+		"Servizio non disponibile: l'API del modello è temporaneamente inattiva. Riprova più tardi.",
+	'error.http.gatewayTimeout': 'Gateway timeout: la richiesta API ha impiegato troppo tempo. Riprova.',
+	'error.http.serverErrorWithCode':
+		"Errore del server ({statusCode}): l'API del modello sta riscontrando problemi. Riprova più tardi.",
+	'error.http.clientErrorWithCode': 'Errore del client ({statusCode}): {message}',
+	'error.http.clientErrorWithCodeNoDetail': 'Errore del client ({statusCode}): verifica la richiesta e riprova.',
+	'error.http.genericWithCode': 'Errore HTTP {statusCode}: {message}',
+	'error.http.genericWithCodeNoDetail': 'Errore HTTP {statusCode}: si è verificato un errore imprevisto.',
+	'settings.advanced.compactionThresholdName': 'Soglia di compattazione del contesto',
+	'settings.advanced.compactionThresholdDesc':
+		'I turni precedenti vengono riassunti una volta che la finestra di contesto raggiunge questa percentuale di riempimento.',
+	'settings.advanced.stopOnToolErrorName': "Interrompi l'agente quando uno strumento fallisce",
+	'settings.advanced.stopOnToolErrorDesc':
+		"Se disattivato, l'agente prosegue dopo il fallimento di uno strumento invece di terminare il turno.",
+	'settings.advanced.summaryFrontmatterKeyName': 'Chiave frontmatter del riassunto',
+	'settings.advanced.summaryFrontmatterKeyDesc':
+		'Il nome della proprietà frontmatter utilizzato per salvare il riassunto generato della nota.',
+	'settings.advanced.logToolExecutionName': 'Registra le chiamate agli strumenti nella cronologia della sessione',
+	'settings.advanced.logToolExecutionDesc': 'Richiede che la cronologia della sessione sia abilitata.',
+	'settings.advanced.diagnosticsHeading': 'Diagnostica',
+	'settings.advanced.debugModeName': 'Modalità debug',
+	'settings.advanced.debugModeDesc':
+		"Registra dettagli aggiuntivi nella console per sviluppatori per facilitare l'individuazione dei problemi.",
+	'settings.advanced.showTokenUsageName': "Mostra l'utilizzo dei token",
+	'settings.advanced.showTokenUsageDesc':
+		"Mostra il conteggio dei token per ciascun messaggio nella vista dell'agente.",
+	'settings.advanced.logToFileName': 'Registra le chiamate API su file',
+	'settings.advanced.logToFileDesc':
+		'Scrive ogni richiesta e risposta API del modello in un file di log nella cartella del plugin.',
+	'settings.automation.manageScheduledTasksName': 'Gestisci attività pianificate',
+	'settings.automation.manageScheduledTasksDesc': "Visualizza, modifica ed esegui le attività pianificate dell'agente.",
+	'settings.automation.newTaskName': 'Nuova attività pianificata',
+	'settings.automation.newTaskDesc': 'Crea una nuova attività pianificata.',
+	'settings.automation.autoRunCatchUpName': "Esegui automaticamente le attività perse all'avvio",
+	'settings.automation.autoRunCatchUpDesc':
+		"Se Obsidian era chiuso all'ora pianificata di un'attività, la esegue automaticamente alla successiva apertura del vault.",
+	'settings.automation.taskCount': '{count} attività',
+	'settings.automation.taskCountSingular': '{count} attività',
+	'settings.automation.enableHooksName': 'Abilita hook del ciclo di vita',
+	'settings.automation.enableHooksDesc':
+		"Consente all'IA di avviarsi automaticamente in risposta a eventi del vault, come la creazione o la modifica di un file.",
+	'settings.automation.manageHooksName': 'Gestisci hook',
+	'settings.automation.manageHooksDesc': 'Visualizza, modifica ed esegui i tuoi hook del ciclo di vita.',
+	'settings.automation.newHookName': 'Nuovo hook',
+	'settings.automation.newHookDesc': 'Crea un nuovo hook del ciclo di vita.',
+	'settings.automation.hooksStatusOn': 'Attivo',
+	'settings.automation.hooksStatusOff': 'Disattivo',
+	'settings.automation.openHookManagerFailed': 'Impossibile aprire la gestione degli hook: {error}',
+	'settings.automation.openSchedulerFailed': 'Impossibile aprire il pianificatore: {error}',
+	'settings.mcp.noServers': 'Nessun server MCP ancora configurato.',
+	'settings.mcp.addServerButton': 'Aggiungi server MCP',
+	'settings.mcp.editButton': 'Modifica',
+	'settings.mcp.httpUrl': 'URL: {url}',
+	'settings.mcp.authorized': 'Autorizzato',
+	'settings.mcp.duplicateServerName': 'Un server denominato "{name}" esiste già.',
+	'settings.mcp.reconnectFailed': 'Salvato, ma la riconnessione a "{name}" non è riuscita: {error}',
+	'settings.mcp.openEditorFailed': "Impossibile aprire l'editor dei server MCP: {error}",
+	'settings.mcp.openAddDialogFailed': 'Impossibile aprire la finestra di aggiunta server: {error}',
+	'settings.mcp.savedButConnectFailed': 'Salvato, ma la connessione al server non è riuscita: {error}',
+	'settings.mcp.serverCount': '{count} server',
+	'settings.mcp.serverCountSingular': '{count} server',
+	'settings.rag.privacyNoticeName': 'Privacy',
+	'settings.rag.privacyNotice':
+		"L'indicizzazione invia il contenuto delle note a Google File Search per la ricerca semantica. Le cartelle escluse e gli allegati non lasciano mai il tuo dispositivo.",
+	'settings.rag.enableName': 'Indicizza questo vault',
+	'settings.rag.enableDesc': 'Crea un indice semantico ricercabile delle tue note utilizzando Google File Search.',
+	'settings.rag.statusName': 'Stato',
+	'settings.rag.notYetIndexed': 'Non ancora indicizzato.',
+	'settings.rag.filesIndexed': '{count} file indicizzati.',
+	'settings.rag.reindexButton': 'Riscansiona',
+	'settings.rag.indexingButton': 'Indicizzazione…',
+	'settings.rag.indexResult': 'Indicizzati {indexed}, ignorati {skipped}, non riusciti {failed}.',
+	'settings.rag.indexingFailed': 'Indicizzazione non riuscita: {error}',
+	'settings.rag.serviceNotInitialized':
+		'Il servizio di indicizzazione per la ricerca nel vault non è ancora inizializzato.',
+	'settings.rag.deleteIndexButton': 'Elimina indice',
+	'settings.rag.deletingButton': 'Eliminazione…',
+	'settings.rag.indexDeletedNotice': 'Indice di ricerca del vault eliminato.',
+	'settings.rag.deleteIndexFailed': "Impossibile eliminare l'indice di ricerca del vault: {error}",
+	'settings.rag.openDeleteConfirmFailed': "Impossibile aprire la conferma di eliminazione dell'indice: {error}",
+	'settings.rag.storeNameName': "Nome dell'indice",
+	'settings.rag.storeNameDescAssigned': 'Assegnato automaticamente da Google File Search.',
+	'settings.rag.storeNameDescPending':
+		'Assegnato automaticamente non appena il vault viene indicizzato per la prima volta.',
+	'settings.rag.copyButton': 'Copia',
+	'settings.rag.copyTooltip': "Copia il nome dell'indice negli appunti",
+	'settings.rag.storeNameCopiedNotice': "Nome dell'indice copiato negli appunti.",
+	'settings.rag.whatGetsIndexedHeading': 'Cosa viene indicizzato',
+	'settings.rag.autoSyncName': 'Sincronizza le modifiche automaticamente',
+	'settings.rag.autoSyncDesc':
+		"Mantieni aggiornato l'indice man mano che le note vengono create, modificate ed eliminate.",
+	'settings.rag.includeAttachmentsName': 'Includi allegati',
+	'settings.rag.includeAttachmentsDesc': 'Indicizza anche PDF e altri allegati supportati, non solo le note.',
+	'settings.rag.excludeFoldersName': 'Escludi cartelle',
+	'settings.rag.excludeFoldersDesc':
+		'Un percorso di cartella per riga. {folders} sono sempre escluse e non devono essere elencate.',
+	'settings.rag.excludeFoldersPlaceholder': 'cartella/sottocartella',
+	'settings.rag.summaryOn': 'Attivo · {count} file',
+	'settings.rag.summaryOff': 'Disattivo',
+	'settings.tools.presetName': 'Preset',
+	'settings.tools.presetDesc': 'Personalizzato apparirà qui non appena modifichi uno strumento in basso.',
+	'settings.tools.toolsHeading': 'Strumenti',
+	'settings.tools.filterPlaceholder': 'Filtra strumenti…',
+	'settings.tools.filterRowName': 'Filtra per tipo',
+	'settings.tools.filterAll': 'Tutti',
+	'settings.tools.filterRead': 'Lettura',
+	'settings.tools.filterWrite': 'Scrittura',
+	'settings.tools.filterDestructive': 'Distruttivo',
+	'settings.tools.filterExternal': 'Esterno',
+	'settings.tools.filterMcp': 'MCP',
+	'settings.tools.noToolsName': 'Nessuno strumento registrato',
+	'settings.tools.noToolsDesc':
+		"I permessi degli strumenti appariranno qui al termine del caricamento degli strumenti dell'agente.",
+	'settings.tools.yoloConfirmFailed': 'Impossibile aprire la conferma della modalità YOLO: {error}',
+	'settings.common.listSeparator': '·',
+	'settings.providers.shortLabel.gemini': 'Gemini',
+	'settings.providers.shortLabel.ollama': 'Ollama',
+	'settings.providers.shortLabel.openai': 'OpenAI',
+	'settings.providers.shortLabel.anthropic': 'Anthropic',
+	'settings.providers.cardNameGemini': 'Google Gemini',
+	'settings.providers.apiKeyName': 'Chiave API',
+	'settings.providers.apiKeyDesc': "Salvata nell'archiviazione sicura di Obsidian, non nei dati di questo vault.",
+	'settings.providers.baseUrlName': 'URL di base',
+	'settings.providers.baseUrlOptionalDesc': "Lascia vuoto per utilizzare l'endpoint predefinito.",
+	'settings.providers.baseUrlRequiredDesc': 'Indirizzo del server locale con cui comunica questo provider.',
+	'settings.providers.baseUrlPlaceholder': 'http://localhost:11434',
+	'settings.providers.baseUrlInvalid': 'Inserisci un URL valido.',
+	'settings.providers.modelsHeading': 'Modelli',
+	'settings.providers.modelsRowName': 'Modelli disponibili',
+	'settings.providers.refreshButton': 'Aggiorna',
+	'settings.providers.refreshUnreachable': "Impossibile raggiungere {provider}. Controlla l'endpoint e riprova.",
+	'settings.providers.modelsAvailable': '{count} disponibili',
+	'settings.providers.modelsPulledAndCloud': '{count} scaricati · {cloud} cloud',
+	'settings.providers.ollamaCloudModelLabel': '{model} (cloud)',
+	'settings.providers.modelsPulled': '{count} scaricati',
+	'settings.providers.modelsLoading': 'Caricamento…',
+	'settings.providers.includesHeading': 'Include',
+	'settings.providers.includesMaps': 'Grounding con Google Maps',
+	'settings.providers.includesUrlFetch': 'Recupero pagina tramite URL',
+	'settings.providers.includesNone': 'Nessun extra',
+	'settings.providers.usedByHeading': 'Utilizzato da',
+	'settings.providers.usedByNone': 'Niente per ora',
+	'settings.providers.statusConnected': 'Connesso',
+	'settings.providers.statusNeedsKey': 'Non configurato',
+	'settings.providers.statusUnreachable': 'Non raggiungibile',
+	'settings.providers.statusUnknown': 'Non ancora verificato',
+	'settings.providers.defaultProviderName': 'Provider predefinito',
+	'settings.providers.defaultProviderDesc': 'Utilizzato da qualsiasi funzionalità non indirizzata altrove.',
+	'settings.providers.privacyNoticeName': 'Privacy',
+	'settings.providers.privacyNoticeDesc':
+		'Solo i provider effettivamente utilizzati dalle tue funzionalità ricevono i tuoi contenuti. Ollama mantiene le richieste su questa macchina, ad eccezione dei modelli contrassegnati come "cloud", che inoltra a ollama.com. Gemini, OpenAI e Anthropic inviano la richiesta ai server della rispettiva azienda.',
+	'settings.providers.defaultMoved': '{count} funzionalità spostate sul nuovo provider predefinito.',
+	'settings.providers.groupOnProvider': '{group} su {provider}',
+	'settings.features.modelMissingHelp': '{model} non è più disponibile da questo provider. Scegline un altro.',
+};
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-09-22T15:46:24.440Z
+            </div>
+        <script src="../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../sorter.js"></script>
+        <script src="../../block-navigation.js"></script>
+    </body>
+</html>
+    
