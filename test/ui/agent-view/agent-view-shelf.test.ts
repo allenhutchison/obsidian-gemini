@@ -288,7 +288,7 @@ describe('AgentViewShelf — rendering and interaction', () => {
 	});
 
 	it('marks sent items visually and routes clicks to openLinkText', () => {
-		const { shelf, container } = makeHarness();
+		const { shelf, container, openLinkText } = makeHarness();
 		const file = makeFile('notes/idea.md');
 		shelf.addTextFile(file);
 		shelf.markBinarySent();
@@ -298,7 +298,19 @@ describe('AgentViewShelf — rendering and interaction', () => {
 
 		// Click (not on the remove button) opens the file.
 		itemEl.click();
-		// jsdom click bubbles to the listener; openLinkText is fire-and-forget.
+
+		expect(openLinkText).toHaveBeenCalledWith('notes/idea.md', '', false);
+	});
+
+	it('does not open the file when the click lands on the remove button', () => {
+		const { shelf, container, onRemoveTextFile, openLinkText } = makeHarness();
+		shelf.addTextFile(makeFile('a.md'));
+
+		const removeBtn = container.querySelector('.gemini-shelf-remove') as HTMLElement;
+		removeBtn.click();
+
+		expect(onRemoveTextFile).toHaveBeenCalledTimes(1);
+		expect(openLinkText).not.toHaveBeenCalled();
 	});
 
 	it('remove button removes the item and fires the callback', () => {

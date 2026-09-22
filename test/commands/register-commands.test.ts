@@ -102,6 +102,7 @@ vi.mock('../../src/services/rag-status-bar', () => ({
 import { registerCommands } from '../../src/commands/register-commands';
 import { featureStatus } from '../../src/api/provider-status';
 import { SelectionRewriter } from '../../src/rewrite-selection';
+import { refreshGeminiModelList } from '../../src/ui/settings/provider-cards';
 
 const openSpy = vi.fn();
 
@@ -222,6 +223,11 @@ describe('registerCommands', () => {
 			async (id) => {
 				const { plugin, commands } = makeRegistered((p) => {
 					p.checkInitialized.mockReturnValue(false);
+					// Spies for each command's first action, so "stopped at the gate"
+					// means nothing at all happened — not just that the gate ran.
+					p.activateAgentView = vi.fn().mockResolvedValue(undefined);
+					p.agentView = { createNewSession: vi.fn().mockResolvedValue(undefined) };
+					p.imageGeneration = { promptForImageDescription: vi.fn() };
 				});
 				const cmd = commands.get(id)!;
 
@@ -232,6 +238,11 @@ describe('registerCommands', () => {
 				}
 
 				expect(plugin.checkInitialized).toHaveBeenCalled();
+				// The gate must stop the command *before* its first action.
+				expect(plugin.activateAgentView).not.toHaveBeenCalled();
+				expect((plugin).agentView?.createNewSession).not.toHaveBeenCalled();
+				expect((plugin).imageGeneration.promptForImageDescription).not.toHaveBeenCalled();
+				expect(refreshGeminiModelList).not.toHaveBeenCalled();
 			}
 		);
 	});
