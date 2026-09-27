@@ -218,6 +218,11 @@ export function extractModelResponseFromInteraction(interaction: Record<string, 
 	let thoughts = '';
 	const toolCalls: ToolCall[] = [];
 	const sources = new Map<string, GroundingSource>();
+	// Same shape as the stream (see InteractionStreamAccumulator): the thought
+	// signature rides on the `thought` step that precedes a `function_call`, not
+	// on the call itself. Carry it forward to the next call, or the replayed tool
+	// turn goes out unsigned and Gemini thinking models reject it with a 400.
+	let unclaimedSignature: string | undefined;
 
 	for (const step of steps) {
 		const type = step.type as string;
@@ -228,12 +233,17 @@ export function extractModelResponseFromInteraction(interaction: Record<string, 
 			collectCitationsFromContent(step.content, sources);
 		} else if (type === 'thought') {
 			thoughts += textFromContentArray(step.summary);
+			if (typeof step.signature === 'string' && step.signature) unclaimedSignature = step.signature;
 		} else if (type === 'function_call') {
+			// A step-level signature wins, but the buffered one is spent either way so
+			// only the first call of a parallel batch carries it (as on the stream).
+			const bufferedSignature = unclaimedSignature;
+			unclaimedSignature = undefined;
 			toolCalls.push({
 				name: typeof step.name === 'string' ? step.name : '',
 				arguments: (step.arguments as Record<string, unknown>) ?? {},
 				id: typeof step.id === 'string' ? step.id : undefined,
-				thoughtSignature: typeof step.signature === 'string' ? step.signature : undefined,
+				thoughtSignature: typeof step.signature === 'string' ? step.signature : bufferedSignature,
 			});
 		}
 	}
@@ -321,7 +331,11 @@ export class InteractionStreamAccumulator {
 
 		if (eventType === 'step.start') {
 			const step = event.step as Record<string, unknown> | undefined;
-			if (step?.type === 'function_call') {
+			if (step?.type === 'thought' && typeof step.signature === 'string' && step.signature) {
+				// Normally streamed as a `thought_signature` delta, but accept it on
+				// the step itself too — that's where the non-streaming response puts it.
+				this.unclaimedSignature = step.signature;
+			} else if (step?.type === 'function_call') {
 				const index = event.index as number;
 				this.pending.set(index, {
 					id: typeof step.id === 'string' ? step.id : undefined,
