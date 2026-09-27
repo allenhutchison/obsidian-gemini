@@ -92,6 +92,12 @@ export class CachedModelCatalog<E extends CatalogEndpoint> {
 	 * its `/api/ps` cache and the settings UI applies to its model counts.
 	 */
 	private generation = 0;
+	/**
+	 * The non-forced load currently in flight, keyed by the endpoint identity it
+	 * is loading. Concurrent callers for the same endpoint (several settings
+	 * renders, model-manager init) share it instead of each firing a request.
+	 */
+	private inFlight: { identity: string; promise: Promise<GeminiModel[]> } | null = null;
 
 	/** Holds `options` by reference; each field is resolved per call, not captured. */
 	constructor(private readonly options: CachedModelCatalogOptions<E>) {}
@@ -113,7 +119,24 @@ export class CachedModelCatalog<E extends CatalogEndpoint> {
 		if (!forceRefresh && identityMatches) {
 			return cachedOnEntry.models;
 		}
+		const pending = this.inFlight;
+		if (!forceRefresh && pending?.identity === endpoint.key) {
+			return pending.promise;
+		}
 
+		const promise = this.load(endpoint, forceRefresh, identityMatches);
+		// A forced refresh is registered too, so a plain read arriving while it runs
+		// joins it rather than starting a second request.
+		const entry = { identity: endpoint.key, promise };
+		this.inFlight = entry;
+		try {
+			return await promise;
+		} finally {
+			if (this.inFlight === entry) this.inFlight = null;
+		}
+	}
+
+	private async load(endpoint: E, forceRefresh: boolean, identityMatches: boolean): Promise<GeminiModel[]> {
 		this.options.beforeFetch?.({ forceRefresh, identityChanged: !identityMatches });
 
 		// Captured before the await: a reset() landing mid-load must not be undone by
@@ -163,6 +186,7 @@ export class CachedModelCatalog<E extends CatalogEndpoint> {
 	 */
 	reset(): void {
 		this.generation++;
+		this.inFlight = null;
 		this.lastProbeResult = null;
 		this.cache = null;
 	}

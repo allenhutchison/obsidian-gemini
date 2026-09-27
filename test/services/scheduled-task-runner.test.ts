@@ -83,7 +83,7 @@ function createMockPlugin(vaultFiles: Record<string, string> = {}): any {
 			releaseSession: vi.fn(),
 			createAgentSession: vi.fn().mockResolvedValue({
 				id: 'session-1',
-				title: 'Scheduled: test-task',
+				title: 'Scheduled task - test-task',
 				created: new Date(),
 				context: { enabledTools: [], requireConfirmation: [] },
 				modelConfig: {},
@@ -359,6 +359,17 @@ describe('ScheduledTaskRunner', () => {
 			expect(plugin.sessionManager.createAgentSession).toHaveBeenCalledWith(
 				expect.any(String),
 				expect.objectContaining({ toolPolicy: undefined })
+			);
+		});
+
+		it('labels the session with a file-name-safe title', async () => {
+			// A ':' here would be rewritten to '-' in the session's file name.
+			const plugin = createMockPlugin();
+			await new ScheduledTaskRunner(plugin, makeTask()).run(() => false);
+
+			expect(plugin.sessionManager.createAgentSession).toHaveBeenCalledWith(
+				'Scheduled task - test-task',
+				expect.anything()
 			);
 		});
 

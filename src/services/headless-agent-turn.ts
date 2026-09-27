@@ -31,7 +31,11 @@ import { HeadlessConfirmationProvider } from './headless-confirmation-provider';
  * imports the runners back, per the shared-leaf-helper rule in `coding.md`.
  */
 export interface HeadlessAgentTurnSpec {
-	/** Session title, e.g. `Scheduled: my-task` or `Hook: my-hook`. */
+	/**
+	 * Session title, e.g. `Scheduled task - my-task` or `Hook - my-hook`. It also
+	 * becomes the session's nominal file name, so avoid characters that
+	 * `sanitizeFileName` rewrites (a `:` would turn into `-`).
+	 */
 	sessionLabel: string;
 	/** Log/error prefix identifying the caller, e.g. `[ScheduledTaskRunner]`. */
 	logPrefix: string;
@@ -103,6 +107,9 @@ export async function runHeadlessAgentTurn(
 		toolPolicy: spec.toolPolicy,
 		requireConfirmation: [] as DestructiveAction[],
 	});
+	// Headless runs write their result to an output file, never to session
+	// history, so tell history writers not to look for a session file.
+	session.ephemeral = true;
 
 	try {
 		// Propagate the per-run model override so follow-up requests also use the

@@ -41,7 +41,13 @@ interface ToolLogEntry {
  */
 export class ToolExecutionLogger extends EventBusSubscriber {
 	private plugin: ObsidianGemini;
-	private pendingLogs: ToolLogEntry[] = [];
+	/**
+	 * Pending entries per session id. The subscriber is plugin-wide, so a
+	 * headless run and the interactive view can interleave tool executions;
+	 * keying by session keeps one session's drain from dropping or writing
+	 * another's entries.
+	 */
+	private pendingLogs = new Map<string, ToolLogEntry[]>();
 
 	constructor(plugin: ObsidianGemini) {
 		super();
@@ -55,7 +61,13 @@ export class ToolExecutionLogger extends EventBusSubscriber {
 					// us cheaply no-op if the user toggles logging off mid-session without
 					// needing to tear down the subscriber.
 					if (!this.plugin.settings.logToolExecution) return;
-					this.pendingLogs.push({
+					const sessionId = payload.session.id;
+					let queue = this.pendingLogs.get(sessionId);
+					if (!queue) {
+						queue = [];
+						this.pendingLogs.set(sessionId, queue);
+					}
+					queue.push({
 						toolName: payload.toolName,
 						args: payload.args,
 						result: payload.result,
@@ -70,18 +82,27 @@ export class ToolExecutionLogger extends EventBusSubscriber {
 			plugin.agentEventBus.on(
 				'toolChainComplete',
 				async (payload) => {
-					if (this.pendingLogs.length === 0) return;
+					const sessionId = payload.session.id;
+					const queue = this.pendingLogs.get(sessionId);
+					if (!queue || queue.length === 0) return;
+					if (payload.session.ephemeral) {
+						// A headless run has no history file by design; its tool entries
+						// have nowhere to go, and that is not a failure worth a warning.
+						this.pendingLogs.delete(sessionId);
+						return;
+					}
 					// Snapshot and clear only after the append succeeds, so that a
 					// transient failure (missing history file, locked vault) does not
 					// silently drop tool execution entries.
-					const snapshot = this.pendingLogs.slice();
+					const snapshot = queue.slice();
 					const lines = snapshot.map((entry) => formatToolLine(entry));
 					const block = formatToolBlock(lines);
 					const appended = await this.appendToHistory(payload.session, block, snapshot.length);
 					if (appended) {
-						// Remove only the entries we just wrote (more entries may have
-						// been pushed concurrently by other handlers, though that's rare).
-						this.pendingLogs.splice(0, snapshot.length);
+						// Remove only the entries we just wrote; more may have been queued
+						// for this session while the append was in flight.
+						queue.splice(0, snapshot.length);
+						if (queue.length === 0) this.pendingLogs.delete(sessionId);
 					}
 				},
 				HandlerPriority.INTERNAL
@@ -95,7 +116,7 @@ export class ToolExecutionLogger extends EventBusSubscriber {
 	 */
 	override destroy(): void {
 		super.destroy();
-		this.pendingLogs = [];
+		this.pendingLogs.clear();
 	}
 
 	private async appendToHistory(session: ChatSession, block: string, entryCount: number): Promise<boolean> {
@@ -107,8 +128,8 @@ export class ToolExecutionLogger extends EventBusSubscriber {
 		if (!(file instanceof TFile)) {
 			// History file doesn't exist yet; drop these entries to avoid unbounded
 			// growth. This matches the prior behavior but is now explicit.
-			// Use the caller-supplied snapshot size, not this.pendingLogs.length —
-			// the latter may contain entries added after the snapshot was taken.
+			// Use the caller-supplied snapshot size, not the live queue length —
+			// the queue may hold entries added after the snapshot was taken.
 			this.plugin.logger.warn(
 				`ToolExecutionLogger: history file not found at ${session.historyPath}; dropping ${entryCount} tool log entries.`
 			);

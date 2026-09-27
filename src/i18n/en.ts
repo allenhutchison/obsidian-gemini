@@ -1090,8 +1090,8 @@ export const en = {
 		context: 'Form label for the per-task model override field.',
 	},
 	'scheduler.modelOverrideDesc': {
-		message: 'Override the plugin chat model for this task (e.g. gemini-2.0-flash). Leave blank to use the default.',
-		context: 'Description of the model override field. "gemini-2.0-flash" is a literal model id; keep it.',
+		message: 'Override the plugin chat model for this task. Leave blank to use the default.',
+		context: 'Description of the model override field.',
 	},
 	'scheduler.outputPathSetting': { message: 'Output path', context: 'Form label for the run output path field.' },
 	'scheduler.outputPathDesc': {
@@ -3738,6 +3738,11 @@ export const en = {
 		message: 'Could not reach {provider}. Check the endpoint and try again.',
 		context:
 			'Notice after the user clicks Refresh on a provider card and the model list could not be fetched. {provider} is the provider name (Ollama / OpenAI).',
+	},
+	'settings.providers.refreshNeedsKey': {
+		message: 'Add an API key for {provider} to load its models.',
+		context:
+			'Notice after the user clicks Refresh on a provider card that has no API key, so no model list is fetched. {provider} is the provider name (OpenAI / Anthropic).',
 	},
 	'settings.providers.modelsAvailable': {
 		message: '{count} available',

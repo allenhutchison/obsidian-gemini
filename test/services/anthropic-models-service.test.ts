@@ -135,4 +135,13 @@ describe('AnthropicModelsService', () => {
 		mockedRequestUrl.mockRejectedValueOnce(new Error('offline'));
 		expect((await svc.getModels(true)).map((m) => m.value)).toEqual(['claude-sonnet-5']);
 	});
+
+	it('shares one /v1/models request between concurrent callers', async () => {
+		mockedRequestUrl.mockResolvedValue({ status: 200, json: { data: [{ id: 'claude-opus-5' }] } });
+		const svc = new AnthropicModelsService(buildPlugin());
+
+		await Promise.all([svc.getModels(), svc.getModels(), svc.getModels()]);
+
+		expect(mockedRequestUrl).toHaveBeenCalledTimes(1);
+	});
 });

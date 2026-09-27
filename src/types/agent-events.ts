@@ -35,6 +35,7 @@ export interface AgentEventMap {
 
 	/** Individual tool finished executing */
 	toolExecutionComplete: Readonly<{
+		session: ChatSession;
 		toolName: string;
 		args: Record<string, unknown>;
 		result: ToolResult;

@@ -114,7 +114,7 @@ function createMockPlugin(): any {
 
 function makeSpec(overrides: Partial<HeadlessAgentTurnSpec> = {}): HeadlessAgentTurnSpec {
 	return {
-		sessionLabel: 'Scheduled: test-task',
+		sessionLabel: 'Scheduled task - test-task',
 		logPrefix: '[TestRunner]',
 		subjectNoun: 'Task',
 		subjectName: 'test-task',
@@ -394,10 +394,10 @@ describe('runHeadlessAgentTurn', () => {
 			const plugin = createMockPlugin();
 			const toolPolicy = { preset: PolicyPreset.READ_ONLY };
 
-			await runHeadlessAgentTurn(plugin, makeSpec({ sessionLabel: 'Hook: my-hook', toolPolicy }), () => false);
+			await runHeadlessAgentTurn(plugin, makeSpec({ sessionLabel: 'Hook - my-hook', toolPolicy }), () => false);
 
 			expect(plugin.sessionManager.createAgentSession).toHaveBeenCalledWith(
-				'Hook: my-hook',
+				'Hook - my-hook',
 				expect.objectContaining({ toolPolicy, requireConfirmation: [] })
 			);
 		});
@@ -411,6 +411,16 @@ describe('runHeadlessAgentTurn', () => {
 				expect.any(String),
 				expect.objectContaining({ toolPolicy: undefined })
 			);
+		});
+
+		it('marks the session ephemeral so history writers skip its nominal file', async () => {
+			const plugin = createMockPlugin();
+			const session = { modelConfig: {} as any, created: new Date() } as any;
+			plugin.sessionManager.createAgentSession = vi.fn().mockResolvedValue(session);
+
+			await runHeadlessAgentTurn(plugin, makeSpec(), () => false);
+
+			expect(session.ephemeral).toBe(true);
 		});
 
 		it('applies a model override to both the session and the request', async () => {

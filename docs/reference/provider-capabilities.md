@@ -81,6 +81,11 @@ Consequences worth knowing:
 - Each provider card only needs its own credential: the Gemini card's API key is required only
   once some feature is actually routed to Gemini (not only when Gemini is your default provider);
   the OpenAI and Anthropic cards' API key fields work the same way for their providers.
+- A hosted provider that needs an API key gets **no traffic at all** until you add one — not even
+  a model-list request. The OpenAI and Anthropic cards only query `/models` once an API key is
+  configured (or, for OpenAI, once the base URL points at a custom server).
+- Ollama needs no key, so its card always checks the configured Ollama URL (`localhost` by
+  default) for pulled models, even if no feature is routed to Ollama.
 - With every feature on Ollama and every selected model pulled locally, nothing leaves your
   machine — the Providers page shows Ollama as the only connected provider and the privacy note
   is empty. Pointing the OpenAI provider's base URL at a local OpenAI-compatible server (LM

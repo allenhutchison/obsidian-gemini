@@ -1,7 +1,7 @@
 import { requestUrl } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { GeminiModel, ModelRole } from '../models';
-import { DEFAULT_OPENAI_BASE_URL } from '../api/providers/openai/config';
+import { DEFAULT_OPENAI_BASE_URL, isOpenAIHostedEndpoint } from '../api/providers/openai/config';
 import { CachedModelCatalog, joinBaseUrl, type CatalogEndpoint } from './remote-model-catalog';
 
 interface OpenAIModelMetadata {
@@ -74,18 +74,6 @@ interface OpenAIModelListResponse {
 	data?: OpenAIModelListEntry[];
 }
 
-/** Whether `baseUrl` points at the real OpenAI API rather than a compatible server. */
-function isOpenAIHostedEndpoint(baseUrl: string): boolean {
-	try {
-		return new URL(baseUrl).hostname === 'api.openai.com';
-	} catch {
-		// Unparseable base URL — treat as a compatible server rather than
-		// substring-matching (a host like `api.openai.com.evil.example` must
-		// never be classified as the official endpoint).
-		return false;
-	}
-}
-
 interface OpenAIEndpoint extends CatalogEndpoint {
 	baseUrl: string;
 	apiKey: string;
@@ -138,6 +126,13 @@ export class OpenAIModelsService {
 	 * Cache is invalidated when the base URL or API key changes.
 	 */
 	async getModels(forceRefresh = false): Promise<GeminiModel[]> {
+		const baseUrl = this.plugin.settings.openaiBaseUrl || DEFAULT_OPENAI_BASE_URL;
+		if (!this.plugin.openaiApiKey && isOpenAIHostedEndpoint(baseUrl)) {
+			// api.openai.com rejects every keyless request, so there is nothing to
+			// learn — and a provider the user hasn't set up gets no traffic at all.
+			// A custom base URL is still probed: local servers often need no key.
+			return [];
+		}
 		return this.catalog.get(forceRefresh);
 	}
 

@@ -42,6 +42,7 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 
 	// ── Configuration ────────────────────────────────────────────────────────
 
+	protected readonly logTag = 'SchedulerManagementModal';
 	protected readonly entityLabel = t('scheduler.entityLabel');
 	protected readonly entityLabelPlural = t('scheduler.entityLabelPlural');
 	protected readonly entityIcon = 'calendar-clock';
@@ -304,7 +305,6 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 
 		this.addSharedAdvancedFields(advDetails, {
 			keyPrefix: 'scheduler',
-			modelPlaceholder: 'gemini-2.0-flash',
 			getModel: () => this.form.model,
 			setModel: (v) => {
 				this.form.model = v;

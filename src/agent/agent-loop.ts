@@ -882,7 +882,7 @@ export class AgentLoop {
 		toolContext: ToolExecutionContext,
 		options: AgentLoopOptions
 	): Promise<ToolCallResultPair[]> {
-		const { plugin, isCancelled, hooks, confirmationProvider } = options;
+		const { plugin, session, isCancelled, hooks, confirmationProvider } = options;
 		const results: ToolCallResultPair[] = [];
 
 		for (const { call: toolCall, sourceIndex } of sortedToolCalls) {
@@ -919,6 +919,7 @@ export class AgentLoop {
 				);
 
 				await this.safeEmit(plugin, 'toolExecutionComplete', {
+					session,
 					toolName: toolCall.name,
 					args: toolCall.arguments || {},
 					result,

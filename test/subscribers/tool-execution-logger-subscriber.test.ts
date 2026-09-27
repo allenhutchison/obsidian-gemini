@@ -67,6 +67,7 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 
 	it('should push to pending logs on toolExecutionComplete when logToolExecution is true', async () => {
 		await bus.emit('toolExecutionComplete', {
+			session: createMockSession(),
 			toolName: 'read_file',
 			args: { path: 'notes/test.md' },
 			result: { success: true, data: { path: 'notes/test.md' } },
@@ -89,6 +90,7 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 		plugin.settings.logToolExecution = false;
 
 		await bus.emit('toolExecutionComplete', {
+			session: createMockSession(),
 			toolName: 'read_file',
 			args: { path: 'notes/test.md' },
 			result: { success: true, data: { path: 'notes/test.md' } },
@@ -110,12 +112,14 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 	it('should format and append pending logs on toolChainComplete', async () => {
 		// Add two pending entries
 		await bus.emit('toolExecutionComplete', {
+			session: createMockSession(),
 			toolName: 'read_file',
 			args: { path: 'a.md' },
 			result: { success: true, data: { path: 'a.md' } },
 			durationMs: 50,
 		});
 		await bus.emit('toolExecutionComplete', {
+			session: createMockSession(),
 			toolName: 'write_file',
 			args: { path: 'b.md', content: 'hello' },
 			result: { success: true, data: { path: 'b.md' } },
@@ -142,6 +146,7 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 		plugin.settings.chatHistory = false;
 
 		await bus.emit('toolExecutionComplete', {
+			session: createMockSession(),
 			toolName: 'read_file',
 			args: { path: 'test.md' },
 			result: { success: true, data: { path: 'test.md' } },
@@ -171,6 +176,7 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 		plugin.app.vault.getAbstractFileByPath.mockReturnValue(null);
 
 		await bus.emit('toolExecutionComplete', {
+			session: createMockSession(),
 			toolName: 'read_file',
 			args: { path: 'test.md' },
 			result: { success: true, data: { path: 'test.md' } },
@@ -188,8 +194,63 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 		expect(plugin.logger.warn).toHaveBeenCalledWith(expect.stringContaining('history file not found'));
 	});
 
+	it('drains the queue silently for an ephemeral (headless) session', async () => {
+		const headless = createMockSession({
+			id: 'headless-session-id',
+			ephemeral: true,
+			historyPath: 'gemini-scribe/Agent-Sessions/Scheduled task - pt-runnow.md',
+		});
+		await bus.emit('toolExecutionComplete', {
+			session: headless,
+			toolName: 'read_file',
+			args: { path: 'test.md' },
+			result: { success: true, data: { path: 'test.md' } },
+			durationMs: 10,
+		});
+
+		await bus.emit('toolChainComplete', { session: headless, toolResults: [], toolCount: 0 });
+
+		expect(plugin.logger.warn).not.toHaveBeenCalled();
+		expect(plugin.app.vault.getAbstractFileByPath).not.toHaveBeenCalled();
+
+		// The dropped entries must not leak into the next (persisted) session's history.
+		await bus.emit('toolChainComplete', { session: createMockSession(), toolResults: [], toolCount: 0 });
+		expect(plugin.app.vault.process).not.toHaveBeenCalled();
+	});
+
+	it("keeps an interactive session's entries when an interleaved headless run drains", async () => {
+		const interactive = createMockSession();
+		const headless = createMockSession({ id: 'headless-session-id', ephemeral: true });
+		const emitTool = (session: ChatSession, path: string) =>
+			bus.emit('toolExecutionComplete', {
+				session,
+				toolName: 'read_file',
+				args: { path },
+				result: { success: true, data: { path } },
+				durationMs: 10,
+			});
+
+		await emitTool(interactive, 'interactive.md');
+		await emitTool(headless, 'headless.md');
+
+		// The headless batch finishes first; it must drop only its own entry.
+		await bus.emit('toolChainComplete', { session: headless, toolResults: [], toolCount: 0 });
+		expect(plugin.app.vault.process).not.toHaveBeenCalled();
+
+		let written = '';
+		plugin.app.vault.process.mockImplementation(async (_file: any, fn: (content: string) => string) => {
+			written = fn('# Session\n');
+		});
+		await bus.emit('toolChainComplete', { session: interactive, toolResults: [], toolCount: 0 });
+
+		expect(plugin.app.vault.process).toHaveBeenCalledTimes(1);
+		expect(written).toContain('path="interactive.md"');
+		expect(written).not.toContain('headless.md');
+	});
+
 	it('should snapshot pending logs then clear after successful append', async () => {
 		await bus.emit('toolExecutionComplete', {
+			session: createMockSession(),
 			toolName: 'read_file',
 			args: { path: 'first.md' },
 			result: { success: true, data: { path: 'first.md' } },
@@ -219,6 +280,7 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 		plugin.app.vault.process.mockRejectedValue(new Error('vault locked'));
 
 		await bus.emit('toolExecutionComplete', {
+			session: createMockSession(),
 			toolName: 'read_file',
 			args: { path: 'test.md' },
 			result: { success: true, data: { path: 'test.md' } },
@@ -257,6 +319,7 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 		logger.destroy();
 
 		await bus.emit('toolExecutionComplete', {
+			session: createMockSession(),
 			toolName: 'read_file',
 			args: { path: 'test.md' },
 			result: { success: true, data: { path: 'test.md' } },

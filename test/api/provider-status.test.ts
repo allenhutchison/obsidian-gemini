@@ -3,7 +3,7 @@
  * `unsupported` / `unconfigured` / `ok` truth table that drives warning rows
  * on the Features settings page.
  */
-import { providerConnection, featureStatus } from '../../src/api/provider-status';
+import { providerConnection, featureStatus, providerMissingKey } from '../../src/api/provider-status';
 import { DEFAULT_OPENAI_BASE_URL } from '../../src/api/providers/openai/config';
 import type { FeatureRoutes } from '../../src/types/features';
 import type { ObsidianGemini } from '../../src/types/plugin';
@@ -39,6 +39,7 @@ function makePlugin(opts: {
 		},
 		apiKey: opts.apiKeySecretName ? 'secret-value' : '',
 		openaiApiKey: opts.openaiApiKeySecretName ? 'secret-value' : '',
+		anthropicApiKey: opts.anthropicApiKeySecretName ? 'secret-value' : '',
 	} as unknown as ObsidianGemini;
 }
 
@@ -109,5 +110,36 @@ describe('featureStatus', () => {
 			features: routes({ chat: { provider: 'gemini', model: '' } }),
 		});
 		expect(featureStatus(plugin, 'chat')).toBe('ok');
+	});
+});
+
+describe('providerMissingKey', () => {
+	it('reads the resolved key, not the saved secret name', () => {
+		const plugin = makePlugin({ openaiApiKeySecretName: 'k', features: routes({}) });
+		expect(providerMissingKey(plugin, 'openai')).toBe(false);
+		(plugin as { openaiApiKey: string }).openaiApiKey = '';
+		expect(providerMissingKey(plugin, 'openai')).toBe(true);
+	});
+
+	it('never reports a missing key for keyless endpoints', () => {
+		const plugin = makePlugin({ openaiBaseUrl: 'http://localhost:1234/v1', features: routes({}) });
+		expect(providerMissingKey(plugin, 'openai')).toBe(false);
+		expect(providerMissingKey(plugin, 'ollama')).toBe(false);
+	});
+
+	it('reports gemini and anthropic by their resolved keys', () => {
+		const bare = makePlugin({ features: routes({}) });
+		expect(providerMissingKey(bare, 'gemini')).toBe(true);
+		expect(providerMissingKey(bare, 'anthropic')).toBe(true);
+		const keyed = makePlugin({ apiKeySecretName: 'g', anthropicApiKeySecretName: 'a', features: routes({}) });
+		expect(providerMissingKey(keyed, 'gemini')).toBe(false);
+		expect(providerMissingKey(keyed, 'anthropic')).toBe(false);
+	});
+});
+
+describe('providerConnection hosted-endpoint check', () => {
+	it('treats the OpenAI host with a trailing slash as hosted (needs a key)', () => {
+		const plugin = makePlugin({ openaiBaseUrl: 'https://api.openai.com/v1/', features: routes({}) });
+		expect(providerConnection(plugin, 'openai')).toBe('needs-key');
 	});
 });

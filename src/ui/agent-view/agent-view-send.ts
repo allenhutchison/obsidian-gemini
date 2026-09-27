@@ -561,10 +561,10 @@ export class AgentViewSend {
 			featureToolPolicy: activeProject?.config.toolPolicy,
 		};
 		const availableTools = this.ctx.plugin.toolRegistry.getEnabledTools(toolContext);
-		this.ctx.plugin.logger.log('Available tools from registry:', availableTools);
-		this.ctx.plugin.logger.log('Number of tools:', availableTools.length);
+		// Log names, not the tool objects: the bundle minifies class names, so the
+		// objects print as unreadable `e {…}` entries.
 		this.ctx.plugin.logger.log(
-			'Tool names:',
+			`Available tools from registry (${availableTools.length}):`,
 			availableTools.map((t) => t.name)
 		);
 
