@@ -3,7 +3,7 @@ name: plugin-test
 description: Three-pass acceptance test for the obsidian-gemini plugin — unit tests, then UI/state via the Obsidian CLI (cheap pass), then API-spending verification (only with explicit user authorization). Driven by the user-facing docs as the source of truth for what should work, with extra focus on functionality shipped since the last release. The agent acts as judge between passes; later passes only run when the earlier ones pass cleanly. Use when the user asks to "test the plugin", "smoke test the release", "verify before release", "run the pre-release tests", "act as a judge on the plugin", or similar. Has Obsidian-CLI side effects (modal opens, plugin reloads, screenshots) but does NOT modify source code or commit; reports go to the working tree under `planning/test-reports/`.
 metadata:
   author: obsidian-gemini
-  version: '1.0'
+  version: '1.1'
 compatibility: Requires Obsidian desktop with the CLI enabled and the plugin installed in a vault. The Obsidian CLI must be reachable on PATH.
 ---
 
@@ -92,10 +92,18 @@ Common pattern for any UI surface check:
 1. Ensure plugin is loaded: `obsidian eval code="app.plugins.plugins['gemini-scribe'] !== undefined"`
 2. Open the surface: `obsidian command id=<command-id>` or `obsidian eval code="<workspace API call>"`
 3. Settle: brief `sleep 1` so the DOM lands
-4. Screenshot: `obsidian dev:screenshot path=planning/test-reports/<timestamp>/<surface>.png`
+4. Screenshot: `obsidian dev:screenshot path="$REPORT_DIR/<surface>.png"` — `REPORT_DIR` must be an **absolute** path (e.g. `REPORT_DIR="$(pwd)/planning/test-reports/<timestamp>"`). A relative `path=` resolves against the _vault_ root, not your shell's cwd, so screenshots silently land inside the test vault.
 5. Inspect: `obsidian dev:dom selector=<css>` or `obsidian eval code="..."`
-6. Close: typically `obsidian eval code="document.querySelector('.modal-close-button')?.click()"`
+6. Close: dispatch Escape at the focused element — the plugin's modals have no `.modal-close-button` element, so clicking one is a silent no-op. One Escape closes only the topmost modal, so repeat once per stacked modal, then assert none remain:
+
+   ```bash
+   obsidian eval code="(document.activeElement||document.body).dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',code:'Escape',bubbles:true}))"
+   obsidian eval code="document.querySelectorAll('.modal-container').length"   # expect 0
+   ```
+
 7. Judge: based on the screenshot + DOM, write a one-line verdict for the report
+
+The **Footguns** section of the `obsidian-cli` skill covers the other CLI quirks this skill relies on (`--help` probing, toggle state, hangs, `dev:mobile` reloads).
 
 ## Workflow
 
@@ -170,14 +178,21 @@ If any check fails, write a short report under `planning/test-reports/<timestamp
 
 This is the cheap visual + behavioural pass. The Obsidian CLI is essentially a remote-control + screenshot tool here. Spend nothing, but exercise everything.
 
-**Preflight: verify required CLI subcommands exist.** The Obsidian CLI evolves — commands get renamed, removed, or gated behind plugins. Failing fast at the start with a clear "command X is missing" message is far better than a mid-pass mystery. Run this check before anything else:
+**Preflight: verify required CLI subcommands exist.** The Obsidian CLI evolves — commands get renamed, removed, or gated behind plugins. Failing fast at the start with a clear "command X is missing" message is far better than a mid-pass mystery. Run this check before anything else. It reads the command list from `obsidian help` once — a print-only call — and never invokes the subcommands themselves:
 
 ```bash
 required="plugin:reload dev:debug dev:console dev:errors dev:screenshot dev:dom dev:cdp dev:mobile command commands eval"
+# perl alarm = portable timeout (macOS has no `timeout`): a hung CLI call fails instead of blocking the run.
+help_out=$(perl -e 'alarm shift; exec @ARGV' 15 obsidian help 2>&1)
+if [ -z "$help_out" ]; then
+  echo "Aborting Pass 2: 'obsidian help' returned nothing (CLI unreachable or hung)." >&2
+  exit 1
+fi
 missing=""
 for cmd in $required; do
-  if ! obsidian "$cmd" --help >/dev/null 2>&1; then
-    # --help on most CLI commands prints usage and exits 0; missing commands fail
+  # Anchored match on the two-space-indented command column, so `command` doesn't match `commands`.
+  # Don't use exit codes: `obsidian help <unknown>` prints 'No commands matching ...' and still exits 0.
+  if ! printf '%s\n' "$help_out" | grep -Eq "^  ${cmd}( |$)"; then
     missing="$missing $cmd"
   fi
 done
@@ -187,6 +202,8 @@ if [ -n "$missing" ]; then
   exit 1
 fi
 ```
+
+**Never probe a subcommand with `obsidian <subcommand> --help`.** The CLI does not treat `--help` as a help flag — it runs the subcommand. `dev:mobile --help` toggles mobile emulation (which reloads the app), and other subcommands may likewise act instead of printing usage, so treat `plugin:reload`, `dev:debug`, and every other command as unsafe to probe that way. For per-command usage, use `obsidian help <subcommand>`, which only prints.
 
 If this check fails, **stop and report** — don't try to work around the missing command. The skill must be honest about what it can no longer do, so the maintainer can update both this skill and the `obsidian-cli` skill in tandem.
 
@@ -207,11 +224,11 @@ If `dev:errors` shows anything after a fresh reload, that's a regression — not
 
 1. **Pre-state inspection** — eval whatever services/state the surface depends on, capture before-state.
 2. **Trigger the surface** — `obsidian command id=<id>` for command-palette entries; for settings panes use `app.setting.openTabById('gemini-scribe')`; for views use `app.workspace.getLeavesOfType(...)`.
-3. **Settle** (`sleep 1`) and **screenshot**: `obsidian dev:screenshot path=planning/test-reports/<timestamp>/<surface-name>.png`
+3. **Settle** (`sleep 1`) and **screenshot**: `obsidian dev:screenshot path="$REPORT_DIR/<surface-name>.png"` (absolute path — see above)
 4. **DOM inspection** — `obsidian dev:dom selector="..."` to verify expected elements exist
-5. **Drive interactions where it matters** — for forms with conditional UI (e.g. the scheduler's "Daily at time" preset showing a time picker), click via `dev:cdp` (`Input.dispatchMouseEvent`) then re-screenshot
+5. **Drive interactions where it matters** — for forms with conditional UI (e.g. the scheduler's "Daily at time" preset showing a time picker), click via `dev:cdp` (`Input.dispatchMouseEvent`) then re-screenshot. When asserting an Obsidian toggle's state, read the `is-enabled` class on `label.checkbox-container` (the visible toggle), not the hidden `input.checked`.
 6. **Verify state changes** — eval whatever state the action should have changed
-7. **Close the surface** — click the close button, dismiss the modal, or revert state changes
+7. **Close the surface** — Escape-dispatch the modal (repeat for stacked modals; there is no `.modal-close-button`), or revert state changes. Confirm `document.querySelectorAll('.modal-container').length === 0` before moving on.
 8. **Console check** — `obsidian dev:console level=error` to catch errors raised during the interaction
 
 **Specific surfaces every run should cover** (in addition to whatever Phase 0 surfaces up):
@@ -222,7 +239,7 @@ If `dev:errors` shows anything after a fresh reload, that's a regression — not
 - **Scheduler modal** — open Scheduler, screenshot. For each preset (`Once`, `Daily (every 24h)`, `Daily at time`, `Weekly (every 7d)`, `Weekly on days at time`, `Custom interval`) click and screenshot. Confirm the conditional inputs (time picker, day checkboxes, custom interval text) appear/disappear as expected.
 - **Background tasks panel** — open it via the status bar entry or command, screenshot.
 - **Folder layout** — `obsidian files folder=gemini-scribe` and verify `Agent-Sessions/`, `Background-Tasks/`, `Prompts/`, `Skills/`, `Scheduled-Tasks/`, `Scheduled-Tasks/Runs/` all exist after plugin load.
-- **Mobile emulation pass** — `obsidian dev:mobile on`, reload the plugin, repeat the most user-facing surfaces (settings, agent view, scheduler), screenshot. Then `obsidian dev:mobile off`. This is the only way to exercise mobile-only code paths (e.g. PR #723's `Platform.isMobile` catch-up modal).
+- **Mobile emulation pass** — `obsidian dev:mobile on` **reloads the whole app** (not just the plugin), so open modals and in-memory state are gone afterwards. Wait for the reload to settle (`sleep 3`, then poll `obsidian eval code="document.body.classList.contains('is-mobile') && !!app.plugins.plugins['gemini-scribe']"` until it prints `true`), re-run the vault guard, then repeat the most user-facing surfaces (settings, agent view, scheduler) and screenshot. Then `obsidian dev:mobile off` and poll until `is-mobile` is gone again. Never record verdicts after a half-applied toggle: if the `is-mobile` class disagrees with the mode you asked for, wait (or toggle again) before testing. This is the only way to exercise mobile-only code paths (e.g. PR #723's `Platform.isMobile` catch-up modal).
 - **Catch-up modal scenario** — write a fake overdue entry into `<state-folder>/Scheduled-Tasks/scheduled-tasks-state.json`, reload the plugin, observe the badge / modal. Restore the original state file at the end.
 
 **Judging Pass 2 (this is the agent-as-judge step):**
@@ -257,11 +274,18 @@ Each API-spending check should:
 
 **Coverage** (run only the ones relevant to surfaces that were exercised in Pass 2):
 
-- **Foreground chat round-trip** — send a one-shot prompt via the agent view, verify a response comes back, capture token usage
-- **Image generation, palette flow** — open the palette command, fill a prompt, submit. Verify (a) the "submitted" Notice fires synchronously, (b) `BackgroundTaskManager.getActiveTasks()` shows the task, (c) the task completes with a vault path, (d) the wikilink lands at the captured cursor in the right note. ~$0.04/image.
+- **Foreground chat round-trip** — send a one-shot prompt via the agent view, verify a response comes back, capture token usage. Drive it without typing into the DOM:
+
+  ```bash
+  obsidian eval code="app.workspace.getLeavesOfType('gemini-agent-view')[0]?.view.sendMessageProgrammatically('Reply with the single word: pong')"
+  ```
+
+  If the turn pauses on a tool confirmation, approve it with the Allow button: `obsidian eval code="document.querySelector('.gemini-agent-confirmation-btn-confirm')?.click()"`.
+
+- **Image generation, palette flow** — open the palette command, fill a prompt, submit. Verify (a) the "submitted" Notice fires synchronously, (b) `BackgroundTaskManager.getActiveTasks()` shows the task, (c) the task completes with a vault path, (d) the wikilink lands at the captured cursor in the right note. ~$0.04/image. Note: `getRecentTasks()` returns only **finished** tasks (complete / failed / cancelled); to watch an in-flight task use `getActiveTasks()` or `getTask(id)`. The `backgroundTaskManager` handle is nullable, so guard with `?.` (`app.plugins.plugins['gemini-scribe'].backgroundTaskManager?.getActiveTasks()`).
 - **Image generation, agent-tool background mode** — invoke `generate_image` from the agent view with `background: true`. Verify the immediate `{taskId, output_path}` return and the eventual file at the predicted path. ~$0.04/image.
 - **Deep research, background mode** — kick off a research task with a small topic. Verify the report file lands under `[state-folder]/Background-Tasks/`. Costs vary; usually a few cents.
-- **Scheduled task `runNow`** — pick (or create) a `daily@<near-future>` task, then call `app.plugins.plugins['gemini-scribe'].scheduledTaskManager.runNow('<slug>')`. Verify the run output appears at the resolved `outputPath`, frontmatter is correct, and `state.lastRunAt` was updated. ~$0.01–0.05 depending on prompt.
+- **Scheduled task `runNow`** — pick (or create) a `daily@<near-future>` task, then call `app.plugins.plugins['gemini-scribe'].scheduledTaskManager?.runNow('<slug>')`. Verify the run output appears at the resolved `outputPath`, frontmatter is correct, and `state.lastRunAt` was updated. The task's prompt **must make at least one tool call** (e.g. "Use list_files on the vault root and summarize what you find in one sentence") — a pure-text prompt never enters the headless tool loop, so it can pass while the tool path is broken. ~$0.01–0.05 depending on prompt.
 
 **Cleanup after Pass 3:**
 
@@ -335,9 +359,11 @@ The report is the deliverable. Don't commit it; the user decides whether to keep
 - **Focus drifts mid-run.** The CLI always targets the focused Obsidian window. If the user clicks into another vault between your CLI calls, every subsequent action goes there. Re-verify focus at every pass boundary; abort if it moved. The vault prep message tells the user to close other vaults specifically to make this impossible.
 - **Plugin reload didn't take.** `obsidian plugin:reload id=gemini-scribe` returns success even if the plugin's enable hook threw. Always follow with `obsidian dev:errors` to confirm a clean load.
 - **CLI silently using the wrong vault.** Even if the user confirmed at start, only the focused vault is targeted. Always `obsidian eval code="app.vault.getName()"` to pin which vault you're in. The `vault=<name>` flag does NOT redirect — see the vault guard section.
-- **Modals stacking.** If a previous test left a modal open, the next screenshot will be wrong. Verify `document.querySelector('.modal-container')` is null between surfaces, or close all modals at the top of each surface.
+- **Modals stacking.** If a previous test left a modal open, the next screenshot will be wrong. Verify `document.querySelectorAll('.modal-container').length === 0` between surfaces; if not, Escape-dispatch at `document.activeElement` once per open modal (one Escape closes only the topmost). Clicking `.modal-close-button` does nothing — the element doesn't exist.
+- **A CLI call hangs.** Some calls (e.g. anything issued while the app is mid-reload) can block indefinitely. Wrap risky calls in `perl -e 'alarm shift; exec @ARGV' 20 obsidian ...` — macOS has no `timeout` binary.
 - **Screenshot timing.** DOM updates are async. `sleep 1` is the floor; for animations or first-time renders, `sleep 2`. If a screenshot looks blank, retry with a longer settle.
-- **Mobile emulation persists.** Confirmed above; restating because it's a common foot-gun.
+- **Mobile emulation persists.** Confirmed above; restating because it's a common foot-gun. Each `dev:mobile on|off` also reloads the app — re-check `is-mobile`, the plugin handle, and the vault guard after every toggle.
+- **Accidental `--help`.** `obsidian <subcommand> --help` runs the subcommand. Use `obsidian help <subcommand>`.
 - **Pass 1 baseline drift.** If `npm test` count went down since last release, flag it for review and require an explanation in the report (intentional consolidation / removal of obsolete coverage vs. unintended coverage loss). Don't auto-fail the run on a count drop alone — only block when the explanation is missing or unsatisfactory.
 
 ## A complete example
