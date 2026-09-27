@@ -42,6 +42,7 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 
 	// ── Configuration ────────────────────────────────────────────────────────
 
+	protected readonly logTag = 'SchedulerManagementModal';
 	protected readonly entityLabel = t('scheduler.entityLabel');
 	protected readonly entityLabelPlural = t('scheduler.entityLabelPlural');
 	protected readonly entityIcon = 'calendar-clock';

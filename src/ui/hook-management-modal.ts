@@ -32,6 +32,7 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 
 	// ── Configuration ────────────────────────────────────────────────────────
 
+	protected readonly logTag = 'HookManagementModal';
 	protected readonly entityLabel = t('hooks.entityLabel');
 	protected readonly entityLabelPlural = t('hooks.entityLabelPlural');
 	protected readonly entityIcon = 'webhook';

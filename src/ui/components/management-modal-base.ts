@@ -207,7 +207,7 @@ export abstract class ManagementModalBase<TEntity, TEntityState> extends Modal {
 					new Notice(t('component.managementModalBase.deleted', { label: this.capitalizedEntityLabel, slug }));
 					this.render();
 				} catch (err) {
-					this.plugin.logger.error(`[${this.constructor.name}] Delete failed for "${slug}":`, err);
+					this.plugin.logger.error(`[${this.logTag}] Delete failed for "${slug}":`, err);
 					new Notice(t('component.managementModalBase.deleteFailed', { slug }));
 					this.render();
 				}
@@ -423,6 +423,11 @@ export abstract class ManagementModalBase<TEntity, TEntityState> extends Modal {
 
 	// ── Abstract: configuration ──────────────────────────────────────────────
 
+	/**
+	 * Stable English tag for log lines, e.g. `'HookManagementModal'`. Not
+	 * `constructor.name`, which the production bundle minifies.
+	 */
+	protected abstract readonly logTag: string;
 	/** Singular lowercase label: `'hook'` or `'task'`. */
 	protected abstract readonly entityLabel: string;
 	/** Plural display title: `'Lifecycle Hooks'` or `'Scheduled Tasks'`. */

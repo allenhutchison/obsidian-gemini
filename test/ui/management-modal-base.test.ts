@@ -78,6 +78,7 @@ const MOCK_STATES: Record<string, StubState> = {
 class TestModal extends ManagementModalBase<StubEntity, StubState> {
 	// Track calls for assertions
 	deleteEntityCalls: string[] = [];
+	deleteError: Error | null = null;
 	handleSaveCalls: boolean[] = [];
 	resetFormCalls = 0;
 	populateCalls: StubEntity[] = [];
@@ -85,6 +86,7 @@ class TestModal extends ManagementModalBase<StubEntity, StubState> {
 	renderFormBodyCalls: boolean[] = [];
 	preambleCalls = 0;
 
+	protected readonly logTag = 'TestModal';
 	protected readonly entityLabel = 'widget';
 	protected readonly entityLabelPlural = 'Widgets';
 	protected readonly entityIcon = 'box';
@@ -131,6 +133,7 @@ class TestModal extends ManagementModalBase<StubEntity, StubState> {
 	// CRUD
 	protected async deleteEntity(slug: string): Promise<void> {
 		this.deleteEntityCalls.push(slug);
+		if (this.deleteError) throw this.deleteError;
 	}
 	protected async handleSave(isEdit: boolean): Promise<void> {
 		this.handleSaveCalls.push(isEdit);
@@ -367,6 +370,21 @@ describe('ManagementModalBase', () => {
 		it('does not throw and empties content', () => {
 			modal.callConfirmDelete('test-slug');
 			expect(modal.contentEl.empty).toHaveBeenCalled();
+		});
+
+		it('logs a failed delete under the stable logTag, not the minifiable class name', async () => {
+			const error = new Error('disk full');
+			modal.deleteError = error;
+			modal.callConfirmDelete('test-slug');
+
+			const btns = (modal.contentEl.createDiv as any).mock.results[0].value;
+			const confirmBtn = btns.createEl.mock.results[1].value;
+			const onClick = confirmBtn.addEventListener.mock.calls[0][1] as () => void;
+			onClick();
+
+			const logger = (modal as any).plugin.logger;
+			await vi.waitFor(() => expect(logger.error).toHaveBeenCalled());
+			expect(logger.error).toHaveBeenCalledWith('[TestModal] Delete failed for "test-slug":', error);
 		});
 	});
 });
