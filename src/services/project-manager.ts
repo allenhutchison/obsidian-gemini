@@ -122,9 +122,16 @@ export class ProjectManager {
 
 	/**
 	 * Create a new project file with template frontmatter and instructions.
+	 * If `<name>.md` already exists in the folder, the next free `<name> N.md`
+	 * is used instead, and the project's `name` follows the file name.
 	 */
 	async createProject(folderPath: string, name: string): Promise<TFile> {
-		const filePath = normalizePath(`${folderPath}/${name}.md`);
+		const vault = this.plugin.app.vault;
+		let filePath = normalizePath(`${folderPath}/${name}.md`);
+		for (let n = 1; vault.getAbstractFileByPath(filePath); n++) {
+			filePath = normalizePath(`${folderPath}/${name} ${n}.md`);
+		}
+		name = filePath.slice(filePath.lastIndexOf('/') + 1, -'.md'.length);
 
 		const content = `---
 tags:

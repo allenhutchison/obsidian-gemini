@@ -4368,6 +4368,10 @@ body.theme-dark {
 	color: var(--text-warning);
 }
 
+.gemini-scribe-project-name-input {
+	width: 100%;
+}
+
 .gemini-warning-text-bold {
 	font-weight: bold;
 }
