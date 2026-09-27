@@ -22,7 +22,7 @@ export class ScheduledTaskRunner {
 		const turn = await runHeadlessAgentTurn(
 			this.plugin,
 			{
-				sessionLabel: `Scheduled: ${this.task.slug}`,
+				sessionLabel: `Scheduled task - ${this.task.slug}`,
 				logPrefix: '[ScheduledTaskRunner]',
 				subjectNoun: 'Task',
 				subjectName: this.task.slug,

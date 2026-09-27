@@ -91,6 +91,14 @@ export interface ChatSession {
 	/** File path where this session's history is stored */
 	historyPath: string;
 
+	/**
+	 * True for a headless run's session (scheduled task, agent-task hook), which
+	 * is deliberately never written to disk: `historyPath` is nominal and no file
+	 * will exist there. History writers skip such sessions rather than treating
+	 * the missing file as a failure.
+	 */
+	ephemeral?: boolean;
+
 	/** For note-chat sessions, the source note path */
 	sourceNotePath?: string;
 

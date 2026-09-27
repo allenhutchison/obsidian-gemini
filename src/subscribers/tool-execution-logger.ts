@@ -71,6 +71,12 @@ export class ToolExecutionLogger extends EventBusSubscriber {
 				'toolChainComplete',
 				async (payload) => {
 					if (this.pendingLogs.length === 0) return;
+					if (payload.session.ephemeral) {
+						// A headless run has no history file by design; its tool entries
+						// have nowhere to go, and that is not a failure worth a warning.
+						this.pendingLogs = [];
+						return;
+					}
 					// Snapshot and clear only after the append succeeds, so that a
 					// transient failure (missing history file, locked vault) does not
 					// silently drop tool execution entries.

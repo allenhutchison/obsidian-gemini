@@ -146,7 +146,7 @@ function createMockPlugin(opts: { existingPaths?: string[]; createBehaviour?: Va
 			releaseSession: vi.fn(),
 			createAgentSession: vi.fn().mockResolvedValue({
 				id: 'session-1',
-				title: 'Hook: test-hook',
+				title: 'Hook - test-hook',
 				created: new Date(),
 				context: { enabledTools: [], requireConfirmation: [] },
 				modelConfig: {},

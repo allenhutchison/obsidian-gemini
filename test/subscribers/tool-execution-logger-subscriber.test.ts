@@ -188,6 +188,33 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 		expect(plugin.logger.warn).toHaveBeenCalledWith(expect.stringContaining('history file not found'));
 	});
 
+	it('drains the queue silently for an ephemeral (headless) session', async () => {
+		plugin.app.vault.getAbstractFileByPath.mockReturnValue(null);
+
+		await bus.emit('toolExecutionComplete', {
+			toolName: 'read_file',
+			args: { path: 'test.md' },
+			result: { success: true, data: { path: 'test.md' } },
+			durationMs: 10,
+		});
+
+		const headless = createMockSession({
+			ephemeral: true,
+			historyPath: 'gemini-scribe/Agent-Sessions/Scheduled task - pt-runnow.md',
+		});
+		await bus.emit('toolChainComplete', { session: headless, toolResults: [], toolCount: 0 });
+
+		expect(plugin.logger.warn).not.toHaveBeenCalled();
+		expect(plugin.app.vault.getAbstractFileByPath).not.toHaveBeenCalled();
+
+		// The dropped entries must not leak into the next (persisted) session's history.
+		plugin.app.vault.getAbstractFileByPath.mockReturnValue(
+			Object.assign(new TFile(), { path: 'gemini-scribe/Agent-Sessions/test.md' })
+		);
+		await bus.emit('toolChainComplete', { session: createMockSession(), toolResults: [], toolCount: 0 });
+		expect(plugin.app.vault.process).not.toHaveBeenCalled();
+	});
+
 	it('should snapshot pending logs then clear after successful append', async () => {
 		await bus.emit('toolExecutionComplete', {
 			toolName: 'read_file',

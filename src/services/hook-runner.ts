@@ -48,7 +48,7 @@ export class HookRunner {
 		const turn = await runHeadlessAgentTurn(
 			this.plugin,
 			{
-				sessionLabel: `Hook: ${hook.slug}`,
+				sessionLabel: `Hook - ${hook.slug}`,
 				logPrefix: '[HookRunner]',
 				subjectNoun: 'Hook',
 				subjectName: hook.slug,
