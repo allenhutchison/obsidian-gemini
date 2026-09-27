@@ -12,7 +12,7 @@ export interface MCPServerConfig {
 	/** User-friendly server name (unique key) */
 	name: string;
 
-	/** Transport type: "stdio" (local process) or "http" (remote HTTP/SSE). Defaults to "stdio". */
+	/** Transport type: "stdio" (local process) or "http" (remote Streamable HTTP). Defaults to "stdio". */
 	transport?: MCPTransportType;
 
 	/** Command to spawn (e.g., "npx", "python"). Required for stdio transport. */

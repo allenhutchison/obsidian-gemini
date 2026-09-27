@@ -4,6 +4,7 @@ import type { MCPServerConfig } from '../../mcp/types';
 import { MCPConnectionStatus } from '../../mcp/types';
 import { clearServerEnv } from '../../mcp/mcp-secrets';
 import { sanitizeKeySegment } from '../../mcp/mcp-oauth-provider';
+import { explainMCPConnectionError } from '../../mcp/mcp-errors';
 import { getErrorMessage } from '../../utils/error-utils';
 import { t } from '../../i18n';
 import type { SettingsContext } from './context';
@@ -110,7 +111,11 @@ async function addServer(ctx: SettingsContext): Promise<void> {
 				try {
 					await plugin.mcpManager.connectServer(config);
 				} catch (error) {
-					new Notice(t('settings.mcp.savedButConnectFailed', { error: getErrorMessage(error) }));
+					new Notice(
+						t('settings.mcp.savedButConnectFailed', {
+							error: explainMCPConnectionError(error) ?? getErrorMessage(error),
+						})
+					);
 				}
 			}
 			ctx.tab.update();
@@ -149,7 +154,12 @@ async function editServer(ctx: SettingsContext, server: MCPServerConfig, _index:
 					try {
 						await mcpManager.connectServer(updated);
 					} catch (error) {
-						new Notice(t('settings.mcp.reconnectFailed', { name: updated.name, error: getErrorMessage(error) }));
+						new Notice(
+							t('settings.mcp.reconnectFailed', {
+								name: updated.name,
+								error: explainMCPConnectionError(error) ?? getErrorMessage(error),
+							})
+						);
 					}
 				}
 			}

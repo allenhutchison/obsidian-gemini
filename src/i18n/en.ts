@@ -807,6 +807,12 @@ export const en = {
 		message: 'Connection failed: {message}',
 		context: 'Status after a failed test connection. {message} is the raw error message.',
 	},
+	'mcpServer.oauthHtmlResponse': {
+		message:
+			"The server's sign-in (OAuth) step failed with HTTP {status}, and the reply was a web page instead of an OAuth response. This usually means a firewall in front of the server is rejecting the request, for example because it contains the local callback address (127.0.0.1). This needs to be fixed by the server's operator, so please contact them with this message.",
+		context:
+			'Explanation shown instead of a raw error when an MCP server OAuth endpoint returns an HTML page (e.g. a firewall 403) instead of a JSON OAuth response. {status} is the HTTP status code, or "?" if unknown. Keep "OAuth" and "127.0.0.1" untranslated.',
+	},
 	'mcpServer.cancelButton': { message: 'Cancel', context: 'Button that closes the MCP server modal without saving.' },
 	'mcpServer.saveButton': { message: 'Save', context: 'Primary button that saves the MCP server configuration.' },
 	'mcpServer.nameRequired': {
