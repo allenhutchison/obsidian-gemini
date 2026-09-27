@@ -71,7 +71,7 @@ They were removed. Every request now uses the provider SDK's own defaults; there
 
 ### Will you add support for Gemma models?
 
-Yes — the Gemma 4 models served through the Gemini API (ai.google.dev), currently `gemma-4-31b-it` and `gemma-4-26b-a4b-it`, are in the bundled model list, so you can pick them in any Gemini model dropdown. New Gemma 4 variants the Gemini API starts serving are picked up by the regular model-list update. If you're asking about Gemma running locally via Ollama or similar, see the local LLM question below. ([#587](https://github.com/allenhutchison/obsidian-gemini/issues/587), [#1484](https://github.com/allenhutchison/obsidian-gemini/issues/1484))
+Yes — the Gemma 4 models served through the Gemini API (ai.google.dev), currently `gemma-4-31b-it` and `gemma-4-26b-a4b-it`, are in the bundled model list, so you can pick them in the Gemini text-model dropdowns (chat, summary, completions, rewrite, web search). They are text models, so they don't appear in the image-generation model dropdown. New Gemma 4 (`gemma-4-*`) variants the Gemini API starts serving are picked up by the regular model-list update, as long as they support `generateContent`. If you're asking about Gemma running locally via Ollama or similar, see the local LLM question below. ([#587](https://github.com/allenhutchison/obsidian-gemini/issues/587), [#1484](https://github.com/allenhutchison/obsidian-gemini/issues/1484))
 
 ### Can I use non-Gemini providers like OpenAI, Anthropic, or Mistral?
 
