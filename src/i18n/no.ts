@@ -213,6 +213,8 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'mcpServer.connectingDesc': 'Kobler til server...',
 	'mcpServer.connectedDesc': 'Tilkobling vellykket! Fant {count} verktøy.',
 	'mcpServer.connectionFailedDesc': 'Tilkobling feilet: {message}',
+	'mcpServer.oauthHtmlResponse':
+		'Serverens innloggingstrinn (OAuth) mislyktes med HTTP {status}, og svaret var en nettside i stedet for et OAuth-svar. Dette betyr vanligvis at en brannmur foran serveren avviser forespørselen, for eksempel fordi den inneholder den lokale callback-adressen (127.0.0.1). Dette må løses av serverens operatør, så vennligst kontakt dem med denne meldingen.',
 	'mcpServer.cancelButton': 'Avbryt',
 	'mcpServer.saveButton': 'Lagre',
 	'mcpServer.nameRequired': 'Servernavn er påkrevd',

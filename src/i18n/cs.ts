@@ -212,6 +212,8 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'mcpServer.connectingDesc': 'Připojování k serveru...',
 	'mcpServer.connectedDesc': 'Úspěšně připojeno! Nalezeno {count} nástrojů.',
 	'mcpServer.connectionFailedDesc': 'Připojení selhalo: {message}',
+	'mcpServer.oauthHtmlResponse':
+		'Krok přihlášení k serveru (OAuth) selhal s kódem HTTP {status} a odpovědí byla webová stránka namísto odpovědi OAuth. To obvykle znamená, že firewall před serverem požadavek odmítá, například proto, že obsahuje lokální adresu zpětného volání (127.0.0.1). Tento problém musí vyřešit provozovatel serveru, kontaktujte jej proto prosím s touto zprávou.',
 	'mcpServer.cancelButton': 'Zrušit',
 	'mcpServer.saveButton': 'Uložit',
 	'mcpServer.nameRequired': 'Název serveru je vyžadován',

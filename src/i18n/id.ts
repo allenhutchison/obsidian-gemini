@@ -214,6 +214,8 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'mcpServer.connectingDesc': 'Menghubungkan ke server...',
 	'mcpServer.connectedDesc': 'Berhasil terhubung! Menemukan {count} alat.',
 	'mcpServer.connectionFailedDesc': 'Koneksi gagal: {message}',
+	'mcpServer.oauthHtmlResponse':
+		'Langkah masuk (OAuth) server gagal dengan HTTP {status}, dan balasannya berupa halaman web, bukan respons OAuth. Ini biasanya berarti firewall di depan server menolak permintaan tersebut, misalnya karena memuat alamat callback lokal (127.0.0.1). Hal ini perlu diperbaiki oleh pengelola server, jadi silakan hubungi mereka dengan menyertakan pesan ini.',
 	'mcpServer.cancelButton': 'Batal',
 	'mcpServer.saveButton': 'Simpan',
 	'mcpServer.nameRequired': 'Nama server wajib diisi',

@@ -209,6 +209,8 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'mcpServer.connectingDesc': '서버에 연결 중...',
 	'mcpServer.connectedDesc': '성공적으로 연결되었습니다! {count}개의 도구를 찾았습니다.',
 	'mcpServer.connectionFailedDesc': '연결 실패: {message}',
+	'mcpServer.oauthHtmlResponse':
+		'서버 로그인(OAuth) 단계에서 HTTP {status} 오류로 실패했으며, OAuth 응답 대신 웹 페이지가 반환되었습니다. 이는 보통 서버 앞단의 방화벽이 요청을 차단했음을 의미합니다(예: 로컬 콜백 주소인 127.0.0.1이 포함된 경우). 이 문제는 서버 관리자가 해결해야 하므로, 이 메시지와 함께 관리자에게 문의해 주세요.',
 	'mcpServer.cancelButton': '취소',
 	'mcpServer.saveButton': '저장',
 	'mcpServer.nameRequired': '서버 이름이 필요합니다',

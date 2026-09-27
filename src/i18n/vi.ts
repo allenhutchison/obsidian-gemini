@@ -214,6 +214,8 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'mcpServer.connectingDesc': 'Đang kết nối với máy chủ...',
 	'mcpServer.connectedDesc': 'Kết nối thành công! Tìm thấy {count} công cụ.',
 	'mcpServer.connectionFailedDesc': 'Kết nối thất bại: {message}',
+	'mcpServer.oauthHtmlResponse':
+		'Bước đăng nhập (OAuth) của máy chủ đã thất bại với mã HTTP {status}, và phản hồi nhận được là một trang web thay vì phản hồi OAuth. Điều này thường có nghĩa là tường lửa phía trước máy chủ đang từ chối yêu cầu, ví dụ như do chứa địa chỉ callback cục bộ (127.0.0.1). Vấn đề này cần được người vận hành máy chủ xử lý, vui lòng liên hệ với họ kèm theo thông báo này.',
 	'mcpServer.cancelButton': 'Hủy',
 	'mcpServer.saveButton': 'Lưu',
 	'mcpServer.nameRequired': 'Yêu cầu nhập tên máy chủ',

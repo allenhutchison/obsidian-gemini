@@ -213,6 +213,8 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'mcpServer.connectingDesc': 'Forbinder til server...',
 	'mcpServer.connectedDesc': 'Forbindelse oprettet! Fandt {count} værktøj(er).',
 	'mcpServer.connectionFailedDesc': 'Forbindelse mislykkedes: {message}',
+	'mcpServer.oauthHtmlResponse':
+		'Serverens login-trin (OAuth) mislykkedes med HTTP {status}, og svaret var en webside i stedet for et OAuth-svar. Dette betyder normalt, at en firewall foran serveren afviser anmodningen, for eksempel fordi den indeholder den lokale callback-adresse (127.0.0.1). Dette skal rettes af serverens administrator, så kontakt dem venligst med denne besked.',
 	'mcpServer.cancelButton': 'Annuller',
 	'mcpServer.saveButton': 'Gem',
 	'mcpServer.nameRequired': 'Servernavn er påkrævet',

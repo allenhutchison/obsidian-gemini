@@ -216,6 +216,8 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'mcpServer.connectingDesc': 'Connexion au serveur...',
 	'mcpServer.connectedDesc': 'Connexion réussie ! {count} outil(s) trouvé(s).',
 	'mcpServer.connectionFailedDesc': 'Échec de la connexion : {message}',
+	'mcpServer.oauthHtmlResponse':
+		"L'étape de connexion (OAuth) au serveur a échoué avec le code HTTP {status}, et la réponse était une page web au lieu d'une réponse OAuth. Cela signifie généralement qu'un pare-feu situé devant le serveur rejette la requête, par exemple parce qu'elle contient l'adresse de rappel locale (127.0.0.1). Ce problème doit être corrigé par l'administrateur du serveur, veuillez donc le contacter en lui transmettant ce message.",
 	'mcpServer.cancelButton': 'Annuler',
 	'mcpServer.saveButton': 'Enregistrer',
 	'mcpServer.nameRequired': 'Le nom du serveur est requis',
