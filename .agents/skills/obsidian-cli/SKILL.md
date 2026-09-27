@@ -133,9 +133,9 @@ wait_for_eval() {
 }
 
 # After `dev:mobile on`: mobile class present and the plugin is back
-wait_for_eval true "document.body.classList.contains('is-mobile') && !!app.plugins.plugins['gemini-scribe']"
+wait_for_eval true "document.body.classList.contains('is-mobile') && Boolean(app.plugins.plugins['gemini-scribe'])"
 # After `dev:mobile off`: mobile class gone and the plugin is back
-wait_for_eval true "!document.body.classList.contains('is-mobile') && !!app.plugins.plugins['gemini-scribe']"
+wait_for_eval true "document.body.classList.contains('is-mobile') === false && Boolean(app.plugins.plugins['gemini-scribe'])"
 ```
 
 If `wait_for_eval` gives up, stop and investigate (check the app window, `obsidian dev:errors`) rather than testing against a half-applied toggle.
@@ -312,7 +312,7 @@ Useful before depending on a command ID in a doc, test, or skill:
 ```bash
 obsidian commands filter=gemini-scribe          # quick visual check
 obsidian commands filter=gemini-scribe-ope      # narrower
-obsidian eval code="!!app.commands.findCommand('gemini-scribe:open-scheduler')"
+obsidian eval code="Boolean(app.commands.findCommand('gemini-scribe:open-scheduler'))"
 ```
 
 ### Open a UI surface and screenshot it
@@ -343,13 +343,13 @@ obsidian eval code="document.querySelectorAll('.modal-container').length"   # ex
 # wait_for_eval: the bounded poll helper defined under "Mobile emulation" above
 obsidian dev:mobile on                           # reloads the whole app — platform-gated code re-runs on its own
 sleep 3
-wait_for_eval true "document.body.classList.contains('is-mobile') && !!app.plugins.plugins['gemini-scribe']" \
+wait_for_eval true "document.body.classList.contains('is-mobile') && Boolean(app.plugins.plugins['gemini-scribe'])" \
   || exit 1                                      # never test while the toggle is half-applied
 obsidian dev:screenshot path="$PWD/mobile-view.png"
 # … exercise the mobile path …
 obsidian dev:mobile off                          # ALWAYS revert (reloads again)
 sleep 3
-wait_for_eval true "!document.body.classList.contains('is-mobile') && !!app.plugins.plugins['gemini-scribe']" || exit 1
+wait_for_eval true "document.body.classList.contains('is-mobile') === false && Boolean(app.plugins.plugins['gemini-scribe'])" || exit 1
 ```
 
 ### Click a specific button via the DOM
