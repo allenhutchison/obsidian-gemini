@@ -213,6 +213,8 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'mcpServer.connectingDesc': 'A ligar ao servidor...',
 	'mcpServer.connectedDesc': 'Ligado com sucesso! Encontrada(s) {count} ferramenta(s).',
 	'mcpServer.connectionFailedDesc': 'A ligação falhou: {message}',
+	'mcpServer.oauthHtmlResponse':
+		'O passo de início de sessão (OAuth) do servidor falhou com HTTP {status} e a resposta foi uma página web em vez de uma resposta OAuth. Isto geralmente significa que uma firewall à frente do servidor está a rejeitar o pedido, por exemplo, por conter o endereço de retorno local (127.0.0.1). Isto tem de ser corrigido pelo operador do servidor, pelo que deve contactá-lo com esta mensagem.',
 	'mcpServer.cancelButton': 'Cancelar',
 	'mcpServer.saveButton': 'Guardar',
 	'mcpServer.nameRequired': 'O nome do servidor é obrigatório',

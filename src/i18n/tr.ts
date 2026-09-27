@@ -215,6 +215,8 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'mcpServer.connectingDesc': 'Sunucuya bağlanılıyor...',
 	'mcpServer.connectedDesc': 'Başarıyla bağlandı! {count} araç bulundu.',
 	'mcpServer.connectionFailedDesc': 'Bağlantı başarısız oldu: {message}',
+	'mcpServer.oauthHtmlResponse':
+		'Sunucunun oturum açma (OAuth) adımı HTTP {status} ile başarısız oldu ve bir OAuth yanıtı yerine bir web sayfası döndü. Bu durum genellikle sunucunun önündeki bir güvenlik duvarının, örneğin yerel geri çağırma adresini (127.0.0.1) içerdiği için isteği reddettiği anlamına gelir. Bunun sunucunun yöneticisi tarafından düzeltilmesi gerekir; lütfen bu mesajla kendileriyle iletişime geçin.',
 	'mcpServer.cancelButton': 'İptal',
 	'mcpServer.saveButton': 'Kaydet',
 	'mcpServer.nameRequired': 'Sunucu adı gereklidir',

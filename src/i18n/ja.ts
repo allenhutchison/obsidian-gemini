@@ -212,6 +212,8 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'mcpServer.connectingDesc': 'サーバーに接続中...',
 	'mcpServer.connectedDesc': '接続に成功しました！{count} 個のツールが見つかりました。',
 	'mcpServer.connectionFailedDesc': '接続に失敗しました: {message}',
+	'mcpServer.oauthHtmlResponse':
+		'サーバーのサインイン (OAuth) 処理が HTTP {status} で失敗し、OAuth レスポンスではなく Web ページが返されました。これは通常、サーバーの前にあるファイアウォールがリクエストを拒否していることを意味します (例: ローカルのコールバックアドレス (127.0.0.1) が含まれているためなど)。この問題はサーバーの管理者側で修正する必要があるため、このメッセージを添えて管理者にお問い合わせください。',
 	'mcpServer.cancelButton': 'キャンセル',
 	'mcpServer.saveButton': '保存',
 	'mcpServer.nameRequired': 'サーバー名は必須です',

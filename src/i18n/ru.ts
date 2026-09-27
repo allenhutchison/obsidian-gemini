@@ -214,6 +214,8 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'mcpServer.connectingDesc': 'Подключение к серверу...',
 	'mcpServer.connectedDesc': 'Успешно подключено! Найдено {count} инструмент(ов).',
 	'mcpServer.connectionFailedDesc': 'Ошибка подключения: {message}',
+	'mcpServer.oauthHtmlResponse':
+		'Этап входа (OAuth) на сервере завершился с ошибкой HTTP {status}, и вместо ответа OAuth была получена веб-страница. Обычно это означает, что брандмауэр перед сервером блокирует запрос — например, из-за того, что он содержит локальный адрес обратного вызова (127.0.0.1). Эту проблему должен устранить администратор сервера, поэтому обратитесь к нему с этим сообщением.',
 	'mcpServer.cancelButton': 'Отмена',
 	'mcpServer.saveButton': 'Сохранить',
 	'mcpServer.nameRequired': 'Требуется имя сервера',

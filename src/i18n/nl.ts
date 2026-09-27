@@ -212,6 +212,8 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'mcpServer.connectingDesc': 'Verbinding maken met server...',
 	'mcpServer.connectedDesc': 'Succesvol verbonden! {count} tool(s) gevonden.',
 	'mcpServer.connectionFailedDesc': 'Verbinding mislukt: {message}',
+	'mcpServer.oauthHtmlResponse':
+		'De inlogstap (OAuth) van de server is mislukt met HTTP {status}, en het antwoord was een webpagina in plaats van een OAuth-respons. Dit betekent meestal dat een firewall vóór de server het verzoek weigert, bijvoorbeeld omdat het het lokale callback-adres (127.0.0.1) bevat. Dit moet worden opgelost door de beheerder van de server, dus neem contact met hen op met dit bericht.',
 	'mcpServer.cancelButton': 'Annuleren',
 	'mcpServer.saveButton': 'Opslaan',
 	'mcpServer.nameRequired': 'Servernaam is verplicht',

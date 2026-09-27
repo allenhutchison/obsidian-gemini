@@ -217,6 +217,8 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'mcpServer.connectingDesc': 'Verbindung zum Server wird hergestellt...',
 	'mcpServer.connectedDesc': 'Erfolgreich verbunden! {count} Tool(s) gefunden.',
 	'mcpServer.connectionFailedDesc': 'Verbindung fehlgeschlagen: {message}',
+	'mcpServer.oauthHtmlResponse':
+		'Der Anmeldeschritt (OAuth) des Servers ist mit HTTP {status} fehlgeschlagen, und die Antwort war eine Webseite anstelle einer OAuth-Antwort. Dies bedeutet üblicherweise, dass eine Firewall vor dem Server die Anfrage ablehnt, beispielsweise weil sie die lokale Callback-Adresse (127.0.0.1) enthält. Dies muss vom Betreiber des Servers behoben werden; bitte kontaktiere ihn mit dieser Nachricht.',
 	'mcpServer.cancelButton': 'Abbrechen',
 	'mcpServer.saveButton': 'Speichern',
 	'mcpServer.nameRequired': 'Servername ist erforderlich',

@@ -215,6 +215,8 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'mcpServer.connectingDesc': 'Łączenie z serwerem...',
 	'mcpServer.connectedDesc': 'Połączono pomyślnie! Znaleziono {count} narzędzi.',
 	'mcpServer.connectionFailedDesc': 'Połączenie nie powiodło się: {message}',
+	'mcpServer.oauthHtmlResponse':
+		'Etap logowania do serwera (OAuth) nie powiódł się z kodem HTTP {status}, a odpowiedź była stroną internetową zamiast odpowiedzi OAuth. Zazwyczaj oznacza to, że zapora sieciowa przed serwerem odrzuca żądanie, na przykład dlatego, że zawiera ono lokalny adres zwrotny (127.0.0.1). Musi to zostać naprawione przez operatora serwera, dlatego skontaktuj się z nim, przekazując tę wiadomość.',
 	'mcpServer.cancelButton': 'Anuluj',
 	'mcpServer.saveButton': 'Zapisz',
 	'mcpServer.nameRequired': 'Nazwa serwera jest wymagana',

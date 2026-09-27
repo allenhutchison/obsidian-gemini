@@ -213,6 +213,8 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'mcpServer.connectingDesc': 'Підключення до сервера...',
 	'mcpServer.connectedDesc': 'Успішно підключено! Знайдено {count} інструмент(ів).',
 	'mcpServer.connectionFailedDesc': 'Помилка підключення: {message}',
+	'mcpServer.oauthHtmlResponse':
+		'Етап входу на сервер (OAuth) завершився помилкою HTTP {status}, а у відповідь надійшла вебсторінка замість відповіді OAuth. Зазвичай це означає, що брандмауер перед сервером відхиляє запит, наприклад через те, що він містить локальну адресу зворотного виклику (127.0.0.1). Це має виправити оператор сервера, тому, будь ласка, зверніться до нього з цим повідомленням.',
 	'mcpServer.cancelButton': 'Скасувати',
 	'mcpServer.saveButton': 'Зберегти',
 	'mcpServer.nameRequired': "Назва сервера є обов'язаковою",

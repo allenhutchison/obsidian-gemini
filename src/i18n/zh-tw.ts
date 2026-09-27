@@ -206,6 +206,8 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'mcpServer.connectingDesc': '正在連線至伺服器...',
 	'mcpServer.connectedDesc': '連線成功！找到 {count} 個工具。',
 	'mcpServer.connectionFailedDesc': '連線失敗：{message}',
+	'mcpServer.oauthHtmlResponse':
+		'伺服器登入 (OAuth) 步驟失敗，HTTP 狀態碼為 {status}，且傳回的是網頁而非 OAuth 回應。這通常代表伺服器前端的防火牆拒絕了該請求，例如因為請求包含本機回呼位址 (127.0.0.1)。此問題需要由伺服器管理員修復，請聯絡對方並附上此訊息。',
 	'mcpServer.cancelButton': '取消',
 	'mcpServer.saveButton': '儲存',
 	'mcpServer.nameRequired': '必須輸入伺服器名稱',

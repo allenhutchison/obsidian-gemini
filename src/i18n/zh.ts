@@ -206,6 +206,8 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'mcpServer.connectingDesc': '正在连接到服务器...',
 	'mcpServer.connectedDesc': '连接成功！发现 {count} 个工具。',
 	'mcpServer.connectionFailedDesc': '连接失败：{message}',
+	'mcpServer.oauthHtmlResponse':
+		'服务器登录 (OAuth) 步骤失败，HTTP 状态为 {status}，且返回内容是网页而非 OAuth 响应。这通常意味着服务器前的防火墙拦截了该请求，例如由于请求中包含本地回调地址 (127.0.0.1)。此问题需要服务器管理员修复，请携带此信息联系他们。',
 	'mcpServer.cancelButton': '取消',
 	'mcpServer.saveButton': '保存',
 	'mcpServer.nameRequired': '必须填写服务器名称',
