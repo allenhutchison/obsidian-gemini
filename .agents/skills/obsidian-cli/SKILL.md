@@ -115,12 +115,30 @@ obsidian dev:mobile on    # Enable mobile emulation. The app reloads automatical
 obsidian dev:mobile off   # Disable. The app reloads automatically.
 ```
 
-Because each toggle reloads the whole app, every open modal and all in-memory plugin state are gone afterwards, and CLI calls issued mid-reload can hang. Wait for it to settle and confirm the mode actually applied before testing anything:
+Because each toggle reloads the whole app, every open modal and all in-memory plugin state are gone afterwards, and CLI calls issued mid-reload can hang. Wait for it to settle and confirm the mode actually applied before testing anything. Poll with a bounded helper: each call is wrapped in the Perl alarm (see **Footguns**), a call that times out or errors counts as "not ready yet", and the loop gives up with a clear message instead of spinning forever:
 
 ```bash
-# Poll until this prints true (after `on`) / false (after `off`) and the plugin is back
-obsidian eval code="document.body.classList.contains('is-mobile') + ' ' + !!app.plugins.plugins['gemini-scribe']"
+# wait_for_eval <expected> <js>: poll `obsidian eval` until it prints <expected>.
+# Each call is capped at 10s by the Perl alarm (macOS has no `timeout`); a hung or failed
+# call is treated as "not ready yet". Gives up after 20 attempts (~4 min worst case).
+wait_for_eval() {
+  expected=$1; js=$2; out=""
+  for attempt in $(seq 1 20); do
+    out=$(perl -e 'alarm shift; exec @ARGV' 10 obsidian eval code="$js" 2>/dev/null | sed 's/^=> //')
+    [ "$out" = "$expected" ] && return 0
+    sleep 2
+  done
+  echo "Gave up after 20 attempts: '$js' never printed '$expected' (last output: '$out')." >&2
+  return 1
+}
+
+# After `dev:mobile on`: mobile class present and the plugin is back
+wait_for_eval true "document.body.classList.contains('is-mobile') && !!app.plugins.plugins['gemini-scribe']"
+# After `dev:mobile off`: mobile class gone and the plugin is back
+wait_for_eval true "!document.body.classList.contains('is-mobile') && !!app.plugins.plugins['gemini-scribe']"
 ```
+
+If `wait_for_eval` gives up, stop and investigate (check the app window, `obsidian dev:errors`) rather than testing against a half-applied toggle.
 
 **Footgun**: invoking `obsidian dev:mobile` with **no argument toggles** the current state — that's how you accidentally enable it. Always pass `on` or `off` explicitly. Always toggle off when you're done — the flag persists across CLI invocations and silently changes the app's behaviour for whoever next opens it.
 
@@ -322,15 +340,16 @@ obsidian eval code="document.querySelectorAll('.modal-container').length"   # ex
 ### Test a mobile-only code path
 
 ```bash
+# wait_for_eval: the bounded poll helper defined under "Mobile emulation" above
 obsidian dev:mobile on                           # reloads the whole app — platform-gated code re-runs on its own
 sleep 3
-obsidian eval code="document.body.classList.contains('is-mobile') && !!app.plugins.plugins['gemini-scribe']"
-# ^ repeat until it prints true; never test while the toggle is half-applied
+wait_for_eval true "document.body.classList.contains('is-mobile') && !!app.plugins.plugins['gemini-scribe']" \
+  || exit 1                                      # never test while the toggle is half-applied
 obsidian dev:screenshot path="$PWD/mobile-view.png"
 # … exercise the mobile path …
 obsidian dev:mobile off                          # ALWAYS revert (reloads again)
 sleep 3
-obsidian eval code="document.body.classList.contains('is-mobile')"   # repeat until false
+wait_for_eval true "!document.body.classList.contains('is-mobile') && !!app.plugins.plugins['gemini-scribe']" || exit 1
 ```
 
 ### Click a specific button via the DOM
@@ -436,7 +455,7 @@ Multiple Obsidian windows can run simultaneously (one per vault). Open the test 
 
 - **Never probe a command with `--help`.** `obsidian <cmd> --help` is not a help flag — the CLI runs the command (empirical, Sep 2026: `dev:mobile --help` toggled mobile emulation and reloaded the app). Treat every command (including `plugin:reload` and `dev:debug`) as unsafe to probe that way. Use `obsidian help <cmd>`, which only prints.
 - **`dev:mobile` toggles when called with no argument.** Always pass `on` or `off`. The state persists across CLI invocations and across Obsidian restarts. Toggle off as soon as you're done with the mobile sub-pass.
-- **`dev:mobile on|off` reloads the app.** Open modals and in-memory state are lost, and calls issued mid-reload can hang. Poll `document.body.classList.contains('is-mobile')` until it matches the mode you asked for before testing — never record results after a half-applied toggle.
+- **`dev:mobile on|off` reloads the app.** Open modals and in-memory state are lost, and calls issued mid-reload can hang. Poll `document.body.classList.contains('is-mobile')` with the bounded `wait_for_eval` helper (see **Mobile emulation**) until it matches the mode you asked for before testing — never record results after a half-applied toggle.
 - **`dev:screenshot path=` is vault-relative.** A relative path lands the PNG inside the vault (empirical, Sep 2026). Pass an absolute path.
 - **Read toggle state from the label, not the input.** Obsidian's settings toggles are a `label.checkbox-container` that gains `is-enabled` when on; the hidden `input.checked` isn't a reliable read of what the user sees (empirical, Sep 2026). Assert with `el.classList.contains('is-enabled')`.
 - **CLI calls can hang.** A call issued while the app is reloading can block indefinitely, and macOS has no `timeout` binary. Wrap calls in scripts with a Perl alarm: `perl -e 'alarm shift; exec @ARGV' 20 obsidian eval code="..."` (exits non-zero if the alarm fires).
