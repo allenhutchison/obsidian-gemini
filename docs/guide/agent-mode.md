@@ -188,9 +188,10 @@ For detailed information about context files and advanced usage, see the [Contex
 ### Session Management
 
 - Each conversation is a separate session
-- Sessions persist across Obsidian restarts when the "Session History" setting is enabled (off by default — see [Settings Reference](/reference/settings))
-- Access previous sessions from the dropdown
-- Configure session-specific settings
+- Sessions persist across Obsidian restarts when the "Keep session history" setting is enabled (off by default — see [Settings Reference](/reference/settings))
+- Access previous sessions from the session menu (☰) in the agent header → **Browse sessions**, or the "Browse agent sessions" command
+- Delete a session from the **Browse sessions** list: click its trash icon and the row turns into an inline **Delete** / **Cancel** confirmation (press Escape to cancel without closing the list). Confirming moves the history file to the trash using your Obsidian deleted-files setting; deleting the session you currently have open starts a new session
+- Configure session-specific settings (see [Session Configuration](#session-configuration))
 - Sessions are automatically titled with a YYYY-MM-DD date prefix and AI-generated description after the first exchange
 - Rename a session by double-clicking its title in the agent header; the history file is renamed to match. If another session file already carries that name, a numeric suffix is added (`My Session-1.md`). If no free name can be claimed, or the file cannot be renamed, the session keeps its existing history filename — the new title still applies
 - All files the agent reads or writes during a session are tracked in `accessed_files` frontmatter for auditing and session recall
@@ -412,7 +413,7 @@ Research the latest developments in quantum error correction and save it to Rese
 
 #### generate_image
 
-Generate an image from a prompt and save it to your vault. The agent picks a default attachment path if you don't specify one. Like `deep_research`, it defaults to running as a background task — the agent only generates inline when the image needs to appear in the same turn. Requires the **Image generation** feature to be routed to Gemini (the only provider that supports it today).
+Generate an image from a prompt and save it to your vault. The agent picks a default attachment path if you don't specify one. Like `deep_research`, it defaults to running as a background task — the agent only generates inline when the image needs to appear in the same turn. Requires the **Image generation** feature to be routed to a provider that supports it — Gemini or OpenAI (see [Provider Capabilities](/reference/provider-capabilities)).
 
 ```text
 Generate a watercolor diagram of a Zettelkasten workflow and embed it in my notes
@@ -525,18 +526,21 @@ What skills do you have available?
 
 Override global settings for specific conversations:
 
-1. Click the settings icon next to session name
+1. Open the session menu (☰) in the agent header and choose **Session settings** (or run the "Agent session settings" command)
 2. Configure:
    - Model (e.g., switch to Gemini 2.5 Pro for harder reasoning)
    - Custom prompt template
+3. Use the reset button next to either field to go back to the default
+
+These are the only two session settings. When a session overrides either one, the agent header shows a badge — the prompt template's name, or a sliders icon for a model-only override — with the overrides in its tooltip.
 
 ### Permissions
 
-Set session-specific permissions:
+The session settings modal has no permission controls. Tool permissions come from three places:
 
-- Bypass confirmations for trusted operations
-- Temporarily enable additional tools
-- Restrict access for sensitive sessions
+- **Global**: **Settings → Gemini Scribe → Tool permissions** sets which tools run automatically, ask first, or are blocked — see [Settings Reference → Tool permissions](/reference/settings#tool-permissions)
+- **Per project**: a linked project can narrow or open the tool surface with its own `toolPolicy` — see [Projects → Tool Policy](/guide/projects#tool-policy)
+- **Per session**: tick **Don't ask again this session** on an in-chat confirmation card to stop that tool from asking again until the session ends — see [Session-Level Permissions](#session-level-permissions)
 
 ## Tool Confirmations
 
@@ -604,7 +608,7 @@ When the agent proposes file changes (via `write_file`, `append_content`, `creat
 - **Edit the proposed content** directly in the diff view before clicking Allow
 - If you modify the content, the tool result reports `userEdited: true` so the agent knows
 
-Enable **"Always show diff view for file writes"** in settings to automatically open the diff view with every confirmation instead of requiring a button click.
+Enable **"Review a diff before files are written"** in settings to automatically open the diff view with every confirmation instead of requiring a button click.
 
 ### What Operations Require Confirmation
 
@@ -810,8 +814,8 @@ The following folders are automatically protected:
 Prevents infinite execution loops:
 
 - Detects repeated identical operations
-- Stops after threshold (default: 3)
-- Configurable time window
+- Blocks a tool call once the same tool with the same parameters has run 3 times within 30 seconds
+- Always on; the threshold and time window are fixed, not configurable — see [Tool loop detection](/reference/loop-detection)
 
 ### Turn Budget
 

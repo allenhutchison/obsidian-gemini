@@ -45,7 +45,8 @@ The dropdowns list a curated set of Claude models that have been validated again
 
 ## What does not work
 
-- **Gemini-only features** — Google Search, Google Maps, URL Context (web fetch), Deep Research, image generation, and the vault search index all depend on Gemini cloud services. They aren't available on Anthropic. See the [Provider Capabilities reference](/reference/provider-capabilities) for the full matrix.
+- **Gemini-only features** — Google Search, Google Maps, URL Context (web fetch), Deep Research, and the vault search index all depend on Gemini cloud services. They aren't available on Anthropic.
+- **Image generation** — Anthropic has no image-generation API. Route **Image generation** to Gemini or OpenAI instead. See the [Provider Capabilities reference](/reference/provider-capabilities) for the full matrix.
 - **Audio and video attachments** — Not supported; route chat to Gemini for those.
 - **Custom base URL** — Not supported. Requests always go to `api.anthropic.com`.
 

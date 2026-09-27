@@ -93,6 +93,12 @@ Add specific notes as persistent context for your agent sessions using @ mention
 4. **Set Appropriate Permissions** — Configure which operations require confirmation. Balance convenience with safety.
 5. **Leverage Persistent Sessions** — Continue conversations across Obsidian restarts and build on previous work.
 
+## After an Update
+
+The first time Obsidian starts with a new version of Gemini Scribe, a release notes modal opens once, showing that version's highlights (or a short generic message when the version has no bundled notes) and a link to the full release notes on GitHub. It isn't shown on a fresh install.
+
+To see it again later, run **Gemini Scribe: View release notes** from the Command Palette. It shows the notes for the version you have installed.
+
 ## Troubleshooting
 
 **API Key Issues**
