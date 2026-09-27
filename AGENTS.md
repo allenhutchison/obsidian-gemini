@@ -140,7 +140,7 @@ The plugin uses a factory pattern (`ModelClientFactory` in `src/api/factory.ts`)
 10. **Loop Detection**: Tool execution includes loop detection to prevent infinite cycles:
 
 - Tracks identical tool calls within time windows
-- Configurable thresholds and time windows
+- Fixed thresholds (3 identical calls within 30 seconds, set in `ToolLoopDetector`), always on — not user-configurable
 - Session-specific tracking with automatic cleanup
 - Blocked calls are flagged with `loopDetected: true` on `ToolResult` and emit a `toolLoopDetected` event on the agent bus
 - `AgentLoop` counts those fires per turn and aborts the turn after `AGENT_LOOP_ABORT_THRESHOLD` (currently 3) — the result comes back with `loopAborted: true` and a user-visible notice, which the UI displays but does not persist to session history

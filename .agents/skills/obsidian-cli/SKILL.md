@@ -7,7 +7,7 @@ description: >-
   properties, and common debugging recipes for the gemini-scribe plugin.
 metadata:
   author: obsidian-gemini
-  version: '1.1'
+  version: '1.2'
 compatibility: Requires Obsidian desktop with CLI enabled.
 ---
 
@@ -15,7 +15,7 @@ compatibility: Requires Obsidian desktop with CLI enabled.
 
 The Obsidian CLI (`obsidian` command) provides direct access to a running Obsidian instance from the terminal. It's invaluable for plugin development — you can reload plugins, inspect state, evaluate expressions, drive the UI (open modals, click, type, screenshot), toggle mobile emulation, and view console output without leaving your editor.
 
-The CLI surface is large (100+ commands) and growing. Run `obsidian --help` periodically to spot new capabilities, and `obsidian <command> --help` for per-command flags. This skill documents the parts most useful for plugin work.
+The CLI surface is large (100+ commands) and growing. Run `obsidian help` periodically to spot new capabilities, and `obsidian help <command>` for per-command flags. **Never** use `obsidian <command> --help` — the CLI runs the command rather than printing its help (see Footguns). This skill documents the parts most useful for plugin work.
 
 ## When to use this skill
 
@@ -87,8 +87,10 @@ obsidian command id=command-palette:open
 obsidian commands
 obsidian commands filter=gemini-scribe
 
-# Take a screenshot of the current Obsidian window
-obsidian dev:screenshot path=debug-screenshot.png
+# Take a screenshot of the current Obsidian window.
+# path= is resolved against the VAULT root, not your shell's cwd — pass an absolute path
+# unless you really want the PNG inside the vault.
+obsidian dev:screenshot path="$PWD/debug-screenshot.png"
 
 # Inspect the DOM
 obsidian dev:dom selector=".gemini-agent-view"
@@ -112,6 +114,31 @@ Toggles desktop into mobile-emulated mode so platform-gated code paths (`Platfor
 obsidian dev:mobile on    # Enable mobile emulation. The app reloads automatically.
 obsidian dev:mobile off   # Disable. The app reloads automatically.
 ```
+
+Because each toggle reloads the whole app, every open modal and all in-memory plugin state are gone afterwards, and CLI calls issued mid-reload can hang. Wait for it to settle and confirm the mode actually applied before testing anything. Poll with a bounded helper: each call is wrapped in the Perl alarm (see **Footguns**), a call that times out or errors counts as "not ready yet", and the loop gives up with a clear message instead of spinning forever:
+
+```bash
+# wait_for_eval <expected> <js>: poll `obsidian eval` until it prints <expected>.
+# Each call is capped at 10s by the Perl alarm (macOS has no `timeout`); a hung or failed
+# call is treated as "not ready yet". Gives up after 20 attempts (~4 min worst case).
+wait_for_eval() {
+  expected=$1; js=$2; out=""
+  for attempt in $(seq 1 20); do
+    out=$(perl -e 'alarm shift; exec @ARGV' 10 obsidian eval code="$js" 2>/dev/null | sed 's/^=> //')
+    [ "$out" = "$expected" ] && return 0
+    sleep 2
+  done
+  echo "Gave up after 20 attempts: '$js' never printed '$expected' (last output: '$out')." >&2
+  return 1
+}
+
+# After `dev:mobile on`: mobile class present and the plugin is back
+wait_for_eval true "document.body.classList.contains('is-mobile') && Boolean(app.plugins.plugins['gemini-scribe'])"
+# After `dev:mobile off`: mobile class gone and the plugin is back
+wait_for_eval true "document.body.classList.contains('is-mobile') === false && Boolean(app.plugins.plugins['gemini-scribe'])"
+```
+
+If `wait_for_eval` gives up, stop and investigate (check the app window, `obsidian dev:errors`) rather than testing against a half-applied toggle.
 
 **Footgun**: invoking `obsidian dev:mobile` with **no argument toggles** the current state — that's how you accidentally enable it. Always pass `on` or `off` explicitly. Always toggle off when you're done — the flag persists across CLI invocations and silently changes the app's behaviour for whoever next opens it.
 
@@ -285,7 +312,7 @@ Useful before depending on a command ID in a doc, test, or skill:
 ```bash
 obsidian commands filter=gemini-scribe          # quick visual check
 obsidian commands filter=gemini-scribe-ope      # narrower
-obsidian eval code="!!app.commands.findCommand('gemini-scribe:open-scheduler')"
+obsidian eval code="Boolean(app.commands.findCommand('gemini-scribe:open-scheduler'))"
 ```
 
 ### Open a UI surface and screenshot it
@@ -299,26 +326,30 @@ obsidian command id=gemini-scribe:open-scheduler
 # Settle (animations, lazy renders)
 sleep 1
 
-# Screenshot
-obsidian dev:screenshot path=scheduler-modal.png
+# Screenshot (absolute path — path= is vault-relative otherwise)
+obsidian dev:screenshot path="$PWD/scheduler-modal.png"
 
 # Inspect DOM
 obsidian dev:dom selector=".gemini-scheduler-schedule-row" text
 
-# Close
-obsidian eval code="document.querySelector('.modal-close-button')?.click()"
+# Close: Escape at the focused element (there is no .modal-close-button to click)
+obsidian eval code="(document.activeElement||document.body).dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',code:'Escape',bubbles:true}))"
+obsidian eval code="document.querySelectorAll('.modal-container').length"   # expect 0; repeat Escape per stacked modal
 ```
 
 ### Test a mobile-only code path
 
 ```bash
-obsidian dev:mobile on
-sleep 1
-obsidian plugin:reload id=gemini-scribe          # so platform-gated code re-runs
-sleep 1
-obsidian dev:screenshot path=mobile-view.png
+# wait_for_eval: the bounded poll helper defined under "Mobile emulation" above
+obsidian dev:mobile on                           # reloads the whole app — platform-gated code re-runs on its own
+sleep 3
+wait_for_eval true "document.body.classList.contains('is-mobile') && Boolean(app.plugins.plugins['gemini-scribe'])" \
+  || exit 1                                      # never test while the toggle is half-applied
+obsidian dev:screenshot path="$PWD/mobile-view.png"
 # … exercise the mobile path …
-obsidian dev:mobile off                          # ALWAYS revert
+obsidian dev:mobile off                          # ALWAYS revert (reloads again)
+sleep 3
+wait_for_eval true "document.body.classList.contains('is-mobile') === false && Boolean(app.plugins.plugins['gemini-scribe'])" || exit 1
 ```
 
 ### Click a specific button via the DOM
@@ -418,11 +449,16 @@ Multiple Obsidian windows can run simultaneously (one per vault). Open the test 
 - File resolution: `file=` resolves by name (like wikilinks), `path=` is exact
 - Most commands default to the active file when `file`/`path` is omitted
 - Use `\n` for newline and `\t` for tab in content values
-- `obsidian <cmd> --help` prints the command's full parameter list — discover this rather than guess
+- `obsidian help <cmd>` prints the command's full parameter list — discover this rather than guess. `obsidian help` lists every command. Note `obsidian help <unknown>` prints `No commands matching "<unknown>".` and still exits 0, so check its output, not `$?`
 
 ## Footguns
 
+- **Never probe a command with `--help`.** `obsidian <cmd> --help` is not a help flag — the CLI runs the command (empirical, Sep 2026: `dev:mobile --help` toggled mobile emulation and reloaded the app). Treat every command (including `plugin:reload` and `dev:debug`) as unsafe to probe that way. Use `obsidian help <cmd>`, which only prints.
 - **`dev:mobile` toggles when called with no argument.** Always pass `on` or `off`. The state persists across CLI invocations and across Obsidian restarts. Toggle off as soon as you're done with the mobile sub-pass.
+- **`dev:mobile on|off` reloads the app.** Open modals and in-memory state are lost, and calls issued mid-reload can hang. Poll `document.body.classList.contains('is-mobile')` with the bounded `wait_for_eval` helper (see **Mobile emulation**) until it matches the mode you asked for before testing — never record results after a half-applied toggle.
+- **`dev:screenshot path=` is vault-relative.** A relative path lands the PNG inside the vault (empirical, Sep 2026). Pass an absolute path.
+- **Read toggle state from the label, not the input.** Obsidian's settings toggles are a `label.checkbox-container` that gains `is-enabled` when on; the hidden `input.checked` isn't a reliable read of what the user sees (empirical, Sep 2026). Assert with `el.classList.contains('is-enabled')`.
+- **CLI calls can hang.** A call issued while the app is reloading can block indefinitely, and macOS has no `timeout` binary. Wrap calls in scripts with a Perl alarm: `perl -e 'alarm shift; exec @ARGV' 20 obsidian eval code="..."` (exits non-zero if the alarm fires).
 - **`devtools` toggles when called with no argument.** Same pattern — leaves the DevTools window open or shut depending on prior state. If you need a known state, query first via `obsidian eval code="!!document.querySelector('.is-developer-tools-open')"` or just call it twice.
 - **`dev:debug on` ≠ opening DevTools.** It attaches a Chrome DevTools Protocol debugger so commands like `dev:cdp` work. To open the actual DevTools window, use `devtools`.
 - **`plugin:reload` returns success even when the plugin's `onload` threw.** Always follow with `obsidian dev:errors` (or `dev:console level=error`) to confirm a clean load.
@@ -430,7 +466,8 @@ Multiple Obsidian windows can run simultaneously (one per vault). Open the test 
 - **`vaults` is desktop-only.** Returns "only available on desktop" if invoked in a non-desktop context.
 - **Some commands are plugin-conditional.** For example, `dev:css` exists only when a particular dev plugin is enabled; the CLI returns "Command 'dev:css' not found. It may require a plugin to be enabled." Don't depend on conditional commands without first checking they're available.
 - **`vault=<name>` does not actually route by name.** Empirically the CLI always targets the focused Obsidian window regardless of what `vault=` is set to. The flag does not error on a bogus value, does not error on a real-but-different-vault value — it just silently hits the focused window. To target a specific vault, focus its Obsidian window first. Always preflight with `obsidian eval code="app.vault.getName()"` (no `vault=` flag — read the truth) and assert it matches the expected vault before any destructive command. See "Target a specific vault" for the canonical guard.
-- **Modals stack.** If a previous test left a modal open, the next screenshot will be wrong. Either close all modals at the top of each surface (`obsidian eval code="document.querySelectorAll('.modal-close-button').forEach(b => b.click())"`) or assert `document.querySelector('.modal-container')` is null before opening a new one.
+- **There is no `.modal-close-button`.** Clicking it is a silent no-op (empirical, Sep 2026). Close a modal by dispatching Escape at the focused element: `obsidian eval code="(document.activeElement||document.body).dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',code:'Escape',bubbles:true}))"`.
+- **Modals stack.** If a previous test left a modal open, the next screenshot will be wrong. One Escape closes only the topmost modal, so repeat the dispatch until `document.querySelectorAll('.modal-container').length` is 0 before opening a new surface.
 - **Screenshot timing.** DOM updates are async. `sleep 1` is the floor; for animations or first-time renders, `sleep 2`. If a screenshot looks blank, retry with a longer settle.
 - **`reload` reloads the vault; `restart` restarts the app.** `plugin:reload id=...` is what you almost always want during development. Don't reach for `reload`/`restart` unless investigating something that survives a per-plugin reload.
 
@@ -458,7 +495,7 @@ Use `obsidian commands filter=<prefix>` to confirm the ID. Plugin commands are n
 
 ### Screenshot is blank or stale
 
-Settle longer (`sleep 2`+) and confirm the DOM actually has what you expect via `dev:dom selector=...`. If the screenshot still looks wrong, take a baseline first (`dev:screenshot path=before.png`) so you can diff against the expected state.
+Settle longer (`sleep 2`+) and confirm the DOM actually has what you expect via `dev:dom selector=...`. If the screenshot still looks wrong, take a baseline first (`dev:screenshot path="$PWD/before.png"`) so you can diff against the expected state.
 
 ### Mobile emulation appears stuck on
 

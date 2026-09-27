@@ -71,7 +71,7 @@ They were removed. Every request now uses the provider SDK's own defaults; there
 
 ### Will you add support for Gemma models?
 
-If the Gemma model you want is served through the Gemini API (ai.google.dev) it can be added to the curated model list — open an issue naming the specific model ID. If you're asking about Gemma running locally via Ollama or similar, see the local LLM question below. ([#587](https://github.com/allenhutchison/obsidian-gemini/issues/587))
+Yes — the Gemma 4 models served through the Gemini API (ai.google.dev), currently `gemma-4-31b-it` and `gemma-4-26b-a4b-it`, are in the bundled model list, so you can pick them in the Gemini text-model dropdowns (chat, summary, completions, rewrite, web search). They are text models, so they don't appear in the image-generation model dropdown. New Gemma 4 (`gemma-4-*`) variants the Gemini API starts serving are picked up by the regular model-list update, as long as they support `generateContent`. If you're asking about Gemma running locally via Ollama or similar, see the local LLM question below. ([#587](https://github.com/allenhutchison/obsidian-gemini/issues/587), [#1484](https://github.com/allenhutchison/obsidian-gemini/issues/1484))
 
 ### Can I use non-Gemini providers like OpenAI, Anthropic, or Mistral?
 
@@ -89,14 +89,14 @@ If privacy is the concern, the paid AI Studio tier's no-training terms are the i
 
 **Ollama is supported.** Add the Ollama card in Settings → Gemini Scribe → **Providers**, point its endpoint at your Ollama instance, then route Chat and agent (and anything else you want) to Ollama on the **Features** page. See the [Ollama Setup guide](./ollama-setup.md) for a step-by-step walkthrough.
 
-A few Gemini-specific features are unavailable on Ollama — these all depend on Google's cloud APIs and have no local equivalent:
+A few features are unavailable on Ollama — these depend on cloud APIs and have no local equivalent:
 
 - **Deep Research** (requires Google Search grounding)
 - **Semantic vault search / RAG** (requires the Gemini File Search API)
 - **Google Search grounding** in agent mode
 - **Google Maps grounding** in agent mode
 - **URL Context** web-fetch tool
-- **Image generation** (Imagen API)
+- **Image generation** (served by Gemini or OpenAI)
 
 Agent mode, tool calling, scheduled tasks, lifecycle hooks, custom prompts, completions, summarization, and rewriting all work with Ollama.
 

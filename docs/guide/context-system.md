@@ -190,7 +190,7 @@ To remove a file from context:
 Context files persist:
 
 - ✅ Throughout the current session
-- ✅ Across Obsidian restarts, when the "Session History" setting is enabled (off by default — see [Settings Reference](/reference/settings))
+- ✅ Across Obsidian restarts, when the "Keep session history" setting is enabled (off by default — see [Settings Reference](/reference/settings))
 - ✅ When loading saved sessions
 - ❌ When creating a new session
 

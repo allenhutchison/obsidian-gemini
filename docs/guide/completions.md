@@ -42,6 +42,8 @@ Completions provide:
 3. Press Enter
 4. See confirmation notice: "Gemini Scribe completions are now enabled." or "Gemini Scribe completions are now disabled."
 
+The toggle isn't saved: completions start **off** every time Obsidian starts or the plugin reloads, so run the command again to turn them back on.
+
 ### Quick Test
 
 1. Open any markdown note
@@ -55,20 +57,21 @@ Completions provide:
 
 1. **You type** in your note
 2. **Pause detected** (500ms without typing)
-3. **Context gathered** from surrounding text
-4. **AI generates** a suggestion
+3. **Context gathered**: the full text of the note, split at the cursor
+4. **AI generates** a short suggestion
 5. **Suggestion appears** in gray text
 6. **You choose** to accept or continue typing
 
 ### Context Understanding
 
-The AI considers:
+Each request sends the **entire current note** — everything before the cursor and everything after it — together with a fixed instruction to continue the text at the cursor with a short continuation (roughly 5–20 words) that matches the note's tone. That means the AI sees:
 
-- Previous paragraphs
-- Current sentence
-- Document structure
-- Markdown formatting
-- Your writing style
+- Previous paragraphs and the current sentence
+- Text that follows the cursor
+- The note's structure and Markdown formatting
+- The writing style of this note
+
+It does not see other notes, your agent sessions, `AGENTS.md`, or custom prompts.
 
 ### Smart Predictions
 
@@ -108,13 +111,7 @@ These aren't separate engineered features — completions use one fixed, general
 
 ### When Completions Appear
 
-Suggestions trigger when:
-
-- You pause mid-sentence
-- After punctuation (. ! ?)
-- At the start of new lines
-- After list markers (-, \*, 1.)
-- Inside markdown structures
+A suggestion is requested whenever you stop typing for about 500ms in a Markdown note while completions are on — mid-sentence, after punctuation, at the start of a line, after a list marker, anywhere. There are no special trigger characters; the pause is the only trigger.
 
 ## Configuration
 
@@ -136,14 +133,12 @@ The dropdown reflects whatever models the bundled list and Model Discovery have 
 | Flash Latest      | Fast    | Better  | Longer / more nuanced suggestions   |
 | Gemini 2.5 Pro    | Slowest | Best    | Critical content; requires billing  |
 
-### Performance Tuning
+### Performance and Cost
 
-Completions are optimized for:
-
-- 500ms debounce (prevents excessive API calls)
-- Smart context extraction
-- Efficient caching
-- Minimal UI disruption
+- A 500ms debounce means one request per pause, not one per keystroke
+- Each request sends the whole note, so long notes use more tokens and respond more slowly
+- Suggestions aren't cached — pausing again makes a new request
+- The fastest lever is the model: keep Completions on a Flash Lite model
 
 ## Writing Effectively with Completions
 
@@ -259,7 +254,7 @@ Suggestion: " Notes]] for more details"
 Suggestion: "More Data |"
 ```
 
-### 5. Template Expansion
+### 4. Template Expansion
 
 Create shortcuts:
 
@@ -311,10 +306,10 @@ Observe how AI:
 
 ### 4. Custom Patterns
 
-Train the AI by:
+Completions don't learn over time, but the note itself steers them. Guide the AI by:
 
-- Using consistent formats
-- Repeating structures
+- Using consistent formats within the note
+- Repeating structures it can pick up on
 - Building templates
 
 ### 5. Efficient Workflows
@@ -338,6 +333,7 @@ Train the AI by:
 1. **Check if enabled**
    - Run toggle command
    - Look for confirmation
+   - Remember completions switch off after every restart or plugin reload
 
 2. **Verify file type**
    - Must be an open Markdown view (.md file)
@@ -487,9 +483,8 @@ Turn off for:
 
 ### With Chat
 
-- Similar AI understanding
-- Complementary workflows
-- Shared context awareness
+- Completions and chat are independent: completions only see the current note, not your agent session or its context files
+- Use completions for drafting in place and chat for questions, research, and multi-step edits
 
 ### With Rewrite
 

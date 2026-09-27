@@ -302,19 +302,19 @@ Precisely rewrite any portion of your text with AI assistance. This feature prov
 
 ### IDE-Style Completions
 
-1.  **Toggle Completions:** Use the command palette (Ctrl/Cmd + P) and select "Gemini Scribe: Toggle completions". A notice will confirm whether completions are enabled or disabled.
+1.  **Toggle Completions:** Use the command palette (Ctrl/Cmd + P) and select "Gemini Scribe: Toggle completions". A notice will confirm whether completions are enabled or disabled. The toggle isn't saved — completions start off each time Obsidian starts or the plugin reloads.
 2.  **Write:** Begin typing in a Markdown file.
 3.  **Suggestions:** After a short pause in typing (500ms), Gemini will provide an inline suggestion based on your current context.
 4.  **Accept/Dismiss:**
     - Press `Tab` to accept the suggestion.
     - Press any other key to dismiss the suggestion and continue typing.
-5.  **Context-Aware:** Completions consider the surrounding text and document structure for more relevant suggestions.
+5.  **Context-Aware:** Each suggestion is based on the whole current note — the text before and after the cursor.
 
 ### Chat History
 
 - **Sessions in your vault:** Agent sessions are stored as markdown files under `[Plugin state folder]/Agent-Sessions/`, making them easy to browse, back up, and version-control.
-- **Browse and resume:** Use the session dropdown in the agent panel to load a previous session and continue the conversation.
-- **Manual management:** Sessions are plain markdown — delete the files in `Agent-Sessions/` to remove old conversations. There is no in-app "clear all" command.
+- **Browse and resume:** Open the session menu (☰) in the agent header → **Browse sessions** (or run "Browse agent sessions") to load a previous session and continue the conversation.
+- **Delete:** In **Browse sessions**, click a session's trash icon and confirm with the inline **Delete** button. Sessions are also plain markdown, so you can delete the files in `Agent-Sessions/` directly. There is no in-app "clear all" command.
 - **Automatic management:** The plugin automatically:
   - Creates a session file the first time you send a message
   - Adds a YYYY-MM-DD prefix and an AI-generated description to the session title after the first exchange

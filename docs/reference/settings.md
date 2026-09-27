@@ -256,11 +256,12 @@ Everything below the first row is hidden until indexing is turned on.
   an existing index prompts for confirmation before deleting the store.
 - **Status** — read-only file count, plus **Rescan** and **Delete index** buttons.
 - **Index name** (`ragIndexing.fileSearchStoreName`) — read-only text + copy button.
-- **Sync changes automatically** (`ragIndexing.autoSync`) — Boolean. Keep the index current as
-  you edit the vault.
-- **Include attachments** (`ragIndexing.includeAttachments`) — Boolean. Index non-markdown
-  attachments alongside notes.
-- **Exclude folders** (`ragIndexing.excludeFolders`) — `string[]`, entered one per line. The
+- **Sync changes automatically** (`ragIndexing.autoSync`) — Boolean, default `true`. Keep the
+  index current as you edit the vault.
+- **Include attachments** (`ragIndexing.includeAttachments`) — Boolean, default `false`. Index
+  non-markdown attachments alongside notes.
+- **Exclude folders** (`ragIndexing.excludeFolders`) — `string[]`, default empty, entered one per
+  line. The
   plugin state folder and `.obsidian` are always excluded regardless of this list.
 
 See the [Semantic Search Guide](/guide/semantic-search) for a full walkthrough, and route the
@@ -506,8 +507,9 @@ by the data model above:
 
 ## Session-Level Settings
 
-Session settings override global defaults for specific agent sessions. Access via the settings
-icon in the session header.
+Session settings override global defaults for specific agent sessions. Open them from the
+session menu (☰) in the agent header → **Session settings**, or with the "Agent session settings"
+command.
 
 ### Model Configuration
 
@@ -523,21 +525,19 @@ icon in the session header.
 
 ### Permissions
 
-Session-level permissions allow bypassing confirmation dialogs for specific operations during the
-current session only.
+The session settings modal has no permission controls. A session-level bypass is granted from the
+in-chat confirmation card instead: tick **Don't ask again this session** before clicking **Allow**,
+and that tool (any tool that asks for confirmation, not just file operations) runs without
+prompting for the rest of the session. See
+[Agent Mode → Session-Level Permissions](/guide/agent-mode#session-level-permissions).
 
-Available permission bypasses:
-
-- File creation
-- File modification
-- File deletion
-- File moving/renaming
-
-**Note**: Permissions reset when you create a new session or load a different session.
+**Note**: These bypasses are held in memory only. They reset when you create a new session, load a
+different session, or restart Obsidian. For persistent rules, use [Tool permissions](#tool-permissions)
+or a project's `toolPolicy` ([Projects → Tool Policy](/guide/projects#tool-policy)).
 
 ## Performance Considerations
 
-- **Model Selection**: Flash models (8B, standard) are faster but less capable than Pro models
+- **Model Selection**: Flash and Flash Lite models are faster and cheaper but less capable than Pro models
 - **Model Discovery**: Minimal performance impact; runs in background
 - **Loop Detection**: Negligible overhead; always on
 
