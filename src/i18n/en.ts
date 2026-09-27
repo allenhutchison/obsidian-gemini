@@ -362,6 +362,36 @@ export const en = {
 		message: 'Delete permanently',
 		context: 'Destructive button in the RAG cleanup modal that deletes the cloud index.',
 	},
+	'projectName.title': {
+		message: 'New project',
+		context: 'Heading of the dialog that asks for a name before the Create project command creates the project note.',
+	},
+	'projectName.defaultName': {
+		message: 'New Project',
+		context:
+			'Pre-filled project name in the new-project dialog; it becomes the project file name, so keep it a short noun phrase.',
+	},
+	'projectName.inputLabel': {
+		message: 'Project name',
+		context: 'Accessible label for the text field where the user types the new project name.',
+	},
+	'projectName.createButton': {
+		message: 'Create',
+		context: 'Primary button in the new-project dialog that creates the project note.',
+	},
+	'projectName.cancelButton': {
+		message: 'Cancel',
+		context: 'Button that closes the new-project dialog without creating anything.',
+	},
+	'projectName.errorEmpty': {
+		message: 'Enter a project name.',
+		context: 'Inline error in the new-project dialog when the name field is empty.',
+	},
+	'projectName.errorInvalidChars': {
+		message: 'Project names can\'t start with a dot or contain any of: \\ / : * ? " < > | # ^ [ ]',
+		context:
+			'Inline error in the new-project dialog when the name has characters not allowed in a file name. Keep the character list exactly as is.',
+	},
 	'yolo.title': {
 		message: 'Enable YOLO mode?',
 		context:
@@ -2166,7 +2196,8 @@ export const en = {
 	},
 	'command.switchProject': {
 		message: 'Switch project',
-		context: 'Command palette entry that opens the agent view so the user can switch the active project.',
+		context:
+			'Command palette entry that opens the project picker so the user can switch the current agent session to another project.',
 	},
 	'command.createProject': {
 		message: 'Create project',

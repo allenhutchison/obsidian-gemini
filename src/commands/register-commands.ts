@@ -120,35 +120,40 @@ export function registerCommands(plugin: ObsidianGemini): void {
 		},
 	});
 
-	// Switch project for the current agent session
+	// Switch project for the current agent session: open the project picker.
+	// Same flow as `link-project`; both IDs stay registered so existing hotkeys keep working.
 	plugin.addCommand({
 		id: 'switch-project',
 		name: t('command.switchProject'),
-		callback: () => {
+		callback: async () => {
 			if (!plugin.checkInitialized()) return;
-			// Fire-and-forget: opening the view is a UI action; errors surface via Obsidian.
-			void plugin.activateAgentView();
-			// The agent view's switchProject is triggered via the project badge in the header
-			// or users can click the project indicator once the view is open
+			await plugin.activateAgentView();
+			if (plugin.agentView) {
+				plugin.agentView.switchProject();
+			}
 		},
 	});
 
-	// Create a new project
+	// Create a new project, asking for its name first
 	plugin.addCommand({
 		id: 'create-project',
 		name: t('command.createProject'),
 		callback: async () => {
 			if (!plugin.checkInitialized()) return;
 			const folder = plugin.app.workspace.getActiveFile()?.parent?.path || '';
-			const name = 'New Project';
-			try {
-				const file = await plugin.projectManager.createProject(folder, name);
-				await plugin.app.workspace.openLinkText(file.path, '', true);
-				new Notice(t('notice.main.projectCreated', { path: file.path }));
-			} catch (error) {
-				plugin.logger.error('Failed to create project:', error);
-				new Notice(t('notice.main.projectCreateFailed'));
-			}
+			const { ProjectNameModal } = await import('../ui/project-name-modal');
+			new ProjectNameModal(plugin.app, (name) => {
+				void (async () => {
+					try {
+						const file = await plugin.projectManager.createProject(folder, name);
+						await plugin.app.workspace.openLinkText(file.path, '', true);
+						new Notice(t('notice.main.projectCreated', { path: file.path }));
+					} catch (error) {
+						plugin.logger.error('Failed to create project:', error);
+						new Notice(t('notice.main.projectCreateFailed'));
+					}
+				})();
+			}).open();
 		},
 	});
 

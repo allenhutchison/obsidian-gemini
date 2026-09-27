@@ -50,6 +50,14 @@ vi.mock('../../src/ui/rewrite-modal', () => ({
 	}),
 }));
 
+let projectNameSubmission: string | null = 'My Project';
+vi.mock('../../src/ui/project-name-modal', () => ({
+	ProjectNameModal: vi.fn().mockImplementation(function (_app: unknown, onSubmit: (name: string) => void) {
+		// A null submission models the user cancelling the dialog.
+		return { open: vi.fn(() => projectNameSubmission !== null && onSubmit(projectNameSubmission)) };
+	}),
+}));
+
 vi.mock('../../src/ui/update-notification-modal', () => ({
 	UpdateNotificationModal: vi.fn().mockImplementation(function () {
 		return { open: vi.fn() };
@@ -168,6 +176,7 @@ beforeEach(() => {
 	vi.clearAllMocks();
 	(window as any).__noticeMessages = [];
 	featureStatusMock.mockReturnValue('ok');
+	projectNameSubmission = 'My Project';
 });
 
 describe('registerCommands', () => {
@@ -342,13 +351,35 @@ describe('registerCommands', () => {
 	});
 
 	describe('project commands', () => {
-		it('create-project uses the active file folder and opens the new project', async () => {
+		it('create-project asks for a name, then creates it in the active file folder and opens it', async () => {
 			const { plugin, commands } = makeRegistered();
 
 			await (commands.get('create-project')!.callback as () => Promise<void>)();
 
-			expect(plugin.projectManager.createProject).toHaveBeenCalledWith('Projects', 'New Project');
+			await vi.waitFor(() => expect(plugin.app.workspace.openLinkText).toHaveBeenCalled());
+			expect(plugin.projectManager.createProject).toHaveBeenCalledWith('Projects', 'My Project');
 			expect(plugin.app.workspace.openLinkText).toHaveBeenCalledWith('Projects/New Project.md', '', true);
+		});
+
+		it('create-project creates nothing when the name dialog is cancelled', async () => {
+			projectNameSubmission = null;
+			const { plugin, commands } = makeRegistered();
+
+			await (commands.get('create-project')!.callback as () => Promise<void>)();
+
+			expect(plugin.projectManager.createProject).not.toHaveBeenCalled();
+		});
+
+		it.each(['switch-project', 'link-project'])('%s opens the project picker in the agent view', async (id) => {
+			const { plugin, commands } = makeRegistered((p) => {
+				p.activateAgentView = vi.fn().mockResolvedValue(undefined);
+				p.agentView = { switchProject: vi.fn() };
+			});
+
+			await (commands.get(id)!.callback as () => Promise<void>)();
+
+			expect(plugin.activateAgentView).toHaveBeenCalledTimes(1);
+			expect(plugin.agentView.switchProject).toHaveBeenCalledTimes(1);
 		});
 
 		it('convert-to-project converts the current note', async () => {

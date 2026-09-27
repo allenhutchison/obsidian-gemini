@@ -16,8 +16,9 @@ The file body contains instructions that are injected into the agent's system pr
 
 1. Open the command palette (`Ctrl/Cmd + P`)
 2. Search for **"Create project"**
-3. A new project file is created in the current folder with template frontmatter
-4. Edit the file to customize your project
+3. Enter a name for the project (it becomes the file name) and press **Create**
+4. A new project file is created in the current note's folder (or the vault root if no note is open) with template frontmatter. If a file with that name already exists there, a number is added (`My Project 1.md`, …)
+5. Edit the file to customize your project
 
 ### Converting an Existing Note
 
@@ -146,7 +147,7 @@ When you create a **new** agent session, the plugin inspects the session's initi
 
 ### Switching Projects
 
-Click the **project badge** in the agent session header to open the project picker. You can also use the **"Switch project"** command from the command palette, or **"Link project to agent session"** to jump straight to the picker without clicking the badge first.
+Click the **project badge** in the agent session header to open the project picker. You can also use the **"Switch project"** or **"Link project to agent session"** command from the command palette; both open the agent view and go straight to the picker.
 
 Select **"No project"** to unlink the session from any project and return to vault-wide scope.
 

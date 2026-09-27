@@ -627,6 +627,23 @@ describe('ProjectManager – extended coverage', () => {
 			expect(capturedContent).toContain('toolPolicy: {}');
 		});
 
+		it('picks the next free file name when the name is taken, and names the project after it', async () => {
+			const taken = new Set(['folder/My Project.md', 'folder/My Project 1.md']);
+			mockPlugin.app.vault.getAbstractFileByPath.mockImplementation((path: string) =>
+				taken.has(path) ? createMockFile(path) : null
+			);
+			let capturedContent = '';
+			mockPlugin.app.vault.create = vi.fn().mockImplementation(async (path: string, content: string) => {
+				capturedContent = content;
+				return createMockFile(path);
+			});
+
+			await manager.createProject('folder', 'My Project');
+
+			expect(mockPlugin.app.vault.create).toHaveBeenCalledWith('folder/My Project 2.md', expect.any(String));
+			expect(capturedContent).toContain('name: "My Project 2"');
+		});
+
 		it('returns the created TFile', async () => {
 			const createdFile = createMockFile('projects/New.md');
 			mockPlugin.app.vault.create = vi.fn().mockResolvedValue(createdFile);
