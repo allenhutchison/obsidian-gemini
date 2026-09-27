@@ -888,6 +888,10 @@ describe('AgentLoop', () => {
 
 			// 2 tools => 2 toolExecutionComplete; 1 batch => 1 toolChainComplete; 1 model call with usage => 1 apiResponseReceived
 			expect(eventNames.filter((n: string) => n === 'toolExecutionComplete')).toHaveLength(2);
+			// Each tool event names its session so plugin-wide subscribers can keep sessions apart.
+			for (const [, payload] of calls.filter((c: any[]) => c[0] === 'toolExecutionComplete')) {
+				expect(payload.session).toBe(session);
+			}
 			expect(eventNames.filter((n: string) => n === 'toolChainComplete')).toHaveLength(1);
 			expect(eventNames.filter((n: string) => n === 'apiResponseReceived')).toHaveLength(1);
 		});
