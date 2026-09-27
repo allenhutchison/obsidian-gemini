@@ -194,4 +194,39 @@ describe('OpenAIModelsService', () => {
 		expect(await svc.getModels()).toEqual([]);
 		expect(svc.lastProbe).toBe('unreachable');
 	});
+
+	it('makes no network call to api.openai.com when no API key is configured', async () => {
+		const svc = new OpenAIModelsService(buildPlugin({ openaiApiKey: '' }));
+
+		expect(await svc.getModels()).toEqual([]);
+		expect(await svc.getModels(true)).toEqual([]);
+		expect(mockedRequestUrl).not.toHaveBeenCalled();
+	});
+
+	it('treats an empty base URL as api.openai.com for the keyless check', async () => {
+		const svc = new OpenAIModelsService(buildPlugin({ openaiApiKey: '', settings: { openaiBaseUrl: '' } }));
+
+		expect(await svc.getModels()).toEqual([]);
+		expect(mockedRequestUrl).not.toHaveBeenCalled();
+	});
+
+	it('still probes a keyless custom base URL (local servers often need no key)', async () => {
+		mockModelList(['local-model']);
+		const svc = new OpenAIModelsService(
+			buildPlugin({ openaiApiKey: '', settings: { openaiBaseUrl: 'http://localhost:1234/v1' } })
+		);
+
+		expect(await svc.getModels()).toHaveLength(1);
+		expect(mockedRequestUrl).toHaveBeenCalledTimes(1);
+	});
+
+	it('shares one /models request between concurrent callers', async () => {
+		mockModelList(['gpt-5.6-sol']);
+		const svc = new OpenAIModelsService(buildPlugin());
+
+		const results = await Promise.all([svc.getModels(), svc.getModels(), svc.getModels()]);
+
+		expect(mockedRequestUrl).toHaveBeenCalledTimes(1);
+		expect(results.map((r) => r.length)).toEqual([1, 1, 1]);
+	});
 });

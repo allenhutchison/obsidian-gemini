@@ -83,6 +83,9 @@ summarizes its connection state (Connected / Not set up / Unreachable).
   OpenAI-compatible local server instead — LM Studio, MLX, Ollama's own OpenAI-compatible
   endpoint, etc. — to keep requests on your machine.
 - **Available models** — count + **Refresh** button, re-querying `GET <openaiBaseUrl>/models`.
+  With the default `api.openai.com` base URL and no API key, the row reads **Not set up** and no
+  request is made — the plugin never contacts a provider you haven't configured. A keyless custom
+  base URL is still queried, since local servers often don't need a key.
 - **Used by** — read-only list of the features currently routed to OpenAI.
 
 ### Anthropic card
@@ -92,7 +95,8 @@ summarizes its connection state (Connected / Not set up / Unreachable).
   no base URL setting — requests always go to `api.anthropic.com`.
 - **Available models** — count + **Refresh** button. The curated Claude models, narrowed by
   `GET https://api.anthropic.com/v1/models` to those the key can use (the full curated list is
-  shown without a key or when the endpoint is unreachable).
+  offered when the endpoint is unreachable). Without a key the row reads **Not set up** and no
+  request is made.
 - **Used by** — read-only list of the features currently routed to Anthropic.
 
 See the [Anthropic Setup Guide](/guide/anthropic-setup) for the model list and request behavior.

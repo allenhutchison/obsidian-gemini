@@ -109,10 +109,17 @@ function loadModelCount(ctx: SettingsContext, id: ModelProvider, userInitiated: 
 	if (id === 'gemini') return; // Gemini's count comes from the sync remote-list cache.
 	const modelManager = ctx.plugin.modelManager as typeof ctx.plugin.modelManager | undefined;
 	if (!modelManager) return; // plugin still loading; the next render retries
-	const generation = bumpGeneration(id);
-	const service = modelManager.getProviderModelsService(id);
 	const spec = PROVIDER_CARDS.find((card) => card.id === id);
 	const providerLabel = spec ? t(spec.labelKey) : id;
+	if (providerConnection(ctx.plugin, id) === 'needs-key') {
+		// No credentials, no traffic: a keyless probe of a hosted endpoint can only
+		// 401, and it would contact a provider the user never set up. The summary
+		// line already says "Not set up"; a Refresh click says why nothing happened.
+		if (userInitiated) new Notice(t('settings.providers.refreshNeedsKey', { provider: providerLabel }));
+		return;
+	}
+	const generation = bumpGeneration(id);
+	const service = modelManager.getProviderModelsService(id);
 	service
 		.getModels(userInitiated)
 		.then((models) => {
@@ -156,6 +163,8 @@ function modelsSummary(ctx: SettingsContext, id: ModelProvider): string {
 		const count = modelManager.getListProvider().getModels().length;
 		return t('settings.providers.modelsAvailable', { count });
 	}
+	// Never probe a provider that has no credentials (see `loadModelCount`).
+	if (providerConnection(ctx.plugin, id) === 'needs-key') return t('settings.providers.statusNeedsKey');
 	const cached = modelCountCache.get(id);
 	if (cached === undefined) {
 		loadModelCount(ctx, id, false);

@@ -138,6 +138,13 @@ export class OpenAIModelsService {
 	 * Cache is invalidated when the base URL or API key changes.
 	 */
 	async getModels(forceRefresh = false): Promise<GeminiModel[]> {
+		const baseUrl = this.plugin.settings.openaiBaseUrl || DEFAULT_OPENAI_BASE_URL;
+		if (!this.plugin.openaiApiKey && isOpenAIHostedEndpoint(baseUrl)) {
+			// api.openai.com rejects every keyless request, so there is nothing to
+			// learn — and a provider the user hasn't set up gets no traffic at all.
+			// A custom base URL is still probed: local servers often need no key.
+			return [];
+		}
 		return this.catalog.get(forceRefresh);
 	}
 

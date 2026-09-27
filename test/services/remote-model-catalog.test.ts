@@ -227,6 +227,59 @@ describe('CachedModelCatalog', () => {
 		});
 	});
 
+	describe('concurrent loads', () => {
+		it('shares one in-flight load between concurrent callers for the same endpoint', async () => {
+			const { catalog, load } = buildCatalog();
+			load.mockResolvedValue([model('a')]);
+
+			const results = await Promise.all([catalog.get(), catalog.get(), catalog.get()]);
+
+			expect(load).toHaveBeenCalledTimes(1);
+			expect(results).toEqual([[model('a')], [model('a')], [model('a')]]);
+		});
+
+		it('lets a plain read join an in-flight forced refresh', async () => {
+			const { catalog, load } = buildCatalog();
+			load.mockResolvedValue([model('a')]);
+
+			await Promise.all([catalog.get(true), catalog.get()]);
+
+			expect(load).toHaveBeenCalledTimes(1);
+		});
+
+		it('starts a fresh load for a forced refresh even while one is in flight', async () => {
+			const { catalog, load } = buildCatalog();
+			load.mockResolvedValue([model('a')]);
+
+			await Promise.all([catalog.get(), catalog.get(true)]);
+
+			expect(load).toHaveBeenCalledTimes(2);
+		});
+
+		it('does not share an in-flight load across endpoints', async () => {
+			const { catalog, load, setEndpoint } = buildCatalog();
+			load.mockImplementation(async (endpoint) => [model(endpoint.baseUrl)]);
+
+			const first = catalog.get();
+			setEndpoint('http://b');
+			const second = catalog.get();
+
+			expect(await first).toEqual([model('http://a')]);
+			expect(await second).toEqual([model('http://b')]);
+			expect(load).toHaveBeenCalledTimes(2);
+		});
+
+		it('fetches again after an in-flight load settles', async () => {
+			const { catalog, load } = buildCatalog();
+			load.mockRejectedValueOnce(new Error('down'));
+			await catalog.get();
+			load.mockResolvedValue([model('a')]);
+
+			expect(await catalog.get()).toEqual([model('a')]);
+			expect(load).toHaveBeenCalledTimes(2);
+		});
+	});
+
 	it("does not serve the old endpoint's cache when the endpoint changes mid-refresh", async () => {
 		const { catalog, load, setEndpoint } = buildCatalog();
 		load.mockResolvedValue([model('a')]);

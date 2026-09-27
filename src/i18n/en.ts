@@ -3739,6 +3739,11 @@ export const en = {
 		context:
 			'Notice after the user clicks Refresh on a provider card and the model list could not be fetched. {provider} is the provider name (Ollama / OpenAI).',
 	},
+	'settings.providers.refreshNeedsKey': {
+		message: 'Add an API key for {provider} to load its models.',
+		context:
+			'Notice after the user clicks Refresh on a provider card that has no API key, so no model list is fetched. {provider} is the provider name (OpenAI / Anthropic).',
+	},
 	'settings.providers.modelsAvailable': {
 		message: '{count} available',
 		context: 'Model-count summary for a cloud provider (Gemini, OpenAI). {count} is the number of models.',

@@ -39,6 +39,8 @@ export class AnthropicModelsService {
 	 * `invalidate()`, or while no key is configured.
 	 */
 	private lastProbeResult: 'reachable' | 'unreachable' | null = null;
+	/** The non-forced fetch in flight, keyed by the API key it was made with. */
+	private inFlight: { apiKey: string; promise: Promise<GeminiModel[]> } | null = null;
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
@@ -57,7 +59,22 @@ export class AnthropicModelsService {
 		if (!forceRefresh && this.cachedModels && this.lastApiKey === apiKey) {
 			return this.cachedModels;
 		}
+		const pending = this.inFlight;
+		if (!forceRefresh && pending?.apiKey === apiKey) {
+			// Concurrent callers (settings renders, model-manager init) share one request.
+			return pending.promise;
+		}
 
+		const entry = { apiKey, promise: this.fetchModels(apiKey) };
+		this.inFlight = entry;
+		try {
+			return await entry.promise;
+		} finally {
+			if (this.inFlight === entry) this.inFlight = null;
+		}
+	}
+
+	private async fetchModels(apiKey: string): Promise<GeminiModel[]> {
 		try {
 			const response = await requestUrl({
 				url: MODELS_URL,
@@ -98,6 +115,7 @@ export class AnthropicModelsService {
 
 	/** Drop the cache (key changed, or the user clicked "Refresh"). */
 	invalidate(): void {
+		this.inFlight = null;
 		this.lastProbeResult = null;
 		this.cachedModels = null;
 		this.lastApiKey = null;
