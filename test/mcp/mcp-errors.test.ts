@@ -14,11 +14,16 @@ describe('explainMCPConnectionError', () => {
 		expect(explained).not.toContain('SyntaxError');
 	});
 
-	it('recognises doctype and comment-led HTML bodies and a missing status', () => {
+	it('recognises doctype, comment, head and body-led HTML bodies and a missing status', () => {
 		const doctype = 'Invalid OAuth error response: SyntaxError: x. Raw body: <!DOCTYPE html><html></html>';
 		expect(explainMCPConnectionError(new Error(doctype))).toContain('HTTP ?');
 		const comment = 'HTTP 502: Invalid OAuth error response: SyntaxError: x. Raw body: <!-- padding --><html>';
 		expect(explainMCPConnectionError(comment)).toContain('HTTP 502');
+		const headFirst =
+			'HTTP 403: Invalid OAuth error response: SyntaxError: x. Raw body: <head><title>403</title></head>';
+		expect(explainMCPConnectionError(new Error(headFirst))).toContain('HTTP 403');
+		const bodyFirst = 'HTTP 403: Invalid OAuth error response: SyntaxError: x. Raw body: <body>Forbidden</body>';
+		expect(explainMCPConnectionError(new Error(bodyFirst))).toContain('HTTP 403');
 	});
 
 	it('leaves non-HTML OAuth parse failures and other errors to the caller', () => {

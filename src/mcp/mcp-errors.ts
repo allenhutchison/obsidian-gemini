@@ -11,7 +11,7 @@ import { t } from '../i18n';
  * case gets a plain-language explanation.
  */
 const OAUTH_HTML_RESPONSE =
-	/^(?:HTTP (\d{3}): )?Invalid OAuth error response:[\s\S]*?Raw body:\s*<(?:!doctype|html|!--)/i;
+	/^(?:HTTP (\d{3}): )?Invalid OAuth error response:[\s\S]*?Raw body:\s*<(?:!doctype|html|head|body|!--)/i;
 
 /**
  * Explain an MCP connection error in terms a user can act on, or return
