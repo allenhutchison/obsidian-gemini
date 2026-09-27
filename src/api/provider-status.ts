@@ -12,7 +12,7 @@ import { providerSupports, type ModelProvider } from './providers/registry';
 import { apiKeySecretNameFor } from './provider-credentials';
 import { featureRoute } from './feature-routing';
 import type { FeatureId } from '../types/features';
-import { DEFAULT_OPENAI_BASE_URL } from './providers/openai/config';
+import { DEFAULT_OPENAI_BASE_URL, isOpenAIHostedEndpoint } from './providers/openai/config';
 
 export type ProviderConnection = 'connected' | 'needs-key' | 'unreachable' | 'unknown';
 export type FeatureStatus = 'ok' | 'off' | 'unsupported' | 'unconfigured';
@@ -34,7 +34,7 @@ export function providerConnection(plugin: ObsidianGemini, p: ModelProvider): Pr
 	}
 	if (p === 'openai') {
 		const settings = plugin.settings;
-		if (settings.openaiBaseUrl && settings.openaiBaseUrl !== DEFAULT_OPENAI_BASE_URL) {
+		if (!isOpenAIHostedEndpoint(settings.openaiBaseUrl || DEFAULT_OPENAI_BASE_URL)) {
 			// A custom (e.g. local) endpoint may not need a key; a missing key
 			// there isn't evidence of a misconfigured provider.
 			return apiKeySecretNameFor(settings, p) ? 'connected' : 'unknown';
@@ -43,6 +43,27 @@ export function providerConnection(plugin: ObsidianGemini, p: ModelProvider): Pr
 	}
 	// gemini, anthropic
 	return apiKeySecretNameFor(plugin.settings, p) ? 'connected' : 'needs-key';
+}
+
+/**
+ * Whether a provider's model-list request would go out without the key it
+ * requires. Unlike `providerConnection`, which checks only that a secret
+ * name is saved, this reads the resolved key — the same value the models
+ * services send — so a saved name pointing at a missing or empty secret
+ * still counts as missing. Ollama and custom OpenAI-compatible endpoints
+ * need no key, so they never report a missing one.
+ */
+export function providerMissingKey(plugin: ObsidianGemini, p: ModelProvider): boolean {
+	switch (p) {
+		case 'gemini':
+			return !plugin.apiKey;
+		case 'openai':
+			return !plugin.openaiApiKey && isOpenAIHostedEndpoint(plugin.settings.openaiBaseUrl || DEFAULT_OPENAI_BASE_URL);
+		case 'anthropic':
+			return !plugin.anthropicApiKey;
+		case 'ollama':
+			return false;
+	}
 }
 
 /**

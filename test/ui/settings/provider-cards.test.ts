@@ -64,6 +64,16 @@ describe('provider card model-count probe', () => {
 		expect(modelCountCache.get('openai')).toEqual({ total: 0, cloud: 0 });
 	});
 
+	it('treats a saved secret name that resolves to no key as missing', () => {
+		const { ctx, getModels } = buildCtx({ openaiApiKeySecretName: 'openai-key' });
+		(ctx.plugin as { openaiApiKey: string }).openaiApiKey = '';
+
+		const page = providerCardPage(ctx, cardSpec('openai'));
+
+		expect(getModels('openai')).not.toHaveBeenCalled();
+		expect(modelsRow(page).desc).toBe(en['settings.providers.statusNeedsKey'].message);
+	});
+
 	it('still probes a keyless OpenAI-compatible custom endpoint', () => {
 		const { ctx, getModels } = buildCtx({ openaiBaseUrl: 'http://localhost:1234/v1' });
 

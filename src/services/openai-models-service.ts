@@ -1,7 +1,7 @@
 import { requestUrl } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { GeminiModel, ModelRole } from '../models';
-import { DEFAULT_OPENAI_BASE_URL } from '../api/providers/openai/config';
+import { DEFAULT_OPENAI_BASE_URL, isOpenAIHostedEndpoint } from '../api/providers/openai/config';
 import { CachedModelCatalog, joinBaseUrl, type CatalogEndpoint } from './remote-model-catalog';
 
 interface OpenAIModelMetadata {
@@ -72,18 +72,6 @@ interface OpenAIModelListEntry {
 
 interface OpenAIModelListResponse {
 	data?: OpenAIModelListEntry[];
-}
-
-/** Whether `baseUrl` points at the real OpenAI API rather than a compatible server. */
-function isOpenAIHostedEndpoint(baseUrl: string): boolean {
-	try {
-		return new URL(baseUrl).hostname === 'api.openai.com';
-	} catch {
-		// Unparseable base URL — treat as a compatible server rather than
-		// substring-matching (a host like `api.openai.com.evil.example` must
-		// never be classified as the official endpoint).
-		return false;
-	}
 }
 
 interface OpenAIEndpoint extends CatalogEndpoint {
