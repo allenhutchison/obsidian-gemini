@@ -387,6 +387,11 @@ export const en = {
 		message: 'Enter a project name.',
 		context: 'Inline error in the new-project dialog when the name field is empty.',
 	},
+	'projectName.errorReserved': {
+		message: "That name is reserved on Windows (like CON, NUL or COM1) and can't be used as a file name.",
+		context:
+			'Inline error in the new-project dialog when the name is a Windows reserved device name. Keep CON, NUL and COM1 untranslated.',
+	},
 	'projectName.errorInvalidChars': {
 		message: 'Project names can\'t start with a dot or contain any of: \\ / : * ? " < > | # ^ [ ]',
 		context:

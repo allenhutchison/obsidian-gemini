@@ -57,6 +57,14 @@ describe('projectNameError', () => {
 	it.each(['a/b', 'a\\b', 'a:b', 'say "hi"', 'x#y', 'x[y]', 'a|b', '.hidden'])('rejects %j', (name) => {
 		expect(projectNameError(name)).toBe('projectName.errorInvalidChars');
 	});
+
+	it.each(['CON', 'nul', 'Com1', 'LPT9', 'aux.notes', 'PRN .x'])('rejects the Windows reserved name %j', (name) => {
+		expect(projectNameError(name)).toBe('projectName.errorReserved');
+	});
+
+	it.each(['Console', 'COM10', 'my con', 'Null'])('accepts %j, which only resembles a reserved name', (name) => {
+		expect(projectNameError(name)).toBeNull();
+	});
 });
 
 describe('ProjectNameModal', () => {

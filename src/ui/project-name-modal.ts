@@ -9,12 +9,20 @@ import { t, type TranslationKey } from '../i18n';
  */
 const INVALID_NAME_CHARS = /[\\/:*?"<>|#^[\]]/;
 
+/**
+ * Windows device names, which can't be a file's basename even with an
+ * extension: Windows reads everything before the first dot, so `CON.md` and
+ * `CON.notes.md` are both refused.
+ */
+const WINDOWS_RESERVED_NAME = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
+
 /** Why `name` can't be used as a project name, or `null` when it can. */
 export function projectNameError(name: string): TranslationKey | null {
 	const trimmed = name.trim();
 	if (!trimmed) return 'projectName.errorEmpty';
 	if (INVALID_NAME_CHARS.test(trimmed)) return 'projectName.errorInvalidChars';
 	if (trimmed.startsWith('.')) return 'projectName.errorInvalidChars';
+	if (WINDOWS_RESERVED_NAME.test(trimmed.split('.')[0].trimEnd())) return 'projectName.errorReserved';
 	return null;
 }
 
