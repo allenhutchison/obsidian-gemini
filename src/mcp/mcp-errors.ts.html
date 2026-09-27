@@ -3,15 +3,15 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for src/ui/settings/writer-types.ts</title>
+    <title>Code coverage report for src/mcp/mcp-errors.ts</title>
     <meta charset="utf-8" />
-    <link rel="stylesheet" href="../../../prettify.css" />
-    <link rel="stylesheet" href="../../../base.css" />
-    <link rel="shortcut icon" type="image/x-icon" href="../../../favicon.png" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style type='text/css'>
         .coverage-summary .sorter {
-            background-image: url(../../../sort-arrow-sprite.png);
+            background-image: url(../../sort-arrow-sprite.png);
         }
     </style>
 </head>
@@ -19,34 +19,34 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../../index.html">All files</a> / <a href="index.html">src/ui/settings</a> writer-types.ts</h1>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/mcp</a> mcp-errors.ts</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>6/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>8/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>5/5</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -88,10 +88,7 @@
 <a name='L23'></a><a href='#L23'>23</a>
 <a name='L24'></a><a href='#L24'>24</a>
 <a name='L25'></a><a href='#L25'>25</a>
-<a name='L26'></a><a href='#L26'>26</a>
-<a name='L27'></a><a href='#L27'>27</a>
-<a name='L28'></a><a href='#L28'>28</a>
-<a name='L29'></a><a href='#L29'>29</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L26'></a><a href='#L26'>26</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -104,49 +101,43 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
- * `SettingWriter` — published on day one (settings-redesign design doc §5.2),
- * before `context.ts`/`paths.ts` have any other content, so WP3's
- * `page-tool-permissions.ts` (`TOOL_POLICY_WRITERS`) and `page-vault-index.ts`
- * (`RAG_WRITERS`) can compile their contributions without depending on the
- * rest of the settings-UI package.
- *
- * Leaf module: imports only the `ObsidianGemini` plugin-surface interface.
- */
-&nbsp;
-import type { ObsidianGemini } from '../../types/plugin';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { t } from '../i18n';
 &nbsp;
 /**
- * A write handler for a dotted settings path that needs more than the plain
- * assignment `writeSettingPath` performs — validation, side effects,
- * confirmation modals, or a non-scalar shape (`ragIndexing.excludeFolders`)
- * that a generic assignment would corrupt.
- *
- * Registered in `src/ui/settings/paths.ts#SETTING_WRITERS`, keyed by an exact
- * dotted path or a pattern with a single `*` wildcard segment (e.g.
- * `features.*.provider`). See the settings-redesign design doc §5.2 for the
- * longest-prefix matching rule.
- *
- * `needsUpdate: true` tells the setting tab to call `update()` (the
- * definitions tree's shape or a displayed value changed); `false` means
- * `refreshDomState()` is enough.
+ * The MCP SDK's `parseErrorResponse` (client/auth.js) wraps any OAuth endpoint
+ * reply it cannot parse as `HTTP &lt;status&gt;: Invalid OAuth error response: &lt;JSON
+ * parse error&gt;. Raw body: &lt;body&gt;`. When the body is an HTML page, the reply
+ * most likely came from a proxy or firewall in front of the OAuth server, not
+ * from the server itself (#1597 was a firewall rejecting the loopback redirect
+ * URI). The raw message ("SyntaxError: Unexpected token '&lt;'") reads like a
+ * plugin bug and sent that user's diagnosis in the wrong direction, so this
+ * case gets a plain-language explanation.
  */
-export type SettingWriter = (plugin: ObsidianGemini, key: string, value: unknown) =&gt; Promise&lt;{ needsUpdate: boolean }&gt;;
+const OAUTH_HTML_RESPONSE =
+	/^(?:HTTP (\d{3}): )?Invalid OAuth error response:[\s\S]*?Raw body:\s*&lt;(?:!doctype|html|head|body|!--)/i;
+&nbsp;
+/**
+ * Explain an MCP connection error in terms a user can act on, or return
+ * `null` when there is nothing better to say than the caller's own fallback.
+ */
+export function explainMCPConnectionError(error: unknown): string | null {
+	const message = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
+	const match = OAUTH_HTML_RESPONSE.exec(message);
+	if (!match) return null;
+	return t('mcpServer.oauthHtmlResponse', { status: match[1] ?? '?' });
+}
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -156,14 +147,14 @@ export type SettingWriter = (plugin: ObsidianGemini, key: string, value: unknown
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
                 at 2026-09-27T18:42:38.297Z
             </div>
-        <script src="../../../prettify.js"></script>
+        <script src="../../prettify.js"></script>
         <script>
             window.onload = function () {
                 prettyPrint();
             };
         </script>
-        <script src="../../../sorter.js"></script>
-        <script src="../../../block-navigation.js"></script>
+        <script src="../../sorter.js"></script>
+        <script src="../../block-navigation.js"></script>
     </body>
 </html>
     
