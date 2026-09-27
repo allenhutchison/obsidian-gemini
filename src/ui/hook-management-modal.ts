@@ -365,7 +365,6 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 
 		this.addSharedAdvancedFields(advDetails, {
 			keyPrefix: 'hooks',
-			modelPlaceholder: 'gemini-2.5-flash-lite',
 			getModel: () => this.form.model,
 			setModel: (v) => {
 				this.form.model = v;

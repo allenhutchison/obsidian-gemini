@@ -32,7 +32,7 @@ export interface ScheduledTask {
 	 */
 	outputPath: string;
 	/**
-	 * Model override for this task (e.g. 'gemini-2.0-flash').
+	 * Model id override for this task.
 	 * Defaults to the plugin's chat model when omitted.
 	 */
 	model?: string;

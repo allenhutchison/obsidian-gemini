@@ -105,6 +105,9 @@ vi.mock('obsidian', async () => {
 });
 
 let settingRegistry: any[] = [];
+
+/** Settings slice read by the model-override placeholder (the resolved chat model). */
+const CHAT_SETTINGS = { features: { chat: { provider: 'gemini', model: 'current-chat-model' } } };
 const registerSettings = () => {
 	settingRegistry = [];
 };
@@ -120,7 +123,7 @@ describe('HookManagementModal advanced section', () => {
 	beforeEach(() => {
 		modal = new HookManagementModal(
 			{} as any,
-			{ agentEventBus: null, logger: { error: vi.fn(), log: vi.fn() } } as any
+			{ agentEventBus: null, logger: { error: vi.fn(), log: vi.fn() }, settings: CHAT_SETTINGS } as any
 		);
 		registerSettings();
 		(modal as any).openCreate();
@@ -157,6 +160,12 @@ describe('HookManagementModal advanced section', () => {
 		component.changeCb(' 7 ');
 		expect((modal as any).form.maxIterations).toBe('7');
 	});
+
+	it("uses the plugin's current chat model as the model-override placeholder", () => {
+		const modelSetting = settingRegistry.find((s) => s.nameEl?.textContent.includes('Model override'));
+		const component = modelSetting.components.find((c: any) => c.changeCb);
+		expect(component.setPlaceholder).toHaveBeenCalledWith('current-chat-model');
+	});
 });
 
 describe('SchedulerManagementModal advanced section', () => {
@@ -165,7 +174,7 @@ describe('SchedulerManagementModal advanced section', () => {
 	beforeEach(() => {
 		modal = new SchedulerManagementModal(
 			{} as any,
-			{ agentEventBus: null, logger: { error: vi.fn(), log: vi.fn() } } as any
+			{ agentEventBus: null, logger: { error: vi.fn(), log: vi.fn() }, settings: CHAT_SETTINGS } as any
 		);
 		settingRegistry = [];
 		(modal as any).openCreate();
@@ -188,8 +197,14 @@ describe('SchedulerManagementModal advanced section', () => {
 	it('round-trips form values through the shared accessors', () => {
 		const modelSetting = settingRegistry.find((s) => s.nameEl?.textContent.includes('Model override'));
 		const component = modelSetting.components.find((c: any) => c.changeCb);
-		component.changeCb(' gemini-2.0-flash ');
-		expect((modal as any).form.model).toBe('gemini-2.0-flash');
+		component.changeCb(' gemini-flash-latest ');
+		expect((modal as any).form.model).toBe('gemini-flash-latest');
+	});
+
+	it("uses the plugin's current chat model as the model-override placeholder", () => {
+		const modelSetting = settingRegistry.find((s) => s.nameEl?.textContent.includes('Model override'));
+		const component = modelSetting.components.find((c: any) => c.changeCb);
+		expect(component.setPlaceholder).toHaveBeenCalledWith('current-chat-model');
 	});
 });
 
@@ -201,7 +216,7 @@ describe('parseMaxIterationsField (shared coercion)', () => {
 	beforeEach(() => {
 		modal = new HookManagementModal(
 			{} as any,
-			{ agentEventBus: null, logger: { error: vi.fn(), log: vi.fn() } } as any
+			{ agentEventBus: null, logger: { error: vi.fn(), log: vi.fn() }, settings: CHAT_SETTINGS } as any
 		);
 	});
 

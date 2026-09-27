@@ -1090,8 +1090,8 @@ export const en = {
 		context: 'Form label for the per-task model override field.',
 	},
 	'scheduler.modelOverrideDesc': {
-		message: 'Override the plugin chat model for this task (e.g. gemini-2.0-flash). Leave blank to use the default.',
-		context: 'Description of the model override field. "gemini-2.0-flash" is a literal model id; keep it.',
+		message: 'Override the plugin chat model for this task. Leave blank to use the default.',
+		context: 'Description of the model override field.',
 	},
 	'scheduler.outputPathSetting': { message: 'Output path', context: 'Form label for the run output path field.' },
 	'scheduler.outputPathDesc': {

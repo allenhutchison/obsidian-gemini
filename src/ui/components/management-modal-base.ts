@@ -2,6 +2,7 @@ import { App, Modal, Notice, Setting, setIcon } from 'obsidian';
 import type { ObsidianGemini } from '../../types/plugin';
 import { ToolPolicyEditor } from './tool-policy-editor';
 import { t } from '../../i18n';
+import { resolveFeatureModel } from '../../models';
 import { parseMaxIterations } from '../../services/feature-definition';
 import { DEFAULT_HEADLESS_MAX_ITERATIONS } from '../../agent/agent-loop';
 
@@ -36,8 +37,6 @@ export type ManagementView = 'list' | 'create' | 'edit';
 export interface SharedAdvancedFieldOpts {
 	/** i18n key prefix for the entity, e.g. `'hooks'` or `'scheduler'`. */
 	keyPrefix: 'hooks' | 'scheduler';
-	/** Example model id shown verbatim in the placeholder. */
-	modelPlaceholder: string;
 	getModel(): string;
 	setModel(value: string): void;
 	getOutputPath(): string;
@@ -308,9 +307,9 @@ export abstract class ManagementModalBase<TEntity, TEntityState> extends Modal {
 			.setDesc(t(`${opts.keyPrefix}.modelOverrideDesc`))
 			.addText((text) =>
 				text
-					// Placeholder carries an example model id, shown verbatim (the
-					// per-entity values are passed in by the subclasses).
-					.setPlaceholder(opts.modelPlaceholder)
+					// Placeholder is the model a blank field falls back to — the
+					// plugin's current chat model — so it never names a retired id.
+					.setPlaceholder(resolveFeatureModel(this.plugin.settings, 'chat'))
 					.setValue(opts.getModel())
 					.onChange((v) => {
 						opts.setModel(v.trim());

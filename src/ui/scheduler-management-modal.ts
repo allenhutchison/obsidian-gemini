@@ -304,7 +304,6 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 
 		this.addSharedAdvancedFields(advDetails, {
 			keyPrefix: 'scheduler',
-			modelPlaceholder: 'gemini-2.0-flash',
 			getModel: () => this.form.model,
 			setModel: (v) => {
 				this.form.model = v;

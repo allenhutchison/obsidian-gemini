@@ -56,7 +56,7 @@ export enum SessionType {
  * Model configuration for a session
  */
 export interface SessionModelConfig {
-	/** Model to use (e.g., 'gemini-2.0-flash') */
+	/** Model id to use; defaults to the plugin's chat model when omitted. */
 	model?: string;
 
 	/** Path to custom prompt template */
