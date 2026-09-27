@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">89.02% </span>
+                <span class="strong">89.34% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>146/164</span>
+                <span class='fraction'>151/169</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">90.13% </span>
+                <span class="strong">90.38% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>137/152</span>
+                <span class='fraction'>141/156</span>
             </div>
         
             
@@ -473,7 +473,14 @@
 <a name='L408'></a><a href='#L408'>408</a>
 <a name='L409'></a><a href='#L409'>409</a>
 <a name='L410'></a><a href='#L410'>410</a>
-<a name='L411'></a><a href='#L411'>411</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L411'></a><a href='#L411'>411</a>
+<a name='L412'></a><a href='#L412'>412</a>
+<a name='L413'></a><a href='#L413'>413</a>
+<a name='L414'></a><a href='#L414'>414</a>
+<a name='L415'></a><a href='#L415'>415</a>
+<a name='L416'></a><a href='#L416'>416</a>
+<a name='L417'></a><a href='#L417'>417</a>
+<a name='L418'></a><a href='#L418'>418</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -494,11 +501,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">74x</span>
-<span class="cline-any cline-yes">74x</span>
+<span class="cline-any cline-yes">75x</span>
+<span class="cline-any cline-yes">75x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">74x</span>
+<span class="cline-any cline-yes">75x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -599,11 +606,16 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -612,9 +624,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1007,9 +1021,16 @@ export class ProjectManager {
 &nbsp;
 	/**
 	 * Create a new project file with template frontmatter and instructions.
+	 * If `&lt;name&gt;.md` already exists in the folder, the next free `&lt;name&gt; N.md`
+	 * is used instead, and the project's `name` follows the file name.
 	 */
 	async createProject(folderPath: string, name: string): Promise&lt;TFile&gt; {
-		const filePath = normalizePath(`${folderPath}/${name}.md`);
+		const vault = this.plugin.app.vault;
+		let filePath = normalizePath(`${folderPath}/${name}.md`);
+		for (let n = 1; vault.getAbstractFileByPath(filePath); n++) {
+			filePath = normalizePath(`${folderPath}/${name} ${n}.md`);
+		}
+		name = filePath.slice(filePath.lastIndexOf('/') + 1, -'.md'.length);
 &nbsp;
 		const content = `---
 tags:
@@ -1300,7 +1321,7 @@ Add your project instructions here. This text will be injected into the agent's 
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-09-27T20:36:36.742Z
+                at 2026-09-27T22:02:23.876Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
