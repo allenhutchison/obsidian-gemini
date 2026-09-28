@@ -138,8 +138,8 @@ describe('GetWorkspaceStateTool', () => {
 		const result = await tool.execute({}, contextWithWorkspace);
 
 		expect(result.success).toBe(true);
-		expect(result.data.openFiles).toEqual([]);
-		expect(result.data.project).toBeNull();
+		expect((result.data as any).openFiles).toEqual([]);
+		expect((result.data as any).project).toBeNull();
 	});
 
 	it('should return empty openFiles when no leaves are open', async () => {
@@ -163,8 +163,8 @@ describe('GetWorkspaceStateTool', () => {
 		const result = await tool.execute({}, contextWithWorkspace);
 
 		expect(result.success).toBe(true);
-		expect(result.data.openFiles).toEqual([]);
-		expect(result.data.project).toBeNull();
+		expect((result.data as any).openFiles).toEqual([]);
+		expect((result.data as any).project).toBeNull();
 	});
 
 	describe('cached selection fallback', () => {
@@ -223,8 +223,8 @@ describe('GetWorkspaceStateTool', () => {
 			const result = await tool.execute({}, context);
 
 			expect(result.success).toBe(true);
-			expect(result.data.openFiles).toHaveLength(1);
-			expect(result.data.openFiles[0].selection).toBe('remembered foo');
+			expect((result.data as any).openFiles).toHaveLength(1);
+			expect((result.data as any).openFiles[0].selection).toBe('remembered foo');
 		});
 
 		it('ignores cached selection when path does not match', async () => {
@@ -235,7 +235,7 @@ describe('GetWorkspaceStateTool', () => {
 
 			const result = await tool.execute({}, context);
 
-			expect(result.data.openFiles[0].selection).toBeNull();
+			expect((result.data as any).openFiles[0].selection).toBeNull();
 		});
 
 		it('prefers live selection over cached', async () => {
@@ -246,7 +246,7 @@ describe('GetWorkspaceStateTool', () => {
 
 			const result = await tool.execute({}, context);
 
-			expect(result.data.openFiles[0].selection).toBe('live text');
+			expect((result.data as any).openFiles[0].selection).toBe('live text');
 		});
 
 		it('truncates long cached selections', async () => {
@@ -258,7 +258,7 @@ describe('GetWorkspaceStateTool', () => {
 
 			const result = await tool.execute({}, context);
 
-			const selection: string = result.data.openFiles[0].selection;
+			const selection: string = (result.data as any).openFiles[0].selection;
 			expect(selection.endsWith('...')).toBe(true);
 			expect(selection.length).toBe(1003); // 1000 chars + '...'
 		});
@@ -271,7 +271,7 @@ describe('GetWorkspaceStateTool', () => {
 
 			const result = await tool.execute({}, context);
 
-			expect(result.data.openFiles[0].selection).toBeNull();
+			expect((result.data as any).openFiles[0].selection).toBeNull();
 		});
 	});
 });

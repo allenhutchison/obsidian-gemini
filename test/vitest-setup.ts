@@ -11,11 +11,9 @@ if (typeof HTMLElement !== 'undefined') {
 	const proto = HTMLElement.prototype;
 	if (typeof proto.hide !== 'function') {
 		proto.hide = function (this: HTMLElement): void {
-			// eslint-disable-next-line obsidianmd/no-static-styles-assignment -- this IS the polyfill of Obsidian's hide(), which sets inline display
 			this.style.display = 'none';
 		};
 		proto.show = function (this: HTMLElement): void {
-			// eslint-disable-next-line obsidianmd/no-static-styles-assignment -- polyfill of Obsidian's show()
 			this.style.display = '';
 		};
 		proto.toggle = function (this: HTMLElement, show: boolean): void {
@@ -43,6 +41,27 @@ if (typeof window !== 'undefined') {
 	}
 	if (typeof win.activeWindow === 'undefined') {
 		win.activeWindow = window;
+	}
+}
+
+// Obsidian also installs global `createEl` / `createDiv` helpers that build a
+// detached element. Production code uses them for scratch nodes (a rasterizing
+// canvas, an off-DOM render target); give jsdom the minimal equivalents.
+if (typeof document !== 'undefined') {
+	const g = window as unknown as {
+		createEl?: (tag: string, o?: { cls?: string; text?: string }) => HTMLElement;
+		createDiv?: (o?: { cls?: string; text?: string }) => HTMLElement;
+	};
+	if (typeof g.createEl === 'undefined') {
+		g.createEl = (tag, o) => {
+			const el = document.createElement(tag);
+			if (o?.cls) el.className = o.cls;
+			if (o?.text) el.textContent = o.text;
+			return el;
+		};
+	}
+	if (typeof g.createDiv === 'undefined') {
+		g.createDiv = (o) => g.createEl!('div', o);
 	}
 }
 

@@ -286,7 +286,7 @@ describe('DeepResearchTool', () => {
 			const result = await tool.execute({ topic: 'Test', outputFile: 'research-report' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.outputFile).toBe('research-report.md');
+			expect((result.data as any).outputFile).toBe('research-report.md');
 			expect(mockContext.session.context.contextFiles).toContain(mockFile);
 		});
 
@@ -371,8 +371,8 @@ describe('DeepResearchTool', () => {
 			);
 
 			expect(result.success).toBe(true);
-			expect(result.data.taskId).toBe('bg-task-1');
-			expect(result.data.output_file).toBe('reports/ai-ethics.md');
+			expect((result.data as any).taskId).toBe('bg-task-1');
+			expect((result.data as any).output_file).toBe('reports/ai-ethics.md');
 			// conductResearch is NOT called synchronously — it runs inside the submitted callback
 			expect(mockDeepResearch.conductResearch).not.toHaveBeenCalled();
 		});
@@ -391,7 +391,9 @@ describe('DeepResearchTool', () => {
 			const result = await tool.execute({ topic: 'Test Topic', background: true }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.output_file).toMatch(/^gemini-scribe\/Background-Tasks\/\d{4}-\d{2}-\d{2} Test Topic\.md$/);
+			expect((result.data as any).output_file).toMatch(
+				/^gemini-scribe\/Background-Tasks\/\d{4}-\d{2}-\d{2} Test Topic\.md$/
+			);
 		});
 
 		it('truncates long topic in the BackgroundTaskManager label', async () => {

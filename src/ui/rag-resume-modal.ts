@@ -70,9 +70,7 @@ export class RagResumeModal extends Modal {
 			.addButton((btn) =>
 				btn
 					.setButtonText(t('ragResume.startFreshButton'))
-					// setDestructive() (the recommended replacement) requires Obsidian 1.13.0, above the current minAppVersion 1.11.4; keep setWarning until the floor is raised (#1040).
-					// eslint-disable-next-line @typescript-eslint/no-deprecated -- setDestructive() needs Obsidian 1.13.0, above minAppVersion 1.11.4 (#1040)
-					.setWarning()
+					.setDestructive()
 					.onClick(() => {
 						this.close();
 						this.onChoice(false);

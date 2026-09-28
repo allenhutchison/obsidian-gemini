@@ -13,7 +13,7 @@ import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import type { App } from 'obsidian';
 
 /** Button specs captured from `new Setting(contentEl).addButton(...)`, in order. */
-const buttonSpecs: Array<{ text: string; warning: boolean; click?: () => void }> = [];
+const buttonSpecs: Array<{ text: string; destructive: boolean; click?: () => void }> = [];
 
 vi.mock('obsidian', async () => {
 	const original = await vi.importActual<any>('../../__mocks__/obsidian.js');
@@ -40,14 +40,14 @@ vi.mock('obsidian', async () => {
 
 	class Setting extends original.Setting {
 		addButton(cb: (b: any) => void) {
-			const spec = { text: '', warning: false, click: undefined as undefined | (() => void) };
+			const spec = { text: '', destructive: false, click: undefined as undefined | (() => void) };
 			const btn = {
 				setButtonText(text: string) {
 					spec.text = text;
 					return btn;
 				},
-				setWarning() {
-					spec.warning = true;
+				setDestructive() {
+					spec.destructive = true;
 					return btn;
 				},
 				setCta() {
@@ -200,8 +200,8 @@ describe('YoloConfirmationModal', () => {
 
 	it('offers exactly two choices, with the enabling one marked destructive', () => {
 		expect(buttonSpecs).toHaveLength(2);
-		expect(cancelButton().warning).toBe(false);
-		expect(enableButton().warning).toBe(true);
+		expect(cancelButton().destructive).toBe(false);
+		expect(enableButton().destructive).toBe(true);
 		expect(cancelButton().text).toBeTruthy();
 		expect(enableButton().text).toBeTruthy();
 	});

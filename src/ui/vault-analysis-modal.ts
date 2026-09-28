@@ -40,12 +40,9 @@ export class VaultAnalysisModal extends Modal {
 		const statusContainer = contentEl.createDiv({ cls: 'gemini-vault-analysis-status' });
 
 		this.spinnerEl = statusContainer.createDiv({ cls: 'gemini-vault-analysis-spinner' });
-		// eslint-disable-next-line @microsoft/sdl/no-inner-html -- static SVG literal, no user input
-		this.spinnerEl.innerHTML = `
-			<svg class="gemini-spinner" viewBox="0 0 50 50">
-				<circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
-			</svg>
-		`;
+		this.spinnerEl
+			.createSvg('svg', { cls: 'gemini-spinner', attr: { viewBox: '0 0 50 50' } })
+			.createSvg('circle', { cls: 'path', attr: { cx: 25, cy: 25, r: 20, fill: 'none', 'stroke-width': 5 } });
 
 		this.statusEl = statusContainer.createDiv({ cls: 'gemini-vault-analysis-status-text' });
 		this.statusEl.setText(t('vaultAnalysis.initializing'));

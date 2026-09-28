@@ -125,11 +125,11 @@ describe('SearchFileContentsTool', () => {
 		const result = await tool.execute({ query: 'test' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.filesWithMatches).toBe(2);
-		expect(result.data?.totalMatches).toBe(2);
-		expect(result.data?.results).toHaveLength(2);
-		expect(result.data?.results[0].file).toBe('file1.md');
-		expect(result.data?.results[1].file).toBe('file3.md');
+		expect((result.data as any)?.filesWithMatches).toBe(2);
+		expect((result.data as any)?.totalMatches).toBe(2);
+		expect((result.data as any)?.results).toHaveLength(2);
+		expect((result.data as any)?.results[0].file).toBe('file1.md');
+		expect((result.data as any)?.results[1].file).toBe('file3.md');
 	});
 
 	it('should be case-insensitive by default', async () => {
@@ -141,8 +141,8 @@ describe('SearchFileContentsTool', () => {
 		const result = await tool.execute({ query: 'test' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.filesWithMatches).toBe(1);
-		expect(result.data?.totalMatches).toBe(1);
+		expect((result.data as any)?.filesWithMatches).toBe(1);
+		expect((result.data as any)?.totalMatches).toBe(1);
 	});
 
 	it('should support case-sensitive search', async () => {
@@ -154,8 +154,8 @@ describe('SearchFileContentsTool', () => {
 		const result = await tool.execute({ query: 'test', caseSensitive: true }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.filesWithMatches).toBe(1);
-		expect(result.data?.totalMatches).toBe(1);
+		expect((result.data as any)?.filesWithMatches).toBe(1);
+		expect((result.data as any)?.totalMatches).toBe(1);
 	});
 
 	it('should support regex patterns', async () => {
@@ -167,8 +167,8 @@ describe('SearchFileContentsTool', () => {
 		const result = await tool.execute({ query: 'Test \\d+', useRegex: true }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.filesWithMatches).toBe(1);
-		expect(result.data?.totalMatches).toBe(2);
+		expect((result.data as any)?.filesWithMatches).toBe(1);
+		expect((result.data as any)?.totalMatches).toBe(2);
 	});
 
 	it('should include context lines', async () => {
@@ -180,10 +180,10 @@ describe('SearchFileContentsTool', () => {
 		const result = await tool.execute({ query: 'match', contextLines: 2 }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.results[0].matches[0].contextBefore).toHaveLength(2);
-		expect(result.data?.results[0].matches[0].contextBefore).toEqual(['Line 1', 'Line 2']);
-		expect(result.data?.results[0].matches[0].contextAfter).toHaveLength(2);
-		expect(result.data?.results[0].matches[0].contextAfter).toEqual(['Line 4', 'Line 5']);
+		expect((result.data as any)?.results[0].matches[0].contextBefore).toHaveLength(2);
+		expect((result.data as any)?.results[0].matches[0].contextBefore).toEqual(['Line 1', 'Line 2']);
+		expect((result.data as any)?.results[0].matches[0].contextAfter).toHaveLength(2);
+		expect((result.data as any)?.results[0].matches[0].contextAfter).toEqual(['Line 4', 'Line 5']);
 	});
 
 	it('should respect limit parameter', async () => {
@@ -199,8 +199,8 @@ describe('SearchFileContentsTool', () => {
 		const result = await tool.execute({ query: 'search', limit: 5 }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.results.length).toBe(5);
-		expect(result.data?.truncated).toBe(true);
+		expect((result.data as any)?.results.length).toBe(5);
+		expect((result.data as any)?.truncated).toBe(true);
 	});
 
 	it('should return error for empty query', async () => {
@@ -231,8 +231,8 @@ describe('SearchFileContentsTool', () => {
 		const result = await tool.execute({ query: 'test' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.filesWithMatches).toBe(1);
-		expect(result.data?.results[0].file).toBe('file2.md');
+		expect((result.data as any)?.filesWithMatches).toBe(1);
+		expect((result.data as any)?.results[0].file).toBe('file2.md');
 	});
 
 	it('should return line numbers correctly', async () => {
@@ -244,8 +244,8 @@ describe('SearchFileContentsTool', () => {
 		const result = await tool.execute({ query: 'match', contextLines: 0 }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.results[0].matches[0].lineNumber).toBe(3);
-		expect(result.data?.results[0].matches[1].lineNumber).toBe(5);
+		expect((result.data as any)?.results[0].matches[0].lineNumber).toBe(3);
+		expect((result.data as any)?.results[0].matches[1].lineNumber).toBe(5);
 	});
 
 	// --- Gap coverage tests ---
@@ -262,7 +262,7 @@ describe('SearchFileContentsTool', () => {
 		const result = await tool.execute({ query: 'MATCH_HERE', contextLines: 10 }, mockContext);
 
 		expect(result.success).toBe(true);
-		const match = result.data?.results[0].matches[0];
+		const match = (result.data as any)?.results[0].matches[0];
 		// contextBefore should be capped at 5, not 10
 		expect(match.contextBefore).toHaveLength(5);
 		// contextAfter should also be capped at 5
@@ -280,10 +280,10 @@ describe('SearchFileContentsTool', () => {
 		const result = await tool.execute({ query: 'keyword', contextLines: 0 }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.results).toHaveLength(1);
+		expect((result.data as any)?.results).toHaveLength(1);
 		// Should be capped at 10 matches per file
-		expect(result.data?.results[0].matches).toHaveLength(10);
-		expect(result.data?.totalMatches).toBe(10);
+		expect((result.data as any)?.results[0].matches).toHaveLength(10);
+		expect((result.data as any)?.totalMatches).toBe(10);
 	});
 
 	it('should scope results to project root when set', async () => {
@@ -303,8 +303,8 @@ describe('SearchFileContentsTool', () => {
 		const result = await tool.execute({ query: 'important' }, contextWithProject);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.results).toHaveLength(1);
-		expect(result.data?.results[0].path).toBe('projects/myproj/todo.md');
+		expect((result.data as any)?.results).toHaveLength(1);
+		expect((result.data as any)?.results[0].path).toBe('projects/myproj/todo.md');
 	});
 
 	it('should handle context at file boundaries (first and last line)', async () => {
@@ -317,7 +317,7 @@ describe('SearchFileContentsTool', () => {
 		const result1 = await tool.execute({ query: 'match first', contextLines: 3 }, mockContext);
 
 		expect(result1.success).toBe(true);
-		const match1 = result1.data?.results[0].matches[0];
+		const match1 = (result1.data as any)?.results[0].matches[0];
 		// No lines before the first line
 		expect(match1.contextBefore).toHaveLength(0);
 		expect(match1.contextAfter).toHaveLength(3);
@@ -330,7 +330,7 @@ describe('SearchFileContentsTool', () => {
 		const result2 = await tool.execute({ query: 'match last', contextLines: 3 }, mockContext);
 
 		expect(result2.success).toBe(true);
-		const match2 = result2.data?.results[0].matches[0];
+		const match2 = (result2.data as any)?.results[0].matches[0];
 		expect(match2.contextBefore).toHaveLength(3);
 		// No lines after the last line
 		expect(match2.contextAfter).toHaveLength(0);

@@ -189,7 +189,7 @@ describe('Tool Integration Tests', () => {
 			expect(results).toHaveLength(3);
 			expect(results[0].success).toBe(true); // Search should succeed
 			expect(results[1].success).toBe(true); // Read returns success with exists: false
-			expect(results[1].data.exists).toBe(false);
+			expect((results[1].data as any).exists).toBe(false);
 			expect(results[2].success).toBe(true); // List should succeed
 		});
 	});

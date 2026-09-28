@@ -50,7 +50,7 @@ declare module './plugin' {
 	interface ObsidianGemini {
 		// Public service properties — assigned by LifecycleService
 		gfile: ScribeFile;
-		agentView: AgentView;
+		readonly agentView: AgentView | null;
 		history: GeminiHistory;
 		sessionHistory: SessionHistory;
 		promptManager: PromptManager;

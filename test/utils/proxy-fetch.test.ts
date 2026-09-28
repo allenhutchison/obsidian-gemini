@@ -2,6 +2,10 @@
 
 import { proxyFetch } from '../../src/utils/proxy-fetch';
 
+// The retry backoff uses Obsidian's window timers (`window.setTimeout`); the
+// node environment has no `window`, so alias it to the node timers.
+vi.stubGlobal('window', { setTimeout, clearTimeout });
+
 // Mock Obsidian's requestUrl
 const mockRequestUrl = vi.fn();
 

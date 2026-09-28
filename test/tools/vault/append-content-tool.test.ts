@@ -136,7 +136,7 @@ describe('AppendContentTool', () => {
 		const result = await tool.execute({ path: 'notes/foo.md', content: 'new text' }, makeContext(plugin));
 
 		expect(result.success).toBe(true);
-		expect(result.data.action).toBe('appended');
+		expect((result.data as any).action).toBe('appended');
 		expect(plugin.app.vault.append).toHaveBeenCalledWith(file, '\nnew text');
 	});
 
@@ -210,8 +210,8 @@ describe('AppendContentTool', () => {
 		);
 
 		expect(result.success).toBe(true);
-		expect(result.data.action).toBe('replaced');
-		expect(result.data.userEdited).toBe(false);
+		expect((result.data as any).action).toBe('replaced');
+		expect((result.data as any).userEdited).toBe(false);
 		expect(plugin.app.vault.modify).toHaveBeenCalledWith(file, 'replaced');
 		expect(plugin.app.vault.append).not.toHaveBeenCalled();
 	});
@@ -226,7 +226,7 @@ describe('AppendContentTool', () => {
 			makeContext(plugin)
 		);
 
-		expect(result.data.userEdited).toBe(true);
+		expect((result.data as any).userEdited).toBe(true);
 	});
 
 	// ── System folder exclusion ──────────────────────────────────────────

@@ -249,7 +249,7 @@ describe('GoogleMapsTool', () => {
 			const result = await tool.execute({ query: 'coffee in SF' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.citations).toEqual([
+			expect((result.data as any).citations).toEqual([
 				{
 					url: 'https://maps.google.com/?cid=1',
 					title: 'Blue Bottle Coffee',
@@ -290,7 +290,7 @@ describe('GoogleMapsTool', () => {
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.citations[0].title).toBe('https://maps.google.com/?cid=no-title');
+			expect((result.data as any).citations[0].title).toBe('https://maps.google.com/?cid=no-title');
 		});
 
 		it('should use empty string for snippet when chunk.maps.text is undefined', async () => {
@@ -320,7 +320,7 @@ describe('GoogleMapsTool', () => {
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.citations[0].snippet).toBe('');
+			expect((result.data as any).citations[0].snippet).toBe('');
 		});
 
 		it('should filter out chunks without a maps URI', async () => {
@@ -346,8 +346,8 @@ describe('GoogleMapsTool', () => {
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.citations).toHaveLength(1);
-			expect(result.data.citations[0].url).toBe('https://maps.google.com/?cid=valid');
+			expect((result.data as any).citations).toHaveLength(1);
+			expect((result.data as any).citations[0].url).toBe('https://maps.google.com/?cid=valid');
 		});
 	});
 
@@ -384,8 +384,10 @@ describe('GoogleMapsTool', () => {
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.answer).toBe('Hello [1](https://maps.google.com/a) world [2](https://maps.google.com/b)');
-			expect(result.data.originalAnswer).toBe('Hello world');
+			expect((result.data as any).answer).toBe(
+				'Hello [1](https://maps.google.com/a) world [2](https://maps.google.com/b)'
+			);
+			expect((result.data as any).originalAnswer).toBe('Hello world');
 		});
 
 		it('should skip supports with missing endIndex', async () => {
@@ -417,7 +419,7 @@ describe('GoogleMapsTool', () => {
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.answer).toBe('Some text here');
+			expect((result.data as any).answer).toBe('Some text here');
 		});
 
 		it('should filter out citation links when a chunk has no URI', async () => {
@@ -448,7 +450,7 @@ describe('GoogleMapsTool', () => {
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.answer).toBe('Hello world [1](https://maps.google.com/a)');
+			expect((result.data as any).answer).toBe('Hello world [1](https://maps.google.com/a)');
 		});
 	});
 
@@ -464,8 +466,8 @@ describe('GoogleMapsTool', () => {
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.originalAnswer).toBe('Fallback text from result.text');
-			expect(result.data.answer).toBe('Fallback text from result.text');
+			expect((result.data as any).originalAnswer).toBe('Fallback text from result.text');
+			expect((result.data as any).answer).toBe('Fallback text from result.text');
 		});
 	});
 

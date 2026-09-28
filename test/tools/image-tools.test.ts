@@ -189,8 +189,8 @@ describe('ImageTools', () => {
 			);
 
 			expect(result.success).toBe(true);
-			expect(result.data.taskId).toBe('bg-task-1');
-			expect(result.data.output_path).toBe('attachments/cat.png');
+			expect((result.data as any).taskId).toBe('bg-task-1');
+			expect((result.data as any).output_path).toBe('attachments/cat.png');
 			expect(mockImageGeneration.generateImage).not.toHaveBeenCalled();
 		});
 
@@ -221,7 +221,7 @@ describe('ImageTools', () => {
 			const result = await tool.execute({ prompt: 'a dog', background: true }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.output_path).toBe('gemini-scribe/Background-Tasks/generated-a-dog-12345.png');
+			expect((result.data as any).output_path).toBe('gemini-scribe/Background-Tasks/generated-a-dog-12345.png');
 			expect(mockImageGeneration.resolveOutputPath).toHaveBeenCalledWith('a dog', undefined);
 		});
 
@@ -236,7 +236,7 @@ describe('ImageTools', () => {
 			);
 
 			expect(result.success).toBe(true);
-			expect(result.data.output_path).toBe('pictures/dog.png');
+			expect((result.data as any).output_path).toBe('pictures/dog.png');
 			expect(mockImageGeneration.resolveOutputPath).toHaveBeenCalledWith('a dog', 'pictures/dog.jpg');
 		});
 

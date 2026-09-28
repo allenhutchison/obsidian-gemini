@@ -66,9 +66,9 @@ describe('Skill Tools', () => {
 			const result = await tool.execute({ name: 'code-review' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.skillName).toBe('code-review');
-			expect(result.data.content).toContain('Code Review Skill');
-			expect(result.data.availableResources).toEqual(['references/REFERENCE.md']);
+			expect((result.data as any).skillName).toBe('code-review');
+			expect((result.data as any).content).toContain('Code Review Skill');
+			expect((result.data as any).availableResources).toEqual(['references/REFERENCE.md']);
 			expect(mockSkillManager.loadSkill).toHaveBeenCalledWith('code-review');
 		});
 
@@ -78,9 +78,9 @@ describe('Skill Tools', () => {
 			const result = await tool.execute({ name: 'code-review', resource_path: 'references/REFERENCE.md' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.skillName).toBe('code-review');
-			expect(result.data.resourcePath).toBe('references/REFERENCE.md');
-			expect(result.data.content).toBe('Reference content here');
+			expect((result.data as any).skillName).toBe('code-review');
+			expect((result.data as any).resourcePath).toBe('references/REFERENCE.md');
+			expect((result.data as any).content).toBe('Reference content here');
 			expect(mockSkillManager.readSkillResource).toHaveBeenCalledWith('code-review', 'references/REFERENCE.md');
 		});
 
@@ -92,7 +92,7 @@ describe('Skill Tools', () => {
 
 			expect(result.success).toBe(false);
 			expect(result.error).toContain('not found');
-			expect(result.data.availableSkills).toContain('code-review');
+			expect((result.data as any).availableSkills).toContain('code-review');
 		});
 
 		it('should return error when resource is not found', async () => {
@@ -103,7 +103,7 @@ describe('Skill Tools', () => {
 
 			expect(result.success).toBe(false);
 			expect(result.error).toContain('not found');
-			expect(result.data.availableResources).toEqual(['assets/template.hbs']);
+			expect((result.data as any).availableResources).toEqual(['assets/template.hbs']);
 		});
 
 		it('should return error when name is missing', async () => {
@@ -132,7 +132,7 @@ describe('Skill Tools', () => {
 			const result = await tool.execute({ name: 'minimal-skill' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.availableResources).toBeUndefined();
+			expect((result.data as any).availableResources).toBeUndefined();
 		});
 
 		it('should generate progress description', () => {
@@ -176,8 +176,8 @@ describe('Skill Tools', () => {
 			);
 
 			expect(result.success).toBe(true);
-			expect(result.data.name).toBe('my-skill');
-			expect(result.data.path).toContain('SKILL.md');
+			expect((result.data as any).name).toBe('my-skill');
+			expect((result.data as any).path).toContain('SKILL.md');
 			expect(mockSkillManager.createSkill).toHaveBeenCalledWith(
 				'my-skill',
 				'A test skill',
@@ -317,9 +317,9 @@ describe('Skill Tools', () => {
 			);
 
 			expect(result.success).toBe(true);
-			expect(result.data.name).toBe('my-skill');
-			expect(result.data.path).toContain('SKILL.md');
-			expect(result.data.updatedFields).toEqual(['content']);
+			expect((result.data as any).name).toBe('my-skill');
+			expect((result.data as any).path).toContain('SKILL.md');
+			expect((result.data as any).updatedFields).toEqual(['content']);
 			expect(mockSkillManager.updateSkill).toHaveBeenCalledWith(
 				'my-skill',
 				undefined,
@@ -339,7 +339,7 @@ describe('Skill Tools', () => {
 			);
 
 			expect(result.success).toBe(true);
-			expect(result.data.updatedFields).toEqual(['description']);
+			expect((result.data as any).updatedFields).toEqual(['description']);
 			expect(mockSkillManager.updateSkill).toHaveBeenCalledWith('my-skill', 'Updated description', undefined);
 		});
 
@@ -356,7 +356,7 @@ describe('Skill Tools', () => {
 			);
 
 			expect(result.success).toBe(true);
-			expect(result.data.updatedFields).toEqual(['description', 'content']);
+			expect((result.data as any).updatedFields).toEqual(['description', 'content']);
 			expect(mockSkillManager.updateSkill).toHaveBeenCalledWith('my-skill', 'New desc', 'New content');
 		});
 

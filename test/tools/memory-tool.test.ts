@@ -209,8 +209,8 @@ describe('Memory Tools', () => {
 			const result = await tool.execute({}, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.exists).toBe(false);
-			expect(result.data.message).toContain('does not exist yet');
+			expect((result.data as any).exists).toBe(false);
+			expect((result.data as any).message).toContain('does not exist yet');
 		});
 
 		it('should return error if agents memory service is not available', async () => {

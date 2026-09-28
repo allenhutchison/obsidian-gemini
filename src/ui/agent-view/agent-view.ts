@@ -129,9 +129,10 @@ export class AgentView extends ItemView {
 	 *      pushes our children off-screen.
 	 * We compute chat's height directly (targeting the smaller of container
 	 * bottom or mobile-navbar top) and lock overflow on the container and
-	 * its parent so nothing can scroll behind our back. setProperty with
-	 * 'important' is defensive — themes or other plugins sometimes add
-	 * `!important` to flex rules that would otherwise beat inline styles.
+	 * its parent so nothing can scroll behind our back. The flex and overflow
+	 * overrides live in `!important` CSS classes (themes or other plugins
+	 * sometimes add `!important` to flex rules), so teardown only has to remove
+	 * the classes; the computed height is the one value set inline.
 	 */
 	private applyMobileLayoutFix(container: HTMLElement) {
 		const apply = () => {
@@ -141,12 +142,7 @@ export class AgentView extends ItemView {
 			const ctrBottom = container.getBoundingClientRect().bottom;
 			const navbarTop = this.findMobileNavbar()?.getBoundingClientRect().top ?? Infinity;
 			const targetBottom = Math.min(ctrBottom, navbarTop);
-			// eslint-disable-next-line obsidianmd/no-static-styles-assignment -- inline !important is the point (see doc comment): it must beat theme !important flex rules, which a class cannot
-			chat.style.setProperty('flex-grow', '0', 'important');
-			// eslint-disable-next-line obsidianmd/no-static-styles-assignment -- see above
-			chat.style.setProperty('flex-shrink', '0', 'important');
-			// eslint-disable-next-line obsidianmd/no-static-styles-assignment -- see above
-			chat.style.setProperty('flex-basis', 'auto', 'important');
+			chat.addClass('gemini-agent-chat--mobile-pinned');
 			for (let i = 0; i < 3; i++) {
 				const delta = targetBottom - iarea.getBoundingClientRect().bottom;
 				if (Math.abs(delta) < 1) break;
@@ -165,24 +161,12 @@ export class AgentView extends ItemView {
 		const vv = window.visualViewport;
 		vv?.addEventListener('resize', apply);
 
-		// Capture overflow before overriding so we can restore it on teardown.
-		// Obsidian reuses host elements across views; leaving `overflow: hidden`
-		// behind would make subsequent views non-scrollable.
+		// Lock overflow with a class so teardown can remove it cleanly. Obsidian
+		// reuses host elements across views; leaving `overflow: hidden` behind
+		// would make subsequent views non-scrollable.
 		const parent = container.parentElement;
-		const prevContainerOverflow = {
-			value: container.style.getPropertyValue('overflow'),
-			priority: container.style.getPropertyPriority('overflow'),
-		};
-		const prevParentOverflow = parent
-			? {
-					value: parent.style.getPropertyValue('overflow'),
-					priority: parent.style.getPropertyPriority('overflow'),
-				}
-			: null;
-		// eslint-disable-next-line obsidianmd/no-static-styles-assignment -- paired with the inline save/restore above on host elements Obsidian reuses; a class can't round-trip the pre-existing inline value
-		container.style.setProperty('overflow', 'hidden', 'important');
-		// eslint-disable-next-line obsidianmd/no-static-styles-assignment -- see above
-		parent?.style.setProperty('overflow', 'hidden', 'important');
+		container.addClass('gemini-agent-scroll-locked');
+		parent?.addClass('gemini-agent-scroll-locked');
 		const onScroll = () => {
 			if (container.scrollTop !== 0) container.scrollTop = 0;
 			if (parent && parent.scrollTop !== 0) parent.scrollTop = 0;
@@ -196,18 +180,8 @@ export class AgentView extends ItemView {
 			vv?.removeEventListener('resize', apply);
 			container.removeEventListener('scroll', onScroll);
 			parent?.removeEventListener('scroll', onScroll);
-			if (prevContainerOverflow.value) {
-				container.style.setProperty('overflow', prevContainerOverflow.value, prevContainerOverflow.priority);
-			} else {
-				container.style.removeProperty('overflow');
-			}
-			if (parent && prevParentOverflow) {
-				if (prevParentOverflow.value) {
-					parent.style.setProperty('overflow', prevParentOverflow.value, prevParentOverflow.priority);
-				} else {
-					parent.style.removeProperty('overflow');
-				}
-			}
+			container.removeClass('gemini-agent-scroll-locked');
+			parent?.removeClass('gemini-agent-scroll-locked');
 		});
 	}
 

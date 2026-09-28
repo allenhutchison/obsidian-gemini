@@ -24,8 +24,7 @@ export class Logger {
 	 */
 	log(...args: unknown[]): void {
 		if (this.plugin.settings?.debugMode) {
-			// eslint-disable-next-line obsidianmd/rule-custom-message -- central console wrapper; see AGENTS.md
-			console.log(this.prefix, ...args);
+			console.debug(this.prefix, ...args);
 			this.plugin.fileLogWriter?.write('LOG', this.prefix, args);
 		}
 	}

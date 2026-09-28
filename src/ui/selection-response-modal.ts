@@ -1,4 +1,4 @@
-import { App, Modal, MarkdownRenderer, Editor, Notice, setIcon } from 'obsidian';
+import { App, Component, Modal, MarkdownRenderer, Editor, Notice, setIcon } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { t } from '../i18n';
 import { getRawErrorMessageOr } from '../utils/error-utils';
@@ -16,6 +16,8 @@ export class SelectionResponseModal extends Modal {
 	private loadingEl!: HTMLElement;
 	private actionsContainer!: HTMLElement;
 	private response: string = '';
+	/** Owns the rendered markdown's child components; unloaded when the modal closes. */
+	private renderComponent = new Component();
 
 	constructor(
 		app: App,
@@ -35,6 +37,7 @@ export class SelectionResponseModal extends Modal {
 	onOpen() {
 		const { contentEl } = this;
 		contentEl.empty();
+		this.renderComponent.load();
 
 		// Header
 		contentEl.createEl('h2', { text: t('selectionResponse.title') });
@@ -95,8 +98,7 @@ export class SelectionResponseModal extends Modal {
 
 		// Render markdown response
 		this.responseContainer.empty();
-		// eslint-disable-next-line obsidianmd/no-plugin-as-component -- modal lifecycle is short; render happens once and Obsidian cleans up on close
-		await MarkdownRenderer.render(this.app, normalizedResponse, this.responseContainer, '', this.plugin);
+		await MarkdownRenderer.render(this.app, normalizedResponse, this.responseContainer, '', this.renderComponent);
 	}
 
 	/**
@@ -161,6 +163,7 @@ export class SelectionResponseModal extends Modal {
 	onClose() {
 		const { contentEl } = this;
 		contentEl.empty();
+		this.renderComponent.unload();
 	}
 }
 

@@ -164,24 +164,6 @@ export function shouldExcludePathForPlugin(path: string, plugin: ObsidianGemini)
 }
 
 /**
- * Resolve a folder that is known to exist on disk to its `TFolder`.
- *
- * Prefers the metadata-cache entry (narrowed with `instanceof TFolder`). During
- * early plugin init the cache may not be populated yet even though the folder
- * exists on disk, so we fall back to a minimal stub carrying just the path.
- * Callers only read `path`/`name` until the cache catches up; a fabricated
- * object has no runtime kind to narrow, so the single cast here is unavoidable.
- */
-function resolveExistingFolder(vault: Vault, normalized: string): TFolder {
-	const existing = vault.getAbstractFileByPath(normalized);
-	if (existing instanceof TFolder) {
-		return existing;
-	}
-	// eslint-disable-next-line obsidianmd/no-tfile-tfolder-cast -- fabricated early-init stub; nothing to narrow
-	return { path: normalized } as TFolder;
-}
-
-/**
  * Safely ensure a folder exists in the vault, creating it if needed.
  *
  * Uses vault.adapter.exists() as the primary existence check since it reads
@@ -194,7 +176,6 @@ function resolveExistingFolder(vault: Vault, normalized: string): TFolder {
  * @param context - A short description of what this folder is for, used in error messages
  *                  (e.g., "plugin state", "skills", "agent sessions")
  * @param logger - Optional Logger instance for structured error reporting
- * @returns The TFolder instance for the folder (or a minimal stub if metadata cache is not ready)
  * @throws Error if the folder cannot be created and does not exist
  */
 export async function ensureFolderExists(
@@ -202,20 +183,18 @@ export async function ensureFolderExists(
 	folderPath: string,
 	context?: string,
 	logger?: Logger
-): Promise<TFolder> {
+): Promise<void> {
 	const normalized = normalizePath(folderPath);
 
 	// Check metadata cache first (fast path when cache is ready)
 	const existing = vault.getAbstractFileByPath(normalized);
 	if (existing instanceof TFolder) {
-		return existing;
+		return;
 	}
 
 	// Check filesystem directly — handles early init before metadata cache is populated
 	if (await vault.adapter.exists(normalized)) {
-		// Folder exists on disk. Return from cache if available, otherwise a
-		// minimal stub until Obsidian's metadata cache catches up.
-		return resolveExistingFolder(vault, normalized);
+		return;
 	}
 
 	// Folder doesn't exist — create it
@@ -226,7 +205,7 @@ export async function ensureFolderExists(
 
 		// Race condition: another process created it between our check and createFolder
 		if (await vault.adapter.exists(normalized)) {
-			return resolveExistingFolder(vault, normalized);
+			return;
 		}
 
 		const label = context ? ` (${context})` : '';
@@ -234,8 +213,6 @@ export async function ensureFolderExists(
 		new Notice(t('notice.fileUtils.createFolderFailed', { path: normalized, label, message }));
 		throw new Error(`Failed to create folder "${normalized}"${label}: ${message}`);
 	}
-
-	return resolveExistingFolder(vault, normalized);
 }
 
 /**

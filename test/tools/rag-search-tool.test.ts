@@ -628,7 +628,7 @@ describe('RagSearchTool', () => {
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.results[0].path).toBe('document.md');
+			expect((result.data as any).results[0].path).toBe('document.md');
 		});
 
 		it('should extract path from uri with files segment', async () => {
@@ -653,7 +653,7 @@ describe('RagSearchTool', () => {
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.results[0].path).toBe('document.md');
+			expect((result.data as any).results[0].path).toBe('document.md');
 		});
 
 		it('should omit path when API only provides fileSearchStore', async () => {
@@ -679,8 +679,8 @@ describe('RagSearchTool', () => {
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.results[0].path).toBeUndefined();
-			expect(result.data.results[0].excerpt).toBe('Content without path info');
+			expect((result.data as any).results[0].path).toBeUndefined();
+			expect((result.data as any).results[0].excerpt).toBe('Content without path info');
 		});
 	});
 

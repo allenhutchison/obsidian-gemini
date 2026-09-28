@@ -38,7 +38,8 @@ describe('Logger', () => {
 
 			logger.log('test message');
 
-			expect(consoleSpy.log).toHaveBeenCalledWith('[Gemini Scribe]', 'test message');
+			expect(consoleSpy.debug).toHaveBeenCalledWith('[Gemini Scribe]', 'test message');
+			expect(consoleSpy.log).not.toHaveBeenCalled();
 		});
 
 		it('should suppress log() when debugMode is off', () => {
@@ -47,7 +48,7 @@ describe('Logger', () => {
 
 			logger.log('test message');
 
-			expect(consoleSpy.log).not.toHaveBeenCalled();
+			expect(consoleSpy.debug).not.toHaveBeenCalled();
 		});
 
 		it('should output debug() to console when debugMode is on', () => {
@@ -173,7 +174,7 @@ describe('Logger', () => {
 
 			child.log('child message');
 
-			expect(consoleSpy.log).toHaveBeenCalledWith('[Gemini Scribe] [MCP]', 'child message');
+			expect(consoleSpy.debug).toHaveBeenCalledWith('[Gemini Scribe] [MCP]', 'child message');
 		});
 
 		it('should share the same fileLogWriter via plugin reference', () => {

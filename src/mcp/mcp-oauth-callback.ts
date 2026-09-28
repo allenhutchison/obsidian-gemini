@@ -1,4 +1,4 @@
-import { createServer, IncomingMessage, ServerResponse } from 'http';
+import { Platform } from 'obsidian';
 import { OAUTH_CALLBACK_PORT } from './mcp-oauth-provider';
 import { escapeHtml } from '../utils/html-entities';
 
@@ -25,7 +25,9 @@ export interface OAuthCallbackResult {
  *    listening (so the caller can safely open the browser redirect).
  * 2. The returned `waitForCode()` promise – resolves when the callback arrives.
  *
- * Desktop-only: uses Node's `http.createServer`.
+ * Desktop-only: uses Node's `http.createServer`, loaded lazily so the module
+ * graph never pulls a Node built-in in on mobile. Throws off desktop (the
+ * caller also skips this on mobile).
  */
 export interface OAuthCallbackHandle {
 	/** Promise that resolves when the OAuth callback is received. */
@@ -39,6 +41,10 @@ export interface OAuthCallbackHandle {
  * Returns a handle whose `waitForCode` promise resolves with the auth code.
  */
 export async function startOAuthCallbackServer(timeoutMs = CALLBACK_TIMEOUT_MS): Promise<OAuthCallbackHandle> {
+	if (!Platform.isDesktop) {
+		throw new Error('The OAuth callback server requires desktop Obsidian');
+	}
+
 	let settled = false;
 	let resolveCode: (result: OAuthCallbackResult) => void;
 	let rejectCode: (err: Error) => void;
@@ -52,7 +58,8 @@ export async function startOAuthCallbackServer(timeoutMs = CALLBACK_TIMEOUT_MS):
 	// before waitForCode is returned to the caller (the outer await rejects first).
 	waitForCode.catch(() => {});
 
-	const server = createServer((req: IncomingMessage, res: ServerResponse) => {
+	const { createServer } = await import('http');
+	const server = createServer((req, res) => {
 		// Ignore favicon etc.
 		if (!req.url?.startsWith('/callback')) {
 			res.writeHead(404);
