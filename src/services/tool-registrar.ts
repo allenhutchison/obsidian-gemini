@@ -81,6 +81,8 @@ export class ToolRegistrar {
 			// the two in step — otherwise a route to a provider with no key
 			// registers `generate_image` against a null service and the agent
 			// spends a turn on a tool that can only answer "not available".
+			// It reads the *resolved* key, the same thing `hasGeminiKey` reads
+			// above, so a named-but-unsynced secret closes this gate too.
 			gate: (plugin) => featureStatus(plugin, 'imageGen') === 'ok',
 			getTools: () => import('../tools/image-tools').then((m) => m.getImageTools()),
 		},

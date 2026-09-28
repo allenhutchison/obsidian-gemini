@@ -111,6 +111,50 @@ describe('featureStatus', () => {
 		});
 		expect(featureStatus(plugin, 'chat')).toBe('ok');
 	});
+
+	// The two credential checks answer different questions: a settings file
+	// synced from another machine names a secret that was never stored here, so
+	// `providerConnection` says 'connected' while the key resolves to ''.
+	// Callers act on 'ok' by building services and registering agent tools, so
+	// this state must not read as 'ok'.
+	it('is "unconfigured" when the secret name is saved but resolves to no key', () => {
+		const plugin = makePlugin({
+			apiKeySecretName: 'k',
+			features: routes({ chat: { provider: 'gemini', model: '' } }),
+		});
+		(plugin as { apiKey: string }).apiKey = '';
+
+		expect(providerConnection(plugin, 'gemini')).toBe('connected');
+		expect(providerMissingKey(plugin, 'gemini')).toBe(true);
+		expect(featureStatus(plugin, 'chat')).toBe('unconfigured');
+	});
+
+	it('applies the resolved-key check to every routed provider, not just gemini', () => {
+		const plugin = makePlugin({
+			openaiApiKeySecretName: 'k',
+			anthropicApiKeySecretName: 'k',
+			features: routes({
+				imageGen: { provider: 'openai', model: '' },
+				summary: { provider: 'anthropic', model: '' },
+			}),
+		});
+		expect(featureStatus(plugin, 'imageGen')).toBe('ok');
+		expect(featureStatus(plugin, 'summary')).toBe('ok');
+
+		(plugin as { openaiApiKey: string }).openaiApiKey = '';
+		(plugin as { anthropicApiKey: string }).anthropicApiKey = '';
+		expect(featureStatus(plugin, 'imageGen')).toBe('unconfigured');
+		expect(featureStatus(plugin, 'summary')).toBe('unconfigured');
+	});
+
+	// Ollama needs no key, so the resolved-key check must not turn a reachable
+	// daemon into 'unconfigured'.
+	it('does not apply the resolved-key check to a keyless provider', () => {
+		const plugin = Object.assign(makePlugin({ features: routes({ chat: { provider: 'ollama', model: '' } }) }), {
+			modelManager: { getOllamaModelsService: () => ({ lastProbe: 'reachable' }) },
+		});
+		expect(featureStatus(plugin, 'chat')).toBe('ok');
+	});
 });
 
 describe('providerMissingKey', () => {

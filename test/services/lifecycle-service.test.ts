@@ -287,6 +287,11 @@ function createMockPlugin(overrides: Record<string, any> = {}): any {
 			apiKeySecretName: 'gemini-key',
 			features: featuresAllOn('gemini'),
 		},
+		// `featureStatus` reads the resolved key, not just the saved secret
+		// name, so a fixture that names a secret has to resolve it too — a
+		// name with no key is the "synced settings, unsynced secret" state,
+		// and it is deliberately not a servable configuration.
+		apiKey: 'gemini-secret-value',
 		logger: {
 			log: vi.fn(),
 			debug: vi.fn(),
@@ -1361,12 +1366,30 @@ describe('LifecycleService', () => {
 
 			const plugin = createMockPlugin();
 			plugin.settings.openaiApiKeySecretName = 'openai-key';
+			plugin.openaiApiKey = 'openai-secret-value';
 			plugin.settings.features.imageGen = { provider: 'openai', model: 'gpt-image-2.5-flare' };
 			const service = new LifecycleService(plugin);
 			await service.setup();
 
 			expect(ImageGeneration).toHaveBeenCalledTimes(1);
 			expect(plugin.imageGeneration).toBeDefined();
+		});
+
+		// The settings file names a Gemini secret, but this device never stored
+		// it — so the very first image request could not authenticate. The
+		// service must not be built, which is also what keeps `ToolRegistrar`
+		// from advertising `generate_image` against a null service.
+		it('should NOT call ImageGeneration constructor when the secret name resolves to no key', async () => {
+			const { ImageGeneration } = await import('../../src/services/image-generation');
+			(ImageGeneration as unknown as Mock).mockClear();
+
+			const plugin = createMockPlugin();
+			plugin.apiKey = '';
+			const service = new LifecycleService(plugin);
+			await service.setup();
+
+			expect(ImageGeneration).not.toHaveBeenCalled();
+			expect(plugin.imageGeneration).toBeUndefined();
 		});
 
 		it('should NOT call ImageGeneration constructor when provider is ollama', async () => {
