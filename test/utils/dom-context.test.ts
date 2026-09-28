@@ -3,7 +3,6 @@ import {
 	createContextRange,
 	insertTextAtCursor,
 	moveCursorToEnd,
-	execContextCommand,
 } from '../../src/utils/dom-context';
 
 describe('dom-context utils', () => {
@@ -115,18 +114,6 @@ describe('dom-context utils', () => {
 			expect(range.collapsed).toBe(true);
 			expect(range.startContainer).toBe(element);
 			expect(range.startOffset).toBe(element.childNodes.length);
-		});
-	});
-
-	describe('execContextCommand', () => {
-		test('delegates to document.execCommand', () => {
-			(document as any).execCommand = vi.fn().mockReturnValue(true);
-			const spy = vi.spyOn(document, 'execCommand');
-			const result = execContextCommand(element, 'selectAll');
-			expect(result).toBe(true);
-			expect(spy).toHaveBeenCalledWith('selectAll', false, undefined);
-			spy.mockRestore();
-			delete (document as any).execCommand;
 		});
 	});
 });

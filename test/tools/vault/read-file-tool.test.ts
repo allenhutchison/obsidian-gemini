@@ -165,9 +165,9 @@ describe('ReadFileTool', () => {
 		const result = await tool.execute({ path: 'nonexistent.md' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data.exists).toBe(false);
-		expect(result.data.path).toBe('nonexistent.md');
-		expect(result.data.message).toContain('does not exist');
+		expect((result.data as any).exists).toBe(false);
+		expect((result.data as any).path).toBe('nonexistent.md');
+		expect((result.data as any).message).toContain('does not exist');
 	});
 
 	it('should not resolve to system folder files via case-insensitive fallback', async () => {
@@ -192,7 +192,7 @@ describe('ReadFileTool', () => {
 		const result = await tool.execute({ path: 'workspace.json' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data.exists).toBe(false);
+		expect((result.data as any).exists).toBe(false);
 	});
 
 	it('should not suggest system folder files', async () => {
@@ -215,10 +215,10 @@ describe('ReadFileTool', () => {
 		const result = await tool.execute({ path: 'workspace' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data.exists).toBe(false);
+		expect((result.data as any).exists).toBe(false);
 		// Suggestions should include the user file but not the .obsidian file
-		expect(result.data.suggestions.join(' ')).toContain('workspace-notes.md');
-		expect(result.data.suggestions.join(' ')).not.toContain('.obsidian');
+		expect((result.data as any).suggestions.join(' ')).toContain('workspace-notes.md');
+		expect((result.data as any).suggestions.join(' ')).not.toContain('.obsidian');
 	});
 
 	it('should list contents when given a folder path', async () => {
@@ -227,12 +227,12 @@ describe('ReadFileTool', () => {
 		const result = await tool.execute({ path: 'folder' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.type).toBe('folder');
-		expect(result.data?.path).toBe('folder');
-		expect(result.data?.name).toBe('folder');
-		expect(result.data?.contents).toBeDefined();
-		expect(result.data?.contents).toHaveLength(1);
-		expect(result.data?.contents[0]).toEqual({
+		expect((result.data as any)?.type).toBe('folder');
+		expect((result.data as any)?.path).toBe('folder');
+		expect((result.data as any)?.name).toBe('folder');
+		expect((result.data as any)?.contents).toBeDefined();
+		expect((result.data as any)?.contents).toHaveLength(1);
+		expect((result.data as any)?.contents[0]).toEqual({
 			name: 'test.md',
 			path: 'test.md',
 			type: 'file',
@@ -255,9 +255,9 @@ describe('ReadFileTool', () => {
 		const result = await tool.execute({ path: 'images/photo.png' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.type).toBe('binary_file');
-		expect(result.data?.mimeType).toBe('image/png');
-		expect(result.data?.size).toBe(4);
+		expect((result.data as any)?.type).toBe('binary_file');
+		expect((result.data as any)?.mimeType).toBe('image/png');
+		expect((result.data as any)?.size).toBe(4);
 		expect(result.inlineData).toHaveLength(1);
 		expect(result.inlineData![0].mimeType).toBe('image/png');
 		expect(result.inlineData![0].base64).toBe(Buffer.from(new Uint8Array(fakeBuffer)).toString('base64'));
@@ -295,7 +295,7 @@ describe('ReadFileTool', () => {
 		const result = await tool.execute({ path: 'audio.webm' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.mimeType).toBe('audio/webm');
+		expect((result.data as any)?.mimeType).toBe('audio/webm');
 		expect(result.inlineData![0].mimeType).toBe('audio/webm');
 	});
 
@@ -314,7 +314,7 @@ describe('ReadFileTool', () => {
 		const result = await tool.execute({ path: 'video.webm' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.mimeType).toBe('video/webm');
+		expect((result.data as any)?.mimeType).toBe('video/webm');
 		expect(result.inlineData![0].mimeType).toBe('video/webm');
 	});
 
@@ -346,8 +346,8 @@ describe('ReadFileTool', () => {
 		const result = await tool.execute({ path: 'views/tasks.base' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.type).toBe('file');
-		expect(result.data?.content).toContain('filters:');
+		expect((result.data as any)?.type).toBe('file');
+		expect((result.data as any)?.content).toContain('filters:');
 		expect(result.inlineData).toBeUndefined();
 	});
 
@@ -364,8 +364,8 @@ describe('ReadFileTool', () => {
 		const result = await tool.execute({ path: 'canvas/ideas.canvas' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.type).toBe('file');
-		expect(result.data?.content).toContain('"nodes"');
+		expect((result.data as any)?.type).toBe('file');
+		expect((result.data as any)?.content).toContain('"nodes"');
 		expect(result.inlineData).toBeUndefined();
 	});
 
@@ -384,7 +384,7 @@ describe('ReadFileTool', () => {
 
 		// Should NOT return "Cannot read from system folder" error
 		expect(result.success).toBe(true);
-		expect(result.data?.exists).toBe(false);
+		expect((result.data as any)?.exists).toBe(false);
 		// Contrast with non-agent-session history paths which are hard-blocked
 	});
 
@@ -424,7 +424,7 @@ describe('ReadFileTool', () => {
 		const result = await tool.execute({ path: 'diagram.svg' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data.size).toBe(7); // decoded PNG size, not the 1000-byte source
+		expect((result.data as any).size).toBe(7); // decoded PNG size, not the 1000-byte source
 		expect(result.inlineData).toEqual([{ base64: 'UE5HREFUQQ==', mimeType: 'image/png' }]);
 		// The budget is the full inline-data limit for the tool path.
 		expect(mockRasterizeSvg).toHaveBeenCalledWith(expect.any(ArrayBuffer), false, 20 * 1024 * 1024);
@@ -499,7 +499,7 @@ describe('ReadFileTool', () => {
 		const result = await tool.execute({ path: 'poster.svg' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data.size).toBe(1);
+		expect((result.data as any).size).toBe(1);
 		expect(result.inlineData).toEqual([{ base64: 'AB==', mimeType: 'image/png' }]);
 	});
 

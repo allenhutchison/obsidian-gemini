@@ -240,8 +240,7 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			.setDesc(t('hooks.commandIdDesc'))
 			.addText((text) =>
 				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case -- literal command-id format hint, shown verbatim
-					.setPlaceholder('plugin-id:command-name')
+					.setPlaceholder(t('hooks.commandIdPlaceholder'))
 					.setValue(this.form.commandId)
 					.onChange((v) => {
 						this.form.commandId = v.trim();
@@ -353,8 +352,7 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			.setDesc(t('hooks.skillsDesc'))
 			.addText((text) =>
 				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case -- example skill names (lowercase), shown verbatim
-					.setPlaceholder('summarize, index-files')
+					.setPlaceholder(t('hooks.skillsPlaceholder'))
 					.setValue(this.form.enabledSkills.join(', '))
 					.onChange((v) => {
 						this.form.enabledSkills = v

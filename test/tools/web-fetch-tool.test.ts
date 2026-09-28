@@ -371,13 +371,13 @@ describe('WebFetchTool', () => {
 			const result = await tool.execute({ url: 'https://example.com', query: 'summarize' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.content).toBe('Analyzed content from the page');
-			expect(result.data.url).toBe('https://example.com');
-			expect(result.data.query).toBe('summarize');
-			expect(result.data.urlsRetrieved).toEqual([
+			expect((result.data as any).content).toBe('Analyzed content from the page');
+			expect((result.data as any).url).toBe('https://example.com');
+			expect((result.data as any).query).toBe('summarize');
+			expect((result.data as any).urlsRetrieved).toEqual([
 				{ url: 'https://example.com', status: 'URL_RETRIEVAL_STATUS_SUCCESS' },
 			]);
-			expect(result.data.fetchedAt).toBeDefined();
+			expect((result.data as any).fetchedAt).toBeDefined();
 		});
 	});
 
@@ -535,7 +535,7 @@ describe('WebFetchTool', () => {
 			const result = await tool.execute({ url: 'https://example.com', query: 'summarize' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.fallbackMethod).toBe(true);
+			expect((result.data as any).fallbackMethod).toBe(true);
 		});
 
 		it('should return fallback error when both primary and fallback fail', async () => {

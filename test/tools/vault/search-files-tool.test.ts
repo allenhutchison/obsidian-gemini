@@ -121,8 +121,8 @@ describe('SearchFilesTool', () => {
 		const result = await tool.execute({ pattern: 'test' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.matches).toHaveLength(1);
-		expect(result.data?.matches[0].name).toBe('test.md');
+		expect((result.data as any)?.matches).toHaveLength(1);
+		expect((result.data as any)?.matches[0].name).toBe('test.md');
 	});
 
 	it('should support wildcard patterns', async () => {
@@ -138,8 +138,8 @@ describe('SearchFilesTool', () => {
 		// Test * wildcard
 		const result1 = await tool.execute({ pattern: '*Test*' }, mockContext);
 		expect(result1.success).toBe(true);
-		expect(result1.data?.matches).toHaveLength(3);
-		const names1 = result1.data?.matches.map((f: any) => f.name);
+		expect((result1.data as any)?.matches).toHaveLength(3);
+		const names1 = (result1.data as any)?.matches.map((f: any) => f.name);
 		expect(names1).toContain('Test.md');
 		expect(names1).toContain('TestCase.md');
 		expect(names1).toContain('UnitTest.md');
@@ -147,8 +147,8 @@ describe('SearchFilesTool', () => {
 		// Test pattern at start
 		const result2 = await tool.execute({ pattern: 'Test*' }, mockContext);
 		expect(result2.success).toBe(true);
-		expect(result2.data?.matches).toHaveLength(2);
-		const names2 = result2.data?.matches.map((f: any) => f.name);
+		expect((result2.data as any)?.matches).toHaveLength(2);
+		const names2 = (result2.data as any)?.matches.map((f: any) => f.name);
 		expect(names2).toContain('Test.md');
 		expect(names2).toContain('TestCase.md');
 
@@ -156,8 +156,8 @@ describe('SearchFilesTool', () => {
 		const result3 = await tool.execute({ pattern: '*Test.md' }, mockContext);
 		expect(result3.success).toBe(true);
 		// This should match both Test.md and UnitTest.md since * matches any characters
-		expect(result3.data?.matches).toHaveLength(2);
-		const names3 = result3.data?.matches.map((f: any) => f.name);
+		expect((result3.data as any)?.matches).toHaveLength(2);
+		const names3 = (result3.data as any)?.matches.map((f: any) => f.name);
 		expect(names3).toContain('Test.md');
 		expect(names3).toContain('UnitTest.md');
 	});
@@ -174,7 +174,7 @@ describe('SearchFilesTool', () => {
 		const result = await tool.execute({ pattern: 'test' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.matches).toHaveLength(3);
+		expect((result.data as any)?.matches).toHaveLength(3);
 	});
 
 	it('should limit results', async () => {
@@ -191,8 +191,8 @@ describe('SearchFilesTool', () => {
 		const result = await tool.execute({ pattern: 'test', limit: 10 }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.matches).toHaveLength(10);
-		expect(result.data?.truncated).toBe(true);
+		expect((result.data as any)?.matches).toHaveLength(10);
+		expect((result.data as any)?.truncated).toBe(true);
 	});
 
 	it('should find non-markdown files', async () => {
@@ -207,8 +207,8 @@ describe('SearchFilesTool', () => {
 		const result = await tool.execute({ pattern: '*' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.matches).toHaveLength(3);
-		const names = result.data?.matches.map((f: any) => f.name);
+		expect((result.data as any)?.matches).toHaveLength(3);
+		const names = (result.data as any)?.matches.map((f: any) => f.name);
 		expect(names).toContain('photo.png');
 		expect(names).toContain('recording.mp3');
 	});
@@ -225,8 +225,8 @@ describe('SearchFilesTool', () => {
 		const result = await tool.execute({ pattern: '*' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.matches).toHaveLength(1);
-		expect(result.data?.matches[0].name).toBe('note.md');
+		expect((result.data as any)?.matches).toHaveLength(1);
+		expect((result.data as any)?.matches[0].name).toBe('note.md');
 	});
 
 	// --- Gap coverage tests ---
@@ -246,8 +246,8 @@ describe('SearchFilesTool', () => {
 		const result = await tool.execute({ pattern: 'note?.md' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.matches).toHaveLength(3);
-		const names = result.data?.matches.map((f: any) => f.name);
+		expect((result.data as any)?.matches).toHaveLength(3);
+		const names = (result.data as any)?.matches.map((f: any) => f.name);
 		expect(names).toContain('note1.md');
 		expect(names).toContain('note2.md');
 		expect(names).toContain('notes.md');
@@ -267,8 +267,8 @@ describe('SearchFilesTool', () => {
 		const result = await tool.execute({ pattern: 'test.md' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.matches).toHaveLength(1);
-		expect(result.data?.matches[0].name).toBe('test.md');
+		expect((result.data as any)?.matches).toHaveLength(1);
+		expect((result.data as any)?.matches[0].name).toBe('test.md');
 	});
 
 	it('should match against file.path not just file.name', async () => {
@@ -283,8 +283,8 @@ describe('SearchFilesTool', () => {
 		const result = await tool.execute({ pattern: 'alpha' }, mockContext);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.matches).toHaveLength(1);
-		expect(result.data?.matches[0].path).toBe('projects/alpha/note.md');
+		expect((result.data as any)?.matches).toHaveLength(1);
+		expect((result.data as any)?.matches[0].path).toBe('projects/alpha/note.md');
 	});
 
 	it('should scope results to project root when set', async () => {
@@ -303,7 +303,7 @@ describe('SearchFilesTool', () => {
 		const result = await tool.execute({ pattern: 'todo' }, contextWithProject);
 
 		expect(result.success).toBe(true);
-		expect(result.data?.matches).toHaveLength(1);
-		expect(result.data?.matches[0].path).toBe('projects/myproj/todo.md');
+		expect((result.data as any)?.matches).toHaveLength(1);
+		expect((result.data as any)?.matches[0].path).toBe('projects/myproj/todo.md');
 	});
 });

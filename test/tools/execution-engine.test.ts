@@ -104,7 +104,7 @@ describe('ToolExecutionEngine - Confirmation Requirements', () => {
 
 		// Tool should execute without confirmation — returns success with exists: false
 		expect(readResult.success).toBe(true);
-		expect(readResult.data.exists).toBe(false);
+		expect((readResult.data as any).exists).toBe(false);
 
 		// Test list_files - should not require confirmation
 		const listResult = await engine.executeTool(
@@ -211,7 +211,7 @@ describe('ToolExecutionEngine - Confirmation Requirements', () => {
 			expect.objectContaining({ path: 'test.md' }),
 			'user edited content'
 		);
-		expect(writeResult.data.userEdited).toBe(true);
+		expect((writeResult.data as any).userEdited).toBe(true);
 	});
 });
 
@@ -865,8 +865,8 @@ describe('ToolExecutionEngine - Confirmation Flow', () => {
 		expect(result.success).toBe(true);
 		// A user edit means "replace the whole file", not "append the suffix":
 		// the tool overwrites with the edited content and reports a replace.
-		expect(result.data.action).toBe('replaced');
-		expect(result.data.userEdited).toBe(true);
+		expect((result.data as any).action).toBe('replaced');
+		expect((result.data as any).userEdited).toBe(true);
 		expect(plugin.app.vault.modify).toHaveBeenCalledWith(
 			expect.objectContaining({ path: 'doc.md' }),
 			'full edited file'

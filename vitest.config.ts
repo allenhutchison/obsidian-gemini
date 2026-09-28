@@ -41,10 +41,10 @@ export default defineConfig({
 			// number in the same PR, with the reason in the PR body — one
 			// reviewed line, not a bypass.
 			thresholds: {
-				lines: 73.56,
-				statements: 73.17,
-				branches: 71,
-				functions: 71.96,
+				lines: 73.93,
+				statements: 73.55,
+				branches: 71.27,
+				functions: 72.3,
 				autoUpdate: true,
 			},
 		},

@@ -57,25 +57,24 @@ const PERVASIVE_OBSIDIANMD_RULES_TODO = {
 	// rule can't statically evaluate), leaving only a handful of `setPlaceholder`
 	// hints that intentionally show a literal value the user types verbatim (a URL,
 	// example model IDs, a command-id format, skill names, a frontmatter key). Those
-	// carry scoped inline disables at their call sites, so the rule is enforced again
-	// (left at the preset default). The anticipated brand/acronym allowlist proved
+	// go through `t()` too (with a "keep verbatim" translator note), so the rule is
+	// enforced again (left at the preset default) with no inline disables. The anticipated brand/acronym allowlist proved
 	// unnecessary — the plugin's built-in allowlist already covers the acronyms and
 	// brands in use (#1043).
 	// `obsidianmd/prefer-active-doc` was here (bare `document` usage) — now fixed:
 	// live-view DOM operations use the target element's `ownerDocument`, and the few
-	// genuinely detached nodes (escape-only, rasterization, test stubs) carry scoped
-	// inline disables. The rule is enforced again (left at the preset default).
+	// genuinely detached nodes (rasterization, off-DOM render targets) use Obsidian's
+	// global `createEl`/`createDiv`. The rule is enforced again (left at the preset
+	// default).
 	// `obsidianmd/no-static-styles-assignment` was here (~69 violations) — now fixed:
 	// static inline styles migrated to CSS classes / Obsidian's show()/hide() helpers
-	// (#1167). The agent view's iOS layout fix keeps deliberate inline `!important`
-	// setProperty calls with scoped inline disables (a class can't beat theme
-	// !important rules or round-trip host-element inline styles). The rule is
-	// enforced again (left at the preset default).
+	// (#1167). The agent view's iOS layout fix pins the chat and locks scrolling
+	// with `!important` classes in styles.css, keeping only the measured height as
+	// a dynamic inline style. The rule is enforced again (left at the preset
+	// default).
 	// `obsidianmd/no-tfile-tfolder-cast` was here — now fixed: all `x as TFile`
-	// / `x as TFolder` casts replaced with `instanceof` narrowing (the sole
-	// remaining exception is a fabricated early-init folder stub in
-	// file-utils.ts with a scoped inline disable), so the rule is enforced
-	// again (left at the preset default).
+	// / `x as TFolder` casts replaced with `instanceof` narrowing, so the rule
+	// is enforced again (left at the preset default).
 	// `obsidianmd/commands/no-plugin-id-in-command-id` was here (28 violations) —
 	// now fixed: the `gemini-scribe-` prefix was dropped from every command ID
 	// (#1042), so Obsidian's automatic `gemini-scribe:` namespacing is no longer
@@ -268,25 +267,39 @@ export default defineConfig([
 	...obsidianmd.configs.recommended,
 	{
 		// The 0.4.x preset's `eslint-comments/no-restricted-disable` forbids inline
-		// `eslint-disable` comments for a list of rules outright, expecting exceptions
-		// to live as file-scoped config overrides instead. This repo's documented
-		// policy is the opposite: intentional exceptions are line-scoped inline
-		// disables at the call site, each carrying a `-- reason` description
-		// (`eslint-comments/require-description` stays enforced). Keep the restriction
-		// only for rules we never disable inline.
+		// `eslint-disable` comments for a list of rules outright. The Obsidian
+		// community-plugin audit enforces the same list and fails a release that
+		// carries such a disable, so it is kept verbatim here (a trimmed copy once let
+		// ~20 of them ship in 4.12.0 and fail the audit). Other rules may still take a
+		// line-scoped inline disable with a `-- reason` description
+		// (`eslint-comments/require-description` stays enforced). Re-list the preset's
+		// entries when bumping eslint-plugin-obsidianmd: a flat-config override
+		// replaces the options array rather than merging it.
 		rules: {
 			'eslint-comments/no-restricted-disable': [
 				'error',
+				'obsidianmd/*',
 				'no-console',
 				'no-restricted-globals',
 				'@typescript-eslint/no-restricted-imports',
+				'no-alert',
+				'@typescript-eslint/no-deprecated',
+				'@typescript-eslint/no-explicit-any',
 				'@microsoft/sdl/no-document-write',
 				'no-eval',
+				'@microsoft/sdl/no-inner-html',
+				'obsidianmd/no-nodejs-modules',
 				// #1525: an inline disable would re-open the knip tag-exemption hole the
 				// rule exists to close — suppressible only via a config change, never a comment.
 				'local/no-tags-as-reachability',
 			],
 		},
+	},
+	{
+		// The test setup polyfills Obsidian's show()/hide(), which set inline
+		// `display` — the very thing the rule steers callers towards.
+		files: ['test/vitest-setup.ts'],
+		rules: { 'obsidianmd/no-static-styles-assignment': 'off' },
 	},
 	{
 		files: ['test/eslint-no-tags-as-reachability.test.ts'],

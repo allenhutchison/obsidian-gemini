@@ -54,8 +54,7 @@ export interface RetryOptions {
  * Sleep for a specified number of milliseconds
  */
 function sleep(ms: number): Promise<void> {
-	// eslint-disable-next-line obsidianmd/prefer-window-timers -- shared with tests running in node environment
-	return new Promise((resolve) => setTimeout(resolve, ms));
+	return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 /** How often an in-flight backoff sleep re-checks the abort hook (ms). */

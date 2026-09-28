@@ -439,6 +439,18 @@ body.theme-dark {
 	background-color: var(--gs-surface);
 }
 
+/* iOS layout fix (AgentView.applyMobileLayoutFix): the chat height is computed
+   in JS, so flex must not resize it. !important beats theme flex overrides. */
+.gemini-agent-chat.gemini-agent-chat--mobile-pinned {
+	flex: 0 0 auto !important;
+}
+
+/* Paired with the mobile layout fix: stops ancestors scrolling the input into
+   view. Removed on view teardown because Obsidian reuses host elements. */
+.gemini-agent-scroll-locked {
+	overflow: hidden !important;
+}
+
 /* Progress Bar Container - Fixed above input */
 .gemini-agent-progress-container {
 	position: relative;
@@ -552,6 +564,9 @@ body.theme-dark {
 }
 
 .gemini-agent-thinking-chevron svg {
+	/* Smaller than the --gs-icon-* scale: the chevron sits inline with 12px meta text. */
+	width: 12px;
+	height: 12px;
 	transition: transform var(--gs-dur) var(--gs-ease);
 }
 

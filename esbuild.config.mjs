@@ -1,6 +1,6 @@
 import esbuild from 'esbuild';
 import process from 'process';
-import builtins from 'builtin-modules';
+import { builtinModules } from 'node:module';
 import alias from 'esbuild-plugin-alias';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -36,7 +36,8 @@ const context = await esbuild.context({
 		'@lezer/common',
 		'@lezer/highlight',
 		'@lezer/lr',
-		...builtins,
+		// Node built-ins under both spellings (`stream` and `node:stream`).
+		...builtinModules.flatMap((m) => (m.startsWith('node:') ? [m] : [m, `node:${m}`])),
 	],
 	format: 'cjs',
 	target: 'es2018',

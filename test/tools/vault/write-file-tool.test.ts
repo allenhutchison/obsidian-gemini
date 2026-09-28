@@ -265,7 +265,7 @@ describe('WriteFileTool', () => {
 
 		const result = await tool.execute({ path: 'test.md', content: 'hello world' }, mockContext);
 		expect(result.success).toBe(true);
-		expect(result.data.userEdited).toBe(false);
+		expect((result.data as any).userEdited).toBe(false);
 	});
 
 	it('should use summary in confirmation message when provided', () => {
@@ -296,8 +296,8 @@ describe('WriteFileTool', () => {
 		);
 
 		expect(result.success).toBe(true);
-		expect(result.data.userEdited).toBe(true);
-		expect(result.data.userChangeSummary).toBe('User modified the proposed content before writing');
+		expect((result.data as any).userEdited).toBe(true);
+		expect((result.data as any).userChangeSummary).toBe('User modified the proposed content before writing');
 	});
 
 	// --- Gap coverage tests ---

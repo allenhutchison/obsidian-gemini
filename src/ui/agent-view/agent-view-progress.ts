@@ -1,4 +1,4 @@
-import { App, MarkdownRenderer, Component } from 'obsidian';
+import { App, MarkdownRenderer, Component, setIcon } from 'obsidian';
 import { ChatTimer } from '../../utils/timer-utils';
 import { t } from '../../i18n';
 
@@ -65,9 +65,7 @@ export class AgentViewProgress {
 		this.thinkingChevron = this.progressStatusContainer.createSpan({
 			cls: 'gemini-agent-thinking-chevron',
 		});
-		// eslint-disable-next-line @microsoft/sdl/no-inner-html -- static SVG literal, no user input
-		this.thinkingChevron.innerHTML =
-			'<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+		setIcon(this.thinkingChevron, 'chevron-down');
 		this.thinkingChevron.addClass('gemini-agent-thinking-chevron--hidden'); // Hidden until thinking content arrives
 
 		this.progressStatus = this.progressStatusContainer.createSpan({
@@ -115,8 +113,7 @@ export class AgentViewProgress {
 		if (!this.progressBarContainer) return;
 
 		this.progressBarContainer.removeClass('gemini-agent-progress-container--hidden');
-		// eslint-disable-next-line @microsoft/sdl/no-inner-html, no-unsanitized/property -- formatProgressText escapes HTML before adding <strong>
-		this.progressStatus.innerHTML = this.formatProgressText(statusText);
+		this.renderProgressText(statusText);
 
 		// Update state class for color coding
 		this.progressFill.className = 'gemini-agent-progress-fill';
@@ -135,8 +132,7 @@ export class AgentViewProgress {
 		if (!this.progressBarContainer || this.progressBarContainer.hasClass('gemini-agent-progress-container--hidden'))
 			return;
 
-		// eslint-disable-next-line @microsoft/sdl/no-inner-html, no-unsanitized/property -- formatProgressText escapes HTML before adding <strong>
-		this.progressStatus.innerHTML = this.formatProgressText(statusText);
+		this.renderProgressText(statusText);
 
 		if (state) {
 			this.progressFill.className = 'gemini-agent-progress-fill';
@@ -167,8 +163,7 @@ export class AgentViewProgress {
 
 		// Update status line with truncated preview
 		const preview = this.truncateThought(accumulatedThought);
-		// eslint-disable-next-line @microsoft/sdl/no-inner-html, no-unsanitized/property -- formatProgressText escapes HTML before adding <strong>
-		this.progressStatus.innerHTML = this.formatProgressText(preview);
+		this.renderProgressText(preview);
 
 		// Update the full thinking content in the expandable section (fire-and-forget async)
 		void this.renderThinkingContent(accumulatedThought);
@@ -181,10 +176,10 @@ export class AgentViewProgress {
 		const renderVersion = ++this.thinkingRenderVersion;
 
 		if (this.app && this.renderComponent) {
-			// Render into a temporary container to avoid stale async renders
-			// mutating the live DOM node. Use the live node's document so the
-			// temp element matches its context in a popout window.
-			const tempEl = this.thinkingContent.ownerDocument.createElement('div');
+			// Render into a detached container to avoid stale async renders
+			// mutating the live DOM node; appendChild below adopts the rendered
+			// nodes into the live node's document (including a popout window's).
+			const tempEl = createDiv();
 			try {
 				await MarkdownRenderer.render(this.app, text, tempEl, '', this.renderComponent);
 
@@ -299,36 +294,20 @@ export class AgentViewProgress {
 	}
 
 	/**
-	 * Escape HTML entities to prevent XSS
+	 * Render status text into the status line as a single line, turning
+	 * `**bold**` spans into <strong> elements. Text is inserted as text nodes,
+	 * never parsed as HTML, so model output can't inject markup.
 	 */
-	private escapeHtml(text: string): string {
-		// Detached node used only to HTML-escape a string; never inserted into a live view.
-		// eslint-disable-next-line obsidianmd/prefer-create-el -- jsdom unit tests exercise this path; Obsidian's createDiv global doesn't exist there
-		const div = activeDocument.createElement('div');
-		div.textContent = text;
-		return div.innerHTML;
-	}
-
-	/**
-	 * Convert simple markdown formatting to HTML for progress status
-	 * Handles **bold** and basic text
-	 * Note: Input is sanitized before markdown conversion to prevent XSS
-	 */
-	private formatProgressText(text: string): string {
-		if (!text) return '';
-
-		// First, escape HTML entities to prevent XSS
-		let formatted = this.escapeHtml(text);
-
-		// Then convert **text** to <strong>text</strong>
-		formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-
-		// Replace newlines with spaces for single-line display
-		formatted = formatted.replace(/\n+/g, ' ');
-
-		// Trim extra spaces
-		formatted = formatted.replace(/\s+/g, ' ').trim();
-
-		return formatted;
+	private renderProgressText(text: string): void {
+		this.progressStatus.empty();
+		const line = (text ?? '').replace(/\s+/g, ' ').trim();
+		// split() with a capture group alternates plain and bold segments.
+		line.split(/\*\*(.*?)\*\*/g).forEach((segment, i) => {
+			if (i % 2 === 1) {
+				this.progressStatus.createEl('strong', { text: segment });
+			} else if (segment) {
+				this.progressStatus.appendChild(this.progressStatus.ownerDocument.createTextNode(segment));
+			}
+		});
 	}
 }

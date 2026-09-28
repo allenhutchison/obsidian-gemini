@@ -1,7 +1,7 @@
 import { App, Menu, TFile, TFolder, Notice, setIcon, setTooltip } from 'obsidian';
 import type { ObsidianGemini } from '../../types/plugin';
 import { ChatSession } from '../../types/agent';
-import { insertTextAtCursor, moveCursorToEnd, execContextCommand } from '../../utils/dom-context';
+import { insertTextAtCursor } from '../../utils/dom-context';
 import { isPathInFolder, shouldExcludePathForPlugin } from '../../utils/file-utils';
 import { renameSessionHistoryFile } from '../../agent/session-rename';
 import { collectFilesFromFolder } from '../../utils/folder-walk';
@@ -834,37 +834,9 @@ export class AgentViewUI {
 					try {
 						text = await navigator.clipboard.readText();
 					} catch (err) {
-						this.plugin.logger.debug('Async clipboard access failed:', err);
-
-						// Method 3: As last resort, get the selection and use execCommand
-						// This is a fallback that might help in some browsers
-						try {
-							// Focus the input first
-							userInput.focus();
-
-							// Try using execCommand as absolute fallback
-							// This will paste with formatting, but we'll clean it up after
-							execContextCommand(userInput, 'paste');
-
-							// Give it a moment to paste, then clean up formatting
-							window.setTimeout(() => {
-								// Get just the text content, removing all HTML
-								const plainText = userInput.innerText || userInput.textContent || '';
-
-								// Clear and set plain text
-								userInput.textContent = plainText;
-
-								// Move cursor to end
-								moveCursorToEnd(userInput);
-							}, 10);
-
-							return; // Exit early since we handled it with the timeout
-						} catch (execErr) {
-							this.plugin.logger.warn('All paste methods failed:', execErr);
-							// If all else fails, we can't paste
-							new Notice(t('agent.input.pasteFailed'));
-							return;
-						}
+						this.plugin.logger.warn('All paste methods failed:', err);
+						new Notice(t('agent.input.pasteFailed'));
+						return;
 					}
 				}
 

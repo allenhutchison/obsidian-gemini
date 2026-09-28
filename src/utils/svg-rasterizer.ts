@@ -168,8 +168,7 @@ export async function rasterizeSvg(buffer: ArrayBuffer, isSvgz: boolean, budgetB
 
 		// Detached canvas used only to rasterize the SVG to a PNG data URL; it is
 		// never inserted into a view.
-		// eslint-disable-next-line obsidianmd/prefer-create-el -- jsdom unit tests exercise this path; Obsidian's createEl global doesn't exist there
-		const canvas = activeDocument.createElement('canvas');
+		const canvas = createEl('canvas');
 		canvas.width = dims.width;
 		canvas.height = dims.height;
 

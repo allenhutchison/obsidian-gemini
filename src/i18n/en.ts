@@ -1310,6 +1310,10 @@ export const en = {
 		message: 'Command id',
 		context: 'Form label for the command palette id field (command action only).',
 	},
+	'hooks.commandIdPlaceholder': {
+		message: 'plugin-id:command-name',
+		context: 'Placeholder showing the literal command id format. Keep it verbatim; do not translate.',
+	},
 	'hooks.commandIdDesc': {
 		message:
 			'Command palette id to fire. Examples: editor:save-file, gemini-scribe:summarize-active-file. View command IDs via Settings → Hotkeys (open the developer console with Ctrl+Shift+I to inspect ids).',
@@ -1366,6 +1370,11 @@ export const en = {
 	'hooks.skillsSetting': {
 		message: 'Skills (comma-separated)',
 		context: 'Form label for the pre-activated skills field.',
+	},
+	'hooks.skillsPlaceholder': {
+		message: 'summarize, index-files',
+		context:
+			'Placeholder listing example skill slugs (lowercase, comma-separated). Keep it verbatim; do not translate.',
 	},
 	'hooks.skillsDesc': {
 		message: 'Slugs of skills to pre-activate. Empty = inherit all available skills.',

@@ -250,7 +250,7 @@ describe('GoogleSearchTool', () => {
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.citations).toEqual([
+			expect((result.data as any).citations).toEqual([
 				{ url: 'https://example.com/page1', title: 'Example Page 1', snippet: 'Snippet for page 1' },
 				{ url: 'https://example.com/page2', title: 'Example Page 2', snippet: 'Snippet for page 2' },
 			]);
@@ -283,7 +283,7 @@ describe('GoogleSearchTool', () => {
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.citations[0].title).toBe('https://example.com/no-title');
+			expect((result.data as any).citations[0].title).toBe('https://example.com/no-title');
 		});
 
 		it('should use empty string for snippet when chunk.web.snippet is undefined', async () => {
@@ -313,7 +313,7 @@ describe('GoogleSearchTool', () => {
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.citations[0].snippet).toBe('');
+			expect((result.data as any).citations[0].snippet).toBe('');
 		});
 
 		it('should filter out chunks without web URI', async () => {
@@ -339,8 +339,8 @@ describe('GoogleSearchTool', () => {
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.citations).toHaveLength(1);
-			expect(result.data.citations[0].url).toBe('https://example.com/valid');
+			expect((result.data as any).citations).toHaveLength(1);
+			expect((result.data as any).citations[0].url).toBe('https://example.com/valid');
 		});
 	});
 
@@ -380,8 +380,8 @@ describe('GoogleSearchTool', () => {
 
 			expect(result.success).toBe(true);
 			// Citations inserted from end: "Hello world" → at 11: " [2](https://b.com)" → at 5: " [1](https://a.com)"
-			expect(result.data.answer).toBe('Hello [1](https://a.com) world [2](https://b.com)');
-			expect(result.data.originalAnswer).toBe('Hello world');
+			expect((result.data as any).answer).toBe('Hello [1](https://a.com) world [2](https://b.com)');
+			expect((result.data as any).originalAnswer).toBe('Hello world');
 		});
 
 		it('should skip supports with missing endIndex', async () => {
@@ -414,7 +414,7 @@ describe('GoogleSearchTool', () => {
 
 			expect(result.success).toBe(true);
 			// No inline citations should be inserted
-			expect(result.data.answer).toBe('Some text here');
+			expect((result.data as any).answer).toBe('Some text here');
 		});
 
 		it('should skip supports with missing groundingChunkIndices', async () => {
@@ -446,7 +446,7 @@ describe('GoogleSearchTool', () => {
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.answer).toBe('Some text');
+			expect((result.data as any).answer).toBe('Some text');
 		});
 
 		it('should filter out citation links when chunk has no URI', async () => {
@@ -478,7 +478,7 @@ describe('GoogleSearchTool', () => {
 
 			expect(result.success).toBe(true);
 			// Only chunk 0 should produce a citation link; chunk 1 (no URI) is filtered
-			expect(result.data.answer).toBe('Hello world [1](https://a.com)');
+			expect((result.data as any).answer).toBe('Hello world [1](https://a.com)');
 		});
 	});
 
@@ -494,8 +494,8 @@ describe('GoogleSearchTool', () => {
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.originalAnswer).toBe('Fallback text from result.text');
-			expect(result.data.answer).toBe('Fallback text from result.text');
+			expect((result.data as any).originalAnswer).toBe('Fallback text from result.text');
+			expect((result.data as any).answer).toBe('Fallback text from result.text');
 		});
 
 		it('should catch and log error when result.text getter throws inside fallback', async () => {

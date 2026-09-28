@@ -162,9 +162,18 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		return this.app.secretStorage.getSecret(secretName) ?? '';
 	}
 
+	/**
+	 * The open agent view, looked up from the workspace on each read rather than
+	 * held on the plugin (Obsidian's guidance: plugins must not keep references to
+	 * their views, which outlive neither the leaf nor a plugin reload).
+	 */
+	get agentView(): AgentView | null {
+		const view = this.app.workspace.getLeavesOfType(VIEW_TYPE_AGENT)[0]?.view;
+		return view instanceof AgentView ? view : null;
+	}
+
 	// Public service properties — assigned by LifecycleService
 	public gfile!: ScribeFile;
-	public agentView!: AgentView;
 	public history!: GeminiHistory;
 	public sessionHistory!: SessionHistory;
 	public promptManager!: PromptManager;
@@ -476,8 +485,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		});
 
 		// Register views
-		// eslint-disable-next-line obsidianmd/no-view-references-in-plugin -- TODO: replace `this.agentView` reads with `app.workspace.getLeavesOfType(VIEW_TYPE_AGENT)`
-		this.registerView(VIEW_TYPE_AGENT, (leaf) => (this.agentView = new AgentView(leaf, this)));
+		this.registerView(VIEW_TYPE_AGENT, (leaf) => new AgentView(leaf, this));
 		this.registerView(VIEW_TYPE_DIFF, (leaf) => new GeminiDiffView(leaf, this));
 
 		// Register all command-palette commands (extracted to ./commands/register-commands)

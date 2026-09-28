@@ -163,37 +163,33 @@ describe('file-utils', () => {
 			(Notice as unknown as Mock).mockClear();
 		});
 
-		it('should return existing folder without creating', async () => {
+		it('should not create a folder that is already in the metadata cache', async () => {
 			const existingFolder = Object.assign(new TFolder(), { path: 'my-folder' });
 			mockVault.getAbstractFileByPath.mockReturnValue(existingFolder);
 
-			const result = await ensureFolderExists(mockVault as unknown as Vault, 'my-folder');
+			await ensureFolderExists(mockVault as unknown as Vault, 'my-folder');
 
-			expect(result).toBe(existingFolder);
+			expect(mockVault.adapter.exists).not.toHaveBeenCalled();
 			expect(mockVault.createFolder).not.toHaveBeenCalled();
 		});
 
 		it('should create folder when it does not exist', async () => {
-			const createdFolder = Object.assign(new TFolder(), { path: 'new-folder' });
-			mockVault.getAbstractFileByPath.mockReturnValueOnce(null).mockReturnValueOnce(createdFolder);
+			mockVault.getAbstractFileByPath.mockReturnValue(null);
 			mockVault.createFolder.mockResolvedValue(undefined);
 
-			const result = await ensureFolderExists(mockVault as unknown as Vault, 'new-folder');
+			await ensureFolderExists(mockVault as unknown as Vault, 'new-folder');
 
 			expect(mockVault.createFolder).toHaveBeenCalledWith('new-folder');
-			expect(result).toBe(createdFolder);
 		});
 
 		it('should handle race condition where folder is created concurrently', async () => {
-			const concurrentFolder = Object.assign(new TFolder(), { path: 'race-folder' });
 			// First check: not found; adapter check: not found; createFolder throws; adapter re-check: found
-			mockVault.getAbstractFileByPath.mockReturnValueOnce(null).mockReturnValueOnce(concurrentFolder);
+			mockVault.getAbstractFileByPath.mockReturnValue(null);
 			mockVault.adapter.exists.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
 			mockVault.createFolder.mockRejectedValue(new Error('Folder already exists'));
 
-			const result = await ensureFolderExists(mockVault as unknown as Vault, 'race-folder');
+			await expect(ensureFolderExists(mockVault as unknown as Vault, 'race-folder')).resolves.toBeUndefined();
 
-			expect(result).toBe(concurrentFolder);
 			expect(Notice).not.toHaveBeenCalled();
 		});
 
@@ -202,9 +198,8 @@ describe('file-utils', () => {
 			mockVault.getAbstractFileByPath.mockReturnValue(null);
 			mockVault.adapter.exists.mockResolvedValue(true);
 
-			const result = await ensureFolderExists(mockVault as unknown as Vault, 'synced-folder');
+			await ensureFolderExists(mockVault as unknown as Vault, 'synced-folder');
 
-			expect(result.path).toBe('synced-folder');
 			expect(mockVault.createFolder).not.toHaveBeenCalled();
 		});
 

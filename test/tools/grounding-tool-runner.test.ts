@@ -138,10 +138,10 @@ describe('runGroundingTool', () => {
 			const result = await runGroundingTool(mockPlugin, makeRequest());
 
 			expect(result.success).toBe(true);
-			expect(result.data.originalAnswer).toBe('Hello world');
-			expect(result.data.answer).toBe('Hello world');
-			expect(result.data.citations).toEqual([]);
-			expect(result.data.searchGrounding).toBeUndefined();
+			expect((result.data as any).originalAnswer).toBe('Hello world');
+			expect((result.data as any).answer).toBe('Hello world');
+			expect((result.data as any).citations).toEqual([]);
+			expect((result.data as any).searchGrounding).toBeUndefined();
 		});
 
 		it('falls back to result.text when candidates are missing', async () => {
@@ -150,8 +150,8 @@ describe('runGroundingTool', () => {
 			const result = await runGroundingTool(mockPlugin, makeRequest());
 
 			expect(result.success).toBe(true);
-			expect(result.data.originalAnswer).toBe('Fallback text');
-			expect(result.data.answer).toBe('Fallback text');
+			expect((result.data as any).originalAnswer).toBe('Fallback text');
+			expect((result.data as any).answer).toBe('Fallback text');
 		});
 
 		it('routes a throwing result.text getter into the outer catch', async () => {
@@ -189,7 +189,7 @@ describe('runGroundingTool', () => {
 			const result = await runGroundingTool(mockPlugin, makeRequest());
 
 			expect(result.success).toBe(true);
-			expect(result.data.citations).toEqual([
+			expect((result.data as any).citations).toEqual([
 				{ url: 'https://a.com', title: 'A', snippet: 'Snippet A' },
 				{ url: 'https://b.com', title: 'https://b.com', snippet: '' },
 			]);
@@ -215,7 +215,9 @@ describe('runGroundingTool', () => {
 
 			const result = await runGroundingTool(mockPlugin, makeRequest({ getChunkCitation: mapsCitation }));
 
-			expect(result.data.citations).toEqual([{ url: 'https://maps/1', title: 'Place', snippet: 'Review text' }]);
+			expect((result.data as any).citations).toEqual([
+				{ url: 'https://maps/1', title: 'Place', snippet: 'Review text' },
+			]);
 		});
 	});
 
@@ -242,8 +244,8 @@ describe('runGroundingTool', () => {
 
 			const result = await runGroundingTool(mockPlugin, makeRequest());
 
-			expect(result.data.answer).toBe('Hello [1](https://a.com) world [2](https://b.com)');
-			expect(result.data.originalAnswer).toBe('Hello world');
+			expect((result.data as any).answer).toBe('Hello [1](https://a.com) world [2](https://b.com)');
+			expect((result.data as any).originalAnswer).toBe('Hello world');
 		});
 
 		it('skips supports with a missing endIndex or empty groundingChunkIndices', async () => {
@@ -265,7 +267,7 @@ describe('runGroundingTool', () => {
 
 			const result = await runGroundingTool(mockPlugin, makeRequest());
 
-			expect(result.data.answer).toBe('Some text');
+			expect((result.data as any).answer).toBe('Some text');
 		});
 
 		it('filters out citation links for chunk indices without a URI', async () => {
@@ -283,7 +285,7 @@ describe('runGroundingTool', () => {
 
 			const result = await runGroundingTool(mockPlugin, makeRequest());
 
-			expect(result.data.answer).toBe('Hello world [1](https://a.com)');
+			expect((result.data as any).answer).toBe('Hello world [1](https://a.com)');
 		});
 
 		it('leaves text untouched when there are chunks but no supports', async () => {
@@ -300,8 +302,8 @@ describe('runGroundingTool', () => {
 
 			const result = await runGroundingTool(mockPlugin, makeRequest());
 
-			expect(result.data.answer).toBe('Just text');
-			expect(result.data.citations).toEqual([{ url: 'https://a.com', title: 'A', snippet: '' }]);
+			expect((result.data as any).answer).toBe('Just text');
+			expect((result.data as any).citations).toEqual([{ url: 'https://a.com', title: 'A', snippet: '' }]);
 		});
 	});
 
