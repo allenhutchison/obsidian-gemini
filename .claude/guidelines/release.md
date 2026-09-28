@@ -54,25 +54,31 @@ release. If `gh`/network is unavailable, record it as errored and move on — ne
   `package.json`, runs `version-bump.mjs` to update `manifest.json` + `versions.json`, creates the
   git tag, and (via the `postversion` script) pushes the commit and tag.
 - **Never** hand-edit version numbers in `package.json`, `manifest.json`, or `versions.json`.
-- Generated artifacts (`main.js`, `manifest.json`, `versions.json`) stay committed at the repo root.
+- Generated artifacts `manifest.json` and `versions.json` stay committed at the repo root; `main.js` is a
+  gitignored build output, attached to the GitHub release by the release workflow.
 
 ## 🚨 Live transport smoke gate — run LAST, in a real vault
 
 `npm test` and `npm run build` **cannot** see renderer-side CORS failures. After **every** code and
 dependency change is final — as the **last** pre-bump step — run the live transport smoke test in
-the test vault with the current settings:
+the test vault with the current settings, with Chat, Summaries, and Web search routed to Gemini:
 
-1. Summarize a note (the `generateContent` path).
-2. Send an agent chat message that streams.
-3. Toggle **Use Interactions API** ON and repeat 1–2, plus a grounded `google_search`.
+1. Summarize a note (non-streaming Interactions request).
+2. Send an agent chat message that streams (the response `content-type` is `text/event-stream`).
+3. Ask the agent to use `google_search` and answer with a citation. That exercises a grounded
+   `generateContent` call plus a streamed tool follow-up, which carries the thought signature.
 
-Confirm no console errors and real model output for each.
+Confirm no console errors (`obsidian dev:errors`) and real model output for each.
 
-- **If `@google/genai` changed at all — even a semver-minor or -patch bump — the Interactions smoke
-  test (flag ON) is MANDATORY.** The CORS workaround (`installObsidianFetch` / `obsidian-fetch.ts`)
-  reaches into the SDK's next-gen client internals, which minor releases have silently restructured
-  before (2.9.0→2.10.0 broke it and shipped in 4.10.1 — see #1044). Instrument `window.fetch` to
-  confirm Interactions requests route through `requestUrl`, not the renderer global `fetch`.
+- **The Interactions API is always on** for Gemini conversational calls since #1508 — there is no
+  toggle to flip. Image generation still uses `generateContent`.
+- **If `@google/genai` changed at all — even a semver-minor or -patch bump — this gate is
+  MANDATORY.** Interactions requests go through the renderer's global `fetch` (#1256 removed the
+  `requestUrl` shim once the SDK stopped sending the `Api-Revision` header that triggered a CORS
+  preflight). A new SDK version that reintroduces a non-simple request header would fail only in the
+  renderer — the class of break that shipped in 4.10.1 (#1044). Instrument `window.fetch` to log
+  each `generativelanguage.googleapis.com` request's status and `content-type`, and confirm every
+  one returns 200 with no `Failed to fetch` / CORS error.
 - **Ordering rule:** never bump a dependency _after_ the smoke gate. If you do, you've invalidated
   it — re-run it. (This is exactly how 4.10.1 broke.)
 
