@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">86% </span>
+                <span class="strong">84.9% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>43/50</span>
+                <span class='fraction'>45/53</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">57.14% </span>
+                <span class="strong">56.25% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>8/14</span>
+                <span class='fraction'>9/16</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">89.58% </span>
+                <span class="strong">88.23% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>43/48</span>
+                <span class='fraction'>45/51</span>
             </div>
         
             
@@ -197,7 +197,14 @@
 <a name='L132'></a><a href='#L132'>132</a>
 <a name='L133'></a><a href='#L133'>133</a>
 <a name='L134'></a><a href='#L134'>134</a>
-<a name='L135'></a><a href='#L135'>135</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -238,6 +245,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -251,6 +264,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
@@ -331,7 +345,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { createServer, IncomingMessage, ServerResponse } from 'http';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Platform } from 'obsidian';
 import { OAUTH_CALLBACK_PORT } from './mcp-oauth-provider';
 import { escapeHtml } from '../utils/html-entities';
 &nbsp;
@@ -358,7 +372,9 @@ export interface OAuthCallbackResult {
  *    listening (so the caller can safely open the browser redirect).
  * 2. The returned `waitForCode()` promise – resolves when the callback arrives.
  *
- * Desktop-only: uses Node's `http.createServer`.
+ * Desktop-only: uses Node's `http.createServer`, loaded lazily so the module
+ * graph never pulls a Node built-in in on mobile. Throws off desktop (the
+ * caller also skips this on mobile).
  */
 export interface OAuthCallbackHandle {
 	/** Promise that resolves when the OAuth callback is received. */
@@ -372,6 +388,10 @@ export interface OAuthCallbackHandle {
  * Returns a handle whose `waitForCode` promise resolves with the auth code.
  */
 export async function startOAuthCallbackServer(timeoutMs = CALLBACK_TIMEOUT_MS): Promise&lt;OAuthCallbackHandle&gt; {
+	<span class="missing-if-branch" title="if path not taken" >I</span>if (!Platform.isDesktop) {
+<span class="cstat-no" title="statement not covered" >		throw new Error('The OAuth callback server requires desktop Obsidian');</span>
+	}
+&nbsp;
 	let settled = false;
 	let resolveCode: (result: OAuthCallbackResult) =&gt; void;
 	let rejectCode: (err: Error) =&gt; void;
@@ -385,7 +405,8 @@ export async function startOAuthCallbackServer(timeoutMs = CALLBACK_TIMEOUT_MS):
 	// before waitForCode is returned to the caller (the outer await rejects first).
 	waitForCode.catch(() =&gt; {});
 &nbsp;
-	const server = createServer((req: IncomingMessage, res: ServerResponse) =&gt; {
+	const { createServer } = await import('http');
+	const server = createServer((req, res) =&gt; {
 		// Ignore favicon etc.
 		if (!req.url?.startsWith('/callback')) {
 			res.writeHead(404);
@@ -472,7 +493,7 @@ export async function startOAuthCallbackServer(timeoutMs = CALLBACK_TIMEOUT_MS):
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-09-28T14:04:55.314Z
+                at 2026-09-28T14:06:21.902Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/96</span>
+                <span class='fraction'>0/99</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/89</span>
+                <span class='fraction'>0/92</span>
             </div>
         
             
@@ -299,7 +299,10 @@
 <a name='L234'></a><a href='#L234'>234</a>
 <a name='L235'></a><a href='#L235'>235</a>
 <a name='L236'></a><a href='#L236'>236</a>
-<a name='L237'></a><a href='#L237'>237</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L237'></a><a href='#L237'>237</a>
+<a name='L238'></a><a href='#L238'>238</a>
+<a name='L239'></a><a href='#L239'>239</a>
+<a name='L240'></a><a href='#L240'>240</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -318,6 +321,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -336,6 +341,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -396,7 +402,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -460,6 +465,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -535,7 +541,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { App, Modal, MarkdownRenderer, Editor, Notice, setIcon } from 'obsidian';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { App, Component, Modal, MarkdownRenderer, Editor, Notice, setIcon } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { t } from '../i18n';
 import { getRawErrorMessageOr } from '../utils/error-utils';
@@ -553,6 +559,8 @@ export class SelectionResponseModal extends Modal {
 	private loadingEl!: HTMLElement;
 	private actionsContainer!: HTMLElement;
 	private response: string = <span class="cstat-no" title="statement not covered" >'';</span>
+	/** Owns the rendered markdown's child components; unloaded when the modal closes. */
+	private renderComponent = <span class="cstat-no" title="statement not covered" >new Component();</span>
 &nbsp;
 <span class="fstat-no" title="function not covered" >	constructor(</span>
 		app: App,
@@ -572,6 +580,7 @@ export class SelectionResponseModal extends Modal {
 <span class="fstat-no" title="function not covered" >	onOpen() {</span>
 		const { contentEl } = <span class="cstat-no" title="statement not covered" >this;</span>
 <span class="cstat-no" title="statement not covered" >		contentEl.empty();</span>
+<span class="cstat-no" title="statement not covered" >		this.renderComponent.load();</span>
 &nbsp;
 		// Header
 <span class="cstat-no" title="statement not covered" >		contentEl.createEl('h2', { text: t('selectionResponse.title') });</span>
@@ -632,8 +641,7 @@ export class SelectionResponseModal extends Modal {
 &nbsp;
 		// Render markdown response
 <span class="cstat-no" title="statement not covered" >		this.responseContainer.empty();</span>
-		// eslint-disable-next-line obsidianmd/no-plugin-as-component -- modal lifecycle is short; render happens once and Obsidian cleans up on close
-<span class="cstat-no" title="statement not covered" >		await MarkdownRenderer.render(this.app, normalizedResponse, this.responseContainer, '', this.plugin);</span>
+<span class="cstat-no" title="statement not covered" >		await MarkdownRenderer.render(this.app, normalizedResponse, this.responseContainer, '', this.renderComponent);</span>
 	}
 &nbsp;
 	/**
@@ -698,6 +706,7 @@ export class SelectionResponseModal extends Modal {
 <span class="fstat-no" title="function not covered" >	onClose() {</span>
 		const { contentEl } = <span class="cstat-no" title="statement not covered" >this;</span>
 <span class="cstat-no" title="statement not covered" >		contentEl.empty();</span>
+<span class="cstat-no" title="statement not covered" >		this.renderComponent.unload();</span>
 	}
 }
 &nbsp;
@@ -778,7 +787,7 @@ export class AskQuestionModal extends Modal {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-09-28T14:04:55.314Z
+                at 2026-09-28T14:06:21.902Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
