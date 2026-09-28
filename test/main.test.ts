@@ -1,7 +1,9 @@
 import ObsidianGemini, { ObsidianGeminiSettings } from '../src/main';
 import { routingKey } from '../src/api/feature-routing';
 import { FEATURE_IDS } from '../src/types/features';
+import { Platform } from 'obsidian';
 import type { App, PluginManifest } from 'obsidian';
+import { AgentView } from '../src/ui/agent-view/agent-view';
 
 describe('ObsidianGeminiSettings', () => {
 	describe('feature routing (settings redesign)', () => {
@@ -420,6 +422,48 @@ describe('ObsidianGeminiSettings', () => {
 			await plugin.saveSettings();
 
 			expect((plugin as unknown as { previousHistoryFolder: string }).previousHistoryFolder).toBe('renamed-folder');
+		});
+	});
+
+	describe('agentView', () => {
+		const rootSplit = { id: 'root' };
+		const sidebar = { id: 'right' };
+		const makeLeaf = (root: object) => ({ view: Object.create(AgentView.prototype), getRoot: () => root });
+
+		function pluginWithLeaves(leaves: unknown[]): ObsidianGemini {
+			const app = { workspace: { rootSplit, getLeavesOfType: vi.fn(() => leaves) } };
+			return new ObsidianGemini(app as unknown as App, {} as PluginManifest);
+		}
+
+		afterEach(() => {
+			Platform.isMobile = false;
+		});
+
+		it('is null when no agent leaf is open', () => {
+			expect(pluginWithLeaves([]).agentView).toBeNull();
+		});
+
+		it('is null when the leaf holds something other than an AgentView', () => {
+			expect(pluginWithLeaves([{ view: {}, getRoot: () => rootSplit }]).agentView).toBeNull();
+		});
+
+		it('returns the first leaf on desktop', () => {
+			const side = makeLeaf(sidebar);
+			const main = makeLeaf(rootSplit);
+			expect(pluginWithLeaves([side, main]).agentView).toBe(side.view);
+		});
+
+		it('prefers the main-area leaf on mobile, matching activateAgentView', () => {
+			Platform.isMobile = true;
+			const side = makeLeaf(sidebar);
+			const main = makeLeaf(rootSplit);
+			expect(pluginWithLeaves([side, main]).agentView).toBe(main.view);
+		});
+
+		it('falls back to the first leaf on mobile when none is in the main area', () => {
+			Platform.isMobile = true;
+			const side = makeLeaf(sidebar);
+			expect(pluginWithLeaves([side]).agentView).toBe(side.view);
 		});
 	});
 });

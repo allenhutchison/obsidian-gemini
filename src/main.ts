@@ -168,7 +168,11 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	 * their views, which outlive neither the leaf nor a plugin reload).
 	 */
 	get agentView(): AgentView | null {
-		const view = this.app.workspace.getLeavesOfType(VIEW_TYPE_AGENT)[0]?.view;
+		const { workspace } = this.app;
+		const leaves = workspace.getLeavesOfType(VIEW_TYPE_AGENT);
+		// Match activateAgentView(): on mobile the main-area leaf is the one shown.
+		const leaf = (Platform.isMobile && leaves.find((l) => l.getRoot() === workspace.rootSplit)) || leaves[0];
+		const view = leaf?.view;
 		return view instanceof AgentView ? view : null;
 	}
 
