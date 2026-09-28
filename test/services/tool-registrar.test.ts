@@ -140,12 +140,35 @@ describe('ToolRegistrar', () => {
 			expect(mockRegistry.registerTool).not.toHaveBeenCalledWith(expect.objectContaining({ name: 'google_search' }));
 		});
 
-		it('registers image tools when imageGen is routed to openai', async () => {
+		it('registers image tools when imageGen is routed to a configured openai', async () => {
 			mockPlugin.settings.features.imageGen = { provider: 'openai', model: 'gpt-image-2.5-flare' };
+			mockPlugin.settings.openaiApiKeySecretName = 'openai-key';
 
 			await registrar.registerAll(mockRegistry, mockLogger, mockPlugin);
 
 			expect(mockRegistry.registerTool).toHaveBeenCalledWith(expect.objectContaining({ name: 'generate_image' }));
+		});
+
+		// The route alone used to be the whole gate here, unlike 'web' and
+		// 'deep-research'. `LifecycleService` only builds `plugin.imageGeneration`
+		// when the routed provider is configured, so a route with no key
+		// registered `generate_image` against a null service.
+		it('skips image tools when imageGen is routed to openai with no key configured', async () => {
+			mockPlugin.settings.features.imageGen = { provider: 'openai', model: 'gpt-image-2.5-flare' };
+			mockPlugin.settings.openaiApiKeySecretName = '';
+
+			await registrar.registerAll(mockRegistry, mockLogger, mockPlugin);
+
+			expect(mockRegistry.registerTool).not.toHaveBeenCalledWith(expect.objectContaining({ name: 'generate_image' }));
+		});
+
+		it('skips image tools when imageGen is routed to gemini with no key configured', async () => {
+			mockPlugin.settings.apiKeySecretName = '';
+			mockPlugin.apiKey = '';
+
+			await registrar.registerAll(mockRegistry, mockLogger, mockPlugin);
+
+			expect(mockRegistry.registerTool).not.toHaveBeenCalledWith(expect.objectContaining({ name: 'generate_image' }));
 		});
 
 		it('skips cloud sources when routed to a provider that cannot serve them', async () => {
