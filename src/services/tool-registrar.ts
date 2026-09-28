@@ -4,6 +4,7 @@ import { Logger } from '../utils/logger';
 import { getVaultTools } from '../tools/vault';
 import type { ObsidianGemini } from '../types/plugin';
 import { featureProvider } from '../api/feature-routing';
+import { featureStatus } from '../api/provider-status';
 
 /**
  * Whether the Gemini key is actually available on this device. `plugin.apiKey`
@@ -33,9 +34,13 @@ interface ToolSource {
  * Capability-coupled sources (web search/fetch, maps, deep research, image
  * generation) register only when their `gate` passes: web/deep-research/image
  * are gated on the routed feature resolving to a provider that supports it
- * (settings redesign — each is its own feature, not one shared use case), and
- * maps is provider-bound (gated on the Gemini key resolving on this device,
- * regardless of routing).
+ * *and* on that provider being configured (settings redesign — each is its own
+ * feature, not one shared use case), and maps is provider-bound (gated on the
+ * Gemini key resolving on this device, regardless of routing).
+ *
+ * The credential half of that gate is not belt-and-braces: a tool registered
+ * against a provider with no key is advertised to the model and can only fail
+ * when called.
  *
  * RAG tools are excluded — they have independent lifecycle
  * (toggled without full re-init).
@@ -70,7 +75,15 @@ export class ToolRegistrar {
 		{ name: 'memory', getTools: () => import('../tools/memory-tool').then((m) => m.getMemoryTools()) },
 		{
 			name: 'image',
-			gate: (plugin) => featureProvider(plugin.settings, 'imageGen') !== null,
+			// Same reasoning as 'web' and 'deep-research': the route alone isn't
+			// enough. `featureStatus` is the exact condition `LifecycleService`
+			// uses to construct `plugin.imageGeneration`, so gating on it keeps
+			// the two in step — otherwise a route to a provider with no key
+			// registers `generate_image` against a null service and the agent
+			// spends a turn on a tool that can only answer "not available".
+			// It reads the *resolved* key, the same thing `hasGeminiKey` reads
+			// above, so a named-but-unsynced secret closes this gate too.
+			gate: (plugin) => featureStatus(plugin, 'imageGen') === 'ok',
 			getTools: () => import('../tools/image-tools').then((m) => m.getImageTools()),
 		},
 		{ name: 'skill', getTools: () => import('../tools/skill-tools').then((m) => m.getSkillTools()) },

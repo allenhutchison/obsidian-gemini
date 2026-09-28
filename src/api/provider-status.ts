@@ -71,11 +71,25 @@ export function providerMissingKey(plugin: ObsidianGemini, p: ModelProvider): bo
  * the feature -> `unsupported`; a provider that supports it but isn't
  * connected -> `unconfigured`; otherwise `ok`. Only `unsupported` and
  * `unconfigured` warrant a warning — `off` is a deliberate choice.
+ *
+ * Both credential checks run, and they are not redundant.
+ * `providerConnection` asks whether a secret *name* is saved;
+ * `providerMissingKey` asks whether that name resolves to a key on this
+ * device. A settings file synced from another machine names a secret that
+ * was never stored here, so the first says `connected` while the second
+ * says the key is missing — and `ok` would then promise a feature whose
+ * very first request cannot authenticate. Callers act on `ok` by building
+ * services and registering agent tools (`LifecycleService`,
+ * `ToolRegistrar`), so the weaker of the two answers is the wrong one to
+ * hand them. This also stops the Features page reporting a feature as fine
+ * while the provider's own card reports "needs key" from
+ * `providerMissingKey`.
  */
 export function featureStatus(plugin: ObsidianGemini, f: FeatureId): FeatureStatus {
 	const route = featureRoute(plugin.settings, f);
 	if (route.provider === 'none') return 'off';
 	if (!providerSupports(route.provider, f)) return 'unsupported';
 	if (providerConnection(plugin, route.provider) !== 'connected') return 'unconfigured';
+	if (providerMissingKey(plugin, route.provider)) return 'unconfigured';
 	return 'ok';
 }

@@ -413,7 +413,7 @@ Research the latest developments in quantum error correction and save it to Rese
 
 #### generate_image
 
-Generate an image from a prompt and save it to your vault. The agent picks a default attachment path if you don't specify one. Like `deep_research`, it defaults to running as a background task — the agent only generates inline when the image needs to appear in the same turn. Requires the **Image generation** feature to be routed to a provider that supports it — Gemini or OpenAI (see [Provider Capabilities](/reference/provider-capabilities)).
+Generate an image from a prompt and save it to your vault. The agent picks a default attachment path if you don't specify one. Like `deep_research`, it defaults to running as a background task — the agent only generates inline when the image needs to appear in the same turn. Requires the **Image generation** feature to be routed to a provider that supports it — Gemini or OpenAI — and that provider to have a key configured; otherwise the tool isn't offered to the agent at all (see [Provider Capabilities](/reference/provider-capabilities)).
 
 ```text
 Generate a watercolor diagram of a Zettelkasten workflow and embed it in my notes
