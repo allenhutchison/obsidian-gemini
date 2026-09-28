@@ -91,6 +91,16 @@ export const de: Partial<Record<TranslationKey, string>> = {
 		'⚠️ Wenn Sie löschen, ist diese Aktion dauerhaft und kann nicht rückgängig gemacht werden. Alle indizierten Daten werden dauerhaft aus der Google Cloud entfernt und Sie müssen alle Dateien neu indizieren.',
 	'ragCleanup.keepButton': 'Daten behalten',
 	'ragCleanup.deleteButton': 'Dauerhaft löschen',
+	'projectName.title': 'Neues Projekt',
+	'projectName.defaultName': 'Neues Projekt',
+	'projectName.inputLabel': 'Projektname',
+	'projectName.createButton': 'Erstellen',
+	'projectName.cancelButton': 'Abbrechen',
+	'projectName.errorEmpty': 'Gib einen Projektnamen ein.',
+	'projectName.errorReserved':
+		'Dieser Name ist unter Windows reserviert (wie CON, NUL oder COM1) und kann nicht als Dateiname verwendet werden.',
+	'projectName.errorInvalidChars':
+		'Projektnamen dürfen nicht mit einem Punkt beginnen oder folgende Zeichen enthalten: \\ / : * ? " < > | # ^ [ ]',
 	'yolo.title': 'YOLO-Modus aktivieren?',
 	'yolo.description':
 		'Der YOLO-Modus ermöglicht es dem KI-Agenten, alle Tools ohne Bestätigung auszuführen – einschließlich des Erstellens, Bearbeitens, Löschens und Verschiebens von Dateien sowie externer API-Aufrufe.',
@@ -323,7 +333,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'scheduler.advancedOptions': 'Erweiterte Optionen',
 	'scheduler.modelOverrideSetting': 'Modell überschreiben',
 	'scheduler.modelOverrideDesc':
-		'Überschreibe das Chat-Modell des Plugins für diese Aufgabe (z. B. gemini-2.0-flash). Leer lassen, um den Standard zu verwenden.',
+		'Überschreibe das Plugin-Chat-Modell für diese Aufgabe. Leer lassen, um den Standard zu verwenden.',
 	'scheduler.outputPathSetting': 'Ausgabepfad',
 	'scheduler.outputPathDesc':
 		'Wo die Ergebnisse gespeichert werden sollen. Unterstützt die Platzhalter {slug} und {date}. Standard: {defaultPath}',
@@ -386,6 +396,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'hooks.pathGlobDesc':
 		'Auslösungen auf Pfade beschränken, die diesem Glob entsprechen. Beispiele: Daily/**/*.md, Notes/*.md. Leer lassen für beliebige Pfade.',
 	'hooks.commandIdSetting': 'Befehls-ID',
+	'hooks.commandIdPlaceholder': 'plugin-id:command-name',
 	'hooks.commandIdDesc':
 		'Auszuführende Befehlspaletten-ID. Beispiele: editor:save-file, gemini-scribe:summarize-active-file. Befehls-IDs können über Einstellungen → Tastaturkürzel eingesehen werden (öffnen Sie die Entwicklerkonsole mit Ctrl+Shift+I, um IDs zu untersuchen).',
 	'hooks.focusFileSetting': 'Auslösende Datei vor Ausführung fokussieren',
@@ -407,6 +418,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'hooks.maxRunsSetting': 'Maximale Durchläufe pro Stunde',
 	'hooks.maxRunsDesc': 'Gleitendes Limit über alle Dateien hinweg. 0 (Standard) bedeutet unbegrenzt.',
 	'hooks.skillsSetting': 'Skills (kommagetrennt)',
+	'hooks.skillsPlaceholder': 'summarize, index-files',
 	'hooks.skillsDesc': 'Slugs der vorab zu aktivierenden Skills. Leer = alle verfügbaren Skills vererben.',
 	'hooks.modelOverrideSetting': 'Modell-Überschreibung',
 	'hooks.modelOverrideDesc':
@@ -1038,6 +1050,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.refreshButton': 'Aktualisieren',
 	'settings.providers.refreshUnreachable':
 		'{provider} konnte nicht erreicht werden. Überprüfe den Endpunkt und versuche es erneut.',
+	'settings.providers.refreshNeedsKey': 'Füge einen API-Schlüssel für {provider} hinzu, um dessen Modelle zu laden.',
 	'settings.providers.modelsAvailable': '{count} verfügbar',
 	'settings.providers.modelsPulledAndCloud': '{count} heruntergeladen · {cloud} Cloud',
 	'settings.providers.ollamaCloudModelLabel': '{model} (Cloud)',

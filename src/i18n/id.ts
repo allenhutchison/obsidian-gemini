@@ -89,6 +89,16 @@ export const id: Partial<Record<TranslationKey, string>> = {
 		'⚠️ Jika Anda menghapus, tindakan ini bersifat permanen dan tidak dapat dibatalkan. Semua data yang diindeks akan dihapus secara permanen dari Google Cloud, dan Anda harus mengindeks ulang semua file.',
 	'ragCleanup.keepButton': 'Simpan data',
 	'ragCleanup.deleteButton': 'Hapus permanen',
+	'projectName.title': 'Proyek baru',
+	'projectName.defaultName': 'Proyek Baru',
+	'projectName.inputLabel': 'Nama proyek',
+	'projectName.createButton': 'Buat',
+	'projectName.cancelButton': 'Batal',
+	'projectName.errorEmpty': 'Masukkan nama proyek.',
+	'projectName.errorReserved':
+		'Nama tersebut dicadangkan di Windows (seperti CON, NUL, atau COM1) dan tidak dapat digunakan sebagai nama file.',
+	'projectName.errorInvalidChars':
+		'Nama proyek tidak boleh diawali dengan titik atau berisi salah satu dari: \\ / : * ? " < > | # ^ [ ]',
 	'yolo.title': 'Aktifkan mode YOLO?',
 	'yolo.description':
 		'Mode YOLO memungkinkan agen AI untuk mengeksekusi semua alat tanpa konfirmasi apa pun — termasuk membuat, mengedit, menghapus, dan memindahkan berkas, serta panggilan API eksternal.',
@@ -319,7 +329,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'scheduler.advancedOptions': 'Opsi lanjutan',
 	'scheduler.modelOverrideSetting': 'Override model',
 	'scheduler.modelOverrideDesc':
-		'Ganti model obrolan plugin untuk tugas ini (misal: gemini-2.0-flash). Biarkan kosong untuk menggunakan default.',
+		'Ganti model obrolan plugin untuk tugas ini. Biarkan kosong untuk menggunakan default.',
 	'scheduler.outputPathSetting': 'Jalur output',
 	'scheduler.outputPathDesc': 'Tempat menulis hasil. Mendukung placeholder {slug} dan {date}. Default: {defaultPath}',
 	'scheduler.maxIterationsSetting': 'Iterasi alat maksimum',
@@ -381,6 +391,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'hooks.pathGlobDesc':
 		'Batasi pemicuan hanya pada jalur yang cocok dengan glob ini. Contoh: Daily/**/*.md, Notes/*.md. Biarkan kosong untuk jalur apa pun.',
 	'hooks.commandIdSetting': 'ID perintah',
+	'hooks.commandIdPlaceholder': 'plugin-id:command-name',
 	'hooks.commandIdDesc':
 		'ID palet perintah yang akan dijalankan. Contoh: editor:save-file, gemini-scribe:summarize-active-file. Lihat ID perintah melalui Pengaturan → Pintasan keyboard (buka konsol pengembang dengan Ctrl+Shift+I untuk memeriksa ID).',
 	'hooks.focusFileSetting': 'Fokuskan file pemicu sebelum dijalankan',
@@ -401,6 +412,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'hooks.maxRunsSetting': 'Eksekusi maks per jam',
 	'hooks.maxRunsDesc': 'Batas jendela geser (sliding-window) di semua file. 0 (default) berarti tanpa batas.',
 	'hooks.skillsSetting': 'Keahlian (dipisahkan koma)',
+	'hooks.skillsPlaceholder': 'summarize, index-files',
 	'hooks.skillsDesc': 'Slug keahlian yang akan diaktifkan sebelumnya. Kosong = warisi semua keahlian yang tersedia.',
 	'hooks.modelOverrideSetting': 'Ganti model',
 	'hooks.modelOverrideDesc': 'Ganti model obrolan plugin untuk hook ini. Biarkan kosong untuk menggunakan default.',
@@ -614,7 +626,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'command.openHookManager': 'Buka pengelola hook',
 	'command.newHook': 'Hook siklus hidup baru',
 	'command.viewScheduledTasks': 'Lihat tugas terjadwal',
-	'command.switchProject': 'Ganti proyek',
+	'command.switchProject': 'Beralih proyek',
 	'command.createProject': 'Buat proyek',
 	'command.convertToProject': 'Konversi catatan ke proyek',
 	'command.openProjectSettings': 'Buka pengaturan proyek',
@@ -1012,6 +1024,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.modelsRowName': 'Model yang tersedia',
 	'settings.providers.refreshButton': 'Segarkan',
 	'settings.providers.refreshUnreachable': 'Tidak dapat menjangkau {provider}. Periksa endpoint dan coba lagi.',
+	'settings.providers.refreshNeedsKey': 'Tambahkan kunci API untuk {provider} untuk memuat modelnya.',
 	'settings.providers.modelsAvailable': '{count} tersedia',
 	'settings.providers.modelsPulledAndCloud': '{count} diunduh · {cloud} cloud',
 	'settings.providers.ollamaCloudModelLabel': '{model} (cloud)',

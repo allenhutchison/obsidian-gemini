@@ -89,6 +89,16 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 		'⚠️ Pokud data smažete, tato akce je trvalá a nelze ji vrátit zpět. Všechna indexovaná data budou trvale odstraněna z Google Cloud a budete muset znovu reindexovat všechny soubory.',
 	'ragCleanup.keepButton': 'Ponechat data',
 	'ragCleanup.deleteButton': 'Trvale smazat',
+	'projectName.title': 'Nový projekt',
+	'projectName.defaultName': 'Nový projekt',
+	'projectName.inputLabel': 'Název projektu',
+	'projectName.createButton': 'Vytvořit',
+	'projectName.cancelButton': 'Zrušit',
+	'projectName.errorEmpty': 'Zadejte název projektu.',
+	'projectName.errorReserved':
+		'Tento název je rezervován systémem Windows (např. CON, NUL nebo COM1) a nelze jej použít jako název souboru.',
+	'projectName.errorInvalidChars':
+		'Názvy projektů nesmí začínat tečkou ani obsahovat žádný ze znaků: \\ / : * ? " < > | # ^ [ ]',
 	'yolo.title': 'Povolit YOLO mode?',
 	'yolo.description':
 		'Režim YOLO umožňuje AI agentovi spouštět všechny nástroje bez jakéhokoli potvrzení — včetně vytváření, úprav, mazání a přesouvání souborů, stejně jako externích volání API.',
@@ -318,7 +328,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'scheduler.advancedOptions': 'Pokročilé možnosti',
 	'scheduler.modelOverrideSetting': 'Přepsání modelu',
 	'scheduler.modelOverrideDesc':
-		'Přepsat chatovací model pluginu pro tuto úlohu (např. gemini-2.0-flash). Ponechte prázdné pro použití výchozího.',
+		'Přepsat chatovací model pluginu pro tento úkol. Ponechte prázdné pro použití výchozího.',
 	'scheduler.outputPathSetting': 'Výstupní cesta',
 	'scheduler.outputPathDesc':
 		'Kam zapisovat výsledky. Podporuje zástupné znaky {slug} a {date}. Výchozí: {defaultPath}',
@@ -381,6 +391,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'hooks.pathGlobDesc':
 		'Omezit spouštění na cesty odpovídající tomuto globu. Příklady: Daily/**/*.md, Notes/*.md. Pro jakoukoli cestu ponechte prázdné.',
 	'hooks.commandIdSetting': 'ID příkazu',
+	'hooks.commandIdPlaceholder': 'plugin-id:command-name',
 	'hooks.commandIdDesc':
 		'ID příkazu z palety příkazů, který se má spustit. Příklady: editor:save-file, gemini-scribe:summarize-active-file. ID příkazů si můžete zobrazit v Nastavení → Klávesové zkratky (otevřete vývojářskou konzoli pomocí Ctrl+Shift+I pro zobrazení ID).',
 	'hooks.focusFileSetting': 'Zaměřit spouštěcí soubor před odesláním',
@@ -401,6 +412,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'hooks.maxRunsSetting': 'Maximální počet spuštění za hodinu',
 	'hooks.maxRunsDesc': 'Limit klouzavého okna pro všechny soubory. 0 (výchozí) znamená bez omezení.',
 	'hooks.skillsSetting': 'Dovednosti (oddělené čárkou)',
+	'hooks.skillsPlaceholder': 'summarize, index-files',
 	'hooks.skillsDesc':
 		'Identifikátory (slugy) dovedností, které se mají předaktivovat. Prázdné = zdědit všechny dostupné dovednosti.',
 	'hooks.modelOverrideSetting': 'Přepsání modelu',
@@ -1020,6 +1032,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.refreshButton': 'Obnovit',
 	'settings.providers.refreshUnreachable':
 		'Nepodařilo se připojit k {provider}. Zkontrolujte koncový bod a zkuste to znovu.',
+	'settings.providers.refreshNeedsKey': 'Přidejte API klíč pro {provider} k načtení jeho modelů.',
 	'settings.providers.modelsAvailable': '{count} k dispozici',
 	'settings.providers.modelsPulledAndCloud': '{count} staženo · {cloud} cloud',
 	'settings.providers.ollamaCloudModelLabel': '{model} (cloud)',

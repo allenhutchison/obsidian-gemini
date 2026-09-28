@@ -90,6 +90,16 @@ export const no: Partial<Record<TranslationKey, string>> = {
 		'⚠️ Hvis du sletter, er denne handlingen permanent og kan ikke angres. Alle indekserte data vil bli permanent fjernet fra Google Cloud, og du må reindeksere alle filene.',
 	'ragCleanup.keepButton': 'Behold data',
 	'ragCleanup.deleteButton': 'Slett permanent',
+	'projectName.title': 'Nytt prosjekt',
+	'projectName.defaultName': 'Nytt prosjekt',
+	'projectName.inputLabel': 'Prosjektnavn',
+	'projectName.createButton': 'Opprett',
+	'projectName.cancelButton': 'Avbryt',
+	'projectName.errorEmpty': 'Skriv inn et prosjektnavn.',
+	'projectName.errorReserved':
+		'Dette navnet er reservert i Windows (som CON, NUL eller COM1) og kan ikke brukes som et filnavn.',
+	'projectName.errorInvalidChars':
+		'Prosjektnavn kan ikke starte med et punktum eller inneholde noen av følgende: \\ / : * ? " < > | # ^ [ ]',
 	'yolo.title': 'Aktiver YOLO-modus?',
 	'yolo.description':
 		'YOLO-modus lar AI-agenten kjøre alle verktøy uten bekreftelse — inkludert å opprette, redigere, slette og flytte filer, samt eksterne API-kall.',
@@ -319,7 +329,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'scheduler.advancedOptions': 'Avanserte alternativer',
 	'scheduler.modelOverrideSetting': 'Modelloverstyring',
 	'scheduler.modelOverrideDesc':
-		'Overstyr pluginens chatmodell for denne oppgaven (f.eks. gemini-2.0-flash). La stå tom for å bruke standarden.',
+		'Overstyr chatmodellen til programtillegget for denne oppgaven. La stå tomt for å bruke standard.',
 	'scheduler.outputPathSetting': 'Bane for utdata',
 	'scheduler.outputPathDesc':
 		'Hvor resultatene skal skrives. Støtter plassholderne {slug} og {date}. Standard: {defaultPath}',
@@ -381,6 +391,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'hooks.pathGlobDesc':
 		'Begrens utløsere til stier som samsvarer med denne globen. Eksempler: Daily/**/*.md, Notes/*.md. La stå tom for alle stier.',
 	'hooks.commandIdSetting': 'Kommando-ID',
+	'hooks.commandIdPlaceholder': 'plugin-id:command-name',
 	'hooks.commandIdDesc':
 		'Kommando-ID fra kommandopaletten som skal kjøres. Eksempler: editor:save-file, gemini-scribe:summarize-active-file. Se kommando-ID-er via Innstillinger → Hurtigtaster (åpne utviklerkonsollen med Ctrl+Shift+I for å inspisere ID-er).',
 	'hooks.focusFileSetting': 'Fokuser på utløsende fil før sending',
@@ -401,6 +412,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'hooks.maxRunsSetting': 'Maks antall kjøringer per time',
 	'hooks.maxRunsDesc': 'Grense for glidende tidsvindu på tvers av alle filer. 0 (standard) betyr ubegrenset.',
 	'hooks.skillsSetting': 'Ferdigheter (kommaseparert)',
+	'hooks.skillsPlaceholder': 'summarize, index-files',
 	'hooks.skillsDesc': 'Slugs for ferdigheter som skal forhåndsaktiveres. Tom = arv alle tilgjengelige ferdigheter.',
 	'hooks.modelOverrideSetting': 'Modelloverstyring',
 	'hooks.modelOverrideDesc': 'Overstyr pluginens chatmodell for denne hooken. La stå tom for å bruke standarden.',
@@ -1016,6 +1028,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.modelsRowName': 'Tilgjengelige modeller',
 	'settings.providers.refreshButton': 'Oppdater',
 	'settings.providers.refreshUnreachable': 'Kunne ikke nå {provider}. Sjekk endepunktet og prøv igjen.',
+	'settings.providers.refreshNeedsKey': 'Legg til en API-nøkkel for {provider} for å laste inn modellene.',
 	'settings.providers.modelsAvailable': '{count} tilgjengelige',
 	'settings.providers.modelsPulledAndCloud': '{count} lastet ned · {cloud} sky',
 	'settings.providers.ollamaCloudModelLabel': '{model} (sky)',

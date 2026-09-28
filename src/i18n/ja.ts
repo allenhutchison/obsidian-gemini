@@ -89,6 +89,16 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 		'⚠️ 削除すると、この操作は永続的であり、元に戻すことはできません。インデックスされたすべてのデータはGoogle Cloudから完全に削除され、すべてのファイルを再インデックスする必要があります。',
 	'ragCleanup.keepButton': 'データを保持',
 	'ragCleanup.deleteButton': '完全に削除',
+	'projectName.title': '新規プロジェクト',
+	'projectName.defaultName': '新規プロジェクト',
+	'projectName.inputLabel': 'プロジェクト名',
+	'projectName.createButton': '作成',
+	'projectName.cancelButton': 'キャンセル',
+	'projectName.errorEmpty': 'プロジェクト名を入力してください。',
+	'projectName.errorReserved':
+		'その名前はWindowsで予約されているため（CON、NUL、COM1など）、ファイル名として使用できません。',
+	'projectName.errorInvalidChars':
+		'プロジェクト名の先頭にドットを使用したり、次の文字を含めたりすることはできません: \\ / : * ? " < > | # ^ [ ]',
 	'yolo.title': 'YOLO modeを有効にしますか？',
 	'yolo.description':
 		'YOLOモードを有効にすると、AIエージェントは確認なしですべてのツールを実行できるようになります。これには、ファイルの作成、編集、削除、移動、および外部APIの呼び出しが含まれます。',
@@ -317,7 +327,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'scheduler.advancedOptions': '詳細オプション',
 	'scheduler.modelOverrideSetting': 'モデルのオーバーライド',
 	'scheduler.modelOverrideDesc':
-		'このタスクのプラグインチャットモデルをオーバーライドします（例: gemini-2.0-flash）。デフォルトを使用する場合は空白のままにしてください。',
+		'このタスクで使用するプラグインのチャットモデルを上書きします。空欄の場合はデフォルトを使用します。',
 	'scheduler.outputPathSetting': '出力パス',
 	'scheduler.outputPathDesc':
 		'結果の書き込み先。{slug} および {date} プレースホルダーをサポートしています。デフォルト: {defaultPath}',
@@ -380,6 +390,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'hooks.pathGlobDesc':
 		'このGlobパターンに一致するパスのみに実行を制限します。例: Daily/**/*.md, Notes/*.md。すべてのパスを対象にする場合は空欄にしてください。',
 	'hooks.commandIdSetting': 'コマンドID',
+	'hooks.commandIdPlaceholder': 'plugin-id:command-name',
 	'hooks.commandIdDesc':
 		'実行するコマンドパレットのID。例: editor:save-file、gemini-scribe:summarize-active-file。コマンドIDは 設定 → ホットキー で確認できます（Ctrl+Shift+Iでデベロッパーコンソールを開き、IDを確認してください）。',
 	'hooks.focusFileSetting': '実行前にトリガーとなったファイルにフォーカスする',
@@ -400,6 +411,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'hooks.maxRunsSetting': '1時間あたりの最大実行回数',
 	'hooks.maxRunsDesc': 'すべてのファイルを対象としたスライディングウィンドウ方式の上限。0（デフォルト）は無制限。',
 	'hooks.skillsSetting': 'スキル (カンマ区切り)',
+	'hooks.skillsPlaceholder': 'summarize, index-files',
 	'hooks.skillsDesc': '事前有効化するスキルのスラッグ。空欄 = 利用可能なすべてのスキルを継承。',
 	'hooks.modelOverrideSetting': 'モデルのオーバーライド',
 	'hooks.modelOverrideDesc':
@@ -1014,6 +1026,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.refreshButton': '更新',
 	'settings.providers.refreshUnreachable':
 		'{provider}に接続できませんでした。エンドポイントを確認して再試行してください。',
+	'settings.providers.refreshNeedsKey': '{provider}のモデルを読み込むには、APIキーを追加してください。',
 	'settings.providers.modelsAvailable': '{count}件利用可能',
 	'settings.providers.modelsPulledAndCloud': '{count}件プル済み · {cloud}件クラウド',
 	'settings.providers.ollamaCloudModelLabel': '{model} (クラウド)',

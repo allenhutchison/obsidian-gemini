@@ -89,6 +89,16 @@ export const da: Partial<Record<TranslationKey, string>> = {
 		'⚠️ Hvis du sletter, er denne handling permanent og kan ikke fortrydes. Alle indekserede data vil blive fjernet permanent fra Google Cloud, og du skal genindeksere alle filer.',
 	'ragCleanup.keepButton': 'Behold data',
 	'ragCleanup.deleteButton': 'Slet permanent',
+	'projectName.title': 'Nyt projekt',
+	'projectName.defaultName': 'Nyt projekt',
+	'projectName.inputLabel': 'Projektnavn',
+	'projectName.createButton': 'Opret',
+	'projectName.cancelButton': 'Annuller',
+	'projectName.errorEmpty': 'Indtast et projektnavn.',
+	'projectName.errorReserved':
+		'Dette navn er reserveret i Windows (som CON, NUL eller COM1) og kan ikke bruges som et filnavn.',
+	'projectName.errorInvalidChars':
+		'Projektnavne må ikke starte med et punktum eller indeholde nogen af følgende: \\ / : * ? " < > | # ^ [ ]',
 	'yolo.title': 'Aktiver YOLO mode?',
 	'yolo.description':
 		'YOLO-tilstand tillader AI-agenten at køre alle værktøjer uden bekræftelse – herunder at oprette, redigere, slette og flytte filer samt foretage eksterne API-kald.',
@@ -319,7 +329,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'scheduler.advancedOptions': 'Avancerede indstillinger',
 	'scheduler.modelOverrideSetting': 'Model-tilsidesættelse',
 	'scheduler.modelOverrideDesc':
-		'Tilsidesæt pluginets chatmodel for denne opgave (f.eks. gemini-2.0-flash). Lad feltet være tomt for at bruge standarden.',
+		'Tilsidesæt pluginets chatmodel for denne opgave. Lad feltet stå tomt for at bruge standarden.',
 	'scheduler.outputPathSetting': 'Output-sti',
 	'scheduler.outputPathDesc':
 		'Hvor resultaterne skal skrives hen. Understøtter pladsholderne {slug} og {date}. Standard: {defaultPath}',
@@ -382,6 +392,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'hooks.pathGlobDesc':
 		'Begræns udløsninger til stier, der matcher denne glob. Eksempler: Daily/**/*.md, Notes/*.md. Lad feltet være tomt for alle stier.',
 	'hooks.commandIdSetting': 'Kommando-id',
+	'hooks.commandIdPlaceholder': 'plugin-id:command-name',
 	'hooks.commandIdDesc':
 		"Kommando-id fra kommandopaletten, der skal udløses. Eksempler: editor:save-file, gemini-scribe:summarize-active-file. Se kommando-id'er via Indstillinger → Genvejstaster (åbn udviklerkonsollen med Ctrl+Shift+I for at inspicere id'er).",
 	'hooks.focusFileSetting': 'Fokuser på udløsende fil før afsendelse',
@@ -402,6 +413,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'hooks.maxRunsSetting': 'Maks. kørsler pr. time',
 	'hooks.maxRunsDesc': 'Grænse for glidende tidsvindue på tværs af alle filer. 0 (standard) betyder ubegrænset.',
 	'hooks.skillsSetting': 'Færdigheder (kommasepareret)',
+	'hooks.skillsPlaceholder': 'summarize, index-files',
 	'hooks.skillsDesc': 'Slugs for færdigheder, der skal præ-aktiveres. Tom = nedarv alle tilgængelige færdigheder.',
 	'hooks.modelOverrideSetting': 'Model-tilsidesættelse',
 	'hooks.modelOverrideDesc':
@@ -1020,6 +1032,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.modelsRowName': 'Tilgængelige modeller',
 	'settings.providers.refreshButton': 'Genindlæs',
 	'settings.providers.refreshUnreachable': 'Kunne ikke nå {provider}. Tjek endepunktet, og prøv igen.',
+	'settings.providers.refreshNeedsKey': 'Tilføj en API-nøgle til {provider} for at indlæse dens modeller.',
 	'settings.providers.modelsAvailable': '{count} tilgængelige',
 	'settings.providers.modelsPulledAndCloud': '{count} hentet · {cloud} cloud',
 	'settings.providers.ollamaCloudModelLabel': '{model} (cloud)',
