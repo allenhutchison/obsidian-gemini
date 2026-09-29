@@ -144,4 +144,45 @@ describe('AnthropicModelsService', () => {
 
 		expect(mockedRequestUrl).toHaveBeenCalledTimes(1);
 	});
+
+	it("serves the curated list, not the previous key's models, when a fetch fails after the key changed", async () => {
+		mockedRequestUrl.mockResolvedValueOnce({ status: 200, json: { data: [{ id: 'claude-sonnet-5' }] } });
+		const plugin = buildPlugin();
+		const svc = new AnthropicModelsService(plugin);
+		await svc.getModels();
+
+		plugin.anthropicApiKey = 'sk-ant-other';
+		mockedRequestUrl.mockRejectedValueOnce(new Error('offline'));
+		expect((await svc.getModels()).map((m) => m.value)).toEqual(CATALOG);
+	});
+
+	it('clears the probe outcome when the key is removed', async () => {
+		mockedRequestUrl.mockResolvedValue({ status: 200, json: { data: [{ id: 'claude-opus-5' }] } });
+		const plugin = buildPlugin();
+		const svc = new AnthropicModelsService(plugin);
+		await svc.getModels();
+		expect(svc.lastProbe).toBe('reachable');
+
+		plugin.anthropicApiKey = '';
+		await svc.getModels();
+		expect(svc.lastProbe).toBeNull();
+	});
+
+	it('does not let a fetch in flight during invalidate() re-seed the cleared cache', async () => {
+		let settle!: (value: unknown) => void;
+		mockedRequestUrl.mockReturnValueOnce(new Promise((resolve) => (settle = resolve)));
+		const svc = new AnthropicModelsService(buildPlugin());
+
+		const inFlight = svc.getModels();
+		svc.invalidate();
+		settle({ status: 200, json: { data: [{ id: 'claude-opus-5' }] } });
+
+		// The caller still gets the list it asked for...
+		expect((await inFlight).map((m) => m.value)).toEqual(['claude-opus-5']);
+		// ...but the state invalidate() cleared stays cleared, so the next read refetches.
+		expect(svc.lastProbe).toBeNull();
+		mockedRequestUrl.mockResolvedValueOnce({ status: 200, json: { data: [{ id: 'claude-sonnet-5' }] } });
+		expect((await svc.getModels()).map((m) => m.value)).toEqual(['claude-sonnet-5']);
+		expect(mockedRequestUrl).toHaveBeenCalledTimes(2);
+	});
 });

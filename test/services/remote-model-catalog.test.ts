@@ -406,4 +406,61 @@ describe('CachedModelCatalog', () => {
 			expect(await catalog.get()).toEqual([]);
 		});
 	});
+
+	describe('fallback', () => {
+		function buildWithFallback() {
+			const load = vi.fn<(e: TestEndpoint) => Promise<GeminiModel[]>>();
+			let baseUrl = 'http://a';
+			const catalog = new CachedModelCatalog<TestEndpoint>({
+				logger: () => buildLogger(),
+				logPrefix: '[TestService]',
+				endpoint: (): TestEndpoint => ({ key: baseUrl, label: baseUrl, baseUrl }),
+				load,
+				fallback: () => [model('curated')],
+			});
+			return {
+				catalog,
+				load,
+				setEndpoint: (next: string) => {
+					baseUrl = next;
+				},
+			};
+		}
+
+		it('is served when the very first fetch fails', async () => {
+			const { catalog, load } = buildWithFallback();
+			load.mockRejectedValue(new Error('down'));
+			expect(await catalog.get()).toEqual([model('curated')]);
+		});
+
+		it("is served instead of another endpoint's cache after the endpoint changed", async () => {
+			const { catalog, load, setEndpoint } = buildWithFallback();
+			load.mockResolvedValue([model('a')]);
+			await catalog.get();
+
+			setEndpoint('http://b');
+			load.mockRejectedValue(new Error('down'));
+			expect(await catalog.get()).toEqual([model('curated')]);
+		});
+
+		it('is served when a load failing after reset() has nothing valid left', async () => {
+			const { catalog, load } = buildWithFallback();
+			let fail!: (error: unknown) => void;
+			load.mockReturnValue(new Promise((_, reject) => (fail = reject)));
+
+			const inFlight = catalog.get();
+			catalog.reset();
+			fail(new Error('down'));
+			expect(await inFlight).toEqual([model('curated')]);
+		});
+
+		it('does not replace a valid cache for the same endpoint', async () => {
+			const { catalog, load } = buildWithFallback();
+			load.mockResolvedValue([model('a')]);
+			await catalog.get();
+
+			load.mockRejectedValue(new Error('down'));
+			expect(await catalog.get(true)).toEqual([model('a')]);
+		});
+	});
 });
