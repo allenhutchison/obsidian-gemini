@@ -11,11 +11,18 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 >
 > Then route each feature to a provider on the **Features** page. See the [provider capability matrix](docs/reference/provider-capabilities.md) for what's supported on each.
 
-## What's New in v4.12.0
+## What's New in v4.12.1
 
-**🔌 Gemini Scribe 4.12.0 - Multi-Provider, Per-Feature Routing & Settings Redesign**
+**🛠️ Gemini Scribe 4.12.1 - Plugin audit compliance & fixes**
 
-_The multi-provider release — two new providers, per-feature routing, and a rebuilt settings page:_
+_4.12.1 is a patch for the 4.12 line — a few fixes on top of the full 4.12 feature set:_
+
+- **✅ Obsidian directory audit compliance** - The 4.12.0 build was flagged by Obsidian's plugin audit; the code now passes it without suppressing any checks. Destructive buttons use Obsidian's own destructive styling, agent progress and thinking indicators render with Obsidian's DOM helpers, the OAuth callback server only loads on desktop, and the mobile layout fix no longer relies on inline or `!important` styles. (#1610, #1614)
+- **📱 Agent view on mobile** - Commands that act on the agent view now find the one you're looking at on mobile instead of a hidden sidebar copy. (#1610)
+- **🖼️ Image generation tool only when it can run** - The agent's `generate_image` tool is registered only when image generation is routed to a provider that's actually connected, so it no longer appears and then fails with a missing key. (#1611)
+- **🌍 Translation refresh** - Updated UI translations. (#1606)
+
+_The full 4.12 feature set is unchanged — the multi-provider release, with two new providers, per-feature routing, and a rebuilt settings page:_
 
 - **🌍 Anthropic (Claude) and OpenAI-compatible providers** - Two new providers join Gemini and Ollama: Anthropic Claude models (with adaptive thinking and image/PDF input) and OpenAI or any OpenAI-compatible server such as LM Studio or MLX (custom base URL + API key), each with streaming and tool calling. (#1532, #1286, #1288)
 - **🧭 Per-feature routing** - Chat, summaries, completions, rewrite, web search, deep research, RAG, and image generation each route to their own provider and model; a feature routed to a provider that isn't set up stays off instead of silently falling back to another provider. (#1266)
