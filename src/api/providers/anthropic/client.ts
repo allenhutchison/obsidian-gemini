@@ -61,6 +61,8 @@ const MAX_TOKENS_NON_STREAMING = 16_000;
 const MAX_TOKENS_STREAMING = 64_000;
 /** Beta that enables `fallbacks: 'default'` (route a refused request to a fallback model server-side). */
 const SERVER_SIDE_FALLBACK_BETA = 'server-side-fallback-2026-07-01';
+/** Beta that enables `thinking.block_binding` (what happens to a replayed thinking block that fails the conversation check). */
+const THINKING_BINDING_BETA = 'thinking-binding-controls-2026-08-01';
 
 export class AnthropicClient implements ModelApi {
 	private client: Anthropic;
@@ -187,9 +189,25 @@ export class AnthropicClient implements ModelApi {
 			// cacheable block, so the stable system prompt + history prefix is
 			// reused across tool-loop iterations and follow-up turns.
 			cache_control: { type: 'ephemeral' },
-			...(meta.adaptiveThinking && { thinking: { type: 'adaptive', display: 'summarized' } }),
-			...(meta.refusalFallback && { betas: [SERVER_SIDE_FALLBACK_BETA], fallbacks: 'default' }),
+			// A replayed thinking block is bound to everything before it. When
+			// compaction rewrites earlier history mid tool chain (#1608), the
+			// in-flight turn's blocks no longer match that prefix and the API
+			// rejects them with a 400 by default; `drop_block` removes just the
+			// stale blocks instead, so the chain continues without that reasoning.
+			...(meta.adaptiveThinking && {
+				thinking: {
+					type: 'adaptive',
+					display: 'summarized',
+					block_binding: { prefix_mismatch_behavior: 'drop_block' },
+				},
+			}),
+			...(meta.refusalFallback && { fallbacks: 'default' }),
 		};
+		const betas = [
+			...(meta.adaptiveThinking ? [THINKING_BINDING_BETA] : []),
+			...(meta.refusalFallback ? [SERVER_SIDE_FALLBACK_BETA] : []),
+		];
+		if (betas.length) params.betas = betas;
 
 		if (!isExtendedRequest(request)) {
 			params.messages = [{ role: 'user', content: request.prompt }];
@@ -318,6 +336,12 @@ export class AnthropicClient implements ModelApi {
 		if (message.stop_reason === 'refusal') {
 			const category = message.stop_details?.category;
 			throw new Error(`Claude declined to respond to this request${category ? ` (${category})` : ''}.`);
+		}
+
+		const dropped = message.input_transformations?.filter((entry) => entry.type === 'thinking_dropped') ?? [];
+		if (dropped.length) {
+			// Expected after mid tool chain compaction; see the block_binding note in buildParams.
+			this.plugin?.logger.debug('[AnthropicClient] API dropped stale replayed thinking blocks:', dropped);
 		}
 
 		let markdown = '';
