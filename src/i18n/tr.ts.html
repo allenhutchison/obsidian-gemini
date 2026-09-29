@@ -1114,12 +1114,36 @@
 <a name='L1049'></a><a href='#L1049'>1049</a>
 <a name='L1050'></a><a href='#L1050'>1050</a>
 <a name='L1051'></a><a href='#L1051'>1051</a>
-<a name='L1052'></a><a href='#L1052'>1052</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L1052'></a><a href='#L1052'>1052</a>
+<a name='L1053'></a><a href='#L1053'>1053</a>
+<a name='L1054'></a><a href='#L1054'>1054</a>
+<a name='L1055'></a><a href='#L1055'>1055</a>
+<a name='L1056'></a><a href='#L1056'>1056</a>
+<a name='L1057'></a><a href='#L1057'>1057</a>
+<a name='L1058'></a><a href='#L1058'>1058</a>
+<a name='L1059'></a><a href='#L1059'>1059</a>
+<a name='L1060'></a><a href='#L1060'>1060</a>
+<a name='L1061'></a><a href='#L1061'>1061</a>
+<a name='L1062'></a><a href='#L1062'>1062</a>
+<a name='L1063'></a><a href='#L1063'>1063</a>
+<a name='L1064'></a><a href='#L1064'>1064</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">120x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2257,6 +2281,15 @@ export const tr: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 		"⚠️ Silerseniz, bu işlem kalıcıdır ve geri alınamaz. Tüm dizine eklenmiş veriler Google Cloud'dan kalıcı olarak kaldırılacaktır ve tüm dosyaları yeniden dizine eklemeniz gerekecektir.",
 	'ragCleanup.keepButton': 'Verileri koru',
 	'ragCleanup.deleteButton': 'Kalıcı olarak sil',
+	'projectName.title': 'Yeni proje',
+	'projectName.defaultName': 'Yeni Proje',
+	'projectName.inputLabel': 'Proje adı',
+	'projectName.createButton': 'Oluştur',
+	'projectName.cancelButton': 'İptal',
+	'projectName.errorEmpty': 'Bir proje adı girin.',
+	'projectName.errorReserved':
+		"Bu ad Windows'ta ayrılmıştır (CON, NUL veya COM1 gibi) ve dosya adı olarak kullanılamaz.",
+	'projectName.errorInvalidChars': 'Proje adları noktayla başlayamaz veya şunları içeremez: \\ / : * ? " &lt; &gt; | # ^ [ ]',
 	'yolo.title': 'YOLO modu etkinleştirilsin mi?',
 	'yolo.description':
 		'YOLO modu, yapay zeka ajanının tüm araçları hiçbir onay almadan çalıştırmasına olanak tanır — buna dosyaları oluşturma, düzenleme, silme ve taşımanın yanı sıra harici API çağrıları da dahildir.',
@@ -2488,7 +2521,7 @@ export const tr: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'scheduler.advancedOptions': 'Gelişmiş seçenekler',
 	'scheduler.modelOverrideSetting': 'Modeli geçersiz kıl',
 	'scheduler.modelOverrideDesc':
-		'Bu görev için eklenti sohbet modelini geçersiz kılın (örn. gemini-2.0-flash). Varsayılanı kullanmak için boş bırakın.',
+		'Bu görev için eklenti sohbet modelini geçersiz kılın. Varsayılanı kullanmak için boş bırakın.',
 	'scheduler.outputPathSetting': 'Çıktı yolu',
 	'scheduler.outputPathDesc':
 		'Sonuçların nereye yazılacağı. {slug} ve {date} yer tutucularını destekler. Varsayılan: {defaultPath}',
@@ -2551,6 +2584,7 @@ export const tr: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'hooks.pathGlobDesc':
 		'Tetiklemeleri bu glob ile eşleşen yollarla sınırlandırın. Örnekler: Daily/**/*.md, Notes/*.md. Tüm yollar için boş bırakın.',
 	'hooks.commandIdSetting': 'Komut kimliği',
+	'hooks.commandIdPlaceholder': 'plugin-id:command-name',
 	'hooks.commandIdDesc':
 		'Tetiklenecek komut paleti kimliği. Örnekler: editor:save-file, gemini-scribe:summarize-active-file. Komut kimliklerini Ayarlar → Kısayollar üzerinden görüntüleyin (kimlikleri incelemek için Ctrl+Shift+I ile geliştirici konsolunu açın).',
 	'hooks.focusFileSetting': 'Göndermeden önce tetikleyici dosyaya odaklan',
@@ -2571,6 +2605,7 @@ export const tr: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'hooks.maxRunsSetting': 'Saat başına maksimum çalışma',
 	'hooks.maxRunsDesc': 'Tüm dosyalar genelinde kayan pencere sınırı. 0 (varsayılan) sınırsız anlamına gelir.',
 	'hooks.skillsSetting': 'Yetenekler (virgülle ayrılmış)',
+	'hooks.skillsPlaceholder': 'summarize, index-files',
 	'hooks.skillsDesc':
 		'Önceden etkinleştirilecek yeteneklerin kısa adları (slug). Boş bırakılırsa = kullanılabilir tüm yetenekleri devralır.',
 	'hooks.modelOverrideSetting': 'Model geçersiz kılma',
@@ -3192,6 +3227,7 @@ export const tr: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'settings.providers.refreshButton': 'Yenile',
 	'settings.providers.refreshUnreachable':
 		'{provider} sağlayıcısına ulaşılamadı. Uç noktayı kontrol edip tekrar deneyin.',
+	'settings.providers.refreshNeedsKey': '{provider} modellerini yüklemek için bir API anahtarı ekleyin.',
 	'settings.providers.modelsAvailable': '{count} kullanılabilir',
 	'settings.providers.modelsPulledAndCloud': '{count} çekildi · {cloud} bulut',
 	'settings.providers.ollamaCloudModelLabel': '{model} (bulut)',
@@ -3223,7 +3259,7 @@ export const tr: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-09-28T14:06:21.902Z
+                at 2026-09-29T00:02:03.666Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

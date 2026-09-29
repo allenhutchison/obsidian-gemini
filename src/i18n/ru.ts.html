@@ -1117,12 +1117,38 @@
 <a name='L1052'></a><a href='#L1052'>1052</a>
 <a name='L1053'></a><a href='#L1053'>1053</a>
 <a name='L1054'></a><a href='#L1054'>1054</a>
-<a name='L1055'></a><a href='#L1055'>1055</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L1055'></a><a href='#L1055'>1055</a>
+<a name='L1056'></a><a href='#L1056'>1056</a>
+<a name='L1057'></a><a href='#L1057'>1057</a>
+<a name='L1058'></a><a href='#L1058'>1058</a>
+<a name='L1059'></a><a href='#L1059'>1059</a>
+<a name='L1060'></a><a href='#L1060'>1060</a>
+<a name='L1061'></a><a href='#L1061'>1061</a>
+<a name='L1062'></a><a href='#L1062'>1062</a>
+<a name='L1063'></a><a href='#L1063'>1063</a>
+<a name='L1064'></a><a href='#L1064'>1064</a>
+<a name='L1065'></a><a href='#L1065'>1065</a>
+<a name='L1066'></a><a href='#L1066'>1066</a>
+<a name='L1067'></a><a href='#L1067'>1067</a>
+<a name='L1068'></a><a href='#L1068'>1068</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">120x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2262,6 +2288,16 @@ export const ru: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 		'⚠️ Удаление необратимо. Все проиндексированные данные будут навсегда удалены из Google Cloud, и вам потребуется заново проиндексировать все файлы.',
 	'ragCleanup.keepButton': 'Сохранить данные',
 	'ragCleanup.deleteButton': 'Удалить навсегда',
+	'projectName.title': 'Новый проект',
+	'projectName.defaultName': 'Новый проект',
+	'projectName.inputLabel': 'Название проекта',
+	'projectName.createButton': 'Создать',
+	'projectName.cancelButton': 'Отмена',
+	'projectName.errorEmpty': 'Введите название проекта.',
+	'projectName.errorReserved':
+		'Это имя зарезервировано в Windows (например, CON, NUL или COM1) и не может использоваться в качестве имени файла.',
+	'projectName.errorInvalidChars':
+		'Имя проекта не может начинаться с точки или содержать следующие символы: \\ / : * ? " &lt; &gt; | # ^ [ ]',
 	'yolo.title': 'Включить YOLO mode?',
 	'yolo.description':
 		'Режим YOLO позволяет ИИ-агенту выполнять все инструменты без подтверждения — включая создание, редактирование, удаление и перемещение файлов, а также внешние API-вызовы.',
@@ -2493,7 +2529,7 @@ export const ru: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'scheduler.advancedOptions': 'Дополнительные параметры',
 	'scheduler.modelOverrideSetting': 'Переопределение модели',
 	'scheduler.modelOverrideDesc':
-		'Переопределить модель чата плагина для этой задачи (например, gemini-2.0-flash). Оставьте пустым, чтобы использовать по умолчанию.',
+		'Переопределить модель чата плагина для этой задачи. Оставьте пустым, чтобы использовать значение по умолчанию.',
 	'scheduler.outputPathSetting': 'Путь вывода',
 	'scheduler.outputPathDesc':
 		'Куда записывать результаты. Поддерживает плейсхолдеры {slug} и {date}. По умолчанию: {defaultPath}',
@@ -2556,6 +2592,7 @@ export const ru: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'hooks.pathGlobDesc':
 		'Ограничить запуск путями, соответствующими этой маске. Примеры: Daily/**/*.md, Notes/*.md. Оставьте пустым для любых путей.',
 	'hooks.commandIdSetting': 'ID команды',
+	'hooks.commandIdPlaceholder': 'plugin-id:command-name',
 	'hooks.commandIdDesc':
 		'ID запускаемой команды из палитры команд. Примеры: editor:save-file, gemini-scribe:summarize-active-file. Просмотреть ID команд можно в меню Настройки → Горячие клавиши (откройте консоль разработчика с помощью Ctrl+Shift+I, чтобы узнать ID).',
 	'hooks.focusFileSetting': 'Фокусировать файл-триггер перед отправкой',
@@ -2576,6 +2613,7 @@ export const ru: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'hooks.maxRunsSetting': 'Макс. запусков в час',
 	'hooks.maxRunsDesc': 'Лимит скользящего окна для всех файлов. 0 (по умолчанию) — без ограничений.',
 	'hooks.skillsSetting': 'Навыки (через запятую)',
+	'hooks.skillsPlaceholder': 'summarize, index-files',
 	'hooks.skillsDesc':
 		'Идентификаторы (slug) навыков для предварительной активации. Пусто = наследовать все доступные навыки.',
 	'hooks.modelOverrideSetting': 'Переопределение модели',
@@ -3201,6 +3239,7 @@ export const ru: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'settings.providers.refreshButton': 'Обновить',
 	'settings.providers.refreshUnreachable':
 		'Не удалось подключиться к {provider}. Проверьте эндпоинт и попробуйте снова.',
+	'settings.providers.refreshNeedsKey': 'Добавьте ключ API для {provider}, чтобы загрузить список моделей.',
 	'settings.providers.modelsAvailable': 'Доступно: {count}',
 	'settings.providers.modelsPulledAndCloud': '{count} загружено · {cloud} облачных',
 	'settings.providers.ollamaCloudModelLabel': '{model} (облачная)',
@@ -3232,7 +3271,7 @@ export const ru: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-09-28T14:06:21.902Z
+                at 2026-09-29T00:02:03.666Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

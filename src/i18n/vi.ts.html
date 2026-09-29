@@ -1107,12 +1107,36 @@
 <a name='L1042'></a><a href='#L1042'>1042</a>
 <a name='L1043'></a><a href='#L1043'>1043</a>
 <a name='L1044'></a><a href='#L1044'>1044</a>
-<a name='L1045'></a><a href='#L1045'>1045</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L1045'></a><a href='#L1045'>1045</a>
+<a name='L1046'></a><a href='#L1046'>1046</a>
+<a name='L1047'></a><a href='#L1047'>1047</a>
+<a name='L1048'></a><a href='#L1048'>1048</a>
+<a name='L1049'></a><a href='#L1049'>1049</a>
+<a name='L1050'></a><a href='#L1050'>1050</a>
+<a name='L1051'></a><a href='#L1051'>1051</a>
+<a name='L1052'></a><a href='#L1052'>1052</a>
+<a name='L1053'></a><a href='#L1053'>1053</a>
+<a name='L1054'></a><a href='#L1054'>1054</a>
+<a name='L1055'></a><a href='#L1055'>1055</a>
+<a name='L1056'></a><a href='#L1056'>1056</a>
+<a name='L1057'></a><a href='#L1057'>1057</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">120x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2243,6 +2267,16 @@ export const vi: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 		'⚠️ Nếu bạn xóa, hành động này là vĩnh viễn và không thể hoàn tác. Tất cả dữ liệu đã lập chỉ mục sẽ bị xóa vĩnh viễn khỏi Google Cloud và bạn sẽ cần lập lại chỉ mục cho tất cả các tệp.',
 	'ragCleanup.keepButton': 'Giữ lại dữ liệu',
 	'ragCleanup.deleteButton': 'Xóa vĩnh viễn',
+	'projectName.title': 'Dự án mới',
+	'projectName.defaultName': 'Dự án mới',
+	'projectName.inputLabel': 'Tên dự án',
+	'projectName.createButton': 'Tạo',
+	'projectName.cancelButton': 'Hủy',
+	'projectName.errorEmpty': 'Nhập tên dự án.',
+	'projectName.errorReserved':
+		'Tên đó đã được dành riêng trên Windows (như CON, NUL hoặc COM1) và không thể dùng làm tên tệp.',
+	'projectName.errorInvalidChars':
+		'Tên dự án không được bắt đầu bằng dấu chấm hoặc chứa bất kỳ ký tự nào sau đây: \\ / : * ? " &lt; &gt; | # ^ [ ]',
 	'yolo.title': 'Bật YOLO mode?',
 	'yolo.description':
 		'Chế độ YOLO cho phép AI agent thực thi tất cả các công cụ mà không cần xác nhận — bao gồm tạo, chỉnh sửa, xóa, di chuyển tệp và các cuộc gọi API bên ngoài.',
@@ -2472,8 +2506,7 @@ export const vi: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'scheduler.promptPlaceholder': 'Viết prompt của bạn ở đây...',
 	'scheduler.advancedOptions': 'Tùy chọn nâng cao',
 	'scheduler.modelOverrideSetting': 'Ghi đè mô hình',
-	'scheduler.modelOverrideDesc':
-		'Ghi đè mô hình trò chuyện của plugin cho tác vụ này (vd: gemini-2.0-flash). Để trống để sử dụng mặc định.',
+	'scheduler.modelOverrideDesc': 'Ghi đè mô hình trò chuyện của plugin cho tác vụ này. Để trống để sử dụng mặc định.',
 	'scheduler.outputPathSetting': 'Đường dẫn đầu ra',
 	'scheduler.outputPathDesc': 'Nơi ghi kết quả. Hỗ trợ các biến giữ chỗ {slug} và {date}. Mặc định: {defaultPath}',
 	'scheduler.maxIterationsSetting': 'Số lần lặp công cụ tối đa',
@@ -2535,6 +2568,7 @@ export const vi: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'hooks.pathGlobDesc':
 		'Chỉ kích hoạt cho các đường dẫn khớp với glob này. Ví dụ: Daily/**/*.md, Notes/*.md. Để trống cho mọi đường dẫn.',
 	'hooks.commandIdSetting': 'ID lệnh',
+	'hooks.commandIdPlaceholder': 'plugin-id:command-name',
 	'hooks.commandIdDesc':
 		'ID bảng lệnh cần kích hoạt. Ví dụ: editor:save-file, gemini-scribe:summarize-active-file. Xem các ID lệnh qua Cài đặt → Phím tắt (mở bảng điều khiển cho nhà phát triển bằng Ctrl+Shift+I để kiểm tra ID).',
 	'hooks.focusFileSetting': 'Chuyển đến tệp kích hoạt trước khi chạy',
@@ -2555,6 +2589,7 @@ export const vi: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'hooks.maxRunsSetting': 'Số lần chạy tối đa mỗi giờ',
 	'hooks.maxRunsDesc': 'Giới hạn khung thời gian trượt trên tất cả các tệp. 0 (mặc định) nghĩa là không giới hạn.',
 	'hooks.skillsSetting': 'Kỹ năng (phân tách bằng dấu phẩy)',
+	'hooks.skillsPlaceholder': 'summarize, index-files',
 	'hooks.skillsDesc': 'Slug của các kỹ năng cần kích hoạt trước. Để trống = kế thừa tất cả các kỹ năng có sẵn.',
 	'hooks.modelOverrideSetting': 'Ghi đè mô hình',
 	'hooks.modelOverrideDesc': 'Ghi đè mô hình trò chuyện của plugin cho hook này. Để trống để sử dụng mặc định.',
@@ -3171,6 +3206,7 @@ export const vi: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'settings.providers.modelsRowName': 'Mô hình khả dụng',
 	'settings.providers.refreshButton': 'Làm mới',
 	'settings.providers.refreshUnreachable': 'Không thể kết nối với {provider}. Hãy kiểm tra điểm cuối và thử lại.',
+	'settings.providers.refreshNeedsKey': 'Thêm khóa API cho {provider} để tải các mô hình.',
 	'settings.providers.modelsAvailable': '{count} khả dụng',
 	'settings.providers.modelsPulledAndCloud': '{count} đã tải · {cloud} đám mây',
 	'settings.providers.ollamaCloudModelLabel': '{model} (đám mây)',
@@ -3202,7 +3238,7 @@ export const vi: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-09-28T14:06:21.902Z
+                at 2026-09-29T00:02:03.666Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

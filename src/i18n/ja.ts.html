@@ -1104,12 +1104,38 @@
 <a name='L1039'></a><a href='#L1039'>1039</a>
 <a name='L1040'></a><a href='#L1040'>1040</a>
 <a name='L1041'></a><a href='#L1041'>1041</a>
-<a name='L1042'></a><a href='#L1042'>1042</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L1042'></a><a href='#L1042'>1042</a>
+<a name='L1043'></a><a href='#L1043'>1043</a>
+<a name='L1044'></a><a href='#L1044'>1044</a>
+<a name='L1045'></a><a href='#L1045'>1045</a>
+<a name='L1046'></a><a href='#L1046'>1046</a>
+<a name='L1047'></a><a href='#L1047'>1047</a>
+<a name='L1048'></a><a href='#L1048'>1048</a>
+<a name='L1049'></a><a href='#L1049'>1049</a>
+<a name='L1050'></a><a href='#L1050'>1050</a>
+<a name='L1051'></a><a href='#L1051'>1051</a>
+<a name='L1052'></a><a href='#L1052'>1052</a>
+<a name='L1053'></a><a href='#L1053'>1053</a>
+<a name='L1054'></a><a href='#L1054'>1054</a>
+<a name='L1055'></a><a href='#L1055'>1055</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">120x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2236,6 +2262,16 @@ export const ja: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 		'⚠️ 削除すると、この操作は永続的であり、元に戻すことはできません。インデックスされたすべてのデータはGoogle Cloudから完全に削除され、すべてのファイルを再インデックスする必要があります。',
 	'ragCleanup.keepButton': 'データを保持',
 	'ragCleanup.deleteButton': '完全に削除',
+	'projectName.title': '新規プロジェクト',
+	'projectName.defaultName': '新規プロジェクト',
+	'projectName.inputLabel': 'プロジェクト名',
+	'projectName.createButton': '作成',
+	'projectName.cancelButton': 'キャンセル',
+	'projectName.errorEmpty': 'プロジェクト名を入力してください。',
+	'projectName.errorReserved':
+		'その名前はWindowsで予約されているため（CON、NUL、COM1など）、ファイル名として使用できません。',
+	'projectName.errorInvalidChars':
+		'プロジェクト名の先頭にドットを使用したり、次の文字を含めたりすることはできません: \\ / : * ? " &lt; &gt; | # ^ [ ]',
 	'yolo.title': 'YOLO modeを有効にしますか？',
 	'yolo.description':
 		'YOLOモードを有効にすると、AIエージェントは確認なしですべてのツールを実行できるようになります。これには、ファイルの作成、編集、削除、移動、および外部APIの呼び出しが含まれます。',
@@ -2464,7 +2500,7 @@ export const ja: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'scheduler.advancedOptions': '詳細オプション',
 	'scheduler.modelOverrideSetting': 'モデルのオーバーライド',
 	'scheduler.modelOverrideDesc':
-		'このタスクのプラグインチャットモデルをオーバーライドします（例: gemini-2.0-flash）。デフォルトを使用する場合は空白のままにしてください。',
+		'このタスクで使用するプラグインのチャットモデルを上書きします。空欄の場合はデフォルトを使用します。',
 	'scheduler.outputPathSetting': '出力パス',
 	'scheduler.outputPathDesc':
 		'結果の書き込み先。{slug} および {date} プレースホルダーをサポートしています。デフォルト: {defaultPath}',
@@ -2527,6 +2563,7 @@ export const ja: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'hooks.pathGlobDesc':
 		'このGlobパターンに一致するパスのみに実行を制限します。例: Daily/**/*.md, Notes/*.md。すべてのパスを対象にする場合は空欄にしてください。',
 	'hooks.commandIdSetting': 'コマンドID',
+	'hooks.commandIdPlaceholder': 'plugin-id:command-name',
 	'hooks.commandIdDesc':
 		'実行するコマンドパレットのID。例: editor:save-file、gemini-scribe:summarize-active-file。コマンドIDは 設定 → ホットキー で確認できます（Ctrl+Shift+Iでデベロッパーコンソールを開き、IDを確認してください）。',
 	'hooks.focusFileSetting': '実行前にトリガーとなったファイルにフォーカスする',
@@ -2547,6 +2584,7 @@ export const ja: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'hooks.maxRunsSetting': '1時間あたりの最大実行回数',
 	'hooks.maxRunsDesc': 'すべてのファイルを対象としたスライディングウィンドウ方式の上限。0（デフォルト）は無制限。',
 	'hooks.skillsSetting': 'スキル (カンマ区切り)',
+	'hooks.skillsPlaceholder': 'summarize, index-files',
 	'hooks.skillsDesc': '事前有効化するスキルのスラッグ。空欄 = 利用可能なすべてのスキルを継承。',
 	'hooks.modelOverrideSetting': 'モデルのオーバーライド',
 	'hooks.modelOverrideDesc':
@@ -3161,6 +3199,7 @@ export const ja: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'settings.providers.refreshButton': '更新',
 	'settings.providers.refreshUnreachable':
 		'{provider}に接続できませんでした。エンドポイントを確認して再試行してください。',
+	'settings.providers.refreshNeedsKey': '{provider}のモデルを読み込むには、APIキーを追加してください。',
 	'settings.providers.modelsAvailable': '{count}件利用可能',
 	'settings.providers.modelsPulledAndCloud': '{count}件プル済み · {cloud}件クラウド',
 	'settings.providers.ollamaCloudModelLabel': '{model} (クラウド)',
@@ -3193,7 +3232,7 @@ export const ja: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-09-28T14:06:21.902Z
+                at 2026-09-29T00:02:03.666Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

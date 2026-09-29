@@ -1105,12 +1105,38 @@
 <a name='L1040'></a><a href='#L1040'>1040</a>
 <a name='L1041'></a><a href='#L1041'>1041</a>
 <a name='L1042'></a><a href='#L1042'>1042</a>
-<a name='L1043'></a><a href='#L1043'>1043</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L1043'></a><a href='#L1043'>1043</a>
+<a name='L1044'></a><a href='#L1044'>1044</a>
+<a name='L1045'></a><a href='#L1045'>1045</a>
+<a name='L1046'></a><a href='#L1046'>1046</a>
+<a name='L1047'></a><a href='#L1047'>1047</a>
+<a name='L1048'></a><a href='#L1048'>1048</a>
+<a name='L1049'></a><a href='#L1049'>1049</a>
+<a name='L1050'></a><a href='#L1050'>1050</a>
+<a name='L1051'></a><a href='#L1051'>1051</a>
+<a name='L1052'></a><a href='#L1052'>1052</a>
+<a name='L1053'></a><a href='#L1053'>1053</a>
+<a name='L1054'></a><a href='#L1054'>1054</a>
+<a name='L1055'></a><a href='#L1055'>1055</a>
+<a name='L1056'></a><a href='#L1056'>1056</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">120x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2239,6 +2265,16 @@ export const no: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 		'⚠️ Hvis du sletter, er denne handlingen permanent og kan ikke angres. Alle indekserte data vil bli permanent fjernet fra Google Cloud, og du må reindeksere alle filene.',
 	'ragCleanup.keepButton': 'Behold data',
 	'ragCleanup.deleteButton': 'Slett permanent',
+	'projectName.title': 'Nytt prosjekt',
+	'projectName.defaultName': 'Nytt prosjekt',
+	'projectName.inputLabel': 'Prosjektnavn',
+	'projectName.createButton': 'Opprett',
+	'projectName.cancelButton': 'Avbryt',
+	'projectName.errorEmpty': 'Skriv inn et prosjektnavn.',
+	'projectName.errorReserved':
+		'Dette navnet er reservert i Windows (som CON, NUL eller COM1) og kan ikke brukes som et filnavn.',
+	'projectName.errorInvalidChars':
+		'Prosjektnavn kan ikke starte med et punktum eller inneholde noen av følgende: \\ / : * ? " &lt; &gt; | # ^ [ ]',
 	'yolo.title': 'Aktiver YOLO-modus?',
 	'yolo.description':
 		'YOLO-modus lar AI-agenten kjøre alle verktøy uten bekreftelse — inkludert å opprette, redigere, slette og flytte filer, samt eksterne API-kall.',
@@ -2468,7 +2504,7 @@ export const no: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'scheduler.advancedOptions': 'Avanserte alternativer',
 	'scheduler.modelOverrideSetting': 'Modelloverstyring',
 	'scheduler.modelOverrideDesc':
-		'Overstyr pluginens chatmodell for denne oppgaven (f.eks. gemini-2.0-flash). La stå tom for å bruke standarden.',
+		'Overstyr chatmodellen til programtillegget for denne oppgaven. La stå tomt for å bruke standard.',
 	'scheduler.outputPathSetting': 'Bane for utdata',
 	'scheduler.outputPathDesc':
 		'Hvor resultatene skal skrives. Støtter plassholderne {slug} og {date}. Standard: {defaultPath}',
@@ -2530,6 +2566,7 @@ export const no: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'hooks.pathGlobDesc':
 		'Begrens utløsere til stier som samsvarer med denne globen. Eksempler: Daily/**/*.md, Notes/*.md. La stå tom for alle stier.',
 	'hooks.commandIdSetting': 'Kommando-ID',
+	'hooks.commandIdPlaceholder': 'plugin-id:command-name',
 	'hooks.commandIdDesc':
 		'Kommando-ID fra kommandopaletten som skal kjøres. Eksempler: editor:save-file, gemini-scribe:summarize-active-file. Se kommando-ID-er via Innstillinger → Hurtigtaster (åpne utviklerkonsollen med Ctrl+Shift+I for å inspisere ID-er).',
 	'hooks.focusFileSetting': 'Fokuser på utløsende fil før sending',
@@ -2550,6 +2587,7 @@ export const no: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'hooks.maxRunsSetting': 'Maks antall kjøringer per time',
 	'hooks.maxRunsDesc': 'Grense for glidende tidsvindu på tvers av alle filer. 0 (standard) betyr ubegrenset.',
 	'hooks.skillsSetting': 'Ferdigheter (kommaseparert)',
+	'hooks.skillsPlaceholder': 'summarize, index-files',
 	'hooks.skillsDesc': 'Slugs for ferdigheter som skal forhåndsaktiveres. Tom = arv alle tilgjengelige ferdigheter.',
 	'hooks.modelOverrideSetting': 'Modelloverstyring',
 	'hooks.modelOverrideDesc': 'Overstyr pluginens chatmodell for denne hooken. La stå tom for å bruke standarden.',
@@ -3165,6 +3203,7 @@ export const no: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'settings.providers.modelsRowName': 'Tilgjengelige modeller',
 	'settings.providers.refreshButton': 'Oppdater',
 	'settings.providers.refreshUnreachable': 'Kunne ikke nå {provider}. Sjekk endepunktet og prøv igjen.',
+	'settings.providers.refreshNeedsKey': 'Legg til en API-nøkkel for {provider} for å laste inn modellene.',
 	'settings.providers.modelsAvailable': '{count} tilgjengelige',
 	'settings.providers.modelsPulledAndCloud': '{count} lastet ned · {cloud} sky',
 	'settings.providers.ollamaCloudModelLabel': '{model} (sky)',
@@ -3196,7 +3235,7 @@ export const no: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-09-28T14:06:21.902Z
+                at 2026-09-29T00:02:03.666Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
