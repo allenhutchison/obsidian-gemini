@@ -39,7 +39,7 @@ separately over the `test/` tree. Always run it after changing test files.
 
 ## Before every PR — full local pre-flight
 
-The pre-commit hook only auto-fixes **staged** files (`lint-staged`), a narrower check than CI's
+The pre-commit hook only auto-fixes **staged** files (`nano-staged`), a narrower check than CI's
 full-repo, fix-nothing commands. Run all five locally before pushing to avoid a CI-only failure:
 
 ```bash
