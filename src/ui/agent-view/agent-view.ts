@@ -130,9 +130,10 @@ export class AgentView extends ItemView {
 	 * We compute chat's height directly (targeting the smaller of container
 	 * bottom or mobile-navbar top) and lock overflow on the container and
 	 * its parent so nothing can scroll behind our back. The flex and overflow
-	 * overrides live in `!important` CSS classes (themes or other plugins
-	 * sometimes add `!important` to flex rules), so teardown only has to remove
-	 * the classes; the computed height is the one value set inline.
+	 * overrides live in CSS classes scoped to this view (specificity rather
+	 * than `!important`, which the plugin audit's CSS lint rejects), so
+	 * teardown only has to remove the classes; the computed height is the one
+	 * value set inline.
 	 */
 	private applyMobileLayoutFix(container: HTMLElement) {
 		const apply = () => {
