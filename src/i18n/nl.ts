@@ -89,6 +89,16 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 		'⚠️ Als je verwijdert, is deze actie definitief en kan niet ongedaan worden gemaakt. Alle geïndexeerde gegevens worden permanent verwijderd uit Google Cloud en je moet alle bestanden opnieuw indexeren.',
 	'ragCleanup.keepButton': 'Gegevens behouden',
 	'ragCleanup.deleteButton': 'Permanent verwijderen',
+	'projectName.title': 'Nieuw project',
+	'projectName.defaultName': 'Nieuw project',
+	'projectName.inputLabel': 'Projectnaam',
+	'projectName.createButton': 'Maken',
+	'projectName.cancelButton': 'Annuleren',
+	'projectName.errorEmpty': 'Voer een projectnaam in.',
+	'projectName.errorReserved':
+		'Die naam is gereserveerd op Windows (zoals CON, NUL of COM1) en kan niet worden gebruikt als bestandsnaam.',
+	'projectName.errorInvalidChars':
+		'Projectnamen mogen niet beginnen met een punt of een van de volgende tekens bevatten: \\ / : * ? " < > | # ^ [ ]',
 	'yolo.title': 'YOLO-modus inschakelen?',
 	'yolo.description':
 		'De YOLO-modus stelt de AI-agent in staat om alle tools uit te voeren zonder enige bevestiging — inclusief het maken, bewerken, verwijderen en verplaatsen van bestanden, evenals externe API-aanroepen.',
@@ -318,7 +328,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'scheduler.advancedOptions': 'Geavanceerde opties',
 	'scheduler.modelOverrideSetting': 'Model overschrijven',
 	'scheduler.modelOverrideDesc':
-		'Overschrijf het chatmodel van de plugin voor deze taak (bijv. gemini-2.0-flash). Laat leeg om de standaard te gebruiken.',
+		'Overschrijf het chatmodel van de plugin voor deze taak. Laat leeg om de standaard te gebruiken.',
 	'scheduler.outputPathSetting': 'Uitvoerpad',
 	'scheduler.outputPathDesc':
 		'Waar de resultaten moeten worden opgeslagen. Ondersteunt {slug} en {date} placeholders. Standaard: {defaultPath}',
@@ -381,6 +391,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'hooks.pathGlobDesc':
 		'Beperk activeringen tot paden die overeenkomen met deze glob. Voorbeelden: Daily/**/*.md, Notes/*.md. Laat leeg voor elk pad.',
 	'hooks.commandIdSetting': 'Opdracht-ID',
+	'hooks.commandIdPlaceholder': 'plugin-id:command-name',
 	'hooks.commandIdDesc':
 		"Uit te voeren opdrachtpalet-ID. Voorbeelden: editor:save-file, gemini-scribe:summarize-active-file. Bekijk opdracht-ID's via Instellingen → Sneltoetsen (open de ontwikkelaarsconsole met Ctrl+Shift+I om ID's te inspecteren).",
 	'hooks.focusFileSetting': 'Focus op triggerbestand vóór verzending',
@@ -402,6 +413,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'hooks.maxRunsDesc':
 		'Limiet op basis van een voortschrijdend tijdsvenster voor alle bestanden. 0 (standaard) betekent onbeperkt.',
 	'hooks.skillsSetting': "Vaardigheden (door komma's gescheiden)",
+	'hooks.skillsPlaceholder': 'summarize, index-files',
 	'hooks.skillsDesc': 'Slugs van vooraf te activeren vaardigheden. Leeg = alle beschikbare vaardigheden overnemen.',
 	'hooks.modelOverrideSetting': 'Modeloverschrijving',
 	'hooks.modelOverrideDesc':
@@ -1024,6 +1036,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.refreshButton': 'Vernieuwen',
 	'settings.providers.refreshUnreachable':
 		'Kon {provider} niet bereiken. Controleer het eindpunt en probeer het opnieuw.',
+	'settings.providers.refreshNeedsKey': 'Voeg een API-sleutel toe voor {provider} om de modellen te laden.',
 	'settings.providers.modelsAvailable': '{count} beschikbaar',
 	'settings.providers.modelsPulledAndCloud': '{count} binnengehaald · {cloud} cloud',
 	'settings.providers.ollamaCloudModelLabel': '{model} (cloud)',

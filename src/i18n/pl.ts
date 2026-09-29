@@ -90,6 +90,16 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 		'⚠️ Jeśli usuniesz, ta akcja będzie stała i nie będzie można jej cofnąć. Wszystkie zaindeksowane dane zostaną trwale usunięte z Google Cloud, a ponowne indeksowanie wszystkich plików będzie konieczne.',
 	'ragCleanup.keepButton': 'Zachowaj dane',
 	'ragCleanup.deleteButton': 'Usuń trwale',
+	'projectName.title': 'Nowy projekt',
+	'projectName.defaultName': 'Nowy projekt',
+	'projectName.inputLabel': 'Nazwa projektu',
+	'projectName.createButton': 'Utwórz',
+	'projectName.cancelButton': 'Anuluj',
+	'projectName.errorEmpty': 'Wprowadź nazwę projektu.',
+	'projectName.errorReserved':
+		'Ta nazwa jest zarezerwowana w systemie Windows (np. CON, NUL lub COM1) i nie może być użyta jako nazwa pliku.',
+	'projectName.errorInvalidChars':
+		'Nazwy projektów nie mogą zaczynać się od kropki ani zawierać żadnego ze znaków: \\ / : * ? " < > | # ^ [ ]',
 	'yolo.title': 'Włączyć tryb YOLO?',
 	'yolo.description':
 		'Tryb YOLO pozwala agentowi AI na uruchamianie wszystkich narzędzi bez żadnego potwierdzenia — w tym tworzenie, edytowanie, usuwanie i przenoszenie plików, a także zewnętrzne wywołania API.',
@@ -320,8 +330,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'scheduler.promptPlaceholder': 'Wpisz swój prompt tutaj...',
 	'scheduler.advancedOptions': 'Opcje zaawansowane',
 	'scheduler.modelOverrideSetting': 'Nadpisanie modelu',
-	'scheduler.modelOverrideDesc':
-		'Nadpisz model czatu wtyczki dla tego zadania (np. gemini-2.0-flash). Pozostaw puste, aby użyć domyślnego.',
+	'scheduler.modelOverrideDesc': 'Zastąp model czatu wtyczki dla tego zadania. Pozostaw puste, aby użyć domyślnego.',
 	'scheduler.outputPathSetting': 'Ścieżka wyjściowa',
 	'scheduler.outputPathDesc':
 		'Gdzie zapisywać wyniki. Obsługuje symbole zastępcze {slug} i {date}. Domyślnie: {defaultPath}',
@@ -384,6 +393,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'hooks.pathGlobDesc':
 		'Ogranicz wywołania do ścieżek pasujących do tego wzorca glob. Przykłady: Daily/**/*.md, Notes/*.md. Pozostaw puste dla dowolnej ścieżki.',
 	'hooks.commandIdSetting': 'Identyfikator polecenia',
+	'hooks.commandIdPlaceholder': 'plugin-id:command-name',
 	'hooks.commandIdDesc':
 		'ID polecenia z palety poleceń do wywołania. Przykłady: editor:save-file, gemini-scribe:summarize-active-file. Wyświetl ID poleceń w Ustawienia → Skróty klawiszowe (otwórz konsolę deweloperską za pomocą Ctrl+Shift+I, aby sprawdzić identyfikatory).',
 	'hooks.focusFileSetting': 'Przejdź do pliku wyzwalającego przed uruchomieniem',
@@ -404,6 +414,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'hooks.maxRunsSetting': 'Maksymalna liczba uruchomień na godzinę',
 	'hooks.maxRunsDesc': 'Limit ruchomego okna dla wszystkich plików. 0 (domyślnie) oznacza brak limitu.',
 	'hooks.skillsSetting': 'Umiejętności (rozdzielone przecinkami)',
+	'hooks.skillsPlaceholder': 'summarize, index-files',
 	'hooks.skillsDesc':
 		'Identyfikatory (slugs) umiejętności do wstępnej aktywacji. Puste = dziedziczenie wszystkich dostępnych umiejętności.',
 	'hooks.modelOverrideSetting': 'Nadpisanie modelu',
@@ -1023,6 +1034,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.refreshButton': 'Odśwież',
 	'settings.providers.refreshUnreachable':
 		'Nie można połączyć się z {provider}. Sprawdź punkt końcowy i spróbuj ponownie.',
+	'settings.providers.refreshNeedsKey': 'Dodaj klucz API dla {provider}, aby załadować jego modele.',
 	'settings.providers.modelsAvailable': '{count} dostępnych',
 	'settings.providers.modelsPulledAndCloud': '{count} pobranych · {cloud} w chmurze',
 	'settings.providers.ollamaCloudModelLabel': '{model} (chmura)',

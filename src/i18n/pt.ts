@@ -89,6 +89,16 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 		'⚠️ Se eliminar, esta ação é permanente e não pode ser desfeita. Todos os dados indexados serão removidos permanentemente do Google Cloud e precisará de reindexar todos os ficheiros.',
 	'ragCleanup.keepButton': 'Manter dados',
 	'ragCleanup.deleteButton': 'Eliminar permanentemente',
+	'projectName.title': 'Novo projeto',
+	'projectName.defaultName': 'Novo projeto',
+	'projectName.inputLabel': 'Nome do projeto',
+	'projectName.createButton': 'Criar',
+	'projectName.cancelButton': 'Cancelar',
+	'projectName.errorEmpty': 'Introduza um nome de projeto.',
+	'projectName.errorReserved':
+		'Esse nome está reservado no Windows (como CON, NUL ou COM1) e não pode ser utilizado como nome de ficheiro.',
+	'projectName.errorInvalidChars':
+		'Os nomes de projetos não podem começar com um ponto nem conter nenhum de: \\ / : * ? " < > | # ^ [ ]',
 	'yolo.title': 'Ativar o modo YOLO?',
 	'yolo.description':
 		'O modo YOLO permite que o agente de IA execute todas as ferramentas sem qualquer confirmação — incluindo criar, editar, eliminar e mover ficheiros, bem como chamadas de API externas.',
@@ -319,7 +329,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'scheduler.advancedOptions': 'Opções avançadas',
 	'scheduler.modelOverrideSetting': 'Substituição de modelo',
 	'scheduler.modelOverrideDesc':
-		'Substitua o modelo de chat do plugin para esta tarefa (ex: gemini-2.0-flash). Deixe em branco para usar o predefinido.',
+		'Substituir o modelo de chat do plugin para esta tarefa. Deixe em branco para utilizar a predefinição.',
 	'scheduler.outputPathSetting': 'Caminho de saída',
 	'scheduler.outputPathDesc':
 		'Onde escrever os resultados. Suporta os marcadores {slug} e {date}. Predefinido: {defaultPath}',
@@ -382,6 +392,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'hooks.pathGlobDesc':
 		'Limitar execuções a caminhos que correspondam a este glob. Exemplos: Daily/**/*.md, Notes/*.md. Deixe em branco para qualquer caminho.',
 	'hooks.commandIdSetting': 'ID do comando',
+	'hooks.commandIdPlaceholder': 'plugin-id:command-name',
 	'hooks.commandIdDesc':
 		'ID da paleta de comandos a executar. Exemplos: editor:save-file, gemini-scribe:summarize-active-file. Visualize os IDs dos comandos em Definições → Atalhos (abra a consola de programador com Ctrl+Shift+I para inspecionar os IDs).',
 	'hooks.focusFileSetting': 'Focar o ficheiro de gatilho antes do envio',
@@ -402,6 +413,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'hooks.maxRunsSetting': 'Limite de execuções por hora',
 	'hooks.maxRunsDesc': 'Limite de janela deslizante para todos os ficheiros. 0 (predefinição) significa ilimitado.',
 	'hooks.skillsSetting': 'Competências (separadas por vírgulas)',
+	'hooks.skillsPlaceholder': 'summarize, index-files',
 	'hooks.skillsDesc': 'Slugs das competências a pré-ativar. Vazio = herdar todas as competências disponíveis.',
 	'hooks.modelOverrideSetting': 'Substituição de modelo',
 	'hooks.modelOverrideDesc':
@@ -1031,6 +1043,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.refreshButton': 'Atualizar',
 	'settings.providers.refreshUnreachable':
 		'Não foi possível alcançar o {provider}. Verifique o endpoint e tente novamente.',
+	'settings.providers.refreshNeedsKey': 'Adicione uma chave de API para {provider} para carregar os seus modelos.',
 	'settings.providers.modelsAvailable': '{count} disponíveis',
 	'settings.providers.modelsPulledAndCloud': '{count} transferidos · {cloud} na cloud',
 	'settings.providers.ollamaCloudModelLabel': '{model} (cloud)',

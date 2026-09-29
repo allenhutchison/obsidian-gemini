@@ -89,6 +89,16 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 		'⚠️ Удаление необратимо. Все проиндексированные данные будут навсегда удалены из Google Cloud, и вам потребуется заново проиндексировать все файлы.',
 	'ragCleanup.keepButton': 'Сохранить данные',
 	'ragCleanup.deleteButton': 'Удалить навсегда',
+	'projectName.title': 'Новый проект',
+	'projectName.defaultName': 'Новый проект',
+	'projectName.inputLabel': 'Название проекта',
+	'projectName.createButton': 'Создать',
+	'projectName.cancelButton': 'Отмена',
+	'projectName.errorEmpty': 'Введите название проекта.',
+	'projectName.errorReserved':
+		'Это имя зарезервировано в Windows (например, CON, NUL или COM1) и не может использоваться в качестве имени файла.',
+	'projectName.errorInvalidChars':
+		'Имя проекта не может начинаться с точки или содержать следующие символы: \\ / : * ? " < > | # ^ [ ]',
 	'yolo.title': 'Включить YOLO mode?',
 	'yolo.description':
 		'Режим YOLO позволяет ИИ-агенту выполнять все инструменты без подтверждения — включая создание, редактирование, удаление и перемещение файлов, а также внешние API-вызовы.',
@@ -320,7 +330,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'scheduler.advancedOptions': 'Дополнительные параметры',
 	'scheduler.modelOverrideSetting': 'Переопределение модели',
 	'scheduler.modelOverrideDesc':
-		'Переопределить модель чата плагина для этой задачи (например, gemini-2.0-flash). Оставьте пустым, чтобы использовать по умолчанию.',
+		'Переопределить модель чата плагина для этой задачи. Оставьте пустым, чтобы использовать значение по умолчанию.',
 	'scheduler.outputPathSetting': 'Путь вывода',
 	'scheduler.outputPathDesc':
 		'Куда записывать результаты. Поддерживает плейсхолдеры {slug} и {date}. По умолчанию: {defaultPath}',
@@ -383,6 +393,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'hooks.pathGlobDesc':
 		'Ограничить запуск путями, соответствующими этой маске. Примеры: Daily/**/*.md, Notes/*.md. Оставьте пустым для любых путей.',
 	'hooks.commandIdSetting': 'ID команды',
+	'hooks.commandIdPlaceholder': 'plugin-id:command-name',
 	'hooks.commandIdDesc':
 		'ID запускаемой команды из палитры команд. Примеры: editor:save-file, gemini-scribe:summarize-active-file. Просмотреть ID команд можно в меню Настройки → Горячие клавиши (откройте консоль разработчика с помощью Ctrl+Shift+I, чтобы узнать ID).',
 	'hooks.focusFileSetting': 'Фокусировать файл-триггер перед отправкой',
@@ -403,6 +414,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'hooks.maxRunsSetting': 'Макс. запусков в час',
 	'hooks.maxRunsDesc': 'Лимит скользящего окна для всех файлов. 0 (по умолчанию) — без ограничений.',
 	'hooks.skillsSetting': 'Навыки (через запятую)',
+	'hooks.skillsPlaceholder': 'summarize, index-files',
 	'hooks.skillsDesc':
 		'Идентификаторы (slug) навыков для предварительной активации. Пусто = наследовать все доступные навыки.',
 	'hooks.modelOverrideSetting': 'Переопределение модели',
@@ -1028,6 +1040,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.refreshButton': 'Обновить',
 	'settings.providers.refreshUnreachable':
 		'Не удалось подключиться к {provider}. Проверьте эндпоинт и попробуйте снова.',
+	'settings.providers.refreshNeedsKey': 'Добавьте ключ API для {provider}, чтобы загрузить список моделей.',
 	'settings.providers.modelsAvailable': 'Доступно: {count}',
 	'settings.providers.modelsPulledAndCloud': '{count} загружено · {cloud} облачных',
 	'settings.providers.ollamaCloudModelLabel': '{model} (облачная)',

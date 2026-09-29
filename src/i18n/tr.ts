@@ -90,6 +90,15 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 		"⚠️ Silerseniz, bu işlem kalıcıdır ve geri alınamaz. Tüm dizine eklenmiş veriler Google Cloud'dan kalıcı olarak kaldırılacaktır ve tüm dosyaları yeniden dizine eklemeniz gerekecektir.",
 	'ragCleanup.keepButton': 'Verileri koru',
 	'ragCleanup.deleteButton': 'Kalıcı olarak sil',
+	'projectName.title': 'Yeni proje',
+	'projectName.defaultName': 'Yeni Proje',
+	'projectName.inputLabel': 'Proje adı',
+	'projectName.createButton': 'Oluştur',
+	'projectName.cancelButton': 'İptal',
+	'projectName.errorEmpty': 'Bir proje adı girin.',
+	'projectName.errorReserved':
+		"Bu ad Windows'ta ayrılmıştır (CON, NUL veya COM1 gibi) ve dosya adı olarak kullanılamaz.",
+	'projectName.errorInvalidChars': 'Proje adları noktayla başlayamaz veya şunları içeremez: \\ / : * ? " < > | # ^ [ ]',
 	'yolo.title': 'YOLO modu etkinleştirilsin mi?',
 	'yolo.description':
 		'YOLO modu, yapay zeka ajanının tüm araçları hiçbir onay almadan çalıştırmasına olanak tanır — buna dosyaları oluşturma, düzenleme, silme ve taşımanın yanı sıra harici API çağrıları da dahildir.',
@@ -321,7 +330,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'scheduler.advancedOptions': 'Gelişmiş seçenekler',
 	'scheduler.modelOverrideSetting': 'Modeli geçersiz kıl',
 	'scheduler.modelOverrideDesc':
-		'Bu görev için eklenti sohbet modelini geçersiz kılın (örn. gemini-2.0-flash). Varsayılanı kullanmak için boş bırakın.',
+		'Bu görev için eklenti sohbet modelini geçersiz kılın. Varsayılanı kullanmak için boş bırakın.',
 	'scheduler.outputPathSetting': 'Çıktı yolu',
 	'scheduler.outputPathDesc':
 		'Sonuçların nereye yazılacağı. {slug} ve {date} yer tutucularını destekler. Varsayılan: {defaultPath}',
@@ -384,6 +393,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'hooks.pathGlobDesc':
 		'Tetiklemeleri bu glob ile eşleşen yollarla sınırlandırın. Örnekler: Daily/**/*.md, Notes/*.md. Tüm yollar için boş bırakın.',
 	'hooks.commandIdSetting': 'Komut kimliği',
+	'hooks.commandIdPlaceholder': 'plugin-id:command-name',
 	'hooks.commandIdDesc':
 		'Tetiklenecek komut paleti kimliği. Örnekler: editor:save-file, gemini-scribe:summarize-active-file. Komut kimliklerini Ayarlar → Kısayollar üzerinden görüntüleyin (kimlikleri incelemek için Ctrl+Shift+I ile geliştirici konsolunu açın).',
 	'hooks.focusFileSetting': 'Göndermeden önce tetikleyici dosyaya odaklan',
@@ -404,6 +414,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'hooks.maxRunsSetting': 'Saat başına maksimum çalışma',
 	'hooks.maxRunsDesc': 'Tüm dosyalar genelinde kayan pencere sınırı. 0 (varsayılan) sınırsız anlamına gelir.',
 	'hooks.skillsSetting': 'Yetenekler (virgülle ayrılmış)',
+	'hooks.skillsPlaceholder': 'summarize, index-files',
 	'hooks.skillsDesc':
 		'Önceden etkinleştirilecek yeteneklerin kısa adları (slug). Boş bırakılırsa = kullanılabilir tüm yetenekleri devralır.',
 	'hooks.modelOverrideSetting': 'Model geçersiz kılma',
@@ -1025,6 +1036,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.refreshButton': 'Yenile',
 	'settings.providers.refreshUnreachable':
 		'{provider} sağlayıcısına ulaşılamadı. Uç noktayı kontrol edip tekrar deneyin.',
+	'settings.providers.refreshNeedsKey': '{provider} modellerini yüklemek için bir API anahtarı ekleyin.',
 	'settings.providers.modelsAvailable': '{count} kullanılabilir',
 	'settings.providers.modelsPulledAndCloud': '{count} çekildi · {cloud} bulut',
 	'settings.providers.ollamaCloudModelLabel': '{model} (bulut)',

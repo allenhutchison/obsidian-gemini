@@ -90,6 +90,16 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 		'⚠️ Nếu bạn xóa, hành động này là vĩnh viễn và không thể hoàn tác. Tất cả dữ liệu đã lập chỉ mục sẽ bị xóa vĩnh viễn khỏi Google Cloud và bạn sẽ cần lập lại chỉ mục cho tất cả các tệp.',
 	'ragCleanup.keepButton': 'Giữ lại dữ liệu',
 	'ragCleanup.deleteButton': 'Xóa vĩnh viễn',
+	'projectName.title': 'Dự án mới',
+	'projectName.defaultName': 'Dự án mới',
+	'projectName.inputLabel': 'Tên dự án',
+	'projectName.createButton': 'Tạo',
+	'projectName.cancelButton': 'Hủy',
+	'projectName.errorEmpty': 'Nhập tên dự án.',
+	'projectName.errorReserved':
+		'Tên đó đã được dành riêng trên Windows (như CON, NUL hoặc COM1) và không thể dùng làm tên tệp.',
+	'projectName.errorInvalidChars':
+		'Tên dự án không được bắt đầu bằng dấu chấm hoặc chứa bất kỳ ký tự nào sau đây: \\ / : * ? " < > | # ^ [ ]',
 	'yolo.title': 'Bật YOLO mode?',
 	'yolo.description':
 		'Chế độ YOLO cho phép AI agent thực thi tất cả các công cụ mà không cần xác nhận — bao gồm tạo, chỉnh sửa, xóa, di chuyển tệp và các cuộc gọi API bên ngoài.',
@@ -319,8 +329,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'scheduler.promptPlaceholder': 'Viết prompt của bạn ở đây...',
 	'scheduler.advancedOptions': 'Tùy chọn nâng cao',
 	'scheduler.modelOverrideSetting': 'Ghi đè mô hình',
-	'scheduler.modelOverrideDesc':
-		'Ghi đè mô hình trò chuyện của plugin cho tác vụ này (vd: gemini-2.0-flash). Để trống để sử dụng mặc định.',
+	'scheduler.modelOverrideDesc': 'Ghi đè mô hình trò chuyện của plugin cho tác vụ này. Để trống để sử dụng mặc định.',
 	'scheduler.outputPathSetting': 'Đường dẫn đầu ra',
 	'scheduler.outputPathDesc': 'Nơi ghi kết quả. Hỗ trợ các biến giữ chỗ {slug} và {date}. Mặc định: {defaultPath}',
 	'scheduler.maxIterationsSetting': 'Số lần lặp công cụ tối đa',
@@ -382,6 +391,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'hooks.pathGlobDesc':
 		'Chỉ kích hoạt cho các đường dẫn khớp với glob này. Ví dụ: Daily/**/*.md, Notes/*.md. Để trống cho mọi đường dẫn.',
 	'hooks.commandIdSetting': 'ID lệnh',
+	'hooks.commandIdPlaceholder': 'plugin-id:command-name',
 	'hooks.commandIdDesc':
 		'ID bảng lệnh cần kích hoạt. Ví dụ: editor:save-file, gemini-scribe:summarize-active-file. Xem các ID lệnh qua Cài đặt → Phím tắt (mở bảng điều khiển cho nhà phát triển bằng Ctrl+Shift+I để kiểm tra ID).',
 	'hooks.focusFileSetting': 'Chuyển đến tệp kích hoạt trước khi chạy',
@@ -402,6 +412,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'hooks.maxRunsSetting': 'Số lần chạy tối đa mỗi giờ',
 	'hooks.maxRunsDesc': 'Giới hạn khung thời gian trượt trên tất cả các tệp. 0 (mặc định) nghĩa là không giới hạn.',
 	'hooks.skillsSetting': 'Kỹ năng (phân tách bằng dấu phẩy)',
+	'hooks.skillsPlaceholder': 'summarize, index-files',
 	'hooks.skillsDesc': 'Slug của các kỹ năng cần kích hoạt trước. Để trống = kế thừa tất cả các kỹ năng có sẵn.',
 	'hooks.modelOverrideSetting': 'Ghi đè mô hình',
 	'hooks.modelOverrideDesc': 'Ghi đè mô hình trò chuyện của plugin cho hook này. Để trống để sử dụng mặc định.',
@@ -1018,6 +1029,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.modelsRowName': 'Mô hình khả dụng',
 	'settings.providers.refreshButton': 'Làm mới',
 	'settings.providers.refreshUnreachable': 'Không thể kết nối với {provider}. Hãy kiểm tra điểm cuối và thử lại.',
+	'settings.providers.refreshNeedsKey': 'Thêm khóa API cho {provider} để tải các mô hình.',
 	'settings.providers.modelsAvailable': '{count} khả dụng',
 	'settings.providers.modelsPulledAndCloud': '{count} đã tải · {cloud} đám mây',
 	'settings.providers.ollamaCloudModelLabel': '{model} (đám mây)',

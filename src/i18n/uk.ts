@@ -89,6 +89,16 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 		'⚠️ Якщо ви видалите індекс, цю дію не можна буде скасувати. Усі проіндексовані дані будуть назавжди вилучені з Google Cloud, і вам доведеться заново індексувати всі файли.',
 	'ragCleanup.keepButton': 'Зберегти дані',
 	'ragCleanup.deleteButton': 'Видалити назавжди',
+	'projectName.title': 'Новий проєкт',
+	'projectName.defaultName': 'Новий проєкт',
+	'projectName.inputLabel': 'Назва проєкту',
+	'projectName.createButton': 'Створити',
+	'projectName.cancelButton': 'Скасувати',
+	'projectName.errorEmpty': 'Введіть назву проєкту.',
+	'projectName.errorReserved':
+		'Ця назва зарезервована у Windows (як-от CON, NUL або COM1) і її не можна використовувати як назву файлу.',
+	'projectName.errorInvalidChars':
+		'Назви проєктів не можуть починатися з крапки або містити будь-який із цих символів: \\ / : * ? " < > | # ^ [ ]',
 	'yolo.title': 'Увімкнути YOLO mode?',
 	'yolo.description':
 		'Режим YOLO дозволяє AI-агенту виконувати всі інструменти без будь-якого підтвердження — включаючи створення, редагування, видалення та переміщення файлів, а також зовнішні виклики API.',
@@ -319,7 +329,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'scheduler.advancedOptions': 'Додаткові параметри',
 	'scheduler.modelOverrideSetting': 'Перевизначення моделі',
 	'scheduler.modelOverrideDesc':
-		'Перевизначити модель чату плагіна для цього завдання (наприклад, gemini-2.0-flash). Залиште порожнім, щоб використовувати за замовчуванням.',
+		'Перевизначити модель чату плагіна для цього завдання. Залиште порожнім, щоб використовувати типову.',
 	'scheduler.outputPathSetting': 'Шлях виводу',
 	'scheduler.outputPathDesc':
 		'Куди записувати результати. Підтримує змінні {slug} та {date}. За замовчуванням: {defaultPath}',
@@ -382,6 +392,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'hooks.pathGlobDesc':
 		'Обмежити запуск шляхами, що відповідають цьому glob-шаблону. Приклади: Daily/**/*.md, Notes/*.md. Залиште порожнім для будь-якого шляху.',
 	'hooks.commandIdSetting': 'ID команди',
+	'hooks.commandIdPlaceholder': 'plugin-id:command-name',
 	'hooks.commandIdDesc':
 		'ID команди з палітри команд для запуску. Приклади: editor:save-file, gemini-scribe:summarize-active-file. Переглянути ID команд можна в Налаштування → Гарячі клавіші (відкрийте консоль розробника за допомогою Ctrl+Shift+I, щоб переглянути ID).',
 	'hooks.focusFileSetting': 'Фокусувати файл-тригер перед виконанням',
@@ -402,6 +413,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'hooks.maxRunsSetting': 'Макс. запусків на годину',
 	'hooks.maxRunsDesc': 'Обмеження ковзного вікна для всіх файлів. 0 (за замовчуванням) означає без обмежень.',
 	'hooks.skillsSetting': 'Навички (через кому)',
+	'hooks.skillsPlaceholder': 'summarize, index-files',
 	'hooks.skillsDesc':
 		'Ідентифікатори (slugs) навичок для попередньої активації. Порожньо = успадкувати всі доступні навички.',
 	'hooks.modelOverrideSetting': 'Перевизначення моделі',
@@ -619,7 +631,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'command.openHookManager': 'Відкрити менеджер хуків',
 	'command.newHook': 'Новий хук життєвого циклу',
 	'command.viewScheduledTasks': 'Переглянути заплановані завдання',
-	'command.switchProject': 'Змінити проєкт',
+	'command.switchProject': 'Перемкнути проєкт',
 	'command.createProject': 'Створити проєкт',
 	'command.convertToProject': 'Перетворити нотатку на проєкт',
 	'command.openProjectSettings': 'Відкрити налаштування проєкту',
@@ -1022,6 +1034,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.refreshButton': 'Оновити',
 	'settings.providers.refreshUnreachable':
 		"Не вдалося з'єднатися з {provider}. Перевірте кінцеву точку та спробуйте знову.",
+	'settings.providers.refreshNeedsKey': 'Додайте ключ API для {provider}, щоб завантажити його моделі.',
 	'settings.providers.modelsAvailable': '{count} доступно',
 	'settings.providers.modelsPulledAndCloud': '{count} завантажено · {cloud} хмарних',
 	'settings.providers.ollamaCloudModelLabel': '{model} (хмарна)',

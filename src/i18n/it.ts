@@ -90,6 +90,16 @@ export const it: Partial<Record<TranslationKey, string>> = {
 		'⚠️ Se elimini, questa azione è permanente e non può essere annullata. Tutti i dati indicizzati verranno rimossi definitivamente da Google Cloud e dovrai reindicizzare tutti i file.',
 	'ragCleanup.keepButton': 'Conserva i dati',
 	'ragCleanup.deleteButton': 'Elimina permanentemente',
+	'projectName.title': 'Nuovo progetto',
+	'projectName.defaultName': 'Nuovo progetto',
+	'projectName.inputLabel': 'Nome del progetto',
+	'projectName.createButton': 'Crea',
+	'projectName.cancelButton': 'Annulla',
+	'projectName.errorEmpty': 'Inserisci un nome per il progetto.',
+	'projectName.errorReserved':
+		'Questo nome è riservato su Windows (come CON, NUL o COM1) e non può essere utilizzato come nome di file.',
+	'projectName.errorInvalidChars':
+		'I nomi dei progetti non possono iniziare con un punto o contenere: \\ / : * ? " < > | # ^ [ ]',
 	'yolo.title': 'Abilitare la modalità YOLO?',
 	'yolo.description':
 		"La modalità YOLO consente all'agente IA di eseguire tutti gli strumenti senza alcuna conferma — inclusi la creazione, la modifica, l'eliminazione e lo spostamento di file, nonché le chiamate API esterne.",
@@ -321,7 +331,7 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'scheduler.advancedOptions': 'Opzioni avanzate',
 	'scheduler.modelOverrideSetting': 'Sostituzione modello',
 	'scheduler.modelOverrideDesc':
-		'Sostituisci il modello di chat del plugin per questa attività (es. gemini-2.0-flash). Lascia vuoto per utilizzare quello predefinito.',
+		'Sostituisci il modello di chat del plugin per questa attività. Lascia vuoto per utilizzare quello predefinito.',
 	'scheduler.outputPathSetting': 'Percorso di output',
 	'scheduler.outputPathDesc':
 		'Dove scrivere i risultati. Supporta i segnaposto {slug} e {date}. Predefinito: {defaultPath}',
@@ -384,6 +394,7 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'hooks.pathGlobDesc':
 		'Limita gli avvii ai percorsi che corrispondono a questo glob. Esempi: Daily/**/*.md, Notes/*.md. Lascia vuoto per qualsiasi percorso.',
 	'hooks.commandIdSetting': 'ID comando',
+	'hooks.commandIdPlaceholder': 'plugin-id:command-name',
 	'hooks.commandIdDesc':
 		'ID della tavolozza dei comandi da eseguire. Esempi: editor:save-file, gemini-scribe:summarize-active-file. Visualizza gli ID dei comandi tramite Impostazioni → Scorciatoie (apri la console per sviluppatori con Ctrl+Shift+I per ispezionare gli ID).',
 	'hooks.focusFileSetting': "Metti a fuoco il file di attivazione prima dell'invio",
@@ -404,6 +415,7 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'hooks.maxRunsSetting': "Esecuzioni massime all'ora",
 	'hooks.maxRunsDesc': 'Limite a finestra scorrevole su tutti i file. 0 (predefinito) significa illimitato.',
 	'hooks.skillsSetting': 'Abilità (separate da virgola)',
+	'hooks.skillsPlaceholder': 'summarize, index-files',
 	'hooks.skillsDesc': 'Slug delle abilità da pre-attivare. Vuoto = eredita tutte le abilità disponibili.',
 	'hooks.modelOverrideSetting': 'Sostituzione modello',
 	'hooks.modelOverrideDesc':
@@ -1031,6 +1043,7 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.modelsRowName': 'Modelli disponibili',
 	'settings.providers.refreshButton': 'Aggiorna',
 	'settings.providers.refreshUnreachable': "Impossibile raggiungere {provider}. Controlla l'endpoint e riprova.",
+	'settings.providers.refreshNeedsKey': 'Aggiungi una chiave API per {provider} per caricare i suoi modelli.',
 	'settings.providers.modelsAvailable': '{count} disponibili',
 	'settings.providers.modelsPulledAndCloud': '{count} scaricati · {cloud} cloud',
 	'settings.providers.ollamaCloudModelLabel': '{model} (cloud)',
