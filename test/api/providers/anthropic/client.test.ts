@@ -106,8 +106,12 @@ describe('AnthropicClient', () => {
 				stream: false,
 				messages: [{ role: 'user', content: 'say hi' }],
 				cache_control: { type: 'ephemeral' },
-				thinking: { type: 'adaptive', display: 'summarized' },
-				betas: ['server-side-fallback-2026-07-01'],
+				thinking: {
+					type: 'adaptive',
+					display: 'summarized',
+					block_binding: { prefix_mismatch_behavior: 'drop_block' },
+				},
+				betas: ['thinking-binding-controls-2026-08-01', 'server-side-fallback-2026-07-01'],
 				fallbacks: 'default',
 			});
 			expect(args).not.toHaveProperty('temperature');
@@ -130,8 +134,27 @@ describe('AnthropicClient', () => {
 			anthropicCalls.create.mockResolvedValue(message());
 			await client('claude-sonnet-5').generateModelResponse({ kind: 'base', prompt: 'x' });
 			const args = anthropicCalls.create.mock.calls[0][0];
-			expect(args.thinking).toEqual({ type: 'adaptive', display: 'summarized' });
+			expect(args.thinking).toEqual({
+				type: 'adaptive',
+				display: 'summarized',
+				block_binding: { prefix_mismatch_behavior: 'drop_block' },
+			});
+			expect(args.betas).toEqual(['thinking-binding-controls-2026-08-01']);
 			expect(args).not.toHaveProperty('fallbacks');
+		});
+
+		it('drops stale replayed thinking blocks rather than failing, so mid-chain compaction survives (#1608)', async () => {
+			// Compaction rewrites the history before an in-flight tool turn, which
+			// invalidates that turn's thinking signatures. The binding opt-in makes
+			// the API remove them instead of answering 400.
+			anthropicCalls.create.mockResolvedValue(message());
+			for (const model of ['claude-opus-5', 'claude-sonnet-5', 'claude-opus-4-8']) {
+				await client(model).generateModelResponse(extended());
+			}
+			for (const [args] of anthropicCalls.create.mock.calls) {
+				expect(args.thinking.block_binding).toEqual({ prefix_mismatch_behavior: 'drop_block' });
+				expect(args.betas).toContain('thinking-binding-controls-2026-08-01');
+			}
 		});
 
 		it('builds system, history, tools, and the final user turn for an extended request', async () => {
@@ -263,6 +286,17 @@ describe('AnthropicClient', () => {
 			const response = await client().generateModelResponse(extended());
 			expect(response.toolCalls).toBeUndefined();
 			expect(mockLogger.warn).toHaveBeenCalled();
+		});
+
+		it('logs the thinking blocks the API dropped', async () => {
+			const dropped = { type: 'thinking_dropped', path: 'messages.1.content.0', reason: 'prefix_binding_mismatch' };
+			anthropicCalls.create.mockResolvedValue(message({ input_transformations: [dropped] }));
+			const response = await client().generateModelResponse(extended());
+
+			expect(response.markdown).toBe('hello');
+			expect(mockLogger.debug).toHaveBeenCalledWith('[AnthropicClient] API dropped stale replayed thinking blocks:', [
+				dropped,
+			]);
 		});
 
 		it('logs and rethrows API errors', async () => {
