@@ -257,7 +257,7 @@ The project enforces quality gates through git hooks and CI:
 | Lint           | `npm run lint`           | CI only (pre-commit auto-fixes staged `*.ts` instead) |
 | Test typecheck | `npm run typecheck:test` | CI only                                               |
 
-The pre-commit hook runs `lint-staged`, which auto-fixes formatting (`prettier --write`) and lint issues (`eslint --fix`) on staged files only — a different (and narrower) check than the full-repo, fix-nothing commands CI runs. Run all five full-repo commands locally before pushing to avoid a CI-only failure:
+The pre-commit hook runs `nano-staged`, which auto-fixes formatting (`prettier --write`) and lint issues (`eslint --fix`) on staged files only — a different (and narrower) check than the full-repo, fix-nothing commands CI runs. Run all five full-repo commands locally before pushing to avoid a CI-only failure:
 
 ```bash
 npm run format-check && npm run build && npm test && npm run lint && npm run typecheck:test
