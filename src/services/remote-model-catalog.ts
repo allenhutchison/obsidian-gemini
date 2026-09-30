@@ -48,6 +48,14 @@ export interface CachedModelCatalogOptions<E extends CatalogEndpoint> {
 	load: (endpoint: E) => Promise<GeminiModel[]>;
 	/** Provider-specific state to reset immediately before a fetch. */
 	beforeFetch?: (state: CatalogFetchState) => void;
+	/**
+	 * The list served when a fetch fails and no valid cache is left. Defaults to
+	 * empty, and that is the right answer for a catalog that exists only on the
+	 * endpoint (Ollama's pulled models, an OpenAI-compatible server's `/models`):
+	 * there is nothing true to say offline. Supply one only when the provider has
+	 * static knowledge of its own — Anthropic's curated `KNOWN_ANTHROPIC_MODELS`.
+	 */
+	fallback?: () => GeminiModel[];
 }
 
 /**
@@ -157,12 +165,12 @@ export class CachedModelCatalog<E extends CatalogEndpoint> {
 			if (generation !== this.generation) {
 				// reset() cleared the cache while this was in flight, so a stale request
 				// has nothing valid left to serve and must not report a probe outcome.
-				return [];
+				return this.fallbackModels();
 			}
 			this.lastProbeResult = 'unreachable';
 			// Don't poison the cache with an empty array — that would stick until the
 			// user manually clicks "Refresh" even after the server comes back.
-			// Returning the previous cache (or an empty list as a non-cached fallback)
+			// Returning the previous cache (or the non-cached fallback, empty by default)
 			// lets a subsequent automatic call retry the fetch. But only serve that
 			// cache when it is this endpoint's and this endpoint is still the active
 			// one — another endpoint's models would let the dropdown surface entries
@@ -176,8 +184,12 @@ export class CachedModelCatalog<E extends CatalogEndpoint> {
 			// never served.
 			const cached = this.cache;
 			const safeToServe = cached?.identity === endpoint.key && this.options.endpoint().key === endpoint.key;
-			return safeToServe ? cached.models : [];
+			return safeToServe ? cached.models : this.fallbackModels();
 		}
+	}
+
+	private fallbackModels(): GeminiModel[] {
+		return this.options.fallback?.() ?? [];
 	}
 
 	/**
