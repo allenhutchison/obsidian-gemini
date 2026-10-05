@@ -90,6 +90,17 @@ describe('OllamaClient', () => {
 				totalTokenCount: 14,
 			});
 		});
+
+		it('returns empty markdown when the generate response omits `response`', async () => {
+			ollamaCalls.generate.mockResolvedValue({ done: true });
+
+			const response = await client.generateModelResponse({
+				kind: 'base',
+				prompt: 'say hi',
+			});
+
+			expect(response.markdown).toBe('');
+		});
 	});
 
 	describe('generateModelResponse (ExtendedModelRequest)', () => {

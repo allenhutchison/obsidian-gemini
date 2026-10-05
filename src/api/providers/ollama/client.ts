@@ -73,7 +73,8 @@ export class OllamaClient implements ModelApi {
 				});
 				const usageMetadata = this.toUsageMetadata(generateResponse.prompt_eval_count, generateResponse.eval_count);
 				return {
-					markdown: generateResponse.response,
+					// `response` is optional since ollama 0.6.4 (image-generation responses omit it).
+					markdown: generateResponse.response ?? '',
 					rendered: '',
 					...(usageMetadata && { usageMetadata }),
 				};
