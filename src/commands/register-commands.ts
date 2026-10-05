@@ -28,6 +28,35 @@ function resolveRagIndexing(plugin: ObsidianGemini): NonNullable<ObsidianGemini[
 }
 
 /**
+ * Register a command whose whole body is "open the agent view, then act on it".
+ * Five commands shared that five-line callback verbatim, differing only in the
+ * one method they called — the sort of parallel ladder where a change to the
+ * entry gate (an extra readiness check, a different notice) lands in one of the
+ * five and is missed in the other four.
+ *
+ * `action` is awaited whether or not it returns a promise, so the synchronous
+ * and asynchronous view methods register the same way.
+ */
+function addAgentViewCommand(
+	plugin: ObsidianGemini,
+	id: string,
+	name: string,
+	action: (view: NonNullable<ObsidianGemini['agentView']>) => void | Promise<void>
+): void {
+	plugin.addCommand({
+		id,
+		name,
+		callback: async () => {
+			if (!plugin.checkInitialized()) return;
+			await plugin.activateAgentView();
+			if (plugin.agentView) {
+				await action(plugin.agentView);
+			}
+		},
+	});
+}
+
+/**
  * Register all command-palette commands on the plugin instance.
  *
  * Extracted verbatim from `ObsidianGemini.registerUIAndCommands()` as a pure
@@ -122,17 +151,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 
 	// Switch project for the current agent session: open the project picker.
 	// Same flow as `link-project`; both IDs stay registered so existing hotkeys keep working.
-	plugin.addCommand({
-		id: 'switch-project',
-		name: t('command.switchProject'),
-		callback: async () => {
-			if (!plugin.checkInitialized()) return;
-			await plugin.activateAgentView();
-			if (plugin.agentView) {
-				plugin.agentView.switchProject();
-			}
-		},
-	});
+	addAgentViewCommand(plugin, 'switch-project', t('command.switchProject'), (view) => view.switchProject());
 
 	// Create a new project, asking for its name first
 	plugin.addCommand({
@@ -426,51 +445,11 @@ export function registerCommands(plugin: ObsidianGemini): void {
 		},
 	});
 
-	plugin.addCommand({
-		id: 'browse-sessions',
-		name: t('command.browseSessions'),
-		callback: async () => {
-			if (!plugin.checkInitialized()) return;
-			await plugin.activateAgentView();
-			if (plugin.agentView) {
-				await plugin.agentView.showSessionList();
-			}
-		},
-	});
+	addAgentViewCommand(plugin, 'browse-sessions', t('command.browseSessions'), (view) => view.showSessionList());
 
-	plugin.addCommand({
-		id: 'link-project',
-		name: t('command.linkProject'),
-		callback: async () => {
-			if (!plugin.checkInitialized()) return;
-			await plugin.activateAgentView();
-			if (plugin.agentView) {
-				plugin.agentView.switchProject();
-			}
-		},
-	});
+	addAgentViewCommand(plugin, 'link-project', t('command.linkProject'), (view) => view.switchProject());
 
-	plugin.addCommand({
-		id: 'session-settings',
-		name: t('command.sessionSettings'),
-		callback: async () => {
-			if (!plugin.checkInitialized()) return;
-			await plugin.activateAgentView();
-			if (plugin.agentView) {
-				await plugin.agentView.showSessionSettings();
-			}
-		},
-	});
+	addAgentViewCommand(plugin, 'session-settings', t('command.sessionSettings'), (view) => view.showSessionSettings());
 
-	plugin.addCommand({
-		id: 'toggle-plan-mode',
-		name: t('command.togglePlanMode'),
-		callback: async () => {
-			if (!plugin.checkInitialized()) return;
-			await plugin.activateAgentView();
-			if (plugin.agentView) {
-				plugin.agentView.togglePlanMode();
-			}
-		},
-	});
+	addAgentViewCommand(plugin, 'toggle-plan-mode', t('command.togglePlanMode'), (view) => view.togglePlanMode());
 }
