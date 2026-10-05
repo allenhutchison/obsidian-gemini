@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">89.34% </span>
+                <span class="strong">89.02% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>151/169</span>
+                <span class='fraction'>146/164</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">81.13% </span>
+                <span class="strong">81.37% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>86/106</span>
+                <span class='fraction'>83/102</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">90.38% </span>
+                <span class="strong">90.13% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>141/156</span>
+                <span class='fraction'>137/152</span>
             </div>
         
             
@@ -480,7 +480,15 @@
 <a name='L415'></a><a href='#L415'>415</a>
 <a name='L416'></a><a href='#L416'>416</a>
 <a name='L417'></a><a href='#L417'>417</a>
-<a name='L418'></a><a href='#L418'>418</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L418'></a><a href='#L418'>418</a>
+<a name='L419'></a><a href='#L419'>419</a>
+<a name='L420'></a><a href='#L420'>420</a>
+<a name='L421'></a><a href='#L421'>421</a>
+<a name='L422'></a><a href='#L422'>422</a>
+<a name='L423'></a><a href='#L423'>423</a>
+<a name='L424'></a><a href='#L424'>424</a>
+<a name='L425'></a><a href='#L425'>425</a>
+<a name='L426'></a><a href='#L426'>426</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -494,6 +502,27 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -636,13 +665,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -659,13 +682,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
@@ -913,6 +929,27 @@ import { isPathInFolder } from '../utils/file-utils';
 const UNSUPPORTED_CODE_BLOCK_RE = /```(?:dataview|dataviewjs|bases?)[\s\S]*?```/g;
 &nbsp;
 /**
+ * Read `frontmatter.tags` as a `string[]`, tolerating the three shapes Obsidian
+ * accepts in YAML: a list, a single bare string, or absent. Non-string list
+ * entries are dropped rather than coerced, so a numeric tag can't be written
+ * back as one.
+ *
+ * Shared by the two writers below because they must agree on what the existing
+ * tags are before one adds `PROJECT_TAG` and the other removes it — a reader
+ * that handled only the list shape in one of them would silently discard a
+ * single-string `tags:` value on that path alone.
+ */
+function readFrontmatterTags(frontmatter: Record&lt;string, unknown&gt;): string[] {
+	if (Array.isArray(frontmatter.tags)) {
+		return frontmatter.tags.filter((t): t is string =&gt; typeof t === 'string');
+	}
+	if (typeof frontmatter.tags === 'string') {
+		return [frontmatter.tags];
+	}
+	return [];
+}
+&nbsp;
+/**
  * Discovers, parses, and caches project definitions from the vault.
  * A project is any Markdown file with the `gemini-scribe/project` tag.
  */
@@ -1053,13 +1090,7 @@ Add your project instructions here. This text will be injected into the agent's 
 	 */
 	async convertNoteToProject(file: TFile): Promise&lt;void&gt; {
 		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: Record&lt;string, unknown&gt;) =&gt; {
-			// Normalize tags to array (handle string, array, or missing)
-			let tags: string[] = [];
-			if (Array.isArray(frontmatter.tags)) {
-				tags = frontmatter.tags.filter((t): t is string =&gt; typeof t === 'string');
-			} else if (typeof frontmatter.tags === 'string') {
-				tags = [frontmatter.tags];
-			}
+			const tags = readFrontmatterTags(frontmatter);
 			if (!tags.includes(PROJECT_TAG)) {
 				tags.push(PROJECT_TAG);
 			}
@@ -1076,14 +1107,7 @@ Add your project instructions here. This text will be injected into the agent's 
 	 */
 	async removeProject(file: TFile): Promise&lt;void&gt; {
 		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: Record&lt;string, unknown&gt;) =&gt; {
-			// Normalize tags to array (handle string or array)
-			let tags: string[] = [];
-			if (Array.isArray(frontmatter.tags)) {
-				tags = frontmatter.tags.filter((t): t is string =&gt; typeof t === 'string');
-			} else <span class="missing-if-branch" title="else path not taken" >E</span>if (typeof frontmatter.tags === 'string') {
-				tags = [frontmatter.tags];
-			}
-			tags = tags.filter((t: string) =&gt; t !== PROJECT_TAG);
+			const tags = readFrontmatterTags(frontmatter).filter((t) =&gt; t !== PROJECT_TAG);
 			frontmatter.tags = tags.length &gt; 0 ? tags : undefined;
 			if (frontmatter.tags === undefined) {
 				delete frontmatter.tags;
@@ -1321,7 +1345,7 @@ Add your project instructions here. This text will be injected into the agent's 
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-10-05T15:34:00.706Z
+                at 2026-10-05T15:34:40.670Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
