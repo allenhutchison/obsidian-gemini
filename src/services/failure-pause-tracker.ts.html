@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>27/27</span>
+                <span class='fraction'>28/28</span>
             </div>
         
             
@@ -39,14 +39,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>6/6</span>
+                <span class='fraction'>5/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>25/25</span>
+                <span class='fraction'>26/26</span>
             </div>
         
             
@@ -220,13 +220,7 @@
 <a name='L155'></a><a href='#L155'>155</a>
 <a name='L156'></a><a href='#L156'>156</a>
 <a name='L157'></a><a href='#L157'>157</a>
-<a name='L158'></a><a href='#L158'>158</a>
-<a name='L159'></a><a href='#L159'>159</a>
-<a name='L160'></a><a href='#L160'>160</a>
-<a name='L161'></a><a href='#L161'>161</a>
-<a name='L162'></a><a href='#L162'>162</a>
-<a name='L163'></a><a href='#L163'>163</a>
-<a name='L164'></a><a href='#L164'>164</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L158'></a><a href='#L158'>158</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -329,6 +323,13 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">22x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">21x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -373,20 +374,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">28x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { getRawErrorMessage } from '../utils/error-utils';
@@ -485,7 +473,14 @@ export class FailurePauseTracker&lt;TState extends FailurePauseState&gt; {
 		// (e.g. TaskState.nextRunAt) and persist `undefined`, so no-op instead — mirroring
 		// `reset`. A missing record on success is harmless (nothing to clear) so it's silent.
 		if (!prev) return;
-		await this.options.setState(slug, this.clearedState(prev, patch));
+		const next = {
+			...prev,
+			...patch,
+			lastError: undefined,
+			consecutiveFailures: 0,
+			pausedDueToErrors: false,
+		} as TState;
+		await this.options.setState(slug, next);
 	}
 &nbsp;
 	/**
@@ -529,27 +524,14 @@ export class FailurePauseTracker&lt;TState extends FailurePauseState&gt; {
 	async reset(slug: string, patch?: EntityPatch&lt;TState&gt;): Promise&lt;void&gt; {
 		const prev = this.options.getState(slug);
 		if (!prev) return;
-		await this.options.setState(slug, this.clearedState(prev, patch));
-	}
-&nbsp;
-	/**
-	 * The record that represents "no failures": `prev` with `patch` merged over it and
-	 * the three ladder-owned fields cleared. Built here rather than at each caller so
-	 * {@link recordSuccess} and {@link reset} cannot drift — they are the same write,
-	 * and a fourth field added to {@link FailurePauseState} has one place to be cleared.
-	 * The ladder-owned fields are applied after `patch` because {@link EntityPatch}
-	 * cannot express them, so the order only documents the precedence. The declared
-	 * return type contextually types the literal, so the `as TState` the two call
-	 * sites each needed on their untyped `const next` is no longer required.
-	 */
-	private clearedState(prev: TState, patch?: EntityPatch&lt;TState&gt;): TState {
-		return {
+		const next = {
 			...prev,
 			...patch,
 			lastError: undefined,
 			consecutiveFailures: 0,
 			pausedDueToErrors: false,
-		};
+		} as TState;
+		await this.options.setState(slug, next);
 	}
 }
 &nbsp;</pre></td></tr></table></pre>
@@ -559,7 +541,7 @@ export class FailurePauseTracker&lt;TState extends FailurePauseState&gt; {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-10-05T16:03:35.653Z
+                at 2026-10-05T16:03:42.849Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
