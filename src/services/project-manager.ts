@@ -14,6 +14,27 @@ import { isPathInFolder } from '../utils/file-utils';
 const UNSUPPORTED_CODE_BLOCK_RE = /```(?:dataview|dataviewjs|bases?)[\s\S]*?```/g;
 
 /**
+ * Read `frontmatter.tags` as a `string[]`, tolerating the three shapes Obsidian
+ * accepts in YAML: a list, a single bare string, or absent. Non-string list
+ * entries are dropped rather than coerced, so a numeric tag can't be written
+ * back as one.
+ *
+ * Shared by the two writers below because they must agree on what the existing
+ * tags are before one adds `PROJECT_TAG` and the other removes it — a reader
+ * that handled only the list shape in one of them would silently discard a
+ * single-string `tags:` value on that path alone.
+ */
+function readFrontmatterTags(frontmatter: Record<string, unknown>): string[] {
+	if (Array.isArray(frontmatter.tags)) {
+		return frontmatter.tags.filter((t): t is string => typeof t === 'string');
+	}
+	if (typeof frontmatter.tags === 'string') {
+		return [frontmatter.tags];
+	}
+	return [];
+}
+
+/**
  * Discovers, parses, and caches project definitions from the vault.
  * A project is any Markdown file with the `gemini-scribe/project` tag.
  */
@@ -154,13 +175,7 @@ Add your project instructions here. This text will be injected into the agent's 
 	 */
 	async convertNoteToProject(file: TFile): Promise<void> {
 		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
-			// Normalize tags to array (handle string, array, or missing)
-			let tags: string[] = [];
-			if (Array.isArray(frontmatter.tags)) {
-				tags = frontmatter.tags.filter((t): t is string => typeof t === 'string');
-			} else if (typeof frontmatter.tags === 'string') {
-				tags = [frontmatter.tags];
-			}
+			const tags = readFrontmatterTags(frontmatter);
 			if (!tags.includes(PROJECT_TAG)) {
 				tags.push(PROJECT_TAG);
 			}
@@ -177,14 +192,7 @@ Add your project instructions here. This text will be injected into the agent's 
 	 */
 	async removeProject(file: TFile): Promise<void> {
 		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
-			// Normalize tags to array (handle string or array)
-			let tags: string[] = [];
-			if (Array.isArray(frontmatter.tags)) {
-				tags = frontmatter.tags.filter((t): t is string => typeof t === 'string');
-			} else if (typeof frontmatter.tags === 'string') {
-				tags = [frontmatter.tags];
-			}
-			tags = tags.filter((t: string) => t !== PROJECT_TAG);
+			const tags = readFrontmatterTags(frontmatter).filter((t) => t !== PROJECT_TAG);
 			frontmatter.tags = tags.length > 0 ? tags : undefined;
 			if (frontmatter.tags === undefined) {
 				delete frontmatter.tags;
