@@ -94,14 +94,7 @@ export class FailurePauseTracker<TState extends FailurePauseState> {
 		// (e.g. TaskState.nextRunAt) and persist `undefined`, so no-op instead — mirroring
 		// `reset`. A missing record on success is harmless (nothing to clear) so it's silent.
 		if (!prev) return;
-		const next = {
-			...prev,
-			...patch,
-			lastError: undefined,
-			consecutiveFailures: 0,
-			pausedDueToErrors: false,
-		} as TState;
-		await this.options.setState(slug, next);
+		await this.options.setState(slug, this.clearedState(prev, patch));
 	}
 
 	/**
@@ -145,13 +138,26 @@ export class FailurePauseTracker<TState extends FailurePauseState> {
 	async reset(slug: string, patch?: EntityPatch<TState>): Promise<void> {
 		const prev = this.options.getState(slug);
 		if (!prev) return;
-		const next = {
+		await this.options.setState(slug, this.clearedState(prev, patch));
+	}
+
+	/**
+	 * The record that represents "no failures": `prev` with `patch` merged over it and
+	 * the three ladder-owned fields cleared. Built here rather than at each caller so
+	 * {@link recordSuccess} and {@link reset} cannot drift — they are the same write,
+	 * and a fourth field added to {@link FailurePauseState} has one place to be cleared.
+	 * The ladder-owned fields are applied after `patch` because {@link EntityPatch}
+	 * cannot express them, so the order only documents the precedence. The declared
+	 * return type contextually types the literal, so the `as TState` the two call
+	 * sites each needed on their untyped `const next` is no longer required.
+	 */
+	private clearedState(prev: TState, patch?: EntityPatch<TState>): TState {
+		return {
 			...prev,
 			...patch,
 			lastError: undefined,
 			consecutiveFailures: 0,
 			pausedDueToErrors: false,
-		} as TState;
-		await this.options.setState(slug, next);
+		};
 	}
 }
