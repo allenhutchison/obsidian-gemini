@@ -552,18 +552,22 @@ export class AgentLoop {
 			iterations: number;
 		}
 	): AgentLoopResult | null {
-		if (state.loopFireCount >= AGENT_LOOP_ABORT_THRESHOLD) {
-			plugin.logger.warn(
-				`[AgentLoop] Aborting turn: tool loop detector fired ${state.loopFireCount} times ` +
-					`(threshold ${AGENT_LOOP_ABORT_THRESHOLD})`
-			);
-			const updatedHistory = buildToolHistoryTurns({
+		// Built lazily: the common path returns null without needing it.
+		const terminatingHistory = () =>
+			buildToolHistoryTurns({
 				conversationHistory: state.conversationHistory,
 				userMessage: state.userMessage,
 				perTurnContext: state.perTurnContext,
 				toolCalls: state.toolCalls,
 				toolResults,
 			});
+
+		if (state.loopFireCount >= AGENT_LOOP_ABORT_THRESHOLD) {
+			plugin.logger.warn(
+				`[AgentLoop] Aborting turn: tool loop detector fired ${state.loopFireCount} times ` +
+					`(threshold ${AGENT_LOOP_ABORT_THRESHOLD})`
+			);
+			const updatedHistory = terminatingHistory();
 			return this.loopAbortedResult(updatedHistory, state.iterations, state.loopFireCount);
 		}
 
@@ -572,13 +576,7 @@ export class AgentLoop {
 		// Loop-detector fires are excluded (see doc comment above).
 		if (stopOnToolError && toolResults.some((tr) => !tr.result.success && !tr.result.loopDetected)) {
 			plugin.logger.warn('[AgentLoop] Ending turn: a tool call failed and stopOnToolError is enabled');
-			const updatedHistory = buildToolHistoryTurns({
-				conversationHistory: state.conversationHistory,
-				userMessage: state.userMessage,
-				perTurnContext: state.perTurnContext,
-				toolCalls: state.toolCalls,
-				toolResults,
-			});
+			const updatedHistory = terminatingHistory();
 			return this.makeResult({
 				markdown: t('agent.toolFailedStop', {
 					tool: toolResults.find((tr) => !tr.result.success && !tr.result.loopDetected)?.toolName ?? '',
