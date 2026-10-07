@@ -111,14 +111,7 @@ export class AgentViewTools {
 		// the first row of the tool group (once the group exists) and persist it.
 		this.pendingReasoning = precedingThoughts?.trim() ? precedingThoughts : null;
 		if (this.pendingReasoning) {
-			await this.plugin.sessionHistory.addEntryToSession(currentSession, {
-				role: 'model',
-				message: '',
-				notePath: '',
-				created_at: new Date(),
-				model: currentSession.modelConfig?.model || getActiveChatModel(this.plugin.settings),
-				thoughts: this.pendingReasoning,
-			});
+			await this.persistReasoning(currentSession, this.pendingReasoning);
 		}
 
 		const activeProject = currentSession.projectPath
@@ -186,14 +179,7 @@ export class AgentViewTools {
 							// next tool batch — render it as a row inside the current tool
 							// group (interleaved with the tool calls) and persist it.
 							await this.renderReasoningInGroup(thoughts);
-							await this.plugin.sessionHistory.addEntryToSession(currentSession, {
-								role: 'model',
-								message: '',
-								notePath: '',
-								created_at: new Date(),
-								model: currentSession.modelConfig?.model || getActiveChatModel(this.plugin.settings),
-								thoughts,
-							});
+							await this.persistReasoning(currentSession, thoughts);
 						},
 						onMidLoopCompaction: async ({ summaryText }) => {
 							// Mirrors the pre-turn "Context Compacted" notice in
@@ -333,6 +319,21 @@ export class AgentViewTools {
 	 */
 	public showPermissionGranted(toolName: string): void {
 		this.display.showPermissionGranted(toolName, this.currentGroupContainer);
+	}
+
+	/**
+	 * Persist a reasoning-only entry: model thinking with an empty message, which
+	 * SessionHistory serializes as a bare `[!reasoning]` callout with no header.
+	 */
+	private async persistReasoning(session: ChatSession, thoughts: string): Promise<void> {
+		await this.plugin.sessionHistory.addEntryToSession(session, {
+			role: 'model',
+			message: '',
+			notePath: '',
+			created_at: new Date(),
+			model: session.modelConfig?.model || getActiveChatModel(this.plugin.settings),
+			thoughts,
+		});
 	}
 
 	/**
