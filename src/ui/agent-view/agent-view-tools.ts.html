@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">96.11% </span>
+                <span class="strong">96.15% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>99/103</span>
+                <span class='fraction'>100/104</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">87.3% </span>
+                <span class="strong">86.88% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>55/63</span>
+                <span class='fraction'>53/61</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">95.45% </span>
+                <span class="strong">95.65% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>21/22</span>
+                <span class='fraction'>22/23</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">98.95% </span>
+                <span class="strong">98.96% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>95/96</span>
+                <span class='fraction'>96/97</span>
             </div>
         
             
@@ -459,7 +459,8 @@
 <a name='L394'></a><a href='#L394'>394</a>
 <a name='L395'></a><a href='#L395'>395</a>
 <a name='L396'></a><a href='#L396'>396</a>
-<a name='L397'></a><a href='#L397'>397</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L397'></a><a href='#L397'>397</a>
+<a name='L398'></a><a href='#L398'>398</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -573,13 +574,6 @@
 <span class="cline-any cline-yes">25x</span>
 <span class="cline-any cline-yes">26x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">25x</span>
@@ -648,13 +642,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -794,6 +781,21 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -968,14 +970,7 @@ export class AgentViewTools {
 		// the first row of the tool group (once the group exists) and persist it.
 		this.pendingReasoning = precedingThoughts?.trim() ? precedingThoughts : null;
 		if (this.pendingReasoning) {
-			await this.plugin.sessionHistory.addEntryToSession(currentSession, {
-				role: 'model',
-				message: '',
-				notePath: '',
-				created_at: new Date(),
-				model: currentSession.modelConfig?.model || getActiveChatModel(this.plugin.settings),
-				thoughts: this.pendingReasoning,
-			});
+			await this.persistReasoning(currentSession, this.pendingReasoning);
 		}
 &nbsp;
 		const activeProject = currentSession.projectPath
@@ -1043,14 +1038,7 @@ export class AgentViewTools {
 							// next tool batch — render it as a row inside the current tool
 							// group (interleaved with the tool calls) and persist it.
 							await this.renderReasoningInGroup(thoughts);
-							await this.plugin.sessionHistory.addEntryToSession(currentSession, {
-								role: 'model',
-								message: '',
-								notePath: '',
-								created_at: new Date(),
-								model: currentSession.modelConfig?.model || getActiveChatModel(this.plugin.settings),
-								thoughts,
-							});
+							await this.persistReasoning(currentSession, thoughts);
 						},
 						onMidLoopCompaction: async ({ summaryText }) =&gt; {
 							// Mirrors the pre-turn "Context Compacted" notice in
@@ -1193,6 +1181,21 @@ export class AgentViewTools {
 	}
 &nbsp;
 	/**
+	 * Persist a reasoning-only entry: model thinking with an empty message, which
+	 * SessionHistory serializes as a bare `[!reasoning]` callout with no header.
+	 */
+	private async persistReasoning(session: ChatSession, thoughts: string): Promise&lt;void&gt; {
+		await this.plugin.sessionHistory.addEntryToSession(session, {
+			role: 'model',
+			message: '',
+			notePath: '',
+			created_at: new Date(),
+			model: session.modelConfig?.model || getActiveChatModel(this.plugin.settings),
+			thoughts,
+		});
+	}
+&nbsp;
+	/**
 	 * Render a reasoning line into the current tool group's body so it interleaves
 	 * with the tool rows in execution order. No-op if there's no active group.
 	 */
@@ -1258,7 +1261,7 @@ export class AgentViewTools {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-10-07T22:49:44.332Z
+                at 2026-10-08T02:25:55.686Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
