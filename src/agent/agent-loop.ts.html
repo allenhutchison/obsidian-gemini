@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">94.84% </span>
+                <span class="strong">94.89% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>184/194</span>
+                <span class='fraction'>186/196</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">96.87% </span>
+                <span class="strong">96.96% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>31/32</span>
+                <span class='fraction'>32/33</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">95% </span>
+                <span class="strong">95.05% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>171/180</span>
+                <span class='fraction'>173/182</span>
             </div>
         
             
@@ -1041,9 +1041,7 @@
 <a name='L976'></a><a href='#L976'>976</a>
 <a name='L977'></a><a href='#L977'>977</a>
 <a name='L978'></a><a href='#L978'>978</a>
-<a name='L979'></a><a href='#L979'>979</a>
-<a name='L980'></a><a href='#L980'>980</a>
-<a name='L981'></a><a href='#L981'>981</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L979'></a><a href='#L979'>979</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1597,18 +1595,22 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">72x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">72x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1618,12 +1620,6 @@
 <span class="cline-any cline-yes">75x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
@@ -2577,18 +2573,22 @@ export class AgentLoop {
 			iterations: number;
 		}
 	): AgentLoopResult | null {
-		if (state.loopFireCount &gt;= AGENT_LOOP_ABORT_THRESHOLD) {
-			plugin.logger.warn(
-				`[AgentLoop] Aborting turn: tool loop detector fired ${state.loopFireCount} times ` +
-					`(threshold ${AGENT_LOOP_ABORT_THRESHOLD})`
-			);
-			const updatedHistory = buildToolHistoryTurns({
+		// Built lazily: the common path returns null without needing it.
+		const terminatingHistory = () =&gt;
+			buildToolHistoryTurns({
 				conversationHistory: state.conversationHistory,
 				userMessage: state.userMessage,
 				perTurnContext: state.perTurnContext,
 				toolCalls: state.toolCalls,
 				toolResults,
 			});
+&nbsp;
+		if (state.loopFireCount &gt;= AGENT_LOOP_ABORT_THRESHOLD) {
+			plugin.logger.warn(
+				`[AgentLoop] Aborting turn: tool loop detector fired ${state.loopFireCount} times ` +
+					`(threshold ${AGENT_LOOP_ABORT_THRESHOLD})`
+			);
+			const updatedHistory = terminatingHistory();
 			return this.loopAbortedResult(updatedHistory, state.iterations, state.loopFireCount);
 		}
 &nbsp;
@@ -2597,13 +2597,7 @@ export class AgentLoop {
 		// Loop-detector fires are excluded (see doc comment above).
 		if (stopOnToolError &amp;&amp; toolResults.some((tr) =&gt; !tr.result.success &amp;&amp; !tr.result.loopDetected)) {
 			plugin.logger.warn('[AgentLoop] Ending turn: a tool call failed and stopOnToolError is enabled');
-			const updatedHistory = buildToolHistoryTurns({
-				conversationHistory: state.conversationHistory,
-				userMessage: state.userMessage,
-				perTurnContext: state.perTurnContext,
-				toolCalls: state.toolCalls,
-				toolResults,
-			});
+			const updatedHistory = terminatingHistory();
 			return this.makeResult({
 				markdown: t('agent.toolFailedStop', {
 					tool: toolResults.find((tr) =&gt; !tr.result.success &amp;&amp; !tr.result.loopDetected)?.toolName ?? <span class="branch-1 cbranch-no" title="branch not covered" >'',</span>
@@ -3010,7 +3004,7 @@ export class AgentLoop {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-10-08T02:26:04.776Z
+                at 2026-10-11T00:49:12.370Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
