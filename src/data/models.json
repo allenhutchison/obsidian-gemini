@@ -1,6 +1,6 @@
 {
 	"version": 1,
-	"lastUpdated": "2026-09-21T14:38:26.433Z",
+	"lastUpdated": "2026-10-12T17:05:17.697Z",
 	"models": [
 		{
 			"value": "gemini-pro-latest",
@@ -130,6 +130,11 @@
 			"value": "gemma-4-31b-it",
 			"label": "Gemma 4 31B IT",
 			"maxTemperature": 2
+		},
+		{
+			"value": "gemini-nano-banana-2.1",
+			"label": "Nano Banana 2.1",
+			"maxTemperature": 1
 		}
 	]
 }
