@@ -68,6 +68,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Domyślny ({model})',
 	'settings.features.sameAsChat': 'Taki sam jak dla czatu',
 	'settings.features.modelMissing': 'Już niedostępny',
+	'settings.features.modelSearchPlaceholder': 'Szukaj modeli...',
 	'settings.features.modelCapabilitiesUnknown': 'brak informacji o obsłudze obrazów',
 	'settings.features.off': 'Wył.',
 	'settings.features.chooseProvider': 'Wybierz dostawcę',

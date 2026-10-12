@@ -67,6 +67,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Default ({model})',
 	'settings.features.sameAsChat': 'Sama seperti obrolan',
 	'settings.features.modelMissing': 'Tidak lagi tersedia',
+	'settings.features.modelSearchPlaceholder': 'Cari model...',
 	'settings.features.modelCapabilitiesUnknown': 'dukungan gambar tidak dilaporkan',
 	'settings.features.off': 'Nonaktif',
 	'settings.features.chooseProvider': 'Pilih penyedia',

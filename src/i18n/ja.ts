@@ -67,6 +67,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'デフォルト ({model})',
 	'settings.features.sameAsChat': 'チャットと同じ',
 	'settings.features.modelMissing': '利用不可',
+	'settings.features.modelSearchPlaceholder': 'モデルを検索...',
 	'settings.features.modelCapabilitiesUnknown': '画像サポート未報告',
 	'settings.features.off': 'オフ',
 	'settings.features.chooseProvider': 'プロバイダーを選択',

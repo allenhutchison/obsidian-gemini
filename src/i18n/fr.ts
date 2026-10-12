@@ -69,6 +69,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Par défaut ({model})',
 	'settings.features.sameAsChat': 'Identique au chat',
 	'settings.features.modelMissing': 'Plus disponible',
+	'settings.features.modelSearchPlaceholder': 'Rechercher des modèles...',
 	'settings.features.modelCapabilitiesUnknown': 'prise en charge des images non signalée',
 	'settings.features.off': 'Désactivé',
 	'settings.features.chooseProvider': 'Choisir un fournisseur',

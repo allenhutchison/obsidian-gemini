@@ -68,6 +68,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Mặc định ({model})',
 	'settings.features.sameAsChat': 'Giống như trò chuyện',
 	'settings.features.modelMissing': 'Không còn khả dụng',
+	'settings.features.modelSearchPlaceholder': 'Tìm kiếm mô hình...',
 	'settings.features.modelCapabilitiesUnknown': 'không có thông tin hỗ trợ hình ảnh',
 	'settings.features.off': 'Tắt',
 	'settings.features.chooseProvider': 'Chọn một nhà cung cấp',

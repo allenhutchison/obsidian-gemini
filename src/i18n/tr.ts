@@ -68,6 +68,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Varsayılan ({model})',
 	'settings.features.sameAsChat': 'Sohbet ile aynı',
 	'settings.features.modelMissing': 'Artık mevcut değil',
+	'settings.features.modelSearchPlaceholder': 'Modelleri ara...',
 	'settings.features.modelCapabilitiesUnknown': 'görsel desteği bildirilmedi',
 	'settings.features.off': 'Kapalı',
 	'settings.features.chooseProvider': 'Bir sağlayıcı seçin',

@@ -67,6 +67,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Standard ({model})',
 	'settings.features.sameAsChat': 'Samme som chat',
 	'settings.features.modelMissing': 'Ikke længere tilgængelig',
+	'settings.features.modelSearchPlaceholder': 'Søg efter modeller...',
 	'settings.features.modelCapabilitiesUnknown': 'billedunderstøttelse ikke rapporteret',
 	'settings.features.off': 'Fra',
 	'settings.features.chooseProvider': 'Vælg en udbyder',
