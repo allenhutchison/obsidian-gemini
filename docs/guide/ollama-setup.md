@@ -14,7 +14,7 @@ Gemini Scribe can route chat, summary, completions, rewrite, and agent tool-call
 3. **Raise Ollama's context window** — Do this before anything else; the default is too small for agent mode. See [Set the context window first](#set-the-context-window-first).
 4. **Add the Ollama card** — Open Settings → Gemini Scribe → **Providers** and add an entry for Ollama. If the daemon runs on a different host or port, edit the **Endpoint** field (e.g. `http://10.0.0.5:11434`) instead of the default `http://localhost:11434`.
 5. **Route features to it** — Open the **Features** page and set Chat and agent (and anything else you want local) to **Ollama**. Set **Default provider** on the Providers page to Ollama too if you want it to catch everything you haven't routed elsewhere.
-6. **Pick a model** — Opening the Chat row's model dropdown lists whatever you have pulled. Summaries and completions default to **Same as chat model**, because Ollama keeps only one model resident at a time and a second model is reloaded on every switch. Click **Refresh** on the Ollama provider card if a new pull doesn't show up.
+6. **Pick a model** — Opening the Chat row's model picker lists whatever you have pulled. Summaries and completions default to **Same as chat model**, because Ollama keeps only one model resident at a time and a second model is reloaded on every switch. Click **Refresh** on the Ollama provider card if a new pull doesn't show up.
 
 ## Set the context window first
 

@@ -528,7 +528,7 @@ Override global settings for specific conversations:
 
 1. Open the session menu (☰) in the agent header and choose **Session settings** (or run the "Agent session settings" command)
 2. Configure:
-   - Model (e.g., switch to Gemini 2.5 Pro for harder reasoning)
+   - Model (e.g., switch to Gemini 2.5 Pro for harder reasoning) — click the model button and type to search the list
    - Custom prompt template
 3. Use the reset button next to either field to go back to the default
 

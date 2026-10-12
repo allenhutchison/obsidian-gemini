@@ -1,11 +1,11 @@
 /**
  * Features page (settings-redesign design doc §5.4): one row per feature
  * showing "provider · model". Opening a row gives exactly two controls (a
- * provider dropdown, and a model dropdown filtered to that provider) —
+ * provider dropdown, and a searchable model picker filtered to that provider) —
  * **assignment only happens here**, never on a provider card.
  */
 
-import type { SettingDefinitionItem, SettingDefinitionPage, SettingGroupItem } from 'obsidian';
+import type { SettingDefinitionItem, SettingDefinitionPage, SettingDefinitionRender, SettingGroupItem } from 'obsidian';
 import { t, type TranslationKey } from '../../i18n';
 import type { SettingsContext } from './context';
 import { FEATURE_GROUPS, FEATURE_MODEL_ROLE, type FeatureId } from '../../types/features';
@@ -20,6 +20,7 @@ import {
 	isModelMissing,
 	topLevelFeaturesDisplay,
 } from './display-values';
+import { ModelPickerModal, orderModelPickerOptions } from '../components/model-picker-modal';
 
 const GROUP_DESC_KEY: Partial<Record<(typeof FEATURE_GROUPS)[number]['key'], TranslationKey>> = {
 	text: 'settings.features.groupTextDesc',
@@ -27,8 +28,44 @@ const GROUP_DESC_KEY: Partial<Record<(typeof FEATURE_GROUPS)[number]['key'], Tra
 };
 
 /**
+ * A feature's model row: a button showing the current choice that opens the
+ * fuzzy-search `ModelPickerModal`. A `render` row rather than a declarative
+ * dropdown because a native `<select>` cannot be searched, and an aggregator
+ * endpoint lists hundreds of models. The pick is written through
+ * `features.<f>.model`'s registered writer, exactly as the dropdown's was.
+ */
+function modelPickerRow(ctx: SettingsContext, f: FeatureId): SettingDefinitionRender {
+	return {
+		name: t('settings.features.model'),
+		visible: () => featureRoute(ctx.plugin.settings, f).provider !== 'none',
+		render: (setting) => {
+			const { '': defaultLabel, ...models } = modelOptions(ctx, f);
+			const current = featureRoute(ctx.plugin.settings, f).model;
+			if (isModelMissing(ctx, f)) {
+				setting.setDesc(t('settings.features.modelMissingHelp', { model: current }));
+			}
+			setting.addButton((button) => {
+				button.buttonEl.addClass('gemini-model-picker-button');
+				button.setButtonText(models[current] ?? defaultLabel ?? '').onClick(() => {
+					const options = orderModelPickerOptions(
+						{ value: '', label: defaultLabel ?? '' },
+						Object.entries(models).map(([value, label]) => ({ value, label }))
+					);
+					new ModelPickerModal(ctx.app, options, (value) => {
+						// Reflect the pick at once: persisting a route awaits a full
+						// re-initialization, and the row is only rebuilt after it.
+						button.setButtonText(models[value] ?? defaultLabel ?? '');
+						void ctx.tab.setControlValue(`features.${f}.model`, value).then(() => ctx.tab.update());
+					}).open();
+				});
+			});
+		},
+	};
+}
+
+/**
  * One feature's own sub-page: the provider dropdown, and (when it has a
- * model role) the model dropdown. Only caller is `featuresPage` below.
+ * model role) the model picker. Only caller is `featuresPage` below.
  */
 function featurePage(ctx: SettingsContext, f: FeatureId): SettingDefinitionPage {
 	const items: SettingDefinitionItem[] = [
@@ -51,19 +88,7 @@ function featurePage(ctx: SettingsContext, f: FeatureId): SettingDefinitionPage 
 
 	const hasModelRole = FEATURE_MODEL_ROLE[f] !== null;
 	if (hasModelRole) {
-		items.push({
-			name: t('settings.features.model'),
-			visible: () => featureRoute(ctx.plugin.settings, f).provider !== 'none',
-			control: {
-				type: 'dropdown',
-				key: `features.${f}.model`,
-				options: modelOptions(ctx, f),
-				validate: (value) => {
-					if (!value) return;
-					if (isModelMissing(ctx, f)) return t('settings.features.modelMissingHelp', { model: value });
-				},
-			},
-		});
+		items.push(modelPickerRow(ctx, f));
 	} else {
 		items.push({
 			name: t('settings.features.model'),
