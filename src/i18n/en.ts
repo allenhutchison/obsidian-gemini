@@ -271,6 +271,11 @@ export const en = {
 		context:
 			"Label appended to a model option that is stored in settings but no longer present in the provider's current model list.",
 	},
+	'settings.features.modelSearchPlaceholder': {
+		message: 'Search models...',
+		context:
+			'Placeholder of the fuzzy-search modal that opens when choosing a model, on a Features sub-page or in the session settings modal.',
+	},
 	'settings.features.modelCapabilitiesUnknown': {
 		message: 'image support not reported',
 		context:

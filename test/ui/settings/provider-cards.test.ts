@@ -15,7 +15,7 @@ import { buildPlugin, buildApp } from './fixtures';
 
 function buildCtx(settings: Partial<ObsidianGeminiSettings> = {}) {
 	const plugin = buildPlugin(settings);
-	const tab = { update: vi.fn(), refreshDomState: vi.fn() };
+	const tab = { update: vi.fn(), refreshDomState: vi.fn(), setControlValue: vi.fn(async () => {}) };
 	const ctx: SettingsContext = { plugin, app: buildApp() as unknown as App, tab };
 	const manager = plugin.modelManager as unknown as {
 		getProviderModelsService: (p: ModelProvider) => { getModels: Mock };

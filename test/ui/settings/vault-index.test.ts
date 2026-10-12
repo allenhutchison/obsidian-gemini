@@ -51,7 +51,11 @@ function makePlugin(overrides: Partial<{ enabled: boolean; storeName: string | n
 }
 
 function makeCtx(plugin: any): SettingsContext {
-	return { plugin, app: plugin.app, tab: { update: vi.fn(), refreshDomState: vi.fn() } };
+	return {
+		plugin,
+		app: plugin.app,
+		tab: { update: vi.fn(), refreshDomState: vi.fn(), setControlValue: vi.fn(async () => {}) },
+	};
 }
 
 beforeEach(() => {

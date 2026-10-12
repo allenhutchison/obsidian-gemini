@@ -117,7 +117,7 @@ A suggestion is requested whenever you stop typing for about 500ms in a Markdown
 
 ### Settings
 
-Completions are routed and modeled like every other feature: open **Settings → Gemini Scribe → Features** and select the **Completions** row. It shows a provider dropdown (all four providers support Completions) and, for Gemini, a model dropdown such as:
+Completions are routed and modeled like every other feature: open **Settings → Gemini Scribe → Features** and select the **Completions** row. It shows a provider dropdown (all four providers support Completions) and, for Gemini, a searchable model picker offering options such as:
 
 - Gemini Flash Lite Latest (fastest, default)
 - Gemini Flash Latest (balanced)

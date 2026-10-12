@@ -123,7 +123,10 @@ substituted.
 
 One row per feature, each showing `<provider> · <model>` (or **Off**). Opening a row gives
 **exactly two controls**: a provider dropdown (listing only providers that support the feature,
-plus Off) and, for features with a model, a model dropdown filtered to that provider.
+plus Off) and, for features with a model, a model picker filtered to that provider. The model
+row is a button showing the current choice; clicking it opens a searchable list, sorted
+alphabetically, that filters as you type a model's name or id — useful when an
+OpenAI-compatible endpoint such as OpenRouter lists hundreds of models.
 
 Rows, grouped:
 
@@ -175,7 +178,7 @@ quietly talking to Gemini.
 
 ### Model options
 
-A feature's model dropdown always includes a leading **Default** option, labelled with the model
+A feature's model picker always includes a leading **Default** option, labelled with the model
 it currently resolves to — e.g. **"Default (Claude Opus 5)"** for Chat on Anthropic, or
 **"Default (Claude Haiku 4.5)"** for Completions. It is stored as `''` and resolved at request
 time against the live model list, so it follows the provider's role default if that changes.

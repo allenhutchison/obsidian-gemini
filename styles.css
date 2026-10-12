@@ -4467,3 +4467,14 @@ body.theme-dark {
 	border-color: var(--interactive-accent);
 	color: var(--text-on-accent);
 }
+
+/* Model picker trigger (Features page + session settings): keeps a long
+   aggregator model id from stretching the setting row. The 320px cap is a
+   one-off control width — there is no width scale in the --gs-* tokens. */
+.gemini-model-picker-button {
+	display: inline-block;
+	max-width: min(100%, 320px);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}

@@ -23,6 +23,12 @@ export interface SettingsTabHandle {
 	update(): void;
 	/** Re-evaluate `visible`/`disabled`/`displayValue`/`status` predicates in place, with no re-render. */
 	refreshDomState(): void;
+	/**
+	 * Write a setting through its registered writer and persist it — the same
+	 * path a declarative control takes. For `render` rows that own their control
+	 * (the model picker) and must not bypass the writer's side effects.
+	 */
+	setControlValue(key: string, value: unknown): Promise<void>;
 }
 
 /** Threaded into every `*Page(ctx)` / `*(ctx)` builder function. */
