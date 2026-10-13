@@ -347,6 +347,8 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'scheduler.emptySlug': 'Název úlohy nemůže být prázdný.',
 	'scheduler.invalidMaxIterations':
 		'Maximální počet iterací nástroje musí být kladné celé číslo, nebo prázdné pro výchozí hodnotu.',
+	'scheduler.invalidOutputPath':
+		'Výstupní cesta není povolena. Musí obsahovat název souboru, nacházet se uvnitř trezoru a vyhnout se konfigurační složce Obsidianu a složce stavu doplňku (kromě její složky Runs).',
 	'scheduler.managerUnavailable': 'Správce plánovaných úloh není k dispozici.',
 	'scheduler.taskUpdated': 'Úloha "{slug}" byla aktualizována',
 	'scheduler.taskCreated': 'Úloha "{slug}" byla vytvořena',
@@ -434,6 +436,8 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'hooks.emptySlug': 'Název hooku nemůže být prázdný.',
 	'hooks.invalidMaxIterations':
 		'Maximální počet iterací nástroje musí být kladné celé číslo, nebo prázdné pro výchozí hodnotu.',
+	'hooks.invalidOutputPath':
+		'Výstupní cesta není povolena. Musí obsahovat název souboru, nacházet se uvnitř trezoru a vyhnout se konfigurační složce Obsidianu a složce stavu doplňku (kromě její složky Runs).',
 	'hooks.managerUnavailable': 'Správce hooků není k dispozici.',
 	'hooks.hookUpdated': 'Hook "{slug}" byl aktualizován',
 	'hooks.hookCreated': 'Hook "{slug}" byl vytvořen',

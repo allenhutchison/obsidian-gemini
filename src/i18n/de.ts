@@ -352,6 +352,8 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'scheduler.emptySlug': 'Aufgabenname darf nicht leer sein.',
 	'scheduler.invalidMaxIterations':
 		'Maximale Tool-Iterationen müssen eine positive ganze Zahl sein, oder leer für den Standardwert.',
+	'scheduler.invalidOutputPath':
+		'Ausgabepfad ist nicht zulässig. Er muss einen Dateinamen enthalten, innerhalb des Vaults liegen und darf weder im Obsidian-Konfigurationsordner noch im Plugin-Statusordner liegen (außer in dessen Runs-Ordner).',
 	'scheduler.managerUnavailable': 'Manager für geplante Aufgaben ist nicht verfügbar.',
 	'scheduler.taskUpdated': 'Aufgabe „{slug}“ aktualisiert',
 	'scheduler.taskCreated': 'Aufgabe „{slug}“ erstellt',
@@ -440,6 +442,8 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'hooks.emptySlug': 'Der Hook-Name darf nicht leer sein.',
 	'hooks.invalidMaxIterations':
 		'Die maximalen Tool-Iterationen müssen eine positive ganze Zahl sein oder leer für den Standardwert.',
+	'hooks.invalidOutputPath':
+		'Ausgabepfad ist nicht zulässig. Er muss einen Dateinamen enthalten, innerhalb des Vaults liegen und darf weder im Obsidian-Konfigurationsordner noch im Plugin-Statusordner liegen (außer in dessen Runs-Ordner).',
 	'hooks.managerUnavailable': 'Hook-Manager nicht verfügbar.',
 	'hooks.hookUpdated': 'Hook "{slug}" aktualisiert',
 	'hooks.hookCreated': 'Hook "{slug}" erstellt',

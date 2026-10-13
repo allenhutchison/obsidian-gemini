@@ -332,6 +332,8 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'scheduler.emptyPrompt': '提示词不能为空。',
 	'scheduler.emptySlug': '任务名称不能为空。',
 	'scheduler.invalidMaxIterations': '最大工具迭代次数必须是正整数，或留空以使用默认值。',
+	'scheduler.invalidOutputPath':
+		'不允许使用该输出路径。路径必须包含文件名、位于仓库内，且不能为 Obsidian 配置文件夹或插件状态文件夹（其 Runs 文件夹除外）。',
 	'scheduler.managerUnavailable': '计划任务管理器不可用。',
 	'scheduler.taskUpdated': '任务 "{slug}" 已更新',
 	'scheduler.taskCreated': '任务 "{slug}" 已创建',
@@ -412,6 +414,8 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'hooks.emptyCommandId': '"command" 操作的命令 ID 不能为空。',
 	'hooks.emptySlug': 'Hook 名称不能为空。',
 	'hooks.invalidMaxIterations': '最大工具迭代次数必须是正整数，或留空以使用默认值。',
+	'hooks.invalidOutputPath':
+		'不允许使用该输出路径。路径必须包含文件名、位于仓库内，且不能为 Obsidian 配置文件夹或插件状态文件夹（其 Runs 文件夹除外）。',
 	'hooks.managerUnavailable': 'Hook 管理器不可用。',
 	'hooks.hookUpdated': 'Hook "{slug}" 已更新',
 	'hooks.hookCreated': 'Hook "{slug}" 已创建',

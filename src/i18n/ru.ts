@@ -349,6 +349,8 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'scheduler.emptySlug': 'Имя задачи не может быть пустым.',
 	'scheduler.invalidMaxIterations':
 		'Максимальное число итераций инструментов должно быть положительным целым числом или оставаться пустым для значения по умолчанию.',
+	'scheduler.invalidOutputPath':
+		'Путь вывода недопустим. Он должен содержать имя файла, находиться внутри хранилища и не затрагивать папку конфигурации Obsidian и папку состояния плагина (кроме папки Runs).',
 	'scheduler.managerUnavailable': 'Диспетчер запланированных задач недоступен.',
 	'scheduler.taskUpdated': 'Задача «{slug}» обновлена',
 	'scheduler.taskCreated': 'Задача «{slug}» создана',
@@ -437,6 +439,8 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'hooks.emptySlug': 'Имя хука не может быть пустым.',
 	'hooks.invalidMaxIterations':
 		'Максимальное количество итераций инструментов должно быть положительным целым числом или оставаться пустым для значения по умолчанию.',
+	'hooks.invalidOutputPath':
+		'Путь вывода недопустим. Он должен содержать имя файла, находиться внутри хранилища и не затрагивать папку конфигурации Obsidian и папку состояния плагина (кроме папки Runs).',
 	'hooks.managerUnavailable': 'Менеджер хуков недоступен.',
 	'hooks.hookUpdated': 'Хук "{slug}" обновлен',
 	'hooks.hookCreated': 'Хук "{slug}" создан',

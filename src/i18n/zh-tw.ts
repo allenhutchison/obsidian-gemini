@@ -332,6 +332,8 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'scheduler.emptyPrompt': '提示詞不能為空。',
 	'scheduler.emptySlug': '工作名稱不能為空。',
 	'scheduler.invalidMaxIterations': '最大工具迭代次數必須為正整數，或留空以使用預設值。',
+	'scheduler.invalidOutputPath':
+		'不允許使用此輸出路徑。路徑必須包含檔案名稱、位於儲存庫內，並避開 Obsidian 設定資料夾與外掛程式狀態資料夾（其 Runs 資料夾除外）。',
 	'scheduler.managerUnavailable': '排程工作管理員無法使用。',
 	'scheduler.taskUpdated': '工作 "{slug}" 已更新',
 	'scheduler.taskCreated': '工作 "{slug}" 已建立',
@@ -412,6 +414,8 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'hooks.emptyCommandId': '「command」動作的命令 ID 不能為空。',
 	'hooks.emptySlug': 'Hook 名稱不能為空。',
 	'hooks.invalidMaxIterations': '最大工具迭代次數必須為正整數，或留空以使用預設值。',
+	'hooks.invalidOutputPath':
+		'不允許使用此輸出路徑。路徑必須包含檔案名稱、位於儲存庫內，並避開 Obsidian 設定資料夾與外掛程式狀態資料夾（其 Runs 資料夾除外）。',
 	'hooks.managerUnavailable': 'Hook 管理器無法使用。',
 	'hooks.hookUpdated': 'Hook "{slug}" 已更新',
 	'hooks.hookCreated': 'Hook "{slug}" 已建立',

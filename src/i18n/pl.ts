@@ -349,6 +349,8 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'scheduler.emptySlug': 'Nazwa zadania nie może być pusta.',
 	'scheduler.invalidMaxIterations':
 		'Maksymalna liczba iteracji narzędzia musi być dodatnią liczbą całkowitą lub pozostać pusta dla wartości domyślnej.',
+	'scheduler.invalidOutputPath':
+		'Ścieżka wyjściowa jest niedozwolona. Musi zawierać nazwę pliku, znajdować się wewnątrz skarbca oraz omijać folder konfiguracyjny Obsidian i folder stanu wtyczki (poza folderem Runs).',
 	'scheduler.managerUnavailable': 'Menedżer zaplanowanych zadań jest niedostępny.',
 	'scheduler.taskUpdated': 'Zaktualizowano zadanie „{slug}”',
 	'scheduler.taskCreated': 'Utworzono zadanie „{slug}”',
@@ -435,6 +437,8 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'hooks.emptySlug': 'Nazwa hooka nie może być pusta.',
 	'hooks.invalidMaxIterations':
 		'Maksymalna liczba iteracji narzędzia musi być dodatnią liczbą całkowitą lub pozostać pusta dla wartości domyślnej.',
+	'hooks.invalidOutputPath':
+		'Ścieżka wyjściowa jest niedozwolona. Musi zawierać nazwę pliku, znajdować się wewnątrz skarbca oraz omijać folder konfiguracyjny Obsidian i folder stanu wtyczki (poza folderem Runs).',
 	'hooks.managerUnavailable': 'Menedżer hooków jest niedostępny.',
 	'hooks.hookUpdated': 'Zaktualizowano hook "{slug}"',
 	'hooks.hookCreated': 'Utworzono hook "{slug}"',
