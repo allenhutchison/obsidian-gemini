@@ -347,6 +347,8 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'scheduler.emptyPrompt': 'Prompten kan ikke være tom.',
 	'scheduler.emptySlug': 'Oppgavenavn kan ikke være tomt.',
 	'scheduler.invalidMaxIterations': 'Maks verktøy-iterasjoner må være et positivt heltall, eller tomt for standarden.',
+	'scheduler.invalidOutputPath':
+		'Utdatastien er ikke tillatt. Den må inneholde et filnavn, ligge innenfor hvelvet og unngå Obsidians konfigurasjonsmappe og programtilleggets tilstandsmappe (bortsett fra Runs-mappen).',
 	'scheduler.managerUnavailable': 'Behandler for planlagte oppgaver er ikke tilgjengelig.',
 	'scheduler.taskUpdated': 'Oppgaven "{slug}" ble oppdatert',
 	'scheduler.taskCreated': 'Oppgaven "{slug}" ble opprettet',
@@ -432,6 +434,8 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'hooks.emptyCommandId': 'Kommando-ID kan ikke være tom for handlingen "command".',
 	'hooks.emptySlug': 'Hook-navn kan ikke være tomt.',
 	'hooks.invalidMaxIterations': 'Maks verktøy-iterasjoner må være et positivt heltall, eller tomt for standardverdi.',
+	'hooks.invalidOutputPath':
+		'Utdatastien er ikke tillatt. Den må inneholde et filnavn, ligge innenfor hvelvet og unngå Obsidians konfigurasjonsmappe og programtilleggets tilstandsmappe (bortsett fra Runs-mappen).',
 	'hooks.managerUnavailable': 'Hook-behandler er ikke tilgjengelig.',
 	'hooks.hookUpdated': 'Hook "{slug}" oppdatert',
 	'hooks.hookCreated': 'Hook "{slug}" opprettet',

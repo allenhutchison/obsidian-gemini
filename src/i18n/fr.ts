@@ -351,6 +351,8 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'scheduler.emptySlug': 'Le nom de la tâche ne peut pas être vide.',
 	'scheduler.invalidMaxIterations':
 		"Le nombre max. d'itérations d'outils doit être un nombre entier positif, ou vide pour la valeur par défaut.",
+	'scheduler.invalidOutputPath':
+		"Le chemin de sortie n'est pas autorisé. Il doit inclure un nom de fichier, rester à l'intérieur du coffre et éviter le dossier de configuration d'Obsidian ainsi que le dossier d'état du plugin (à l'exception de son dossier Runs).",
 	'scheduler.managerUnavailable': "Le gestionnaire de tâches planifiées n'est pas disponible.",
 	'scheduler.taskUpdated': 'Tâche "{slug}" mise à jour',
 	'scheduler.taskCreated': 'Tâche "{slug}" créée',
@@ -439,6 +441,8 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'hooks.emptySlug': 'Le nom du hook ne peut pas être vide.',
 	'hooks.invalidMaxIterations':
 		"Le nombre maximal d'itérations d'outils doit être un nombre entier positif, ou vide pour la valeur par défaut.",
+	'hooks.invalidOutputPath':
+		"Le chemin de sortie n'est pas autorisé. Il doit inclure un nom de fichier, rester à l'intérieur du coffre et éviter le dossier de configuration d'Obsidian ainsi que le dossier d'état du plugin (à l'exception de son dossier Runs).",
 	'hooks.managerUnavailable': "Le gestionnaire de hooks n'est pas disponible.",
 	'hooks.hookUpdated': 'Hook "{slug}" mis à jour',
 	'hooks.hookCreated': 'Hook "{slug}" créé',

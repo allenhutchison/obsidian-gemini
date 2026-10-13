@@ -347,6 +347,8 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'scheduler.emptySlug': 'Nama tugas tidak boleh kosong.',
 	'scheduler.invalidMaxIterations':
 		'Iterasi alat maksimum harus berupa bilangan bulat positif, atau kosongkan untuk default.',
+	'scheduler.invalidOutputPath':
+		'Jalur output tidak diizinkan. Jalur harus menyertakan nama file, tetap berada di dalam vault, dan menghindari folder konfigurasi Obsidian serta folder status plugin (selain folder Runs miliknya).',
 	'scheduler.managerUnavailable': 'Pengelola tugas terjadwal tidak tersedia.',
 	'scheduler.taskUpdated': 'Tugas "{slug}" diperbarui',
 	'scheduler.taskCreated': 'Tugas "{slug}" dibuat',
@@ -431,6 +433,8 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'hooks.emptyCommandId': 'ID perintah tidak boleh kosong untuk tindakan "command".',
 	'hooks.emptySlug': 'Nama hook tidak boleh kosong.',
 	'hooks.invalidMaxIterations': 'Iterasi alat maks harus berupa bilangan bulat positif, atau kosongkan untuk default.',
+	'hooks.invalidOutputPath':
+		'Jalur output tidak diizinkan. Jalur harus menyertakan nama file, tetap berada di dalam vault, dan menghindari folder konfigurasi Obsidian serta folder status plugin (selain folder Runs miliknya).',
 	'hooks.managerUnavailable': 'Pengelola hook tidak tersedia.',
 	'hooks.hookUpdated': 'Hook "{slug}" diperbarui',
 	'hooks.hookCreated': 'Hook "{slug}" dibuat',

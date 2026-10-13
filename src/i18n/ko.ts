@@ -340,6 +340,8 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'scheduler.emptyPrompt': '프롬프트는 비워 둘 수 없습니다.',
 	'scheduler.emptySlug': '작업 이름은 비워 둘 수 없습니다.',
 	'scheduler.invalidMaxIterations': '최대 도구 반복 횟수는 양의 정수이거나, 기본값을 사용하려면 비워 두어야 합니다.',
+	'scheduler.invalidOutputPath':
+		'허용되지 않는 출력 경로입니다. 파일 이름을 포함해야 하고, 보관함 내에 있어야 하며, Obsidian 설정 폴더 및 플러그인 상태 폴더(Runs 폴더 제외)는 지정할 수 없습니다.',
 	'scheduler.managerUnavailable': '예약된 작업 관리자를 사용할 수 없습니다.',
 	'scheduler.taskUpdated': '"{slug}" 작업이 업데이트되었습니다',
 	'scheduler.taskCreated': '"{slug}" 작업이 생성되었습니다',
@@ -425,6 +427,8 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'hooks.emptyCommandId': '"command" 동작에는 명령 ID가 비어 있을 수 없습니다.',
 	'hooks.emptySlug': '훅 이름은 비어 있을 수 없습니다.',
 	'hooks.invalidMaxIterations': '최대 도구 반복 횟수는 양의 정수이거나, 기본값을 사용하려면 비워 두어야 합니다.',
+	'hooks.invalidOutputPath':
+		'허용되지 않는 출력 경로입니다. 파일 이름을 포함해야 하고, 보관함 내에 있어야 하며, Obsidian 설정 폴더 및 플러그인 상태 폴더(Runs 폴더 제외)는 지정할 수 없습니다.',
 	'hooks.managerUnavailable': '훅 관리자를 사용할 수 없습니다.',
 	'hooks.hookUpdated': '"{slug}" 훅이 업데이트되었습니다',
 	'hooks.hookCreated': '"{slug}" 훅이 생성되었습니다',

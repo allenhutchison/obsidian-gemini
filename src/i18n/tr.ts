@@ -349,6 +349,8 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'scheduler.emptySlug': 'Görev adı boş olamaz.',
 	'scheduler.invalidMaxIterations':
 		'Maksimum araç yinelemesi pozitif bir tam sayı olmalı veya varsayılan için boş bırakılmalıdır.',
+	'scheduler.invalidOutputPath':
+		'Çıktı yoluna izin verilmiyor. Bir dosya adı içermeli, kasa içinde kalmalı ve Obsidian yapılandırma klasörü ile eklenti durum klasöründe (Runs klasörü hariç) yer almamalıdır.',
 	'scheduler.managerUnavailable': 'Zamanlanmış görev yöneticisi kullanılamıyor.',
 	'scheduler.taskUpdated': '"{slug}" görevi güncellendi',
 	'scheduler.taskCreated': '"{slug}" görevi oluşturuldu',
@@ -437,6 +439,8 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'hooks.emptySlug': 'Kanca adı boş olamaz.',
 	'hooks.invalidMaxIterations':
 		'Maksimum araç yinelemesi pozitif bir tam sayı olmalı veya varsayılan için boş bırakılmalıdır.',
+	'hooks.invalidOutputPath':
+		'Çıktı yoluna izin verilmiyor. Bir dosya adı içermeli, kasa içinde kalmalı ve Obsidian yapılandırma klasörü ile eklenti durum klasöründe (Runs klasörü hariç) yer almamalıdır.',
 	'hooks.managerUnavailable': 'Kanca yöneticisi mevcut değil.',
 	'hooks.hookUpdated': 'Hook "{slug}" güncellendi',
 	'hooks.hookCreated': 'Hook "{slug}" oluşturuldu',

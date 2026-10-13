@@ -348,6 +348,8 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'scheduler.emptySlug': 'O nome da tarefa não pode estar vazio.',
 	'scheduler.invalidMaxIterations':
 		'As iterações máximas da ferramenta devem ser um número inteiro positivo, ou em branco para o valor predefinido.',
+	'scheduler.invalidOutputPath':
+		'O caminho de saída não é permitido. Deve incluir um nome de ficheiro, permanecer dentro do vault e evitar a pasta de configuração do Obsidian e a pasta de estado do plugin (exceto a sua pasta Runs).',
 	'scheduler.managerUnavailable': 'O gestor de tarefas agendadas não está disponível.',
 	'scheduler.taskUpdated': 'Tarefa "{slug}" atualizada',
 	'scheduler.taskCreated': 'Tarefa "{slug}" criada',
@@ -435,6 +437,8 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'hooks.emptySlug': 'O nome do hook não pode estar vazio.',
 	'hooks.invalidMaxIterations':
 		'O limite de iterações de ferramentas deve ser um número inteiro positivo, ou em branco para a predefinição.',
+	'hooks.invalidOutputPath':
+		'O caminho de saída não é permitido. Deve incluir um nome de ficheiro, permanecer dentro do vault e evitar a pasta de configuração do Obsidian e a pasta de estado do plugin (exceto a sua pasta Runs).',
 	'hooks.managerUnavailable': 'Gestor de hooks não disponível.',
 	'hooks.hookUpdated': 'Hook "{slug}" atualizado',
 	'hooks.hookCreated': 'Hook "{slug}" criado',

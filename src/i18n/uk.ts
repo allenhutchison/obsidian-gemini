@@ -348,6 +348,8 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'scheduler.emptySlug': 'Назва завдання не може бути порожньою.',
 	'scheduler.invalidMaxIterations':
 		'Максимальна кількість ітерацій інструментів має бути додатним цілим числом або порожнім полем для значення за замовчуванням.',
+	'scheduler.invalidOutputPath':
+		'Шлях виведення не дозволено. Він має містити назву файлу, знаходитися в межах сховища та бути за межами папки конфігурації Obsidian і папки стану плагіна (крім її папки Runs).',
 	'scheduler.managerUnavailable': 'Менеджер запланованих завдань недоступний.',
 	'scheduler.taskUpdated': 'Завдання "{slug}" оновлено',
 	'scheduler.taskCreated': 'Завдання "{slug}" створено',
@@ -436,6 +438,8 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'hooks.emptySlug': 'Назва хука не може бути порожньою.',
 	'hooks.invalidMaxIterations':
 		'Максимальна кількість ітерацій інструментів має бути додатним цілим числом або порожнім полем для значення за замовчуванням.',
+	'hooks.invalidOutputPath':
+		'Шлях виведення не дозволено. Він має містити назву файлу, знаходитися в межах сховища та бути за межами папки конфігурації Obsidian і папки стану плагіна (крім її папки Runs).',
 	'hooks.managerUnavailable': 'Менеджер хуків недоступний.',
 	'hooks.hookUpdated': 'Хук "{slug}" оновлено',
 	'hooks.hookCreated': 'Хук "{slug}" створено',

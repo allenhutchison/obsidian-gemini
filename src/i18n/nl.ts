@@ -347,6 +347,8 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'scheduler.emptySlug': 'Taaknaam mag niet leeg zijn.',
 	'scheduler.invalidMaxIterations':
 		'Maximale tool-iteraties moet een positief geheel getal zijn, of leeg voor de standaard.',
+	'scheduler.invalidOutputPath':
+		'Uitvoerpad is niet toegestaan. Het moet een bestandsnaam bevatten, binnen de vault blijven en de Obsidian-configuratiemap en de plugin-statusmap vermijden (behalve de Runs-map).',
 	'scheduler.managerUnavailable': 'Beheerder voor geplande taken is niet beschikbaar.',
 	'scheduler.taskUpdated': 'Taak "{slug}" bijgewerkt',
 	'scheduler.taskCreated': 'Taak "{slug}" aangemaakt',
@@ -435,6 +437,8 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'hooks.emptySlug': 'Hook-naam mag niet leeg zijn.',
 	'hooks.invalidMaxIterations':
 		'Max. aantal tool-iteraties moet een positief geheel getal zijn, of leeg voor de standaardwaarde.',
+	'hooks.invalidOutputPath':
+		'Uitvoerpad is niet toegestaan. Het moet een bestandsnaam bevatten, binnen de vault blijven en de Obsidian-configuratiemap en de plugin-statusmap vermijden (behalve de Runs-map).',
 	'hooks.managerUnavailable': 'Hook-manager niet beschikbaar.',
 	'hooks.hookUpdated': 'Hook "{slug}" bijgewerkt',
 	'hooks.hookCreated': 'Hook "{slug}" aangemaakt',

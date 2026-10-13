@@ -346,6 +346,8 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'scheduler.emptySlug': 'タスク名は空にすることはできません。',
 	'scheduler.invalidMaxIterations':
 		'最大ツール反復回数は正の整数にするか、デフォルトを使用する場合は空白にしてください。',
+	'scheduler.invalidOutputPath':
+		'出力パスは許可されていません。ファイル名を含め、保管庫内に配置し、Obsidianの設定フォルダーおよびプラグインの状態フォルダー（Runsフォルダーを除く）を避ける必要があります。',
 	'scheduler.managerUnavailable': 'スケジュールタスクマネージャーが利用できません。',
 	'scheduler.taskUpdated': 'タスク「{slug}」が更新されました',
 	'scheduler.taskCreated': 'タスク「{slug}」が作成されました',
@@ -432,6 +434,8 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'hooks.emptyCommandId': '「command」アクションではコマンドIDを空にすることはできません。',
 	'hooks.emptySlug': 'フック名は空にできません。',
 	'hooks.invalidMaxIterations': '最大ツール反復回数は正の整数にするか、デフォルトを使用する場合は空欄にしてください。',
+	'hooks.invalidOutputPath':
+		'出力パスは許可されていません。ファイル名を含め、保管庫内に配置し、Obsidianの設定フォルダーおよびプラグインの状態フォルダー（Runsフォルダーを除く）を避ける必要があります。',
 	'hooks.managerUnavailable': 'フックマネージャーが利用できません。',
 	'hooks.hookUpdated': 'フック「{slug}」が更新されました',
 	'hooks.hookCreated': 'フック「{slug}」が作成されました',

@@ -350,6 +350,8 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'scheduler.emptySlug': "Il nome dell'attività non può essere vuoto.",
 	'scheduler.invalidMaxIterations':
 		'Le iterazioni massime dello strumento devono essere un numero intero positivo, o vuoto per il valore predefinito.',
+	'scheduler.invalidOutputPath':
+		"Il percorso di output non è consentito. Deve includere un nome file, rimanere all'interno del vault ed evitare la cartella di configurazione di Obsidian e la cartella di stato del plugin (tranne la cartella Runs).",
 	'scheduler.managerUnavailable': 'Gestore delle attività pianificate non disponibile.',
 	'scheduler.taskUpdated': 'Attività "{slug}" aggiornata',
 	'scheduler.taskCreated': 'Attività "{slug}" creata',
@@ -437,6 +439,8 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'hooks.emptySlug': "Il nome dell'hook non può essere vuoto.",
 	'hooks.invalidMaxIterations':
 		'Le iterazioni massime dello strumento devono essere un numero intero positivo, o vuoto per il valore predefinito.',
+	'hooks.invalidOutputPath':
+		"Il percorso di output non è consentito. Deve includere un nome file, rimanere all'interno del vault ed evitare la cartella di configurazione di Obsidian e la cartella di stato del plugin (tranne la cartella Runs).",
 	'hooks.managerUnavailable': 'Gestore degli hook non disponibile.',
 	'hooks.hookUpdated': 'Hook "{slug}" aggiornato',
 	'hooks.hookCreated': 'Hook "{slug}" creato',

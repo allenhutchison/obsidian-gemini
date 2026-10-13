@@ -348,6 +348,8 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'scheduler.emptySlug': 'Opgavenavnet må ikke være tomt.',
 	'scheduler.invalidMaxIterations':
 		'Maks. værktøjsiterationer skal være et positivt heltal, eller tomt for standarden.',
+	'scheduler.invalidOutputPath':
+		'Outputstien er ikke tilladt. Den skal indeholde et filnavn, forblive inde i vaulten og undgå Obsidian-konfigurationsmappen og plugin-tilstandsmappen (bortset fra dens Runs-mappe).',
 	'scheduler.managerUnavailable': 'Styring af planlagte opgaver er ikke tilgængelig.',
 	'scheduler.taskUpdated': 'Opgaven "{slug}" blev opdateret',
 	'scheduler.taskCreated': 'Opgaven "{slug}" blev oprettet',
@@ -434,6 +436,8 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'hooks.emptyCommandId': 'Kommando-id må ikke være tomt for handlingen "command".',
 	'hooks.emptySlug': 'Hook-navn må ikke være tomt.',
 	'hooks.invalidMaxIterations': 'Maks. værktøjsiterationer skal være et positivt heltal, eller tomt for standarden.',
+	'hooks.invalidOutputPath':
+		'Outputstien er ikke tilladt. Den skal indeholde et filnavn, forblive inde i vaulten og undgå Obsidian-konfigurationsmappen og plugin-tilstandsmappen (bortset fra dens Runs-mappe).',
 	'hooks.managerUnavailable': 'Hook-manager er ikke tilgængelig.',
 	'hooks.hookUpdated': 'Hook "{slug}" opdateret',
 	'hooks.hookCreated': 'Hook "{slug}" oprettet',

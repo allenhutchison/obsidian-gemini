@@ -347,6 +347,8 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'scheduler.emptySlug': 'Tên tác vụ không được để trống.',
 	'scheduler.invalidMaxIterations':
 		'Số lần lặp công cụ tối đa phải là một số nguyên dương, hoặc để trống để sử dụng mặc định.',
+	'scheduler.invalidOutputPath':
+		'Đường dẫn đầu ra không được phép. Đường dẫn phải bao gồm tên tệp, nằm trong vault, và tránh thư mục cấu hình Obsidian cùng thư mục trạng thái plugin (ngoại trừ thư mục Runs của nó).',
 	'scheduler.managerUnavailable': 'Trình quản lý tác vụ theo lịch trình không khả dụng.',
 	'scheduler.taskUpdated': 'Đã cập nhật tác vụ "{slug}"',
 	'scheduler.taskCreated': 'Đã tạo tác vụ "{slug}"',
@@ -433,6 +435,8 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'hooks.emptySlug': 'Tên hook không thể để trống.',
 	'hooks.invalidMaxIterations':
 		'Số lần lặp công cụ tối đa phải là một số nguyên dương, hoặc để trống để sử dụng mặc định.',
+	'hooks.invalidOutputPath':
+		'Đường dẫn đầu ra không được phép. Đường dẫn phải bao gồm tên tệp, nằm trong vault, và tránh thư mục cấu hình Obsidian cùng thư mục trạng thái plugin (ngoại trừ thư mục Runs của nó).',
 	'hooks.managerUnavailable': 'Trình quản lý hook không khả dụng.',
 	'hooks.hookUpdated': 'Đã cập nhật hook "{slug}"',
 	'hooks.hookCreated': 'Đã tạo hook "{slug}"',
