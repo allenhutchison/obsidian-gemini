@@ -1,6 +1,12 @@
 import { App, TFile } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
-import { resolveOutputPath, writeHeadlessOutput, markIncompleteOutput } from './headless-run-output';
+import {
+	resolveOutputPath,
+	validateHeadlessOutputPath,
+	writeHeadlessOutput,
+	markIncompleteOutput,
+} from './headless-run-output';
+import { HOOK_RUNS_SUBFOLDER } from './state-folder';
 import { formatLocalDate } from '../utils/format-utils';
 import { GeminiSummary } from '../summary';
 import { SelectionRewriter } from '../rewrite-selection';
@@ -45,6 +51,10 @@ export class HookRunner {
 	private async runAgentTask(isCancelled: () => boolean): Promise<string | undefined> {
 		const { hook } = this.ctx;
 
+		// Resolve and validate the output path before the turn: a refused path
+		// fails the fire here rather than after a model turn has been paid for.
+		const outputPath = hook.outputPath ? this.resolveOutputPath(hook.outputPath) : undefined;
+
 		const turn = await runHeadlessAgentTurn(
 			this.plugin,
 			{
@@ -68,12 +78,12 @@ export class HookRunner {
 		if (turn === undefined) return undefined;
 
 		if (isCancelled()) return undefined;
-		if (!hook.outputPath) return undefined;
+		if (outputPath === undefined) return undefined;
 		if (!turn.text) return undefined;
 
-		const outputPath = this.resolveOutputPath();
-		await this.writeOutput(outputPath, turn.text, turn.notice);
-		return outputPath;
+		// The written path, not the resolved one: it carries a `-N`/timestamp
+		// suffix when the resolved path was already taken.
+		return this.writeOutput(outputPath, turn.text, turn.notice);
 	}
 
 	// ── summarize action ─────────────────────────────────────────────────────
@@ -197,19 +207,26 @@ export class HookRunner {
 		};
 	}
 
-	private resolveOutputPath(): string {
-		return resolveOutputPath(this.ctx.hook.outputPath as string, {
-			slug: this.ctx.hook.slug,
-			date: formatLocalDate(),
-			fileName: this.ctx.fileName,
-		});
+	private resolveOutputPath(template: string): string {
+		return validateHeadlessOutputPath(
+			resolveOutputPath(template, {
+				slug: this.ctx.hook.slug,
+				date: formatLocalDate(),
+				fileName: this.ctx.fileName,
+			}),
+			{
+				configDir: this.plugin.app.vault.configDir,
+				historyFolder: this.plugin.settings.historyFolder,
+				allowedSubfolder: HOOK_RUNS_SUBFOLDER,
+			}
+		);
 	}
 
 	private async writeOutput(
 		outputPath: string,
 		content: string,
 		notice?: { fellBack?: boolean; loopAborted?: boolean }
-	): Promise<void> {
+	): Promise<string> {
 		const ranAt = new Date().toISOString();
 		let header =
 			`---\nhook: ${JSON.stringify(this.ctx.hook.slug)}\n` +
@@ -228,9 +245,11 @@ export class HookRunner {
 		// path (resolve-unique + vault.create is non-atomic), so use the shared
 		// writer's retry policy: re-resolve on "already exists" rejections, then
 		// fall back to a timestamp-suffixed path after the retry budget.
-		await writeHeadlessOutput({
+		return writeHeadlessOutput({
 			vault: this.plugin.app.vault,
 			outputPath,
+			historyFolder: this.plugin.settings.historyFolder,
+			allowedSubfolder: HOOK_RUNS_SUBFOLDER,
 			header,
 			content: body,
 			folderLabel: 'hook output folder',

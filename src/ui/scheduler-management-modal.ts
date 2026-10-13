@@ -5,6 +5,7 @@ import type {
 	TaskState,
 	ScheduledTasksState,
 } from '../services/scheduled-task-manager';
+import { SCHEDULED_TASK_RUNS_SUBFOLDER } from '../services/state-folder';
 import type { FeatureToolPolicy } from '../types/tool-policy';
 import { ManagementModalBase } from './components/management-modal-base';
 import { ToolPolicyEditor } from './components/tool-policy-editor';
@@ -366,6 +367,10 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 		const maxIterations = this.parseMaxIterationsField(this.form.maxIterations);
 		if (maxIterations === 'invalid') {
 			new Notice(t('scheduler.invalidMaxIterations'));
+			return;
+		}
+		if (!this.isOutputPathFieldAllowed(this.form.outputPath, SCHEDULED_TASK_RUNS_SUBFOLDER)) {
+			new Notice(t('scheduler.invalidOutputPath'));
 			return;
 		}
 

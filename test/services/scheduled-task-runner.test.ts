@@ -11,7 +11,9 @@ vi.mock('obsidian', () => ({
 	TFile: class {},
 }));
 
-vi.mock('../../src/utils/file-utils', () => ({
+// Folder helpers are stubbed; the output-path write policy stays real.
+vi.mock('../../src/utils/file-utils', async () => ({
+	...(await vi.importActual<typeof import('../../src/utils/file-utils')>('../../src/utils/file-utils')),
 	ensureFolderExists: vi.fn().mockResolvedValue(undefined),
 	ensureParentFolderExists: vi.fn().mockResolvedValue(undefined),
 }));
@@ -68,6 +70,7 @@ function createMockPlugin(vaultFiles: Record<string, string> = {}): any {
 	return {
 		logger: { log: vi.fn(), debug: vi.fn(), error: vi.fn(), warn: vi.fn() },
 		settings: {
+			historyFolder: 'gemini-scribe',
 			features: {
 				chat: { provider: 'gemini', model: 'gemini-2.0-flash' },
 				summary: { provider: 'gemini', model: '' },
@@ -98,6 +101,7 @@ function createMockPlugin(vaultFiles: Record<string, string> = {}): any {
 		},
 		app: {
 			vault: {
+				configDir: '.obsidian',
 				getAbstractFileByPath: vi.fn().mockReturnValue(null),
 				create: vi.fn().mockImplementation(async (path: string, content: string) => {
 					vaultFiles[path] = content;
@@ -336,7 +340,11 @@ describe('ScheduledTaskRunner', () => {
 			.mockReturnValueOnce(null); // -1 path is free
 
 		const runner = new ScheduledTaskRunner(plugin, makeTask());
-		await runner.run(() => false);
+		const returned = await runner.run(() => false);
+
+		// The returned path is the one written, so the "Open result" link opens
+		// this run's note and not the earlier one that held the base name.
+		expect(returned).toBe('gemini-scribe/Scheduled-Tasks/Runs/test-task/2026-04-18-1.md');
 
 		// Should create at the -1 suffix path, never at the base path
 		expect(plugin.app.vault.create).toHaveBeenCalledWith(
@@ -419,6 +427,33 @@ describe('ScheduledTaskRunner', () => {
 			const createdPath = (plugin.app.vault.create as Mock).mock.calls[0][0] as string;
 			// Must be a timestamp-suffixed path (digits longer than 2, i.e. not -1 through -99)
 			expect(createdPath).toMatch(/-\d{4,}\.md$/);
+		});
+	});
+
+	describe('output-path write policy (#1651)', () => {
+		it.each([
+			['../outside-vault/{date}.md', /escapes the vault/],
+			['.obsidian/plugins/{slug}.md', /Obsidian configuration folder/],
+			// Would plant a new task definition next to the real ones.
+			['gemini-scribe/Scheduled-Tasks/{slug}-copy.md', /plugin state folder/],
+			['gemini-scribe/Hooks/Runs/{slug}/{date}.md', /plugin state folder/],
+		])('refuses %s before the model turn and writes nothing', async (outputPath, message) => {
+			const plugin = createMockPlugin();
+			const runner = new ScheduledTaskRunner(plugin, makeTask({ outputPath }));
+
+			await expect(runner.run(() => false)).rejects.toThrow(message);
+
+			const modelApi = (ModelClientFactory.createChatModel as Mock).mock.results[0]?.value;
+			expect(modelApi?.generateModelResponse).toBeUndefined();
+			expect(plugin.sessionManager.createAgentSession).not.toHaveBeenCalled();
+			expect(plugin.app.vault.create).not.toHaveBeenCalled();
+		});
+
+		it('accepts a path outside the state folder', async () => {
+			const plugin = createMockPlugin();
+			const runner = new ScheduledTaskRunner(plugin, makeTask({ outputPath: 'Reports/{slug}/{date}.md' }));
+
+			await expect(runner.run(() => false)).resolves.toBe('Reports/test-task/2026-04-18.md');
 		});
 	});
 });

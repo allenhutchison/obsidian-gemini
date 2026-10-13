@@ -5,6 +5,7 @@ import {
 	resolveTimestampPath,
 	isAlreadyExistsError,
 	writeHeadlessOutput,
+	validateHeadlessOutputPath,
 	markIncompleteOutput,
 } from '../../src/services/headless-run-output';
 
@@ -22,7 +23,10 @@ const { mockEnsureFolderExists, mockEnsureParentFolderExists } = vi.hoisted(() =
 	mockEnsureFolderExists: vi.fn().mockResolvedValue(undefined),
 	mockEnsureParentFolderExists: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock('../../src/utils/file-utils', () => ({
+// The folder helpers are stubbed, but the write policy
+// (`validateGeneratedOutputPath`) is the real one — it is what's under test.
+vi.mock('../../src/utils/file-utils', async () => ({
+	...(await vi.importActual<typeof import('../../src/utils/file-utils')>('../../src/utils/file-utils')),
 	ensureFolderExists: mockEnsureFolderExists,
 	ensureParentFolderExists: mockEnsureParentFolderExists,
 }));
@@ -31,10 +35,14 @@ vi.mock('../../src/utils/file-utils', () => ({
 function makeVault(opts?: { exists?: (path: string) => boolean; create?: Mock }) {
 	const exists = opts?.exists ?? (() => false);
 	return {
+		configDir: '.obsidian',
 		getAbstractFileByPath: vi.fn((p: string) => (exists(p) ? { path: p } : null)),
 		create: opts?.create ?? vi.fn().mockResolvedValue(undefined),
 	} as any;
 }
+
+/** State-folder inputs every `writeHeadlessOutput` call needs for the policy check. */
+const policy = { historyFolder: 'gemini-scribe', allowedSubfolder: 'Hooks/Runs' };
 
 beforeEach(() => {
 	mockEnsureFolderExists.mockClear();
@@ -137,6 +145,7 @@ describe('writeHeadlessOutput — no retry (scheduled-task shape)', () => {
 			header: '---\nscheduled_task: "task"\n---\n\n',
 			content: 'Body text',
 			folderLabel: 'scheduled task output folder',
+			...policy,
 		});
 
 		expect(written).toBe('Runs/task/2026-04-18.md');
@@ -162,6 +171,7 @@ describe('writeHeadlessOutput — no retry (scheduled-task shape)', () => {
 			header: 'H\n',
 			content: 'B',
 			folderLabel: 'scheduled task output folder',
+			...policy,
 		});
 
 		expect(written).toBe('Runs/task/2026-04-18-1.md');
@@ -170,7 +180,14 @@ describe('writeHeadlessOutput — no retry (scheduled-task shape)', () => {
 
 	it('hands the path to ensureParentFolderExists even at the vault root', async () => {
 		const vault = makeVault({ exists: () => false });
-		await writeHeadlessOutput({ vault, outputPath: 'out.md', header: 'H\n', content: 'B', folderLabel: 'x' });
+		await writeHeadlessOutput({
+			vault,
+			outputPath: 'out.md',
+			header: 'H\n',
+			content: 'B',
+			folderLabel: 'x',
+			...policy,
+		});
 		// The root-level no-op lives inside the shared helper now (unit-tested
 		// in test/utils/file-utils.test.ts); what this test pins is that the
 		// write path always routes through it with the full file path.
@@ -181,7 +198,7 @@ describe('writeHeadlessOutput — no retry (scheduled-task shape)', () => {
 		const create = vi.fn().mockRejectedValue(new Error('permission denied'));
 		const vault = makeVault({ exists: () => false, create });
 		await expect(
-			writeHeadlessOutput({ vault, outputPath: 'out.md', header: 'H\n', content: 'B', folderLabel: 'x' })
+			writeHeadlessOutput({ vault, outputPath: 'out.md', header: 'H\n', content: 'B', folderLabel: 'x', ...policy })
 		).rejects.toThrow('permission denied');
 	});
 });
@@ -197,6 +214,7 @@ describe('writeHeadlessOutput — retry (hook shape)', () => {
 		// resolveUniquePath advances to -1 on the retry.
 		let baseTaken = false;
 		const vault = {
+			configDir: '.obsidian',
 			getAbstractFileByPath: vi.fn((p: string) => (baseTaken && p === 'Hooks/out.md' ? { path: p } : null)),
 			create: vi.fn((p: string, c: string) => {
 				const result = create(p, c);
@@ -211,6 +229,7 @@ describe('writeHeadlessOutput — retry (hook shape)', () => {
 			header: 'H\n',
 			content: 'B',
 			folderLabel: 'hook output folder',
+			...policy,
 			retry,
 		});
 
@@ -233,6 +252,7 @@ describe('writeHeadlessOutput — retry (hook shape)', () => {
 			header: 'H\n',
 			content: 'B',
 			folderLabel: 'hook output folder',
+			...policy,
 			retry,
 		});
 
@@ -251,9 +271,84 @@ describe('writeHeadlessOutput — retry (hook shape)', () => {
 				header: 'H\n',
 				content: 'B',
 				folderLabel: 'hook output folder',
+				...policy,
 				retry,
 			})
 		).rejects.toThrow(/\[HookRunner\] Failed to write hook output after 9 attempts/);
+	});
+});
+
+describe('validateHeadlessOutputPath', () => {
+	const hookPolicy = { configDir: '.obsidian', historyFolder: 'gemini-scribe', allowedSubfolder: 'Hooks/Runs' };
+
+	it.each(['reports/daily/2026-04-18.md', 'out.md', 'gemini-scribe/Hooks/Runs/daily/2026-04-18.md'])(
+		'accepts %s',
+		(path) => {
+			expect(validateHeadlessOutputPath(path, hookPolicy)).toBe(path);
+		}
+	);
+
+	it.each([
+		['', /must include a filename/],
+		['../outside-vault/2026-04-18.md', /escapes the vault/],
+		['reports/../../outside.md', /escapes the vault/],
+		['.obsidian/plugins/daily.md', /Obsidian configuration folder/],
+		// A hook definition lives here — a write would plant a new hook.
+		['gemini-scribe/Hooks/daily.md', /plugin state folder \(other than its Hooks\/Runs folder\)/],
+		['gemini-scribe/AGENTS.md', /plugin state folder/],
+		// Another feature's carve-out is not this one's.
+		['gemini-scribe/Scheduled-Tasks/Runs/daily/2026-04-18.md', /plugin state folder/],
+		['gemini-scribe/Hooks/Runs', /plugin state folder/],
+	])('rejects %j', (path, message) => {
+		expect(() => validateHeadlessOutputPath(path, hookPolicy)).toThrow(message);
+	});
+
+	it('honours a renamed configuration folder', () => {
+		const renamed = { ...hookPolicy, configDir: '.config' };
+		expect(() => validateHeadlessOutputPath('.config/x.md', renamed)).toThrow(/Obsidian configuration folder/);
+		expect(validateHeadlessOutputPath('.obsidian/x.md', renamed)).toBe('.obsidian/x.md');
+	});
+});
+
+describe('writeHeadlessOutput write policy (#1651)', () => {
+	it.each([
+		'../outside-vault/2026-04-18.md',
+		'.obsidian/plugins/daily.md',
+		'gemini-scribe/Hooks/daily.md',
+		'gemini-scribe/Scheduled-Tasks/Runs/daily/2026-04-18.md',
+	])('refuses %s before creating a folder or a file', async (outputPath) => {
+		const vault = makeVault();
+
+		await expect(
+			writeHeadlessOutput({
+				vault,
+				outputPath,
+				header: 'H\n',
+				content: 'B',
+				folderLabel: 'hook output folder',
+				...policy,
+			})
+		).rejects.toThrow(/^Output path /);
+
+		expect(mockEnsureParentFolderExists).not.toHaveBeenCalled();
+		expect(vault.create).not.toHaveBeenCalled();
+	});
+
+	it("writes into the caller's own Runs carve-out", async () => {
+		const vault = makeVault();
+		const outputPath = 'gemini-scribe/Hooks/Runs/daily/2026-04-18.md';
+
+		const written = await writeHeadlessOutput({
+			vault,
+			outputPath,
+			header: 'H\n',
+			content: 'B',
+			folderLabel: 'hook output folder',
+			...policy,
+		});
+
+		expect(written).toBe(outputPath);
+		expect(vault.create).toHaveBeenCalledWith(outputPath, 'H\nB');
 	});
 });
 

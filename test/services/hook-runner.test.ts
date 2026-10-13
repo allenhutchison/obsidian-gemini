@@ -22,7 +22,9 @@ vi.mock('obsidian', () => ({
 	Platform: { isMobile: false },
 }));
 
-vi.mock('../../src/utils/file-utils', () => ({
+// Folder helpers are stubbed; the output-path write policy stays real.
+vi.mock('../../src/utils/file-utils', async () => ({
+	...(await vi.importActual<typeof import('../../src/utils/file-utils')>('../../src/utils/file-utils')),
 	ensureFolderExists: vi.fn().mockResolvedValue(undefined),
 	ensureParentFolderExists: vi.fn().mockResolvedValue(undefined),
 }));
@@ -130,6 +132,7 @@ function createMockPlugin(opts: { existingPaths?: string[]; createBehaviour?: Va
 	return {
 		logger: { log: vi.fn(), debug: vi.fn(), error: vi.fn(), warn: vi.fn() },
 		settings: {
+			historyFolder: 'gemini-scribe',
 			features: {
 				chat: { provider: 'gemini', model: 'gemini-2.0-flash' },
 				summary: { provider: 'gemini', model: '' },
@@ -162,6 +165,7 @@ function createMockPlugin(opts: { existingPaths?: string[]; createBehaviour?: Va
 		summarizer: undefined as any,
 		app: {
 			vault: {
+				configDir: '.obsidian',
 				create,
 				modify: vi.fn().mockResolvedValue(undefined),
 				read: vi.fn().mockResolvedValue('Original file content.'),
@@ -211,12 +215,15 @@ describe('HookRunner.writeOutput retry', () => {
 		});
 		const runner = new HookRunner(plugin as any, makeContext());
 
-		await runner.run();
+		const returned = await runner.run();
 
 		// resolveUniquePath skips the two existing files; the create call lands
 		// on the first free suffix.
 		const written = plugin.__create.mock.calls.map((c: any[]) => c[0]);
 		expect(written).toEqual(['Hooks/Runs/test-hook/2026-05-04-2.md']);
+		// The returned path is the one written, so the "Open result" link opens
+		// this fire's note and not an earlier one.
+		expect(returned).toBe('Hooks/Runs/test-hook/2026-05-04-2.md');
 	});
 
 	it('retries on a race-condition "already exists" rejection from create', async () => {
@@ -277,6 +284,51 @@ describe('HookRunner.writeOutput retry', () => {
 		// shape is "Hooks/Runs/test-hook/2026-05-04-<digits>.md".
 		const finalCallPath = create.mock.calls[create.mock.calls.length - 1][0];
 		expect(finalCallPath).toMatch(/^Hooks\/Runs\/test-hook\/2026-05-04-\d+\.md$/);
+	});
+});
+
+describe('HookRunner.run output-path write policy (#1651)', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it.each([
+		['../outside-vault/{date}.md', /escapes the vault/],
+		['.obsidian/plugins/{slug}.md', /Obsidian configuration folder/],
+		// Would plant a new hook definition next to the real ones.
+		['gemini-scribe/Hooks/{slug}-copy.md', /plugin state folder/],
+		['gemini-scribe/Scheduled-Tasks/Runs/{slug}/{date}.md', /plugin state folder/],
+	])('refuses %s before the model turn and writes nothing', async (outputPath, message) => {
+		const generateModelResponse = vi.fn().mockResolvedValue({ markdown: 'ok', toolCalls: [] });
+		(ModelClientFactory.createChatModel as any).mockReturnValue({ generateModelResponse });
+		const plugin = createMockPlugin();
+		const runner = new HookRunner(plugin as any, makeContext(makeHook({ outputPath })));
+
+		await expect(runner.run()).rejects.toThrow(message);
+
+		expect(generateModelResponse).not.toHaveBeenCalled();
+		expect(plugin.app.vault.create).not.toHaveBeenCalled();
+	});
+
+	it('refuses a path that only escapes once {fileName} is substituted', async () => {
+		const plugin = createMockPlugin();
+		const ctx = { ...makeContext(makeHook({ outputPath: 'out/{fileName}' })), fileName: '../../escape.md' };
+
+		await expect(new HookRunner(plugin as any, ctx).run()).rejects.toThrow(/escapes the vault/);
+		expect(plugin.app.vault.create).not.toHaveBeenCalled();
+	});
+
+	it("writes into the hooks' own Runs folder inside the state folder", async () => {
+		(ModelClientFactory.createChatModel as any).mockReturnValue({
+			generateModelResponse: vi.fn().mockResolvedValue({ markdown: 'Hook output.', toolCalls: [] }),
+		});
+		const plugin = createMockPlugin();
+		const hook = makeHook({ outputPath: 'gemini-scribe/Hooks/Runs/{slug}/{date}.md' });
+
+		const written = await new HookRunner(plugin as any, makeContext(hook)).run();
+
+		expect(written).toBe('gemini-scribe/Hooks/Runs/test-hook/2026-05-04.md');
+		expect(plugin.app.vault.create).toHaveBeenCalledTimes(1);
 	});
 });
 

@@ -1,6 +1,12 @@
 import type { ObsidianGemini } from '../types/plugin';
 import type { ScheduledTask } from './scheduled-tasks/types';
-import { resolveOutputPath, writeHeadlessOutput, markIncompleteOutput } from './headless-run-output';
+import {
+	resolveOutputPath,
+	validateHeadlessOutputPath,
+	writeHeadlessOutput,
+	markIncompleteOutput,
+} from './headless-run-output';
+import { SCHEDULED_TASK_RUNS_SUBFOLDER } from './state-folder';
 import { formatLocalDate } from '../utils/format-utils';
 import { runHeadlessAgentTurn } from './headless-agent-turn';
 
@@ -19,6 +25,23 @@ export class ScheduledTaskRunner {
 	) {}
 
 	async run(isCancelled: () => boolean): Promise<string | undefined> {
+		// Resolve and validate the output path before the turn: a refused path
+		// fails the run here rather than after a model turn has been paid for.
+		// {date} is day-granular so interval tasks or multiple manual runs on the
+		// same day would otherwise overwrite each other — writeHeadlessOutput
+		// resolves a unique path before creating the file.
+		const outputPath = validateHeadlessOutputPath(
+			resolveOutputPath(this.task.outputPath, {
+				slug: this.task.slug,
+				date: formatLocalDate(),
+			}),
+			{
+				configDir: this.plugin.app.vault.configDir,
+				historyFolder: this.plugin.settings.historyFolder,
+				allowedSubfolder: SCHEDULED_TASK_RUNS_SUBFOLDER,
+			}
+		);
+
 		const turn = await runHeadlessAgentTurn(
 			this.plugin,
 			{
@@ -43,13 +66,6 @@ export class ScheduledTaskRunner {
 			throw new Error(`[ScheduledTaskRunner] Task "${this.task.slug}" produced no response`);
 		}
 
-		// {date} is day-granular so interval tasks or multiple manual runs on the
-		// same day would otherwise overwrite each other — writeHeadlessOutput
-		// resolves a unique path before creating the file.
-		const outputPath = resolveOutputPath(this.task.outputPath, {
-			slug: this.task.slug,
-			date: formatLocalDate(),
-		});
 		// Use JSON.stringify for YAML quoted scalars — guards against quotes or
 		// backslashes in the slug or ISO timestamp breaking the frontmatter.
 		let header = `---\nscheduled_task: ${JSON.stringify(this.task.slug)}\nran_at: ${JSON.stringify(new Date().toISOString())}\n---\n\n`;
@@ -59,14 +75,18 @@ export class ScheduledTaskRunner {
 		if (turn.notice) {
 			({ header, content } = markIncompleteOutput(header, content, turn.notice));
 		}
-		await writeHeadlessOutput({
+		// Return the path actually written — it carries a `-N` suffix when the
+		// resolved path was taken, and the "Open result" link must open this run's
+		// note rather than an earlier run's.
+		return writeHeadlessOutput({
 			vault: this.plugin.app.vault,
 			outputPath,
+			historyFolder: this.plugin.settings.historyFolder,
+			allowedSubfolder: SCHEDULED_TASK_RUNS_SUBFOLDER,
 			header,
 			content,
 			folderLabel: 'scheduled task output folder',
 			logger: this.plugin.logger,
 		});
-		return outputPath;
 	}
 }

@@ -42,15 +42,15 @@ Summarize the notes I created or modified today. List the key topics and any ope
 
 ### Frontmatter Fields
 
-| Field           | Required | Default                                                | Description                                                                                                                                             |
-| --------------- | -------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `schedule`      | Yes      | —                                                      | When to run. See [Schedule Formats](#schedule-formats) below.                                                                                           |
-| `toolPolicy`    | No       | _inherit global plugin policy_                         | Per-run tool policy (preset + per-tool overrides). See [Tool Access](#tool-access).                                                                     |
-| `outputPath`    | No       | `[state-folder]/Scheduled-Tasks/Runs/<slug>/{date}.md` | Where to write results. Supports `{slug}` and `{date}` placeholders.                                                                                    |
-| `model`         | No       | Plugin chat model                                      | Override the model for this task (e.g. `gemini-flash-latest`).                                                                                          |
-| `maxIterations` | No       | `20`                                                   | Cap on agent tool-call batches per run. Raise it for long multi-step tasks that exhaust the default. See [Tool Iteration Limit](#tool-iteration-limit). |
-| `enabled`       | No       | `true`                                                 | Set to `false` to disable the task without deleting it.                                                                                                 |
-| `runIfMissed`   | No       | `false`                                                | When `true`, tasks missed while Obsidian was closed are caught up on the next startup. See [Catch-up Runs](#catch-up-runs).                             |
+| Field           | Required | Default                                                | Description                                                                                                                                                        |
+| --------------- | -------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `schedule`      | Yes      | —                                                      | When to run. See [Schedule Formats](#schedule-formats) below.                                                                                                      |
+| `toolPolicy`    | No       | _inherit global plugin policy_                         | Per-run tool policy (preset + per-tool overrides). See [Tool Access](#tool-access).                                                                                |
+| `outputPath`    | No       | `[state-folder]/Scheduled-Tasks/Runs/<slug>/{date}.md` | Where to write results. Supports `{slug}` and `{date}` placeholders. Some locations are refused — see [Where output can be written](#where-output-can-be-written). |
+| `model`         | No       | Plugin chat model                                      | Override the model for this task (e.g. `gemini-flash-latest`).                                                                                                     |
+| `maxIterations` | No       | `20`                                                   | Cap on agent tool-call batches per run. Raise it for long multi-step tasks that exhaust the default. See [Tool Iteration Limit](#tool-iteration-limit).            |
+| `enabled`       | No       | `true`                                                 | Set to `false` to disable the task without deleting it.                                                                                                            |
+| `runIfMissed`   | No       | `false`                                                | When `true`, tasks missed while Obsidian was closed are caught up on the next startup. See [Catch-up Runs](#catch-up-runs).                                        |
 
 ### Schedule Formats
 
@@ -165,6 +165,17 @@ ran_at: '2026-04-18T08:00:00.000Z'
 ```
 
 The `{date}` placeholder in `outputPath` is replaced with the local date (`YYYY-MM-DD`), so each run produces a separate file by default.
+
+### Where output can be written
+
+`outputPath` can point anywhere in your vault, with these exceptions:
+
+- It must name a file — a blank path is refused.
+- It must stay inside the vault — a path containing `..` is refused.
+- It cannot be inside Obsidian's configuration folder (`.obsidian` by default, or a renamed one).
+- It cannot be inside the plugin state folder, **except** `[state-folder]/Scheduled-Tasks/Runs/` (the default location). This keeps a run from planting files among task definitions (a markdown file written into `Scheduled-Tasks/` would itself be read as a task), agent sessions, skills, or other plugin state.
+
+The create/edit form rejects such a path when you save. A path written by hand into a task file is checked when the task runs, after placeholders are substituted: the run fails **before** the model is called, nothing is written, and the failure shows up as the task's last error like any other failed run. The task definition itself is left untouched — fix the `outputPath` and the next run proceeds normally.
 
 ### Incomplete runs
 

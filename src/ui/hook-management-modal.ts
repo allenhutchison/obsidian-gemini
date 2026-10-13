@@ -1,6 +1,7 @@
 import { Notice, Setting, setIcon } from 'obsidian';
 import type { Hook, HookAction, HookCreateParams, HookState, HookTrigger, HooksState } from '../services/hook-manager';
 import { DEFAULT_COOLDOWN_MS, DEFAULT_DEBOUNCE_MS } from '../services/hook-types';
+import { HOOK_RUNS_SUBFOLDER } from '../services/state-folder';
 import type { FeatureToolPolicy } from '../types/tool-policy';
 import { ManagementModalBase } from './components/management-modal-base';
 import { ToolPolicyEditor } from './components/tool-policy-editor';
@@ -424,6 +425,10 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 		const maxIterations = this.parseMaxIterationsField(this.form.maxIterations);
 		if (maxIterations === 'invalid') {
 			new Notice(t('hooks.invalidMaxIterations'));
+			return;
+		}
+		if (!this.isOutputPathFieldAllowed(this.form.outputPath, HOOK_RUNS_SUBFOLDER)) {
+			new Notice(t('hooks.invalidOutputPath'));
 			return;
 		}
 

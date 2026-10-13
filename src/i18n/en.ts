@@ -1178,6 +1178,12 @@ export const en = {
 		message: 'Max tool iterations must be a positive whole number, or blank for the default.',
 		context: 'Validation notice for an invalid max-iterations value.',
 	},
+	'scheduler.invalidOutputPath': {
+		message:
+			'Output path is not allowed. It must include a filename, stay inside the vault, and avoid the Obsidian configuration folder and the plugin state folder (other than its Runs folder).',
+		context:
+			'Validation notice when the scheduled task form\'s output path points somewhere the plugin refuses to write. "Runs" is a literal folder name — keep it verbatim.',
+	},
 	'scheduler.managerUnavailable': {
 		message: 'Scheduled task manager not available.',
 		context: 'Notice when the scheduler service is not running while saving a task.',
@@ -1438,6 +1444,12 @@ export const en = {
 	'hooks.invalidMaxIterations': {
 		message: 'Max tool iterations must be a positive whole number, or blank for the default.',
 		context: 'Validation notice for an invalid max-iterations value in the hook form.',
+	},
+	'hooks.invalidOutputPath': {
+		message:
+			'Output path is not allowed. It must include a filename, stay inside the vault, and avoid the Obsidian configuration folder and the plugin state folder (other than its Runs folder).',
+		context:
+			'Validation notice when the hook form\'s output path points somewhere the plugin refuses to write. "Runs" is a literal folder name — keep it verbatim.',
 	},
 	'hooks.managerUnavailable': {
 		message: 'Hook manager not available.',

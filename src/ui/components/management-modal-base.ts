@@ -4,6 +4,7 @@ import { ToolPolicyEditor } from './tool-policy-editor';
 import { t } from '../../i18n';
 import { resolveFeatureModel } from '../../models';
 import { parseMaxIterations } from '../../services/feature-definition';
+import { validateHeadlessOutputPath } from '../../services/headless-run-output';
 import { DEFAULT_HEADLESS_MAX_ITERATIONS } from '../../agent/agent-loop';
 
 /**
@@ -369,6 +370,34 @@ export abstract class ManagementModalBase<TEntity, TEntityState> extends Modal {
 		if (!trimmed) return undefined;
 		const parsed = parseMaxIterations(trimmed);
 		return parsed === undefined ? 'invalid' : parsed;
+	}
+
+	/**
+	 * Save-time check of an output-path template against the headless write
+	 * policy (`validateHeadlessOutputPath`), so a path the runner would refuse
+	 * is caught while the user is still in the form. Blank is always allowed —
+	 * it means "use the default" (scheduler) or "write no file" (hooks).
+	 *
+	 * The template is checked as authored, `{token}`s unsubstituted; the
+	 * runner's fire-time check on the resolved path remains the real guard.
+	 * Returns a boolean so the caller raises its own per-entity Notice, like
+	 * `parseMaxIterationsField`.
+	 *
+	 * @param allowedSubfolder the entity's run-output carve-out in the state folder
+	 */
+	protected isOutputPathFieldAllowed(raw: string, allowedSubfolder: string): boolean {
+		const trimmed = raw.trim();
+		if (!trimmed) return true;
+		try {
+			validateHeadlessOutputPath(trimmed, {
+				configDir: this.plugin.app.vault.configDir,
+				historyFolder: this.plugin.settings.historyFolder,
+				allowedSubfolder,
+			});
+			return true;
+		} catch {
+			return false;
+		}
 	}
 
 	protected formatDate(date: Date): string {
