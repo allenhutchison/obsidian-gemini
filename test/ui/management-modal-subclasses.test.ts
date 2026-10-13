@@ -233,3 +233,71 @@ describe('parseMaxIterationsField (shared coercion)', () => {
 		expect((modal as any).parseMaxIterationsField(raw)).toBe('invalid');
 	});
 });
+
+// ── isOutputPathFieldAllowed + handleSave rejection (#1651) ─────────────────
+
+describe('output path save-time check', () => {
+	function makePlugin(manager: Record<string, unknown>) {
+		return {
+			agentEventBus: null,
+			logger: { error: vi.fn(), log: vi.fn() },
+			settings: { ...CHAT_SETTINGS, historyFolder: 'gemini-scribe' },
+			app: { vault: { configDir: '.obsidian' } },
+			...manager,
+		} as any;
+	}
+
+	it.each([
+		['', true],
+		['   ', true],
+		['Reports/{slug}/{date}.md', true],
+		['gemini-scribe/Hooks/Runs/{slug}/{date}.md', true],
+		['../outside/{date}.md', false],
+		['.obsidian/plugins/{slug}.md', false],
+		['gemini-scribe/Hooks/{slug}.md', false],
+		['gemini-scribe/Scheduled-Tasks/Runs/{slug}/{date}.md', false],
+	])('hooks: %j allowed = %j', (raw, expected) => {
+		const modal = new HookManagementModal({} as any, makePlugin({}));
+		expect((modal as any).isOutputPathFieldAllowed(raw, 'Hooks/Runs')).toBe(expected);
+	});
+
+	it('hook save refuses a disallowed output path without touching the manager', async () => {
+		const hookManager = { createHook: vi.fn(), updateHook: vi.fn() };
+		const modal = new HookManagementModal({} as any, makePlugin({ hookManager }));
+		(modal as any).form = { ...(modal as any).form, slug: 'h', prompt: 'p', outputPath: '.obsidian/{slug}.md' };
+
+		await (modal as any).handleSave(false);
+
+		expect(hookManager.createHook).not.toHaveBeenCalled();
+	});
+
+	it('scheduler save refuses a disallowed output path without touching the manager', async () => {
+		const scheduledTaskManager = { createTask: vi.fn(), updateTask: vi.fn() };
+		const modal = new SchedulerManagementModal({} as any, makePlugin({ scheduledTaskManager }));
+		(modal as any).form = {
+			...(modal as any).form,
+			slug: 't',
+			prompt: 'p',
+			outputPath: 'gemini-scribe/Scheduled-Tasks/{slug}.md',
+		};
+
+		await (modal as any).handleSave(false);
+
+		expect(scheduledTaskManager.createTask).not.toHaveBeenCalled();
+	});
+
+	it('scheduler save still goes through for the default Runs location', async () => {
+		const scheduledTaskManager = { createTask: vi.fn().mockResolvedValue(undefined), updateTask: vi.fn() };
+		const modal = new SchedulerManagementModal({} as any, makePlugin({ scheduledTaskManager }));
+		(modal as any).form = {
+			...(modal as any).form,
+			slug: 't',
+			prompt: 'p',
+			outputPath: 'gemini-scribe/Scheduled-Tasks/Runs/{slug}/{date}.md',
+		};
+
+		await (modal as any).handleSave(false);
+
+		expect(scheduledTaskManager.createTask).toHaveBeenCalledTimes(1);
+	});
+});

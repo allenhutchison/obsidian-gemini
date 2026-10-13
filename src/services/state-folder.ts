@@ -46,6 +46,14 @@ export const SKILL_FILENAME = 'SKILL.md';
 /** Per-feature run-output subfolder (`<feature>/Runs`), shared by hooks and scheduled tasks. */
 export const RUNS_SUBFOLDER = 'Runs';
 
+/**
+ * State-folder-relative run-output folders. Each is the one place inside the
+ * state folder its feature's headless output may be written — the carve-out
+ * handed to `validateHeadlessOutputPath` (#1651).
+ */
+export const HOOK_RUNS_SUBFOLDER = `${STATE_SUBFOLDERS.hooks}/${RUNS_SUBFOLDER}`;
+export const SCHEDULED_TASK_RUNS_SUBFOLDER = `${STATE_SUBFOLDERS.scheduledTasks}/${RUNS_SUBFOLDER}`;
+
 /** Root-level state files, keyed by purpose. */
 export const STATE_FILES = {
 	/** Agent memory file. */
@@ -73,7 +81,7 @@ export const EAGER_SUBFOLDERS: readonly string[] = [
 	STATE_SUBFOLDERS.prompts,
 	STATE_SUBFOLDERS.skills,
 	STATE_SUBFOLDERS.scheduledTasks,
-	`${STATE_SUBFOLDERS.scheduledTasks}/${RUNS_SUBFOLDER}`,
+	SCHEDULED_TASK_RUNS_SUBFOLDER,
 ];
 
 /**

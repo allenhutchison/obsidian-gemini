@@ -1,5 +1,5 @@
 import { Vault, normalizePath } from 'obsidian';
-import { ensureParentFolderExists } from '../utils/file-utils';
+import { ensureParentFolderExists, validateGeneratedOutputPath } from '../utils/file-utils';
 import { getRawErrorMessage } from '../utils/error-utils';
 import type { Logger } from '../utils/logger';
 
@@ -29,6 +29,45 @@ export function resolveOutputPath(template: string, tokens: Record<string, strin
 		resolved = resolved.split(`{${token}}`).join(value);
 	}
 	return normalizePath(resolved);
+}
+
+/**
+ * Policy inputs for {@link validateHeadlessOutputPath}.
+ */
+export interface HeadlessOutputPathPolicy {
+	/** The vault's configuration directory (`vault.configDir`). Never writable. */
+	configDir: string;
+	/** The plugin state folder (`settings.historyFolder`). */
+	historyFolder?: string;
+	/**
+	 * The one subfolder of the state folder this feature's output may land in —
+	 * its own `Runs` folder (`HOOK_RUNS_SUBFOLDER` / `SCHEDULED_TASK_RUNS_SUBFOLDER`).
+	 */
+	allowedSubfolder: string;
+}
+
+/**
+ * Apply the generated-output write policy to a hook / scheduled-task output
+ * path. The reject set is the shared one in `validateGeneratedOutputPath`
+ * (directory-only, vault-escaping, config folder, state folder outside the
+ * carve-out); only the wording is this pipeline's own. `outputPath` is
+ * user-authored frontmatter, so a typo or an over-ambitious template must not
+ * be able to write into `.obsidian` or over the plugin's own state (#1651).
+ *
+ * @returns the normalized path
+ * @throws Error naming the violation and the offending path
+ */
+export function validateHeadlessOutputPath(rawPath: string, policy: HeadlessOutputPathPolicy): string {
+	return validateGeneratedOutputPath(rawPath, {
+		...policy,
+		messages: {
+			'missing-filename': (path) => `Output path must include a filename: "${path}"`,
+			'vault-escape': (path) => `Output path escapes the vault: "${path}"`,
+			'config-folder': (path) => `Output path cannot be inside the Obsidian configuration folder: "${path}"`,
+			'state-folder': (path) =>
+				`Output path cannot be inside the plugin state folder (other than its ${policy.allowedSubfolder} folder): "${path}"`,
+		},
+	});
 }
 
 /**
@@ -94,6 +133,10 @@ export interface WriteHeadlessOutputParams {
 	vault: Vault;
 	/** Fully resolved (token-substituted, normalized) output path. */
 	outputPath: string;
+	/** The plugin state folder (`settings.historyFolder`), for the write-policy check. */
+	historyFolder?: string;
+	/** The caller's run-output carve-out inside the state folder (see {@link HeadlessOutputPathPolicy}). */
+	allowedSubfolder: string;
 	/** YAML frontmatter block, including the leading/trailing `---` and blank line. */
 	header: string;
 	/** Markdown body appended after the header. */
@@ -110,12 +153,19 @@ export interface WriteHeadlessOutputParams {
 }
 
 /**
- * Ensure the parent folder exists, resolve a unique path, and write
- * `header + content` to it. Returns the path actually written (which may carry a
+ * Validate the path against the write policy, ensure the parent folder exists,
+ * resolve a unique path, and write `header + content` to it. The policy check
+ * lives here, ahead of any vault mutation, so no caller can reach `vault.create`
+ * (or create a parent folder) with an unvalidated path. Returns the path actually written (which may carry a
  * `-N`/timestamp suffix if the resolved path was taken).
  */
 export async function writeHeadlessOutput(params: WriteHeadlessOutputParams): Promise<string> {
-	const { vault, outputPath, header, content, folderLabel, logger, retry } = params;
+	const { vault, header, content, folderLabel, logger, retry } = params;
+	const outputPath = validateHeadlessOutputPath(params.outputPath, {
+		configDir: vault.configDir,
+		historyFolder: params.historyFolder,
+		allowedSubfolder: params.allowedSubfolder,
+	});
 
 	await ensureParentFolderExists(vault, outputPath, folderLabel, logger);
 
