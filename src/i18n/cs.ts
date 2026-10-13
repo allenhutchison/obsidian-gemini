@@ -67,6 +67,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Výchozí ({model})',
 	'settings.features.sameAsChat': 'Stejný jako u chatu',
 	'settings.features.modelMissing': 'Již není k dispozici',
+	'settings.features.modelSearchPlaceholder': 'Hledat modely...',
 	'settings.features.modelCapabilitiesUnknown': 'podpora obrázků neuvedena',
 	'settings.features.off': 'Vypnuto',
 	'settings.features.chooseProvider': 'Vyberte poskytovatele',

@@ -65,6 +65,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': '기본값 ({model})',
 	'settings.features.sameAsChat': '채팅과 동일',
 	'settings.features.modelMissing': '더 이상 사용할 수 없음',
+	'settings.features.modelSearchPlaceholder': '모델 검색...',
 	'settings.features.modelCapabilitiesUnknown': '이미지 지원 여부 미보고',
 	'settings.features.off': '사용 안 함',
 	'settings.features.chooseProvider': '제공자 선택',

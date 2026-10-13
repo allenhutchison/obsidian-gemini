@@ -67,6 +67,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'За замовчуванням ({model})',
 	'settings.features.sameAsChat': 'Як у чаті',
 	'settings.features.modelMissing': 'Більше недоступна',
+	'settings.features.modelSearchPlaceholder': 'Пошук моделей...',
 	'settings.features.modelCapabilitiesUnknown': 'підтримка зображень не вказана',
 	'settings.features.off': 'Вимкнено',
 	'settings.features.chooseProvider': 'Виберіть провайдера',

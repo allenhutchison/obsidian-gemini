@@ -67,6 +67,7 @@ export const ptBR: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Padrão ({model})',
 	'settings.features.sameAsChat': 'Igual ao chat',
 	'settings.features.modelMissing': 'Não está mais disponível',
+	'settings.features.modelSearchPlaceholder': 'Pesquisar modelos...',
 	'settings.features.modelCapabilitiesUnknown': 'suporte a imagens não informado',
 	'settings.features.off': 'Desativado',
 	'settings.features.chooseProvider': 'Escolha um provedor',

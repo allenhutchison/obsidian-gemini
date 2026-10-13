@@ -67,6 +67,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': 'Standaard ({model})',
 	'settings.features.sameAsChat': 'Hetzelfde als chat',
 	'settings.features.modelMissing': 'Niet meer beschikbaar',
+	'settings.features.modelSearchPlaceholder': 'Modellen zoeken...',
 	'settings.features.modelCapabilitiesUnknown': 'afbeeldingsondersteuning niet gemeld',
 	'settings.features.off': 'Uit',
 	'settings.features.chooseProvider': 'Kies een provider',

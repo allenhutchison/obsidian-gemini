@@ -65,6 +65,7 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'settings.features.modelDefaultNamed': '默认 ({model})',
 	'settings.features.sameAsChat': '与聊天相同',
 	'settings.features.modelMissing': '不再可用',
+	'settings.features.modelSearchPlaceholder': '搜索模型...',
 	'settings.features.modelCapabilitiesUnknown': '未报告图像支持',
 	'settings.features.off': '关闭',
 	'settings.features.chooseProvider': '选择提供商',
