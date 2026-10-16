@@ -90,7 +90,7 @@ _The full 4.12 feature set is unchanged — the multi-provider release, with two
 - **Smart Summarization:** Quickly generate concise, one-sentence summaries of your notes and automatically store them in the document's frontmatter, using a model you choose for summarization.
 - **Selection-Based AI Features:** Work with selected text in powerful ways:
   - **Rewrite**: Transform selected text with custom instructions - right-click and choose "Gemini Scribe: Rewrite text..."
-  - **Explain Selection**: Get AI explanations using customizable prompts - right-click and choose "Gemini Scribe: Apply prompt..."
+  - **Explain Selection**: Get AI explanations using customizable prompts - right-click and choose "Gemini Scribe: Apply prompt..." (your own prompts appear there once tagged `gemini-scribe/selection-prompt`; see [Selection Prompts](docs/guide/selection-prompts.md))
   - **Ask about selection**: Ask any question about selected text - right-click and choose "Gemini Scribe: Ask question..."
 - **IDE-Style Completions:** Get real-time, context-aware text completions as you type, similar to IDEs. Accept completions with `Tab` or dismiss with any other key. This feature uses its own model, separate from chat, so you can pick a fast one.
 - **Persistent Agent sessions:** Store your agent conversation history directly in your vault as markdown files. Each session is stored in the `gemini-scribe/Agent-Sessions/` folder, making it easy to backup, version control, and continue conversations across sessions.
@@ -220,7 +220,7 @@ Create reusable AI instruction templates to customize behavior for different typ
 
 **Quick Start:**
 
-1. Create a prompt file in `[Plugin state folder]/Prompts/`
+1. Create a prompt file in `[Plugin state folder]/Prompts/` (subfolders work too)
 2. Open the agent panel and click the gear icon in the session header
 3. Select your prompt from the "Prompt template" dropdown
 
@@ -361,6 +361,7 @@ The plugin UI follows **Obsidian's interface language** (Settings → About → 
 - **Custom Prompts Not Working:**
   - Verify the prompt file exists in the `[Plugin state folder]/Prompts/` folder
   - Check that the prompt is selected in session settings (gear icon)
+  - Prompts tagged `gemini-scribe/selection-prompt` appear only in the right-click "Apply prompt..." menu, not in the session dropdown — and untagged prompts appear only in the session dropdown
   - See the [Custom Prompts Guide](docs/guide/custom-prompts.md) for detailed troubleshooting
 - **Model List Issues:**
   - Open the provider's card under **Settings → Providers** and click **Refresh** to re-query its model list
