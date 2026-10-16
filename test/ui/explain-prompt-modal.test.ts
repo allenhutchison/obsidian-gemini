@@ -69,3 +69,19 @@ describe('ExplainPromptSelectionModal error handling', () => {
 		expect(logger.error).not.toHaveBeenCalled();
 	});
 });
+
+describe('ExplainPromptSelectionModal untagged-prompt hint', () => {
+	const plugin: any = { promptManager: { loadPrompt: vi.fn() }, logger: { error: vi.fn() } };
+
+	it('shows the tagging hint when untagged vault prompts exist', () => {
+		const modal: any = new ExplainPromptSelectionModal({} as any, plugin, [], vi.fn(), true);
+		expect(modal.instructions).toEqual([
+			{ command: '', purpose: expect.stringContaining('gemini-scribe/selection-prompt') },
+		]);
+	});
+
+	it('shows no hint by default', () => {
+		const modal: any = new ExplainPromptSelectionModal({} as any, plugin, [], vi.fn());
+		expect(modal.instructions).toBeUndefined();
+	});
+});

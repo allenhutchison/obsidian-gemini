@@ -94,6 +94,7 @@ function createMockPlugin(): any {
 		logger: createMockLogger(),
 		promptManager: {
 			listSelectionPrompts: vi.fn().mockResolvedValue([]),
+			listSessionPromptFiles: vi.fn().mockReturnValue([]),
 		},
 	};
 }
@@ -358,10 +359,30 @@ describe('SelectionActionService', () => {
 				mockPlugin.app,
 				mockPlugin,
 				prompts,
-				expect.any(Function)
+				expect.any(Function),
+				false
 			);
 			const modalInstance = (ExplainPromptSelectionModal as any).mock.results[0].value;
 			expect(modalInstance.open).toHaveBeenCalled();
+		});
+
+		it('asks the picker to show the tagging hint when untagged vault prompts exist', async () => {
+			const { ExplainPromptSelectionModal } = await import('../../src/ui/explain-prompt-modal');
+			const editor = createMockEditor('selected text');
+			mockPlugin.promptManager.listSelectionPrompts.mockResolvedValue([
+				{ name: 'Explain', content: 'Explain {{selection}}', path: 'bundled:Explain' },
+			]);
+			mockPlugin.promptManager.listSessionPromptFiles.mockReturnValue([{ path: 'gemini-scribe/Prompts/mine.md' }]);
+
+			await service.handleExplainSelection(editor, null);
+
+			expect(ExplainPromptSelectionModal).toHaveBeenCalledWith(
+				mockPlugin.app,
+				mockPlugin,
+				expect.any(Array),
+				expect.any(Function),
+				true
+			);
 		});
 
 		it('should capture cursor position and invoke generateAndShowResponseWithPosition via onSelect', async () => {

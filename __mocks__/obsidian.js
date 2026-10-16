@@ -260,6 +260,9 @@ export class SuggestModal extends Modal {
 	setPlaceholder() {
 		return this;
 	}
+	setInstructions(instructions) {
+		this.instructions = instructions;
+	}
 	getSuggestions() {
 		return [];
 	}

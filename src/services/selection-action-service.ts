@@ -31,7 +31,7 @@ export class SelectionActionService {
 	/**
 	 * Handle "Explain Selection" action:
 	 * 1. Gets the selected text from editor
-	 * 2. Shows prompt selection modal (filtered by selection-action tag)
+	 * 2. Shows prompt selection modal (filtered by the selection-prompt tag)
 	 * 3. Calls AI with selection + prompt
 	 * 4. Shows response in modal with option to insert as callout
 	 */
@@ -58,7 +58,8 @@ export class SelectionActionService {
 			async (prompt: CustomPrompt) => {
 				// Use the captured selection and position from before the modal opened
 				await this.generateAndShowResponseWithPosition(editor, selection, prompt.content, sourceFile, selectionEnd);
-			}
+			},
+			this.plugin.promptManager.listSessionPromptFiles().length > 0
 		);
 		modal.open();
 	}

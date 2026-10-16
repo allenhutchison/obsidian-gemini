@@ -7,6 +7,15 @@ import { asRecord } from '../utils/error-utils';
 import { isPathInFolder } from '../utils/file-utils';
 import { STATE_SUBFOLDERS, stateFolderPath } from '../services/state-folder';
 
+/**
+ * Tag that opts a prompt into the right-click "Apply prompt..." picker. The Prompts folder holds
+ * two kinds of prompt — session prompts (persona/behavior for a whole agent session) and
+ * selection prompts (one-shot instructions applied to selected text) — and this tag is what
+ * keeps them apart: tagged prompts appear only in the picker, untagged ones only in the
+ * session prompt dropdown.
+ */
+const SELECTION_PROMPT_TAG = 'gemini-scribe/selection-prompt';
+
 export class PromptManager {
 	constructor(
 		private plugin: ObsidianGemini,
@@ -40,17 +49,7 @@ export class PromptManager {
 				contentWithoutFrontmatter = fullContent;
 			}
 
-			// Parse tags - normalize to array of lowercase strings
-			const rawTags: unknown = frontmatter.tags;
-			let tagList: unknown[];
-			if (typeof rawTags === 'string') {
-				tagList = [rawTags];
-			} else if (Array.isArray(rawTags)) {
-				tagList = rawTags;
-			} else {
-				tagList = [];
-			}
-			const tags = tagList.filter((t): t is string => typeof t === 'string').map((t) => t.toLowerCase());
+			const tags = parseTags(frontmatter.tags);
 
 			const name = frontmatter.name;
 			const description = frontmatter.description;
@@ -69,8 +68,8 @@ export class PromptManager {
 		}
 	}
 
-	// List all available prompts
-	async listAvailablePrompts(): Promise<PromptInfo[]> {
+	// Markdown files anywhere under the prompts folder, including subfolders
+	private getPromptFiles(): TFile[] {
 		const promptsDir = this.getPromptsDirectory();
 		const folder = this.vault.getAbstractFileByPath(promptsDir);
 
@@ -78,14 +77,29 @@ export class PromptManager {
 			return [];
 		}
 
-		const prompts: PromptInfo[] = [];
-
 		// Use Vault.getMarkdownFiles() and filter by path. Root-anchored
 		// containment, so a sibling like `Prompts-archive/` or a stray
 		// `Prompts.md` next to the folder isn't listed as a custom prompt.
-		const markdownFiles = this.vault.getMarkdownFiles().filter((file) => isPathInFolder(file.path, promptsDir));
+		return this.vault.getMarkdownFiles().filter((file) => isPathInFolder(file.path, promptsDir));
+	}
 
-		for (const file of markdownFiles) {
+	/**
+	 * Vault prompts usable as session prompt templates: every prompt file under the prompts
+	 * folder (subfolders included) except those tagged as selection prompts. Synchronous —
+	 * tags come from the metadata cache — so the session settings dropdown can call it inline.
+	 */
+	listSessionPromptFiles(): TFile[] {
+		return this.getPromptFiles().filter((file) => {
+			const frontmatter = asRecord(this.plugin.app.metadataCache.getFileCache(file)?.frontmatter);
+			return !parseTags(frontmatter.tags).includes(SELECTION_PROMPT_TAG);
+		});
+	}
+
+	// List all available prompts
+	async listAvailablePrompts(): Promise<PromptInfo[]> {
+		const prompts: PromptInfo[] = [];
+
+		for (const file of this.getPromptFiles()) {
 			const prompt = await this.loadPromptFromFile(file.path);
 			if (prompt) {
 				prompts.push({
@@ -111,7 +125,7 @@ export class PromptManager {
 
 	// List all selection prompts (vault + bundled)
 	async listSelectionPrompts(): Promise<PromptInfo[]> {
-		const tag = 'gemini-scribe/selection-prompt';
+		const tag = SELECTION_PROMPT_TAG;
 		const vaultPrompts = await this.listPromptsByTag(tag);
 
 		const bundledPrompts = BundledPromptRegistry.getPrompts()
@@ -267,7 +281,10 @@ Your custom prompt content goes here. This will modify how the AI behaves when a
 - Consider the context this will be used in
 
 ## Example Usage:
-This prompt will be applied to sessions and will supplement the default system prompt unless override_system_prompt is set to true.`;
+This prompt will be applied to sessions and will supplement the default system prompt unless override_system_prompt is set to true.
+
+## Using this prompt on selected text instead:
+To make this a selection prompt, add "${SELECTION_PROMPT_TAG}" to the tags above. It will then appear in the right-click "Apply prompt..." menu and no longer in the session prompt dropdown. Use {{selection}} to mark where the selected text goes.`;
 
 		try {
 			// Create the file
@@ -282,6 +299,19 @@ This prompt will be applied to sessions and will supplement the default system p
 			new Notice(t('notice.prompt.createFileFailed'));
 		}
 	}
+}
+
+// Normalize a frontmatter `tags` value (string or list) to lowercase strings
+function parseTags(rawTags: unknown): string[] {
+	let tagList: unknown[];
+	if (typeof rawTags === 'string') {
+		tagList = [rawTags];
+	} else if (Array.isArray(rawTags)) {
+		tagList = rawTags;
+	} else {
+		tagList = [];
+	}
+	return tagList.filter((t): t is string => typeof t === 'string').map((t) => t.toLowerCase());
 }
 
 class PromptNameModal extends Modal {

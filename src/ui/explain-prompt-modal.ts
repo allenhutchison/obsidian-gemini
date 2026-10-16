@@ -16,13 +16,18 @@ export class ExplainPromptSelectionModal extends SuggestModal<PromptInfo> {
 		app: App,
 		plugin: ObsidianGemini,
 		prompts: PromptInfo[],
-		onSelect: (prompt: CustomPrompt) => void | Promise<void>
+		onSelect: (prompt: CustomPrompt) => void | Promise<void>,
+		hasUntaggedPrompts = false
 	) {
 		super(app);
 		this.plugin = plugin;
 		this.prompts = prompts;
 		this.onSelect = onSelect;
 		this.setPlaceholder(t('explainPrompt.placeholder'));
+		// Untagged vault prompts are session prompts and deliberately absent here; say how to opt one in.
+		if (hasUntaggedPrompts) {
+			this.setInstructions([{ command: '', purpose: t('explainPrompt.untaggedHint') }]);
+		}
 	}
 
 	getSuggestions(query: string): PromptInfo[] {
