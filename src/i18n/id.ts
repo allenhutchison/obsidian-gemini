@@ -83,6 +83,8 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'settings.features.label.rag': 'Indeks pencarian vault',
 	'settings.features.label.imageGen': 'Pembuatan gambar',
 	'explainPrompt.placeholder': 'Pilih prompt untuk menjelaskan pilihan...',
+	'explainPrompt.untaggedHint':
+		'Hanya prompt yang diberi tag "gemini-scribe/selection-prompt" yang dicantumkan. Tambahkan tag ke prompt kustom untuk menggunakannya di sini.',
 	'ragCleanup.title': 'Hapus indeks vault?',
 	'ragCleanup.body': 'Indeks vault Anda disimpan di Google Cloud. Apakah Anda ingin menghapusnya?',
 	'ragCleanup.keepNote': 'Jika Anda menyimpan data tersebut, pengaktifan kembali akan lebih cepat.',

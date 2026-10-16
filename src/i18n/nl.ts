@@ -83,6 +83,8 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'settings.features.label.rag': 'Vault-zoekindex',
 	'settings.features.label.imageGen': 'Afbeeldingsgeneratie',
 	'explainPrompt.placeholder': 'Selecteer een prompt om de selectie uit te leggen...',
+	'explainPrompt.untaggedHint':
+		'Alleen prompts met de tag "gemini-scribe/selection-prompt" worden weergegeven. Voeg de tag toe aan een aangepaste prompt om deze hier te gebruiken.',
 	'ragCleanup.title': 'Vault-index verwijderen?',
 	'ragCleanup.body': 'Je vault-index is opgeslagen in Google Cloud. Wil je deze verwijderen?',
 	'ragCleanup.keepNote': 'Als je de gegevens bewaart, is het opnieuw inschakelen sneller.',

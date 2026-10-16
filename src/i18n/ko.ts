@@ -81,6 +81,8 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'settings.features.label.rag': '보관함 검색 색인',
 	'settings.features.label.imageGen': '이미지 생성',
 	'explainPrompt.placeholder': '선택 영역을 설명할 프롬프트 선택...',
+	'explainPrompt.untaggedHint':
+		'"gemini-scribe/selection-prompt" 태그가 지정된 프롬프트만 표시됩니다. 여기서 사용하려면 사용자 지정 프롬프트에 해당 태그를 추가하세요.',
 	'ragCleanup.title': '보관소 인덱스를 삭제하시겠습니까?',
 	'ragCleanup.body': '보관함 인덱스가 Google Cloud에 저장되어 있습니다. 삭제하시겠습니까?',
 	'ragCleanup.keepNote': '데이터를 유지하면 나중에 다시 활성화할 때 더 빠릅니다.',

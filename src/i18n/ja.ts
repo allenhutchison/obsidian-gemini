@@ -83,6 +83,8 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.features.label.rag': 'Vault検索インデックス',
 	'settings.features.label.imageGen': '画像生成',
 	'explainPrompt.placeholder': '選択範囲を説明するためのプロンプトを選択...',
+	'explainPrompt.untaggedHint':
+		'「gemini-scribe/selection-prompt」タグが付いたプロンプトのみが表示されます。カスタムプロンプトをここで使用するには、このタグを追加してください。',
 	'ragCleanup.title': '保管庫のインデックスを削除しますか？',
 	'ragCleanup.body': '保管庫のインデックスはGoogle Cloudに保存されています。削除しますか？',
 	'ragCleanup.keepNote': 'データを保持しておくと、再有効化時の処理が速くなります。',

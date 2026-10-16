@@ -84,6 +84,8 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.features.label.rag': 'Kasa arama dizini',
 	'settings.features.label.imageGen': 'Görsel oluşturma',
 	'explainPrompt.placeholder': 'Seçimi açıklamak için bir istem seçin...',
+	'explainPrompt.untaggedHint':
+		'Yalnızca "gemini-scribe/selection-prompt" etiketli istemler listelenir. Burada kullanmak için özel bir isteme bu etiketi ekleyin.',
 	'ragCleanup.title': 'Vault dizini silinsin mi?',
 	'ragCleanup.body': "Vault dizininiz Google Cloud'da saklanıyor. Silmek istiyor musunuz?",
 	'ragCleanup.keepNote': 'Verileri tutarsanız, yeniden etkinleştirmek daha hızlı olacaktır.',

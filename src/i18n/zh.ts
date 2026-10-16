@@ -81,6 +81,8 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'settings.features.label.rag': '仓库搜索索引',
 	'settings.features.label.imageGen': '图像生成',
 	'explainPrompt.placeholder': '选择一个提示词来解释选中的内容...',
+	'explainPrompt.untaggedHint':
+		'仅列出带有 “gemini-scribe/selection-prompt” 标签的提示词。为自定义提示词添加该标签后即可在此处使用。',
 	'ragCleanup.title': '删除 vault 索引？',
 	'ragCleanup.body': '您的 vault 索引存储在 Google Cloud 中。您要删除它吗？',
 	'ragCleanup.keepNote': '如果您保留数据，重新启用时速度会更快。',

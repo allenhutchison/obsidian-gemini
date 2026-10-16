@@ -83,6 +83,8 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'settings.features.label.rag': 'Índice de pesquisa do vault',
 	'settings.features.label.imageGen': 'Geração de imagens',
 	'explainPrompt.placeholder': 'Selecione um prompt para explicar a seleção...',
+	'explainPrompt.untaggedHint':
+		'Apenas os prompts com a etiqueta "gemini-scribe/selection-prompt" são listados. Adicione a etiqueta a um prompt personalizado para o utilizar aqui.',
 	'ragCleanup.title': 'Eliminar índice do vault?',
 	'ragCleanup.body': 'O índice do seu vault está armazenado no Google Cloud. Deseja eliminá-lo?',
 	'ragCleanup.keepNote': 'Se mantiver os dados, a reativação será mais rápida.',

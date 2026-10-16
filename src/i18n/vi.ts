@@ -84,6 +84,8 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.features.label.rag': 'Chỉ mục tìm kiếm vault',
 	'settings.features.label.imageGen': 'Tạo hình ảnh',
 	'explainPrompt.placeholder': 'Chọn một prompt để giải thích phần lựa chọn...',
+	'explainPrompt.untaggedHint':
+		'Chỉ các prompt được gắn thẻ "gemini-scribe/selection-prompt" mới được liệt kê. Thêm thẻ vào prompt tùy chỉnh để sử dụng ở đây.',
 	'ragCleanup.title': 'Xóa chỉ mục vault?',
 	'ragCleanup.body': 'Chỉ mục vault của bạn được lưu trữ trên Google Cloud. Bạn có muốn xóa nó không?',
 	'ragCleanup.keepNote': 'Nếu bạn giữ lại dữ liệu, việc kích hoạt lại sẽ nhanh hơn.',
