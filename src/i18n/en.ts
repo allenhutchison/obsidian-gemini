@@ -341,6 +341,12 @@ export const en = {
 		message: 'Select a prompt to explain the selection...',
 		context: 'Search placeholder in the suggest modal for picking an explain-selection prompt.',
 	},
+	'explainPrompt.untaggedHint': {
+		message:
+			'Only prompts tagged "gemini-scribe/selection-prompt" are listed. Add the tag to a custom prompt to use it here.',
+		context:
+			'Footer hint in the "Apply prompt..." picker, shown when the user has custom prompts that lack the tag and so are not listed. "gemini-scribe/selection-prompt" is a literal tag name — do not translate it.',
+	},
 	'ragCleanup.title': {
 		message: 'Delete vault index?',
 		context:

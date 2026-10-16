@@ -1,10 +1,31 @@
-import { App, ButtonComponent, Modal, Setting, DropdownComponent, TFile, TFolder } from 'obsidian';
+import { App, ButtonComponent, Modal, Setting, DropdownComponent } from 'obsidian';
 import { ChatSession, SessionModelConfig } from '../../types/agent';
 import { GeminiModel } from '../../models';
 import type { ObsidianGemini } from '../../types/plugin';
 import { t } from '../../i18n';
 import { STATE_SUBFOLDERS, stateFolderPath } from '../../services/state-folder';
 import { ModelPickerModal, orderModelPickerOptions } from '../components/model-picker-modal';
+
+/**
+ * Options for the session prompt-template dropdown. Prompts can live in subfolders, so each is
+ * labelled by its path relative to the prompts folder. A session's current template is kept
+ * selectable even when it no longer qualifies (e.g. since tagged as a selection prompt), so the
+ * dropdown doesn't misreport the session as using the default.
+ */
+export function buildPromptTemplateOptions(
+	promptPaths: string[],
+	promptsFolder: string,
+	currentTemplate: string | undefined
+): { path: string; label: string }[] {
+	const stripMd = (p: string) => p.replace(/\.md$/, '');
+	const options = promptPaths
+		.map((path) => ({ path, label: stripMd(path.slice(promptsFolder.length + 1)) }))
+		.sort((a, b) => a.label.localeCompare(b.label));
+	if (currentTemplate && !options.some((o) => o.path === currentTemplate)) {
+		options.push({ path: currentTemplate, label: stripMd(currentTemplate.split('/').pop() || currentTemplate) });
+	}
+	return options;
+}
 
 export class SessionSettingsModal extends Modal {
 	private plugin: ObsidianGemini;
@@ -92,19 +113,14 @@ export class SessionSettingsModal extends Modal {
 				// Add default option with special value
 				dropdown.addOption('__default__', t('agent.sessionSettings.useDefaultPrompt'));
 
-				// Get prompt files
-				const promptsFolder = stateFolderPath(this.plugin.settings, STATE_SUBFOLDERS.prompts);
-				const folder = this.plugin.app.vault.getAbstractFileByPath(promptsFolder);
-
-				if (folder && folder instanceof TFolder) {
-					const promptFiles = folder.children
-						.filter((f): f is TFile => f instanceof TFile && f.extension === 'md')
-						.map((f) => f.path);
-
-					promptFiles.forEach((path) => {
-						const name = path.split('/').pop()?.replace('.md', '') || path;
-						dropdown.addOption(path, name);
-					});
+				// Session prompts only: selection-tagged prompts belong to the "Apply prompt..." menu.
+				const options = buildPromptTemplateOptions(
+					this.plugin.promptManager.listSessionPromptFiles().map((file) => file.path),
+					stateFolderPath(this.plugin.settings, STATE_SUBFOLDERS.prompts),
+					this.modelConfig.promptTemplate
+				);
+				for (const { path, label } of options) {
+					dropdown.addOption(path, label);
 				}
 
 				// Set current value

@@ -558,6 +558,52 @@ Content`);
 		});
 	});
 
+	describe('listSessionPromptFiles', () => {
+		it('includes prompts in subfolders and excludes selection-tagged prompts', () => {
+			const mockFolder = Object.create(MockTFolder.prototype);
+			mockVault.getAbstractFileByPath.mockImplementation((path: string) =>
+				path === 'gemini-scribe/Prompts' ? mockFolder : null
+			);
+			const top = Object.assign(new TFile(), { path: 'gemini-scribe/Prompts/expert.md' });
+			const nested = Object.assign(new TFile(), { path: 'gemini-scribe/Prompts/Writing/academic.md' });
+			const selection = Object.assign(new TFile(), { path: 'gemini-scribe/Prompts/translate.md' });
+			const outside = Object.assign(new TFile(), { path: 'gemini-scribe/Prompts-archive/old.md' });
+			mockVault.getMarkdownFiles.mockReturnValue([top, nested, selection, outside]);
+			mockPlugin.app.metadataCache.getFileCache.mockImplementation((file: { path: string }) => ({
+				frontmatter: {
+					tags: file === selection ? ['Gemini-Scribe/Selection-Prompt'] : file === nested ? 'writing' : undefined,
+				},
+			}));
+
+			expect(promptManager.listSessionPromptFiles().map((f) => f.path)).toEqual([
+				'gemini-scribe/Prompts/expert.md',
+				'gemini-scribe/Prompts/Writing/academic.md',
+			]);
+		});
+
+		it('returns nothing when the prompts folder does not exist', () => {
+			mockVault.getAbstractFileByPath.mockReturnValue(null);
+			mockVault.getMarkdownFiles.mockReturnValue([Object.assign(new TFile(), { path: 'gemini-scribe/Prompts/a.md' })]);
+
+			expect(promptManager.listSessionPromptFiles()).toEqual([]);
+		});
+	});
+
+	describe('createPromptFromName template', () => {
+		it('tells the user how to turn the prompt into a selection prompt', async () => {
+			mockPlugin.app.workspace = { openLinkText: vi.fn().mockResolvedValue(undefined) };
+			mockVault.getAbstractFileByPath.mockReturnValue(null);
+			mockVault.create.mockResolvedValue({ path: 'gemini-scribe/Prompts/my-prompt.md' });
+
+			await (promptManager as any).createPromptFromName('My Prompt');
+
+			const [path, content] = mockVault.create.mock.calls[0];
+			expect(path).toBe('gemini-scribe/Prompts/my-prompt.md');
+			expect(content).toContain('"gemini-scribe/selection-prompt"');
+			expect(content).toContain('Apply prompt...');
+		});
+	});
+
 	describe('loadPrompt', () => {
 		it('should load a bundled prompt by bundled: prefix path', async () => {
 			const { BundledPromptRegistry } = await import('../../src/prompts/bundled-prompts');

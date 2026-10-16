@@ -25,6 +25,19 @@ Use custom prompts to:
 - Maintain consistent AI behavior across similar documents
 - Share prompt templates with other users
 
+### Session Prompts vs Selection Prompts
+
+The Prompts folder holds two kinds of prompt that do different jobs:
+
+|                  | Session prompts                                    | Selection prompts                                      |
+| ---------------- | -------------------------------------------------- | ------------------------------------------------------ |
+| **Purpose**      | Shape how the agent behaves for a whole session    | A one-shot instruction applied to text you've selected |
+| **Where to use** | "Prompt template" dropdown in the session settings | Right-click selected text → "Apply prompt..."          |
+| **How to mark**  | Nothing — this is the default                      | Add the `gemini-scribe/selection-prompt` tag           |
+| **Example**      | "Respond as a technical editor using AP style"     | "Translate the selected text to French"                |
+
+The tag keeps the two apart: a prompt with the `gemini-scribe/selection-prompt` tag appears **only** in the "Apply prompt..." menu, and a prompt without it appears **only** in the session dropdown. A persona written to guide a whole conversation rarely makes sense applied to a single paragraph, and vice versa. See [Selection Prompts](/guide/selection-prompts) for how to write them.
+
 ### Custom Prompts vs Skills
 
 If you're unsure whether you need a custom prompt or a [skill](/guide/agent-skills), here's the key difference:
@@ -63,6 +76,8 @@ The easiest way to create a new custom prompt:
 3. Enter a name for your prompt
 4. Edit the generated template to suit your needs
 
+The generated prompt is a session prompt. To use it on selected text instead, add `gemini-scribe/selection-prompt` to its `tags` (the template includes a reminder).
+
 ### Manual Creation
 
 You can also create prompt files manually in your Prompts folder.
@@ -88,9 +103,9 @@ tags: ['category', 'use-case'] # Optional: For organization
 
 #### Special Tags
 
-| Tag                              | Purpose                                                                                                                                                                                                                                                                                                                                                                            |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `gemini-scribe/selection-prompt` | Makes the prompt available in the right-click "Apply prompt..." menu (the Explain Selection feature). It has no effect on the separate "Ask question..." menu item, which always asks a free-form question rather than picking from tagged prompts. See [Selection Prompts](/guide/selection-prompts) and the [AI Writing Guide](/guide/ai-writing#explain-selection) for details. |
+| Tag                              | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `gemini-scribe/selection-prompt` | Makes the prompt a selection prompt: it appears in the right-click "Apply prompt..." menu (the Explain Selection feature) and is removed from the session "Prompt template" dropdown. It has no effect on the separate "Ask question..." menu item, which always asks a free-form question rather than picking from tagged prompts. See [Selection Prompts](/guide/selection-prompts) and the [AI Writing Guide](/guide/ai-writing#explain-selection) for details. |
 
 ### Example: Technical Documentation Assistant
 
@@ -152,6 +167,8 @@ Custom prompts are applied at the session level via the session settings (gear i
 3. Select a prompt from the "Prompt template" dropdown
 4. The prompt applies to all messages in that session
 
+The dropdown lists every prompt in the Prompts folder and its subfolders (shown as `Subfolder/name`), except prompts tagged `gemini-scribe/selection-prompt`. If a session already uses a prompt that you later tag as a selection prompt, the session keeps it and the dropdown still shows it until you pick another.
+
 ### Visual Indicator
 
 When a custom prompt is active, you'll see a badge in the session header showing the prompt name.
@@ -182,7 +199,7 @@ Create specialized prompts for:
 
 ### Organizing Prompts
 
-Use descriptive filenames and tags:
+Use descriptive filenames and tags. Subfolders are supported — prompts in them appear in the session dropdown as `Subfolder/name`:
 
 ```
 Prompts/
@@ -323,6 +340,11 @@ Always maintain academic objectivity and cite sources appropriately.
 
 3. **Check session settings**
    - Open the session settings (gear icon) and verify the prompt is selected
+   - If the prompt is missing from the dropdown, check its tags — prompts tagged `gemini-scribe/selection-prompt` are only offered in the "Apply prompt..." menu
+
+### Prompt Missing from the "Apply prompt..." Menu
+
+Only prompts tagged `gemini-scribe/selection-prompt` appear there; other prompts are session prompts. Add the tag to the prompt's frontmatter `tags` list. When you have untagged prompts, the picker shows a reminder of this at the bottom.
 
 ### AI Behaving Unexpectedly
 
