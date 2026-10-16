@@ -3397,6 +3397,8 @@ body.theme-dark {
 	overflow-y: auto;
 	white-space: pre-wrap;
 	word-wrap: break-word;
+	user-select: text;
+	-webkit-user-select: text;
 }
 
 .gemini-scribe-loading {
@@ -3428,6 +3430,9 @@ body.theme-dark {
 	flex: 1;
 	min-height: 100px;
 	max-height: 400px;
+	/* Obsidian disables text selection in modals; let users select and copy part of the response (#1664). */
+	user-select: text;
+	-webkit-user-select: text;
 }
 
 .gemini-scribe-response-container p:first-child {
