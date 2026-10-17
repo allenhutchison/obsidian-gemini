@@ -434,7 +434,9 @@ export class AgentViewUI {
 				void callbacks.showFileMention();
 			} else if (data.endsWith('/')) {
 				// Slash command only when the / is the whole input, not mid-sentence.
-				if ((userInput.innerText || '').trim() === '/') {
+				// trimEnd, not trim: contenteditable can report a trailing newline, but a
+				// leading space would leave the token off the start of the message.
+				if ((userInput.innerText || '').trimEnd() === '/') {
 					void callbacks.showSkillPicker('trigger');
 				}
 			}

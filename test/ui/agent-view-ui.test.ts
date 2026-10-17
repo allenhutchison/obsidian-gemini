@@ -186,6 +186,11 @@ describe('AgentViewUI', () => {
 			expect(callbacks.showSkillPicker).not.toHaveBeenCalled();
 		});
 
+		it('should not trigger showSkillPicker when / follows leading whitespace', () => {
+			typeInto(' /', '/');
+			expect(callbacks.showSkillPicker).not.toHaveBeenCalled();
+		});
+
 		it('should trigger showSkillPicker from a composition insert (Android keyboards, #1661)', () => {
 			typeInto('/', '/', 'insertCompositionText');
 			expect(callbacks.showSkillPicker).toHaveBeenCalledTimes(1);
