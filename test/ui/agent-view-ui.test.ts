@@ -135,7 +135,11 @@ describe('AgentViewUI', () => {
 				setupMockElement(div);
 				return div;
 			});
-			(el as any).createEl = createElMock;
+			(el as any).createEl = vi.fn().mockImplementation((tag: string, opts?: any) => {
+				const child = createElMock(tag, opts);
+				el.appendChild(child);
+				return child;
+			});
 			(el as any).createSpan = vi.fn().mockImplementation((opts) => {
 				const span = document.createElement('span');
 				if (opts?.cls) span.className = opts.cls;
@@ -174,6 +178,7 @@ describe('AgentViewUI', () => {
 		it('should trigger showSkillPicker when / is typed in empty input', () => {
 			typeInto('/', '/');
 			expect(callbacks.showSkillPicker).toHaveBeenCalledTimes(1);
+			expect(callbacks.showSkillPicker).toHaveBeenCalledWith('trigger');
 		});
 
 		it('should not trigger showSkillPicker when / is typed mid-sentence', () => {
@@ -190,6 +195,14 @@ describe('AgentViewUI', () => {
 			userInput.innerText = '';
 			userInput.dispatchEvent(new KeyboardEvent('keydown', { key: '/', bubbles: true }));
 			expect(callbacks.showSkillPicker).not.toHaveBeenCalled();
+		});
+
+		it('should open the skill picker from the send-bar button (#1661)', () => {
+			const button = container.querySelector<HTMLButtonElement>('.gemini-agent-skill-btn');
+			expect(button).not.toBeNull();
+			expect(button!.getAttribute('aria-label')).toBeTruthy();
+			button!.click();
+			expect(callbacks.showSkillPicker).toHaveBeenCalledWith('button');
 		});
 	});
 

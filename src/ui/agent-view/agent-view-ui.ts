@@ -22,9 +22,12 @@ import { t } from '../../i18n';
 /**
  * Callbacks interface for UI interactions
  */
+/** Where a skill-picker request came from: a typed `/`, or the send-bar button. */
+export type SkillPickerSource = 'trigger' | 'button';
+
 export interface UICallbacks {
 	showFileMention: () => Promise<void>;
-	showSkillPicker: () => Promise<void>;
+	showSkillPicker: (source: SkillPickerSource) => Promise<void>;
 	showSessionList: () => Promise<void>;
 	showSessionSettings: () => Promise<void>;
 	createNewSession: () => Promise<void>;
@@ -368,6 +371,18 @@ export class AgentViewUI {
 			callbacks.togglePlanMode();
 		});
 
+		// Tap target for the skill picker. Typing `/` into an empty input does the
+		// same thing, but that's undiscoverable — and unreliable on some mobile
+		// keyboards — so the picker gets a visible button too (#1661).
+		const skillButton = inputRow.createEl('button', {
+			cls: 'clickable-icon gemini-agent-skill-btn',
+			attr: { 'aria-label': t('agent.input.skillPickerAria') },
+		});
+		setIcon(skillButton, 'wand-sparkles');
+		skillButton.addEventListener('click', () => {
+			void callbacks.showSkillPicker('button');
+		});
+
 		const sendButton = inputRow.createEl('button', {
 			cls: 'gemini-agent-btn gemini-agent-btn-primary gemini-agent-send-btn',
 			attr: { 'aria-label': t('agent.input.sendAria') },
@@ -420,7 +435,7 @@ export class AgentViewUI {
 			} else if (data.endsWith('/')) {
 				// Slash command only when the / is the whole input, not mid-sentence.
 				if ((userInput.innerText || '').trim() === '/') {
-					void callbacks.showSkillPicker();
+					void callbacks.showSkillPicker('trigger');
 				}
 			}
 		});
