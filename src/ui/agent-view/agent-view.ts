@@ -15,7 +15,7 @@ import { AgentViewMessages } from './agent-view-messages';
 import { AgentViewContext } from './agent-view-context';
 import { AgentViewSession, SessionUICallbacks, SessionState } from './agent-view-session';
 import { AgentViewTools, AgentViewContext as ToolsContext } from './agent-view-tools';
-import { AgentViewUI, UICallbacks } from './agent-view-ui';
+import { AgentViewUI, UICallbacks, SkillPickerSource } from './agent-view-ui';
 import { InlineAttachment } from './inline-attachment';
 import { AgentViewShelf } from './agent-view-shelf';
 import { AgentViewSend } from './agent-view-send';
@@ -24,7 +24,7 @@ import { ProjectPickerModal } from './project-picker-modal';
 
 // Import modals from agent-view directory
 import { SessionListModal } from './session-list-modal';
-import { SkillMentionModal, formatSkillTrigger } from './skill-mention-modal';
+import { SkillMentionModal, formatSkillTrigger, prependSkillTrigger } from './skill-mention-modal';
 import { SessionSettingsModal } from './session-settings-modal';
 import { insertTextAtCursor, moveCursorToEnd } from '../../utils/dom-context';
 import { t } from '../../i18n';
@@ -62,6 +62,7 @@ export class AgentView extends ItemView {
 	private shelf!: AgentViewShelf;
 	private tokenUsageContainer!: HTMLElement;
 	private skipNextFocusSelectionCapture = false;
+	private skillPickerLoading = false;
 
 	constructor(leaf: WorkspaceLeaf, plugin: ObsidianGemini) {
 		super(leaf);
@@ -421,10 +422,22 @@ export class AgentView extends ItemView {
 	};
 
 	/**
-	 * Show skill picker modal for / slash commands
+	 * Show the skill picker modal. `trigger` means the user typed `/` into an
+	 * empty input, so that `/` is replaced by the token; `button` means the
+	 * send-bar skill button, which puts the token at the start of whatever is
+	 * already typed (#1661).
 	 */
-	private async showSkillPicker() {
-		const summaries = await this.plugin.skillManager.getSkillSummaries();
+	private async showSkillPicker(source: SkillPickerSource) {
+		// A second tap on the skill button while the list is still loading would
+		// otherwise stack a second picker. Once the modal is open it covers the button.
+		if (this.skillPickerLoading) return;
+		this.skillPickerLoading = true;
+		let summaries;
+		try {
+			summaries = await this.plugin.skillManager.getSkillSummaries();
+		} finally {
+			this.skillPickerLoading = false;
+		}
 		if (summaries.length === 0) {
 			new Notice(t('agent.view.noSkills'));
 			return;
@@ -432,14 +445,18 @@ export class AgentView extends ItemView {
 		const modal = new SkillMentionModal(
 			this.app,
 			(skill) => {
-				this.attachments.removeTrailingTriggerChar('/');
-				if (this.userInput) {
-					// Insert the literal `/skill-name ` token and leave it in the box so the
-					// user can append instructions or send as-is. The model recognizes this
-					// convention (see prompts/toolCatalogPrompt.hbs) and activates the skill.
+				if (!this.userInput) return;
+				// Insert the literal `/skill-name ` token and leave it in the box so the
+				// user can append instructions or send as-is. The model recognizes this
+				// convention (see prompts/toolCatalogPrompt.hbs) and activates the skill.
+				if (source === 'trigger') {
+					this.attachments.removeTrailingTriggerChar('/');
 					insertTextAtCursor(this.userInput, formatSkillTrigger(skill.name));
-					moveCursorToEnd(this.userInput);
+				} else {
+					prependSkillTrigger(this.userInput, skill.name);
+					this.userInput.focus();
 				}
+				moveCursorToEnd(this.userInput);
 			},
 			summaries
 		);
@@ -645,7 +662,7 @@ export class AgentView extends ItemView {
 	private getUICallbacks(): UICallbacks {
 		return {
 			showFileMention: () => this.attachments.showFileMention(),
-			showSkillPicker: () => this.showSkillPicker(),
+			showSkillPicker: (source) => this.showSkillPicker(source),
 			showSessionList: () => this.showSessionList(),
 			showSessionSettings: () => this.showSessionSettings(),
 			createNewSession: () => this.createNewSession(),

@@ -1767,6 +1767,11 @@ export const en = {
 		context:
 			'Placeholder text in the agent chat input box. @ and / are literal trigger characters for mentioning files and skills — keep them.',
 	},
+	'agent.input.skillPickerAria': {
+		message: 'Use a skill',
+		context:
+			'Accessibility label/tooltip for the wand icon button in the agent send bar that opens the skill picker. Picking a skill inserts its /skill-name command at the start of the message.',
+	},
 	'agent.input.sendAria': {
 		message: 'Send message to agent',
 		context: 'Accessibility label (aria-label) for the send button next to the chat input.',

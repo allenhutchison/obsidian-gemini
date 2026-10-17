@@ -135,7 +135,11 @@ describe('AgentViewUI', () => {
 				setupMockElement(div);
 				return div;
 			});
-			(el as any).createEl = createElMock;
+			(el as any).createEl = vi.fn().mockImplementation((tag: string, opts?: any) => {
+				const child = createElMock(tag, opts);
+				el.appendChild(child);
+				return child;
+			});
 			(el as any).createSpan = vi.fn().mockImplementation((opts) => {
 				const span = document.createElement('span');
 				if (opts?.cls) span.className = opts.cls;
@@ -163,25 +167,70 @@ describe('AgentViewUI', () => {
 		document.body.removeChild(container);
 	});
 
+	// The browser has already inserted the text by the time `input` fires, so
+	// each helper seeds the resulting input content before dispatching.
+	const typeInto = (content: string, data: string | null, inputType = 'insertText') => {
+		userInput.innerText = content;
+		userInput.dispatchEvent(new InputEvent('input', { bubbles: true, inputType, data }));
+	};
+
 	describe('Slash Command Handling', () => {
 		it('should trigger showSkillPicker when / is typed in empty input', () => {
-			vi.useFakeTimers();
-			userInput.innerText = '';
-			const event = new KeyboardEvent('keydown', { key: '/', bubbles: true });
-			userInput.dispatchEvent(event);
-			vi.runAllTimers();
-			expect(callbacks.showSkillPicker).toHaveBeenCalled();
-			vi.useRealTimers();
+			typeInto('/', '/');
+			expect(callbacks.showSkillPicker).toHaveBeenCalledTimes(1);
+			expect(callbacks.showSkillPicker).toHaveBeenCalledWith('trigger');
 		});
 
 		it('should not trigger showSkillPicker when / is typed mid-sentence', () => {
-			vi.useFakeTimers();
-			userInput.innerText = 'some text';
-			const event = new KeyboardEvent('keydown', { key: '/', bubbles: true });
-			userInput.dispatchEvent(event);
-			vi.runAllTimers();
+			typeInto('some text/', '/');
 			expect(callbacks.showSkillPicker).not.toHaveBeenCalled();
-			vi.useRealTimers();
+		});
+
+		it('should not trigger showSkillPicker when / follows leading whitespace', () => {
+			typeInto(' /', '/');
+			expect(callbacks.showSkillPicker).not.toHaveBeenCalled();
+		});
+
+		it('should trigger showSkillPicker from a composition insert (Android keyboards, #1661)', () => {
+			typeInto('/', '/', 'insertCompositionText');
+			expect(callbacks.showSkillPicker).toHaveBeenCalledTimes(1);
+		});
+
+		it('should not trigger showSkillPicker from a keydown alone', () => {
+			userInput.innerText = '';
+			userInput.dispatchEvent(new KeyboardEvent('keydown', { key: '/', bubbles: true }));
+			expect(callbacks.showSkillPicker).not.toHaveBeenCalled();
+		});
+
+		it('should open the skill picker from the send-bar button (#1661)', () => {
+			const button = container.querySelector<HTMLButtonElement>('.gemini-agent-skill-btn');
+			expect(button).not.toBeNull();
+			expect(button!.getAttribute('aria-label')).toBeTruthy();
+			button!.click();
+			expect(callbacks.showSkillPicker).toHaveBeenCalledWith('button');
+		});
+	});
+
+	describe('File Mention Handling', () => {
+		it('should trigger showFileMention when @ is typed', () => {
+			typeInto('see @', '@');
+			expect(callbacks.showFileMention).toHaveBeenCalledTimes(1);
+		});
+
+		it('should trigger showFileMention when @ ends a composition run (Android keyboards, #1661)', () => {
+			typeInto('ask user@', 'user@', 'insertCompositionText');
+			expect(callbacks.showFileMention).toHaveBeenCalledTimes(1);
+		});
+
+		it('should not trigger showFileMention for deletions or other characters', () => {
+			typeInto('see', null, 'deleteContentBackward');
+			typeInto('see a', 'a');
+			expect(callbacks.showFileMention).not.toHaveBeenCalled();
+		});
+
+		it('should not trigger showFileMention from a keydown alone', () => {
+			userInput.dispatchEvent(new KeyboardEvent('keydown', { key: '@', bubbles: true }));
+			expect(callbacks.showFileMention).not.toHaveBeenCalled();
 		});
 	});
 

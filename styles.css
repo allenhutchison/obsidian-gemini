@@ -4266,6 +4266,29 @@ body.theme-dark {
 	border-top: 1px solid var(--gs-border);
 }
 
+/* Skill picker button — same quiet borderless icon as the plan toggle at rest. */
+.gemini-agent-skill-btn {
+	align-self: center;
+	display: inline-flex;
+	align-items: center;
+	padding: var(--gs-space-1);
+	border: none;
+	border-radius: var(--gs-radius-sm);
+	background-color: transparent;
+	color: var(--gs-text-muted);
+	cursor: pointer;
+}
+
+.gemini-agent-skill-btn svg {
+	width: var(--gs-icon-lg);
+	height: var(--gs-icon-lg);
+}
+
+.gemini-agent-skill-btn:hover {
+	background-color: var(--gs-hover);
+	color: var(--gs-text);
+}
+
 /* Plan mode toggle — quiet borderless icon at rest, accent pill when armed.
  * Off state stays minimal so it doesn't compete with Send for bar width; the
  * "Plan" label only appears (and only then takes space) once the mode is on. */

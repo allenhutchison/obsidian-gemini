@@ -22,7 +22,7 @@ Skills and [custom prompts](/guide/custom-prompts) serve different purposes:
 Skills use **progressive disclosure** — the agent always knows which skills are available (name and description), but only loads the full instructions when it activates a skill. This keeps conversations focused while making specialized knowledge available when needed.
 
 1. **Discovery** — Skill summaries are included in every agent session
-2. **Activation** — When the agent encounters a matching task, it activates the skill to load full instructions. You can also type `/` in an empty chat input to browse and select a skill directly: picking one inserts a `/skill-name` token into the input, and you can then add instructions or just send it as-is to invoke the skill.
+2. **Activation** — When the agent encounters a matching task, it activates the skill to load full instructions. You can also type `/` in an empty chat input (or tap the wand icon next to the send button) to browse and select a skill directly: picking one inserts a `/skill-name` token into the input, and you can then add instructions or just send it as-is to invoke the skill.
 3. **Execution** — The agent follows the skill's instructions to complete the task
 
 ## Built-in Skills
@@ -133,6 +133,11 @@ Agent: I'll activate the code-review skill to help with this...
 To invoke a skill explicitly, type `/` in an empty chat input, pick a skill from the
 picker, and a `/skill-name` token is inserted into the input. Add instructions after it,
 or send it on its own:
+
+You can also tap the **wand icon** in the input toolbar (next to the send button) to open
+the same picker. This is handy on mobile, and it works even when you've already typed
+something: the `/skill-name` token is placed at the start of your message, where the agent
+looks for it.
 
 ```text
 /code-review                      → activates the skill with no extra instruction
