@@ -383,8 +383,9 @@ export class AgentViewUI {
 	}
 
 	/**
-	 * Wires the input's keydown handling: the IME composition guard,
-	 * Enter-to-send, the `@` file mention and the `/` skill picker.
+	 * Wires the input's keyboard handling: Enter-to-send (with the IME
+	 * composition guard) on keydown, and the `@` file mention and `/` skill
+	 * picker on input.
 	 */
 	private wireInputKeyboard(userInput: HTMLDivElement, callbacks: UICallbacks): void {
 		userInput.addEventListener('keydown', (e) => {
@@ -397,17 +398,29 @@ export class AgentViewUI {
 				e.preventDefault();
 				// Fire-and-forget: sending is driven by the UI; the send path handles its own errors.
 				void callbacks.sendMessage();
-			} else if (e.key === '@') {
-				// Trigger file mention — don't preventDefault so @ is typed.
-				// Defer to next microtask so the browser commits the @ character first.
-				// If user selects a file, the @ will be removed before inserting the chip.
-				// If user dismisses the picker, the @ stays as a literal character.
-				window.setTimeout(() => void callbacks.showFileMention(), 0);
-			} else if (e.key === '/') {
-				// Trigger skill picker only when input is empty (slash command, not mid-sentence slash)
-				const text = userInput.innerText || '';
-				if (text.trim().length === 0) {
-					window.setTimeout(() => void callbacks.showSkillPicker(), 0);
+			}
+		});
+
+		// The pickers trigger on the inserted text rather than keydown: Android
+		// virtual keyboards report almost every keydown as `key: 'Unidentified'`,
+		// so an `e.key === '@'` check never matches there (#1661). Some of those
+		// keyboards also deliver the character inside a composition run whose
+		// `data` is the whole run, so composition inserts count too, matched on
+		// the trailing character. Programmatic inserts (paste, skill tokens,
+		// example prompts) don't fire `input`, so they can't trigger a picker.
+		userInput.addEventListener('input', (e) => {
+			if (!(e.instanceOf(InputEvent))) return;
+			if (e.inputType !== 'insertText' && e.inputType !== 'insertCompositionText') return;
+			const data = e.data ?? '';
+
+			if (data.endsWith('@')) {
+				// The @ is already in the DOM. If the user picks a file, the picker
+				// removes it before attaching; if they dismiss it, it stays as text.
+				void callbacks.showFileMention();
+			} else if (data.endsWith('/')) {
+				// Slash command only when the / is the whole input, not mid-sentence.
+				if ((userInput.innerText || '').trim() === '/') {
+					void callbacks.showSkillPicker();
 				}
 			}
 		});
