@@ -712,6 +712,11 @@ body.theme-dark {
 	padding: var(--gs-space-2);
 	position: relative;
 	line-height: 1.6;
+	/* Pasted text arrives as a text node with literal `\n`s. Without pre-wrap they
+	   collapse to spaces on screen AND in `innerText`, which the send path reads —
+	   so a multi-line paste reached the model flattened to one line (#1669). */
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
 }
 
 .gemini-agent-input-rich:focus {
