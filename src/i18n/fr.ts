@@ -85,6 +85,8 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'settings.features.label.rag': 'Index de recherche du coffre',
 	'settings.features.label.imageGen': "Génération d'images",
 	'explainPrompt.placeholder': 'Sélectionnez un prompt pour expliquer la sélection...',
+	'explainPrompt.untaggedHint':
+		'Seuls les prompts étiquetés "gemini-scribe/selection-prompt" sont listés. Ajoutez l\'étiquette à un prompt personnalisé pour l\'utiliser ici.',
 	'ragCleanup.title': "Supprimer l'index du coffre ?",
 	'ragCleanup.body': "L'index de votre coffre est stocké dans Google Cloud. Voulez-vous le supprimer ?",
 	'ragCleanup.keepNote': 'Si vous conservez les données, la réactivation sera plus rapide.',

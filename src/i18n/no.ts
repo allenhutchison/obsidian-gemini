@@ -84,6 +84,8 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'settings.features.label.rag': 'Søkeindeks for hvelv',
 	'settings.features.label.imageGen': 'Bildegenerering',
 	'explainPrompt.placeholder': 'Velg en prompt for å forklare utvalget...',
+	'explainPrompt.untaggedHint':
+		'Kun prompter tagget med "gemini-scribe/selection-prompt" vises. Legg til taggen i en egendefinert prompt for å bruke den her.',
 	'ragCleanup.title': 'Slette vault-indeks?',
 	'ragCleanup.body': 'Din vault-indeks er lagret i Google Cloud. Vil du slette den?',
 	'ragCleanup.keepNote': 'Hvis du beholder dataene, vil det gå raskere å aktivere på nytt.',

@@ -83,6 +83,8 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.features.label.rag': 'Индекс поиска по хранилищу',
 	'settings.features.label.imageGen': 'Генерация изображений',
 	'explainPrompt.placeholder': 'Выберите запрос для объяснения выделенного фрагмента...',
+	'explainPrompt.untaggedHint':
+		'Отображаются только промпты с тегом "gemini-scribe/selection-prompt". Добавьте этот тег к пользовательскому промпту, чтобы использовать его здесь.',
 	'ragCleanup.title': 'Удалить индекс хранилища?',
 	'ragCleanup.body': 'Индекс вашего хранилища сохранен в Google Cloud. Хотите удалить его?',
 	'ragCleanup.keepNote': 'Если вы сохраните данные, повторное включение пройдет быстрее.',

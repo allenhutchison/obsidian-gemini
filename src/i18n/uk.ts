@@ -83,6 +83,8 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'settings.features.label.rag': 'Пошуковий індекс сховища',
 	'settings.features.label.imageGen': 'Генерація зображень',
 	'explainPrompt.placeholder': 'Виберіть запит для пояснення виділеного тексту...',
+	'explainPrompt.untaggedHint':
+		'Відображаються лише промпти з тегом "gemini-scribe/selection-prompt". Додайте цей тег до власного промпту, щоб використовувати його тут.',
 	'ragCleanup.title': 'Видалити індекс сховища?',
 	'ragCleanup.body': 'Індекс вашого сховища зберігається в Google Cloud. Ви хочете видалити його?',
 	'ragCleanup.keepNote': 'Якщо ви збережете дані, повторне ввімкнення відбудеться швидше.',

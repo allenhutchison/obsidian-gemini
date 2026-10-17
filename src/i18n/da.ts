@@ -83,6 +83,8 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'settings.features.label.rag': 'Vault-søgeindeks',
 	'settings.features.label.imageGen': 'Billedgenerering',
 	'explainPrompt.placeholder': 'Vælg et prompt til at forklare det markerede...',
+	'explainPrompt.untaggedHint':
+		'Kun prompter tagget med "gemini-scribe/selection-prompt" vises på listen. Tilføj tagget til en brugerdefineret prompt for at bruge den her.',
 	'ragCleanup.title': 'Slet vault-indeks?',
 	'ragCleanup.body': 'Dit vault-indeks er gemt i Google Cloud. Vil du slette det?',
 	'ragCleanup.keepNote': 'Hvis du beholder dataene, vil det gå hurtigere at genaktivere.',

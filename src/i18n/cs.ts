@@ -83,6 +83,8 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.features.label.rag': 'Vyhledávací index trezoru',
 	'settings.features.label.imageGen': 'Generování obrázků',
 	'explainPrompt.placeholder': 'Vyberte prompt pro vysvětlení výběru...',
+	'explainPrompt.untaggedHint':
+		'Zobrazují se pouze prompty se štítkem "gemini-scribe/selection-prompt". Přidejte tento štítek k vlastnímu promptu, abyste jej zde mohli použít.',
 	'ragCleanup.title': 'Smazat index trezoru?',
 	'ragCleanup.body': 'Index vašeho vaultu je uložen v Google Cloud. Chcete jej smazat?',
 	'ragCleanup.keepNote': 'Pokud data ponecháte, opětovné povolení bude rychlejší.',
