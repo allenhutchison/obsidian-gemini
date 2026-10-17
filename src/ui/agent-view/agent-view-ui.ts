@@ -409,7 +409,7 @@ export class AgentViewUI {
 		// the trailing character. Programmatic inserts (paste, skill tokens,
 		// example prompts) don't fire `input`, so they can't trigger a picker.
 		userInput.addEventListener('input', (e) => {
-			if (!(e.instanceOf(InputEvent))) return;
+			if (!e.instanceOf(InputEvent)) return;
 			if (e.inputType !== 'insertText' && e.inputType !== 'insertCompositionText') return;
 			const data = e.data ?? '';
 
