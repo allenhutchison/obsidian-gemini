@@ -4271,7 +4271,7 @@ body.theme-dark {
 	align-self: center;
 	display: inline-flex;
 	align-items: center;
-	padding: var(--size-2-2);
+	padding: var(--gs-space-1);
 	border: none;
 	border-radius: var(--gs-radius-sm);
 	background-color: transparent;
