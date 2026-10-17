@@ -62,6 +62,7 @@ export class AgentView extends ItemView {
 	private shelf!: AgentViewShelf;
 	private tokenUsageContainer!: HTMLElement;
 	private skipNextFocusSelectionCapture = false;
+	private skillPickerLoading = false;
 
 	constructor(leaf: WorkspaceLeaf, plugin: ObsidianGemini) {
 		super(leaf);
@@ -427,7 +428,16 @@ export class AgentView extends ItemView {
 	 * already typed (#1661).
 	 */
 	private async showSkillPicker(source: SkillPickerSource) {
-		const summaries = await this.plugin.skillManager.getSkillSummaries();
+		// A second tap on the skill button while the list is still loading would
+		// otherwise stack a second picker. Once the modal is open it covers the button.
+		if (this.skillPickerLoading) return;
+		this.skillPickerLoading = true;
+		let summaries;
+		try {
+			summaries = await this.plugin.skillManager.getSkillSummaries();
+		} finally {
+			this.skillPickerLoading = false;
+		}
 		if (summaries.length === 0) {
 			new Notice(t('agent.view.noSkills'));
 			return;
