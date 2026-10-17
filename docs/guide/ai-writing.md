@@ -225,6 +225,8 @@ The Explain Selection feature lets you get AI-powered explanations of any select
    - **Copy**: Copies the explanation to clipboard
    - **Close**: Dismiss the modal
 
+   To copy only part of the response, select the text in the modal and copy it with Ctrl/Cmd + C.
+
 ### Keyboard Shortcut
 
 You can assign a keyboard shortcut to "Explain selection with AI" in Obsidian's Hotkeys settings.
@@ -318,6 +320,8 @@ The Ask about selection feature lets you ask any question about selected text. T
    - **Insert as callout**: Adds the Q&A as a callout block
    - **Copy**: Copies the response to clipboard
    - **Close**: Dismiss the modal
+
+   To copy only part of the response, select the text in the modal and copy it with Ctrl/Cmd + C.
 
 ### Keyboard Shortcut
 
