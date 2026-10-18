@@ -1,4 +1,18 @@
 {
+	"4.13.0": {
+		"title": "🔎 Gemini Scribe 4.13.0 - Searchable model picker, skill button & fixes",
+		"highlights": [
+			"🔎 Searchable model picker — the model dropdowns are now a fuzzy-search picker, so you can find a model by typing part of its name or id. This helps with long lists like OpenRouter's 458 models. (#1653)",
+			"🪄 Skill button and reliable pickers on Android — typing @ and / in the agent input now opens the file and skill pickers on Android keyboards, and a new wand button in the send bar opens the skill picker with one tap on any platform. (#1671, #1661)",
+			"🗂️ Session vs. selection prompts — agent session settings no longer list prompts tagged as selection prompts, and prompts in subfolders now appear there. \"Apply prompt...\" now explains the gemini-scribe/selection-prompt tag when you have untagged prompts, and new prompts include instructions for adding it. (#1665, #1663)",
+			"📋 Multi-line paste — text pasted into the agent input keeps its line breaks. (#1670, #1669)",
+			"✂️ Selectable responses — you can now select and copy part of a response in the \"Ask question...\" / \"Apply prompt...\" response window. (#1667, #1664)",
+			"🧠 Anthropic context compaction — compacting the context partway through a tool chain no longer fails with a 400, removing the known limitation listed in 4.12. (#1616, #1608)",
+			"🛡️ Safer scheduled-task and hook output — output paths are validated so they can't write into .obsidian or the plugin's state folders, and the \"Open result\" link now points to the note that was actually written. (#1656, #1651)",
+			"🤖 Models and maintenance — nano Banana 2.1 joins the model list (#1654), translations are refreshed (#1655, #1657, #1666), and dependencies are updated, including the Gemini, Anthropic, and OpenAI SDKs."
+		],
+		"details": "4.13.0 adds a searchable model picker — every model dropdown is now a fuzzy-search list, so long catalogs such as OpenRouter's are easy to navigate — and a skill button in the agent send bar. On Android, the @ and / pickers now open reliably, since Android keyboards don't report those keys the way desktop and iOS do. Session prompts and selection prompts are now kept apart in both directions: the session settings dropdown hides selection-tagged prompts and finds prompts in subfolders, and the Apply prompt picker explains the gemini-scribe/selection-prompt tag. Fixes: multi-line pastes keep their newlines in the agent input, response text in the selection response window can be selected, Anthropic tool chains survive mid-chain context compaction, and scheduled-task and hook output paths are validated against the plugin's protected folders with the Open result link pointing at the note actually written. Nano Banana 2.1 joins the model list, translations are refreshed, and dependencies are updated."
+	},
 	"4.12.1": {
 		"title": "🛠️ Gemini Scribe 4.12.1 - Plugin audit compliance & fixes",
 		"highlights": [
