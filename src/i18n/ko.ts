@@ -508,6 +508,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'agent.menu.linkProject': '프로젝트 연결',
 	'agent.menu.sessionSettings': '세션 설정',
 	'agent.input.placeholder': '에이전트에게 메시지 보내기... (@ 파일, / 스킬)',
+	'agent.input.skillPickerAria': '스킬 사용',
 	'agent.input.sendAria': '에이전트에게 메시지 전송',
 	'agent.input.stopAria': '에이전트 실행 중지',
 	'agent.input.pasteFailed': '팝아웃 창에서는 붙여넣을 수 없습니다. 메인 창에서 붙여넣기를 시도해 보세요.',

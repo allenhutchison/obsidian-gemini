@@ -521,6 +521,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'agent.menu.linkProject': 'Project koppelen',
 	'agent.menu.sessionSettings': 'Sessie-instellingen',
 	'agent.input.placeholder': 'Bericht de agent... (@ bestanden, / vaardigheden)',
+	'agent.input.skillPickerAria': 'Een vaardigheid gebruiken',
 	'agent.input.sendAria': 'Bericht naar agent verzenden',
 	'agent.input.stopAria': 'Uitvoering van agent stoppen',
 	'agent.input.pasteFailed': 'Plakken in pop-outvenster mislukt. Probeer te plakken in het hoofdvenster.',

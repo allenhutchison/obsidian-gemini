@@ -494,6 +494,7 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'agent.menu.linkProject': '連結專案',
 	'agent.menu.sessionSettings': '工作階段設定',
 	'agent.input.placeholder': '傳送訊息給 Agent... (@ 檔案, / 技能)',
+	'agent.input.skillPickerAria': '使用技能',
 	'agent.input.sendAria': '傳送訊息給 Agent',
 	'agent.input.stopAria': '停止 Agent 執行',
 	'agent.input.pasteFailed': '無法在彈出視窗中貼上。請嘗試在主視窗中貼上。',

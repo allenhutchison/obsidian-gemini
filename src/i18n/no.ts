@@ -516,6 +516,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'agent.menu.linkProject': 'Koble til prosjekt',
 	'agent.menu.sessionSettings': 'Øktinnstillinger',
 	'agent.input.placeholder': 'Send melding til agenten... (@ filer, / ferdigheter)',
+	'agent.input.skillPickerAria': 'Bruk en ferdighet',
 	'agent.input.sendAria': 'Send melding til agenten',
 	'agent.input.stopAria': 'Stopp kjøring av agent',
 	'agent.input.pasteFailed': 'Kunne ikke lime inn i popout-vinduet. Prøv å lime inn i hovedvinduet.',

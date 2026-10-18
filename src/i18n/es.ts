@@ -523,6 +523,7 @@ export const es: Partial<Record<TranslationKey, string>> = {
 	'agent.menu.linkProject': 'Vincular proyecto',
 	'agent.menu.sessionSettings': 'Ajustes de la sesión',
 	'agent.input.placeholder': 'Enviar mensaje al agente... (@ archivos, / habilidades)',
+	'agent.input.skillPickerAria': 'Usar una habilidad',
 	'agent.input.sendAria': 'Enviar mensaje al agente',
 	'agent.input.stopAria': 'Detener ejecución del agente',
 	'agent.input.pasteFailed': 'No se puede pegar en la ventana emergente. Intenta pegar en la ventana principal.',

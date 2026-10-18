@@ -494,6 +494,7 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'agent.menu.linkProject': '关联项目',
 	'agent.menu.sessionSettings': '会话设置',
 	'agent.input.placeholder': '向智能体发送消息... (@ 文件, / 技能)',
+	'agent.input.skillPickerAria': '使用技能',
 	'agent.input.sendAria': '向智能体发送消息',
 	'agent.input.stopAria': '停止智能体执行',
 	'agent.input.pasteFailed': '无法在独立窗口中粘贴。请尝试在主窗口中粘贴。',

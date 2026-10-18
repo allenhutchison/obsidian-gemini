@@ -518,6 +518,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'agent.menu.linkProject': 'Propojit projekt',
 	'agent.menu.sessionSettings': 'Nastavení relace',
 	'agent.input.placeholder': 'Napište agentovi... (@ soubory, / dovednosti)',
+	'agent.input.skillPickerAria': 'Použít dovednost',
 	'agent.input.sendAria': 'Odeslat zprávu agentovi',
 	'agent.input.stopAria': 'Zastavit provádění agenta',
 	'agent.input.pasteFailed': 'V samostatném okně nelze vložit obsah. Zkuste jej vložit v hlavním okně.',

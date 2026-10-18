@@ -526,6 +526,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'agent.menu.linkProject': 'Projekt verknüpfen',
 	'agent.menu.sessionSettings': 'Sitzungseinstellungen',
 	'agent.input.placeholder': 'Nachricht an den Agenten... (@ Dateien, / Skills)',
+	'agent.input.skillPickerAria': 'Skill verwenden',
 	'agent.input.sendAria': 'Nachricht an Agenten senden',
 	'agent.input.stopAria': 'Ausführung des Agenten stoppen',
 	'agent.input.pasteFailed': 'Einfügen im Popout-Fenster nicht möglich. Versuche, im Hauptfenster einzufügen.',

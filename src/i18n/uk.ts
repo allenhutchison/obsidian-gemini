@@ -521,6 +521,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'agent.menu.linkProject': "Прив'язати проєкт",
 	'agent.menu.sessionSettings': 'Налаштування сесії',
 	'agent.input.placeholder': 'Напишіть агенту... (@ файли, / навички)',
+	'agent.input.skillPickerAria': 'Використати навичку',
 	'agent.input.sendAria': 'Надіслати повідомлення агенту',
 	'agent.input.stopAria': 'Зупинити роботу агента',
 	'agent.input.pasteFailed': 'Неможливо вставити у спливаючому вікні. Спробуйте вставити в головному вікні.',
