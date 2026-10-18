@@ -1469,4 +1469,23 @@ describe('AgentView UI Tests', () => {
 			expect(calls[calls.length - 1][0]).toEqual([]);
 		});
 	});
+
+	describe('showSkillPicker', () => {
+		it('ignores a second tap while the skill list is still loading (#1661)', async () => {
+			let resolve!: (v: unknown[]) => void;
+			const getSkillSummaries = vi.fn(() => new Promise<unknown[]>((r) => (resolve = r)));
+			plugin.skillManager = { getSkillSummaries };
+
+			const first = (agentView as any).showSkillPicker('button');
+			await (agentView as any).showSkillPicker('button');
+			expect(getSkillSummaries).toHaveBeenCalledTimes(1);
+
+			// Empty list → notice, no modal; the guard is released either way.
+			resolve([]);
+			await first;
+			getSkillSummaries.mockResolvedValueOnce([]);
+			await (agentView as any).showSkillPicker('button');
+			expect(getSkillSummaries).toHaveBeenCalledTimes(2);
+		});
+	});
 });

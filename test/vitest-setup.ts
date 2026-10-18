@@ -30,6 +30,21 @@ if (typeof HTMLElement !== 'undefined') {
 	}
 }
 
+// Obsidian adds a cross-window-safe `instanceOf(Type)` to Node and UIEvent
+// (the obsidianmd/prefer-instanceof lint rule requires it over `instanceof`).
+// jsdom is single-window, so a plain `instanceof` is the faithful equivalent.
+for (const ctor of [
+	typeof Node !== 'undefined' ? Node : undefined,
+	typeof UIEvent !== 'undefined' ? UIEvent : undefined,
+]) {
+	const proto = ctor?.prototype as { instanceOf?: unknown } | undefined;
+	if (proto && typeof proto.instanceOf !== 'function') {
+		proto.instanceOf = function (this: object, type: new (...args: never[]) => unknown): boolean {
+			return this instanceof type;
+		};
+	}
+}
+
 // Obsidian exposes `activeWindow` / `activeDocument` globals that point at the
 // currently-focused window/document (for popout-window compatibility). jsdom
 // doesn't provide them, so alias them to the test window/document -- this lets

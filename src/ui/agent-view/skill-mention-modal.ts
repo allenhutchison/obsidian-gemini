@@ -14,6 +14,17 @@ export function formatSkillTrigger(name: string): string {
 	return `/${name} `;
 }
 
+/**
+ * Put a skill's trigger token at the very start of the agent input, ahead of
+ * anything already typed. The send-bar skill button (#1661) uses this instead
+ * of inserting at the caret: the model only honors `/skill-name` at the start
+ * of the message, and the caret may be mid-sentence (or outside the input)
+ * when the button is tapped.
+ */
+export function prependSkillTrigger(input: HTMLElement, name: string): void {
+	input.prepend(formatSkillTrigger(name));
+}
+
 export class SkillMentionModal extends FuzzySuggestModal<SkillSummary> {
 	private onSelect: (skill: SkillSummary) => void;
 	private skills: SkillSummary[];

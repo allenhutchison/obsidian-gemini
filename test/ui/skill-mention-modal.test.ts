@@ -1,5 +1,9 @@
 import type { Mock } from 'vitest';
-import { SkillMentionModal, formatSkillTrigger } from '../../src/ui/agent-view/skill-mention-modal';
+import {
+	SkillMentionModal,
+	formatSkillTrigger,
+	prependSkillTrigger,
+} from '../../src/ui/agent-view/skill-mention-modal';
 import { insertTextAtCursor } from '../../src/utils/dom-context';
 import type { SkillSummary } from '../../src/services/skill-manager';
 
@@ -105,5 +109,21 @@ describe('skill-token insertion flow', () => {
 		insertTextAtCursor(input, formatSkillTrigger('worklog'));
 
 		expect(input.textContent).toBe('note this /worklog ');
+	});
+
+	// Send-bar button path (#1661): the model only honors a leading `/skill-name`,
+	// so the token goes ahead of whatever is already typed.
+	it('prepends the token ahead of existing text for the button path', () => {
+		input.textContent = 'summarize this note';
+
+		prependSkillTrigger(input, 'worklog');
+
+		expect(input.textContent).toBe('/worklog summarize this note');
+	});
+
+	it('produces just the token when the input is empty', () => {
+		prependSkillTrigger(input, 'worklog');
+
+		expect(input.textContent).toBe('/worklog ');
 	});
 });

@@ -166,7 +166,7 @@ Context files are displayed in a **unified file shelf** — a horizontal strip a
 **Adding files:**
 
 1. Type `@` in the chat input to open the file picker (supports text files **and** Gemini-compatible binary files like images, SVGs, PDFs, audio, and video)
-2. Type `/` in an empty chat input to open the skill picker — select a skill to insert an activation prompt you can edit before sending (see [Agent Skills](agent-skills.md) for details)
+2. Type `/` in an empty chat input, or tap the **wand icon** next to the send button, to open the skill picker — select a skill to insert an activation prompt you can edit before sending (see [Agent Skills](agent-skills.md) for details)
 3. Click the file icon in the session header to open the multi-select modal:
    - Already-added files appear pre-checked
    - Type to fuzzy-search; **Enter** toggles a file or folder; **Esc** confirms and closes
