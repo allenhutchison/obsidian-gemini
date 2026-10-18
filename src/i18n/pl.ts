@@ -519,6 +519,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'agent.menu.linkProject': 'Powiąż projekt',
 	'agent.menu.sessionSettings': 'Ustawienia sesji',
 	'agent.input.placeholder': 'Napisz do agenta... (@ pliki, / umiejętności)',
+	'agent.input.skillPickerAria': 'Użyj umiejętności',
 	'agent.input.sendAria': 'Wyślij wiadomość do agenta',
 	'agent.input.stopAria': 'Zatrzymaj działanie agenta',
 	'agent.input.pasteFailed': 'Nie można wkleić w osobnym oknie. Spróbuj wkleić w oknie głównym.',

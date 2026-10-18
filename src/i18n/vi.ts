@@ -517,6 +517,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'agent.menu.linkProject': 'Liên kết dự án',
 	'agent.menu.sessionSettings': 'Cài đặt phiên',
 	'agent.input.placeholder': 'Gửi tin nhắn cho agent... (@ tệp, / kỹ năng)',
+	'agent.input.skillPickerAria': 'Sử dụng kỹ năng',
 	'agent.input.sendAria': 'Gửi tin nhắn cho agent',
 	'agent.input.stopAria': 'Dừng thực thi agent',
 	'agent.input.pasteFailed': 'Không thể dán trong cửa sổ phụ. Hãy thử dán trong cửa sổ chính.',

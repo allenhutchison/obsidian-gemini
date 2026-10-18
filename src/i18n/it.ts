@@ -523,6 +523,7 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'agent.menu.linkProject': 'Collega progetto',
 	'agent.menu.sessionSettings': 'Impostazioni sessione',
 	'agent.input.placeholder': "Invia un messaggio all'agente... (@ file, / abilità)",
+	'agent.input.skillPickerAria': "Usa un'abilità",
 	'agent.input.sendAria': "Invia messaggio all'agente",
 	'agent.input.stopAria': "Interrompi esecuzione dell'agente",
 	'agent.input.pasteFailed':

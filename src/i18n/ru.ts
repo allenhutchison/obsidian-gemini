@@ -522,6 +522,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'agent.menu.linkProject': 'Привязать проект',
 	'agent.menu.sessionSettings': 'Настройки сессии',
 	'agent.input.placeholder': 'Написать агенту... (@ файлы, / навыки)',
+	'agent.input.skillPickerAria': 'Использовать навык',
 	'agent.input.sendAria': 'Отправить сообщение агенту',
 	'agent.input.stopAria': 'Остановить работу агента',
 	'agent.input.pasteFailed': 'Не удалось вставить в отдельном окне. Попробуйте вставить в главном окне.',

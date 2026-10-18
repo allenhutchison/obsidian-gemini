@@ -516,6 +516,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'agent.menu.linkProject': 'プロジェクトをリンク',
 	'agent.menu.sessionSettings': 'セッション設定',
 	'agent.input.placeholder': 'エージェントにメッセージを送信... (@ ファイル, / スキル)',
+	'agent.input.skillPickerAria': 'スキルを使用',
 	'agent.input.sendAria': 'エージェントにメッセージを送信',
 	'agent.input.stopAria': 'エージェントの実行を停止',
 	'agent.input.pasteFailed':

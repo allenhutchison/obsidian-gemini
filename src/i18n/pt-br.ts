@@ -517,6 +517,7 @@ export const ptBR: Partial<Record<TranslationKey, string>> = {
 	'agent.menu.linkProject': 'Vincular projeto',
 	'agent.menu.sessionSettings': 'Configurações da sessão',
 	'agent.input.placeholder': 'Enviar mensagem para o agente... (@ arquivos, / habilidades)',
+	'agent.input.skillPickerAria': 'Usar uma habilidade',
 	'agent.input.sendAria': 'Enviar mensagem para o agente',
 	'agent.input.stopAria': 'Parar execução do agente',
 	'agent.input.pasteFailed': 'Não foi possível colar na janela popout. Tente colar na janela principal.',

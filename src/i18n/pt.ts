@@ -520,6 +520,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'agent.menu.linkProject': 'Associar projeto',
 	'agent.menu.sessionSettings': 'Definições da sessão',
 	'agent.input.placeholder': 'Envie uma mensagem ao agente... (@ ficheiros, / competências)',
+	'agent.input.skillPickerAria': 'Usar uma competência',
 	'agent.input.sendAria': 'Enviar mensagem ao agente',
 	'agent.input.stopAria': 'Parar execução do agente',
 	'agent.input.pasteFailed': 'Não foi possível colar na janela flutuante. Tente colar na janela principal.',

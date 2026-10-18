@@ -518,6 +518,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'agent.menu.linkProject': 'Tilknyt projekt',
 	'agent.menu.sessionSettings': 'Sessionsindstillinger',
 	'agent.input.placeholder': 'Skriv til agenten... (@ filer, / færdigheder)',
+	'agent.input.skillPickerAria': 'Brug en færdighed',
 	'agent.input.sendAria': 'Send besked til agent',
 	'agent.input.stopAria': 'Stop agentudførelse',
 	'agent.input.pasteFailed': 'Kunne ikke indsætte i popout-vindue. Prøv at indsætte i hovedvinduet.',

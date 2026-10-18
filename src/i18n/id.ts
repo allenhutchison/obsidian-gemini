@@ -515,6 +515,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'agent.menu.linkProject': 'Tautkan proyek',
 	'agent.menu.sessionSettings': 'Pengaturan sesi',
 	'agent.input.placeholder': 'Kirim pesan ke agen... (@ berkas, / keahlian)',
+	'agent.input.skillPickerAria': 'Gunakan keahlian',
 	'agent.input.sendAria': 'Kirim pesan ke agen',
 	'agent.input.stopAria': 'Hentikan eksekusi agen',
 	'agent.input.pasteFailed': 'Tidak dapat menempel di jendela popout. Coba tempel di jendela utama.',

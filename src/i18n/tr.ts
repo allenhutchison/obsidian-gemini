@@ -522,6 +522,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'agent.menu.linkProject': 'Projeyi bağla',
 	'agent.menu.sessionSettings': 'Oturum ayarları',
 	'agent.input.placeholder': "Agent'a mesaj yazın... (@ dosyalar, / beceriler)",
+	'agent.input.skillPickerAria': 'Bir beceri kullan',
 	'agent.input.sendAria': "Agent'a mesaj gönder",
 	'agent.input.stopAria': 'Agent yürütmesini durdur',
 	'agent.input.pasteFailed': 'Açılır pencereye yapıştırılamadı. Ana pencereye yapıştırmayı deneyin.',
