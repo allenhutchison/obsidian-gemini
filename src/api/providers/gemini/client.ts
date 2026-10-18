@@ -35,6 +35,12 @@ import {
 } from './interactions-mapper';
 
 /**
+ * Gemini generations that predate thinking: 1.x, 2.0–2.4, and the bare 1.0-era
+ * `gemini-pro` / `gemini-pro-vision` ids. Everything else named `gemini` thinks.
+ */
+const LEGACY_NON_THINKING_MODEL = /gemini-(?:1(?:\.\d+)?|2\.[0-4])(?![\d.])|^gemini-pro(?:-vision)?$/;
+
+/**
  * Per-use-case reasoning depth for Gemini 3.x `thinkingConfig.thinkingLevel`
  * on the Interactions API (which accepts `thinking_level` for every
  * thinking-capable model, including Gemini 2.5 — see `supportsThinking`).
@@ -300,9 +306,15 @@ export class GeminiClient implements ModelApi {
 	/**
 	 * Check if a model supports thinking/reasoning mode. Gated on this alone —
 	 * unlike `generateContent`, the Interactions API accepts `thinking_level`
-	 * for every thinking-capable model (Gemini 2.5, 3.x, thinking-exp) and
-	 * normalizes it server-side, so there is no separate "does this model take
-	 * the 3.x-only knob" check on this transport.
+	 * for every thinking-capable model and normalizes it server-side, so there
+	 * is no separate "does this model take the 3.x-only knob" check on this
+	 * transport.
+	 *
+	 * Every current Gemini model thinks, so this is a denylist of the legacy
+	 * pre-2.5 generations rather than an allowlist of versions: an allowlist
+	 * silently dropped thinking for each new generation (`gemini-4-argon`,
+	 * #1678) and for the version-less aliases (`gemini-flash-latest`,
+	 * `gemini-omni-*`).
 	 */
 	private supportsThinking(model: string | undefined): boolean {
 		if (!model) {
@@ -310,9 +322,10 @@ export class GeminiClient implements ModelApi {
 			return false;
 		}
 
-		const modelLower = model.toLowerCase();
+		const modelLower = model.trim().toLowerCase();
 		const isSupported =
-			modelLower.includes('gemini-2.5') || modelLower.includes('gemini-3') || modelLower.includes('thinking-exp');
+			modelLower.includes('thinking-exp') ||
+			(modelLower.includes('gemini') && !LEGACY_NON_THINKING_MODEL.test(modelLower));
 
 		if (isSupported) {
 			this.plugin?.logger.debug(`[GeminiClient] Enabling thinking mode for model: ${model}`);

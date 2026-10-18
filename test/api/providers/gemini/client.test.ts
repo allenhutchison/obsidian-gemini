@@ -220,14 +220,32 @@ describe('GeminiClient', () => {
 				expect(testSupportsThinking('thinking-exp-alpha')).toBe(true);
 				expect(testSupportsThinking('thinking-exp-beta')).toBe(true);
 			});
+
+			// #1678: a version allowlist dropped thinking for each new generation and
+			// for the version-less aliases; any non-legacy Gemini id now thinks.
+			test('new generations and version-less aliases', () => {
+				expect(testSupportsThinking('gemini-4-argon')).toBe(true);
+				expect(testSupportsThinking('gemini-4.1-flash')).toBe(true);
+				expect(testSupportsThinking('gemini-10-pro')).toBe(true); // not legacy gemini-1
+				expect(testSupportsThinking('gemini-flash-latest')).toBe(true);
+				expect(testSupportsThinking('gemini-pro-latest')).toBe(true);
+				expect(testSupportsThinking('gemini-flash-lite-latest')).toBe(true);
+				expect(testSupportsThinking('gemini-3.8-flash')).toBe(true);
+			});
 		});
 
 		describe('models that should not match', () => {
-			test('similar but different model names', () => {
+			test('legacy pre-2.5 generations', () => {
 				expect(testSupportsThinking('gemini-1.0')).toBe(false);
+				expect(testSupportsThinking('gemini-1.0-pro')).toBe(false);
 				expect(testSupportsThinking('gemini-2.0')).toBe(false);
+				expect(testSupportsThinking('gemini-2.0-flash-lite')).toBe(false);
 				expect(testSupportsThinking('gemini-2.4')).toBe(false);
-				expect(testSupportsThinking('gemini-v3')).toBe(false); // not "gemini-3"
+				expect(testSupportsThinking('gemini-pro-vision')).toBe(false);
+			});
+
+			test('non-Gemini model names', () => {
+				expect(testSupportsThinking('gemma-4-31b-it')).toBe(false);
 				expect(testSupportsThinking('thinking-preview')).toBe(false); // not "thinking-exp"
 			});
 
