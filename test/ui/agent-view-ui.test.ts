@@ -202,6 +202,25 @@ describe('AgentViewUI', () => {
 			expect(callbacks.showSkillPicker).not.toHaveBeenCalled();
 		});
 
+		it('should ignore a plain synthetic input event without throwing (#1675)', () => {
+			// Obsidian adds `instanceOf` to UIEvent only, so a plain `Event` has none.
+			// jsdom reports listener exceptions to the window rather than rethrowing.
+			const errors: unknown[] = [];
+			const onError = (e: ErrorEvent) => {
+				errors.push(e.error);
+				e.preventDefault();
+			};
+			window.addEventListener('error', onError);
+			try {
+				userInput.innerText = '/';
+				userInput.dispatchEvent(new Event('input', { bubbles: true }));
+			} finally {
+				window.removeEventListener('error', onError);
+			}
+			expect(errors).toEqual([]);
+			expect(callbacks.showSkillPicker).not.toHaveBeenCalled();
+		});
+
 		it('should open the skill picker from the send-bar button (#1661)', () => {
 			const button = container.querySelector<HTMLButtonElement>('.gemini-agent-skill-btn');
 			expect(button).not.toBeNull();

@@ -423,8 +423,10 @@ export class AgentViewUI {
 		// `data` is the whole run, so composition inserts count too, matched on
 		// the trailing character. Programmatic inserts (paste, skill tokens,
 		// example prompts) don't fire `input`, so they can't trigger a picker.
+		// Obsidian adds `instanceOf` to UIEvent only, so a plain `Event('input')`
+		// dispatched by another plugin or script has none; skip it (#1675).
 		userInput.addEventListener('input', (e) => {
-			if (!e.instanceOf(InputEvent)) return;
+			if (typeof e.instanceOf !== 'function' || !e.instanceOf(InputEvent)) return;
 			if (e.inputType !== 'insertText' && e.inputType !== 'insertCompositionText') return;
 			const data = e.data ?? '';
 
