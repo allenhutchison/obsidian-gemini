@@ -102,6 +102,22 @@ describe('provider card model-count probe', () => {
 		expect(Notice).toHaveBeenCalledWith(expect.stringContaining('Anthropic'));
 	});
 
+	it('stores a cleared API key picker as an empty secret name, not null', async () => {
+		const { ctx } = buildCtx({ anthropicApiKeySecretName: 'anthropic-key' });
+		const page = providerCardPage(ctx, cardSpec('anthropic'));
+		const secretRow = (page.items ?? [])[0] as unknown as {
+			render: (s: { controlEl: HTMLElement; components: unknown[] }) => void;
+		};
+		const setting = { controlEl: document.createElement('div'), components: [] as unknown[] };
+
+		secretRow.render(setting);
+		const picker = setting.components[0] as { _onChange: (value: string | null) => Promise<void> };
+		await picker._onChange(null);
+
+		expect(ctx.plugin.settings.anthropicApiKeySecretName).toBe('');
+		expect(ctx.plugin.saveSettings).toHaveBeenCalled();
+	});
+
 	it('keeps probing Ollama, which needs no key', () => {
 		const { ctx, getModels } = buildCtx();
 
