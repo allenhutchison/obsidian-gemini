@@ -410,6 +410,63 @@ describe('GeminiClient', () => {
 			const params = interactionsCreateMock.mock.calls[0][0];
 			expect(params.generation_config.thinking_level).toBeUndefined();
 		});
+
+		// Not every model accepts every level: gemini-4-argon and the -latest
+		// aliases 400 on `minimal` (#1678).
+		describe('rejected thinking level', () => {
+			const rejection = () =>
+				new Error(
+					'{"error":{"message":"Thinking level THINKING_LEVEL_MINIMAL is not supported for this model. Please retry with other thinking level.","code":"invalid_request"}}'
+				);
+			const argonCompletions = () =>
+				new GeminiClient(
+					{ apiKey: 'test-api-key', model: 'gemini-4-argon', useCase: ModelUseCase.COMPLETIONS },
+					new GeminiPrompts(mockPlugin),
+					mockPlugin
+				);
+
+			test('retries once at the model default, keeping thinking summaries', async () => {
+				interactionsCreateMock.mockRejectedValueOnce(rejection());
+				const response = await argonCompletions().generateModelResponse({ kind: 'base', prompt: 'hi' });
+
+				expect(response.markdown).toBe('ok');
+				expect(interactionsCreateMock).toHaveBeenCalledTimes(2);
+				expect(interactionsCreateMock.mock.calls[0][0].generation_config.thinking_level).toBe('minimal');
+				const retried = interactionsCreateMock.mock.calls[1][0].generation_config;
+				expect(retried.thinking_level).toBeUndefined();
+				expect(retried.thinking_summaries).toBe('auto');
+			});
+
+			test('skips the rejected level on later requests from the same client', async () => {
+				interactionsCreateMock.mockRejectedValueOnce(rejection());
+				const client = argonCompletions();
+				await client.generateModelResponse({ kind: 'base', prompt: 'hi' });
+				await client.generateModelResponse({ kind: 'base', prompt: 'again' });
+
+				expect(interactionsCreateMock).toHaveBeenCalledTimes(3);
+				expect(interactionsCreateMock.mock.calls[2][0].generation_config.thinking_level).toBeUndefined();
+			});
+
+			test('rethrows errors that are not about the thinking level', async () => {
+				interactionsCreateMock.mockRejectedValueOnce(new Error('Request contains an invalid argument.'));
+				await expect(argonCompletions().generateModelResponse({ kind: 'base', prompt: 'hi' })).rejects.toThrow(
+					'invalid argument'
+				);
+				expect(interactionsCreateMock).toHaveBeenCalledTimes(1);
+			});
+
+			test('retries on the streaming path too', async () => {
+				interactionsCreateMock.mockReset();
+				interactionsCreateMock.mockRejectedValueOnce(rejection()).mockResolvedValueOnce({
+					async *[Symbol.asyncIterator]() {},
+				});
+				await argonCompletions().generateStreamingResponse({ kind: 'base', prompt: 'hi' }, () => {}).complete;
+
+				expect(interactionsCreateMock).toHaveBeenCalledTimes(2);
+				expect(interactionsCreateMock.mock.calls[1][0].generation_config.thinking_level).toBeUndefined();
+				expect(interactionsCreateMock.mock.calls[1][0].stream).toBe(true);
+			});
+		});
 	});
 
 	// Wiring coverage: the constructor must route through createGoogleGenAI so a
