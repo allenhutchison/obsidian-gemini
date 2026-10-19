@@ -1,9 +1,18 @@
 import { App, FuzzySuggestModal, TFile, TFolder, TAbstractFile } from 'obsidian';
 import { shouldExcludePathForPlugin } from '../../utils/file-utils';
-import { classifyFile, FileCategory } from '../../utils/file-classification';
+import { classifyFile, FileCategory, mimeKind, type MimeKind } from '../../utils/file-classification';
 import { collectFoldersFromFolder } from '../../utils/folder-walk';
 import type { ObsidianGemini } from '../../types/plugin';
 import { t } from '../../i18n';
+
+/** Emoji prefixed to a binary file's path in the mention picker, by attachment kind. */
+const MENTION_ICON_BY_MIME_KIND: Record<MimeKind, string> = {
+	image: '🖼',
+	audio: '🎵',
+	video: '🎬',
+	pdf: '📄',
+	other: '📎',
+};
 
 export class FileMentionModal extends FuzzySuggestModal<TAbstractFile> {
 	private onSelect: (file: TAbstractFile) => void;
@@ -57,10 +66,6 @@ export class FileMentionModal extends FuzzySuggestModal<TAbstractFile> {
 	}
 
 	private getIconForMime(mimeType: string): string {
-		if (mimeType.startsWith('image/')) return '🖼';
-		if (mimeType === 'application/pdf') return '📄';
-		if (mimeType.startsWith('audio/')) return '🎵';
-		if (mimeType.startsWith('video/')) return '🎬';
-		return '📎';
+		return MENTION_ICON_BY_MIME_KIND[mimeKind(mimeType)];
 	}
 }

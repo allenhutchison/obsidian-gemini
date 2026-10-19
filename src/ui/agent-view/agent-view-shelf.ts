@@ -1,8 +1,17 @@
 import { App, TFile, TFolder, setIcon, setTooltip } from 'obsidian';
 import { InlineAttachment } from './inline-attachment';
-import { classifyFile, FileCategory } from '../../utils/file-classification';
+import { classifyFile, FileCategory, mimeKind, type MimeKind } from '../../utils/file-classification';
 import { collectFilesFromFolder } from '../../utils/folder-walk';
 import { t } from '../../i18n';
+
+/** Lucide icon shown on a shelf chip, by attachment kind. */
+const SHELF_ICON_BY_MIME_KIND: Record<MimeKind, string> = {
+	image: 'image',
+	audio: 'music',
+	video: 'video',
+	pdf: 'file-text',
+	other: 'file',
+};
 
 /**
  * Recursively collects all supported text files from a folder,
@@ -361,11 +370,7 @@ export class AgentViewShelf {
 	}
 
 	private getIconForMime(mimeType: string): string {
-		if (mimeType === 'application/pdf') return 'file-text';
-		if (mimeType.startsWith('audio/')) return 'music';
-		if (mimeType.startsWith('video/')) return 'video';
-		if (mimeType.startsWith('image/')) return 'image';
-		return 'file';
+		return SHELF_ICON_BY_MIME_KIND[mimeKind(mimeType)];
 	}
 
 	private handleRemove(item: ShelfItem): void {
