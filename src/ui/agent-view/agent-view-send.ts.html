@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">33.11% </span>
+                <span class="strong">34.09% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>103/311</span>
+                <span class='fraction'>104/305</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">20.27% </span>
+                <span class="strong">21.48% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>29/143</span>
+                <span class='fraction'>29/135</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">33.55% </span>
+                <span class="strong">34.24% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>99/295</span>
+                <span class='fraction'>100/292</span>
             </div>
         
             
@@ -1116,7 +1116,16 @@
 <a name='L1051'></a><a href='#L1051'>1051</a>
 <a name='L1052'></a><a href='#L1052'>1052</a>
 <a name='L1053'></a><a href='#L1053'>1053</a>
-<a name='L1054'></a><a href='#L1054'>1054</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L1054'></a><a href='#L1054'>1054</a>
+<a name='L1055'></a><a href='#L1055'>1055</a>
+<a name='L1056'></a><a href='#L1056'>1056</a>
+<a name='L1057'></a><a href='#L1057'>1057</a>
+<a name='L1058'></a><a href='#L1058'>1058</a>
+<a name='L1059'></a><a href='#L1059'>1059</a>
+<a name='L1060'></a><a href='#L1060'>1060</a>
+<a name='L1061'></a><a href='#L1061'>1061</a>
+<a name='L1062'></a><a href='#L1062'>1062</a>
+<a name='L1063'></a><a href='#L1063'>1063</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1134,6 +1143,19 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1574,10 +1596,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2192,6 +2210,19 @@ import { AgentViewShelf } from './agent-view-shelf';
 import type { ObsidianGemini } from '../../types/plugin';
 import { t } from '../../i18n';
 import { projectScopeStatement } from '../../tools/vault/utils';
+import { mimeKind, type MimeKind } from '../../utils/file-classification';
+&nbsp;
+/**
+ * Label shown beside a non-image attachment in the sent message's
+ * "Attachment Source" callout. Persisted into session history, so these stay
+ * English rather than going through `t()`.
+ */
+const ATTACHMENT_LABEL_BY_MIME_KIND: Record&lt;Exclude&lt;MimeKind, 'image'&gt;, string&gt; = {
+	audio: 'Audio',
+	video: 'Video',
+	pdf: 'PDF',
+	other: 'Attachment',
+};
 &nbsp;
 /**
  * Context interface for the send module.
@@ -2623,15 +2654,11 @@ export class AgentViewSend {
 		const otherPaths: { path: string; label: string }[] = <span class="cstat-no" title="statement not covered" >[];</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >		for (const { attachment, path } of savedAttachments) {</span>
-			const mimeType = <span class="cstat-no" title="statement not covered" >attachment.mimeType || '';</span>
-<span class="cstat-no" title="statement not covered" >			if (mimeType.startsWith('image/')) {</span>
+			const kind = <span class="cstat-no" title="statement not covered" >mimeKind(attachment.mimeType);</span>
+<span class="cstat-no" title="statement not covered" >			if (kind === 'image') {</span>
 <span class="cstat-no" title="statement not covered" >				imagePaths.push(path);</span>
 			} else {
-				let label = <span class="cstat-no" title="statement not covered" >'Attachment';</span>
-<span class="cstat-no" title="statement not covered" >				if (mimeType.startsWith('audio/')) <span class="cstat-no" title="statement not covered" >label = 'Audio';</span></span>
-				else <span class="cstat-no" title="statement not covered" >if (mimeType.startsWith('video/')) <span class="cstat-no" title="statement not covered" >label = 'Video';</span></span>
-				else <span class="cstat-no" title="statement not covered" >if (mimeType === 'application/pdf') <span class="cstat-no" title="statement not covered" >label = 'PDF';</span></span>
-<span class="cstat-no" title="statement not covered" >				otherPaths.push({ path, label });</span>
+<span class="cstat-no" title="statement not covered" >				otherPaths.push({ path, label: ATTACHMENT_LABEL_BY_MIME_KIND[kind] });</span>
 			}
 		}
 &nbsp;
@@ -3229,7 +3256,7 @@ To reference an attachment in your response, use the path shown above.`;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-10-19T17:15:22.005Z
+                at 2026-10-19T17:15:48.063Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
