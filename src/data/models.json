@@ -1,6 +1,6 @@
 {
 	"version": 1,
-	"lastUpdated": "2026-10-12T17:05:17.697Z",
+	"lastUpdated": "2026-10-19T15:04:42.870Z",
 	"models": [
 		{
 			"value": "gemini-pro-latest",
@@ -135,6 +135,11 @@
 			"value": "gemini-nano-banana-2.1",
 			"label": "Nano Banana 2.1",
 			"maxTemperature": 1
+		},
+		{
+			"value": "gemini-4-argon",
+			"label": "Gemini 4 Argon",
+			"maxTemperature": 2
 		}
 	]
 }
