@@ -6,6 +6,7 @@ import {
 	GEMINI_INLINE_DATA_LIMIT,
 	GEMINI_INLINE_BINARY_MIMES,
 	OBSIDIAN_TEXT_EXTENSIONS,
+	mimeKind,
 } from '../../src/utils/file-classification';
 
 // Mock the gemini-utils module
@@ -235,6 +236,34 @@ describe('file-classification', () => {
 		it('should include Obsidian text extensions', () => {
 			expect(OBSIDIAN_TEXT_EXTENSIONS['base']).toBe('application/yaml');
 			expect(OBSIDIAN_TEXT_EXTENSIONS['canvas']).toBe('application/json');
+		});
+	});
+
+	describe('mimeKind', () => {
+		it('buckets image types', () => {
+			expect(mimeKind('image/png')).toBe('image');
+			expect(mimeKind('image/svg+xml')).toBe('image');
+		});
+
+		it('buckets audio types', () => {
+			expect(mimeKind('audio/wav')).toBe('audio');
+			expect(mimeKind('audio/mp3')).toBe('audio');
+		});
+
+		it('buckets video types', () => {
+			expect(mimeKind('video/mp4')).toBe('video');
+			expect(mimeKind('video/quicktime')).toBe('video');
+		});
+
+		it('buckets PDF exactly, not by prefix', () => {
+			expect(mimeKind('application/pdf')).toBe('pdf');
+			expect(mimeKind('application/pdfx')).toBe('other');
+		});
+
+		it('falls back to other for unknown, empty and missing types', () => {
+			expect(mimeKind('application/zip')).toBe('other');
+			expect(mimeKind('')).toBe('other');
+			expect(mimeKind(undefined)).toBe('other');
 		});
 	});
 });

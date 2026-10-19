@@ -56,6 +56,35 @@ export const OBSIDIAN_TEXT_EXTENSIONS: Record<string, string> = {
 	canvas: 'application/json',
 };
 
+/**
+ * The attachment kinds the agent-view surfaces present differently. Keyed off a
+ * MIME type rather than an extension because those surfaces hold an already
+ * classified attachment (`InlineAttachment.mimeType`), not a filename — and the
+ * pipeline deliberately diverges the two (SVG rasterized to PNG, `.webm`
+ * resolved to audio vs video, clipboard pastes with no filename at all).
+ */
+export type MimeKind = 'image' | 'audio' | 'video' | 'pdf' | 'other';
+
+/**
+ * Bucket a MIME type into the kind a presentation surface keys off. Each caller
+ * keeps its own lookup table on the result (a Lucide icon, an emoji, a label),
+ * because only the categorization is shared — those vocabularies are unrelated.
+ *
+ * **Not for provider wire encoding.** `mediaTypeForMime` in
+ * `src/api/providers/gemini/interactions-mapper.ts` runs a similar ladder, but
+ * its `null` means "drop this attachment from the payload and degrade it to a
+ * text note", not "show the generic icon". Keep that decision in the provider
+ * layer, so adding a bucket here can never change what goes on the wire.
+ */
+export function mimeKind(mimeType: string | undefined): MimeKind {
+	const mime = mimeType ?? '';
+	if (mime.startsWith('image/')) return 'image';
+	if (mime.startsWith('audio/')) return 'audio';
+	if (mime.startsWith('video/')) return 'video';
+	if (mime === 'application/pdf') return 'pdf';
+	return 'other';
+}
+
 export enum FileCategory {
 	TEXT = 'text',
 	GEMINI_BINARY = 'gemini_binary',

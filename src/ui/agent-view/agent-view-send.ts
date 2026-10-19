@@ -21,6 +21,19 @@ import { AgentViewShelf } from './agent-view-shelf';
 import type { ObsidianGemini } from '../../types/plugin';
 import { t } from '../../i18n';
 import { projectScopeStatement } from '../../tools/vault/utils';
+import { mimeKind, type MimeKind } from '../../utils/file-classification';
+
+/**
+ * Label shown beside a non-image attachment in the sent message's
+ * "Attachment Source" callout. Persisted into session history, so these stay
+ * English rather than going through `t()`.
+ */
+const ATTACHMENT_LABEL_BY_MIME_KIND: Record<Exclude<MimeKind, 'image'>, string> = {
+	audio: 'Audio',
+	video: 'Video',
+	pdf: 'PDF',
+	other: 'Attachment',
+};
 
 /**
  * Context interface for the send module.
@@ -452,15 +465,11 @@ export class AgentViewSend {
 		const otherPaths: { path: string; label: string }[] = [];
 
 		for (const { attachment, path } of savedAttachments) {
-			const mimeType = attachment.mimeType || '';
-			if (mimeType.startsWith('image/')) {
+			const kind = mimeKind(attachment.mimeType);
+			if (kind === 'image') {
 				imagePaths.push(path);
 			} else {
-				let label = 'Attachment';
-				if (mimeType.startsWith('audio/')) label = 'Audio';
-				else if (mimeType.startsWith('video/')) label = 'Video';
-				else if (mimeType === 'application/pdf') label = 'PDF';
-				otherPaths.push({ path, label });
+				otherPaths.push({ path, label: ATTACHMENT_LABEL_BY_MIME_KIND[kind] });
 			}
 		}
 
