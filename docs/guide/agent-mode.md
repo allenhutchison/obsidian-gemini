@@ -199,7 +199,7 @@ For detailed information about context files and advanced usage, see the [Contex
 
 ### Model Reasoning
 
-When you use a thinking model (every current Gemini model, from Gemini 2.5 on, including the `-latest` aliases), the agent captures the model's reasoning ("thinking") for each turn and keeps it after the response completes:
+When you use a thinking model (the Gemini chat models from Gemini 2.5 on, including the `-latest` aliases), the agent captures the model's reasoning ("thinking") for each turn and keeps it after the response completes:
 
 - Each reasoning step shows as a collapsed **🧠 Reasoning** line (collapsed by default) — click to expand and see how the model worked through that step.
 - During a tool-using turn, reasoning is **interleaved into the tool activity block** alongside the tool calls, in the order it happened (reason → call tools → reason → call more tools). Expand the activity block to see the full stream.
