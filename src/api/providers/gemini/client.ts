@@ -35,9 +35,24 @@ import {
 } from './interactions-mapper';
 
 /**
- * Per-use-case reasoning depth for Gemini 3.x `thinkingConfig.thinkingLevel`
- * on the Interactions API (which accepts `thinking_level` for every
- * thinking-capable model, including Gemini 2.5 — see `supportsThinking`).
+ * Gemini generations that predate thinking: 1.x, 2.0–2.4, and the bare 1.0-era
+ * `gemini-pro` / `gemini-pro-vision` ids. Everything else named `gemini` thinks.
+ */
+const LEGACY_NON_THINKING_MODEL = /gemini-(?:1(?:\.\d+)?|2\.[0-4])(?![\d.])|^gemini-pro(?:-vision)?$/;
+
+/**
+ * Matches the 400 the Interactions API returns when a model doesn't accept the
+ * requested `thinking_level` — e.g. "Thinking level THINKING_LEVEL_MINIMAL is
+ * not supported for this model", "'minimal' is not a supported thinking level",
+ * or, on 2.5-flash-lite, an invalid mapped "thinking budget".
+ */
+const THINKING_LEVEL_REJECTED = /thinking[ _]level|thinking budget/i;
+
+/**
+ * Per-use-case reasoning depth sent as `thinking_level` on the Interactions
+ * API. Not every model accepts every level (`minimal` is rejected by
+ * `gemini-4-argon` and the `-latest` aliases, among others); a rejected level
+ * is retried once at the model's default — see `createInteraction`.
  * These are starting points
  * (see #621; tune against the eval suite in #619): latency-sensitive paths
  * think the least, while CHAT — which is the agent loop — thinks the most.
@@ -71,6 +86,11 @@ export class GeminiClient implements ModelApi {
 	private config: GeminiClientConfig;
 	private prompts: GeminiPrompts;
 	private plugin?: ObsidianGemini;
+	/**
+	 * `model:level` pairs the API has rejected on this client, so later requests
+	 * skip straight to the model's default level instead of paying a 400 first.
+	 */
+	private rejectedThinkingLevels = new Set<string>();
 
 	constructor(config: GeminiClientConfig, prompts?: GeminiPrompts, plugin?: ObsidianGemini) {
 		this.config = config;
@@ -133,7 +153,7 @@ export class GeminiClient implements ModelApi {
 		const params = await this.buildInteractionParams(request);
 
 		try {
-			const interaction = await this.interactionsClient.create(params);
+			const interaction = await this.createInteraction(params);
 			return extractModelResponseFromInteraction(interaction);
 		} catch (error) {
 			this.plugin?.logger.error('[GeminiClient] Error creating interaction:', error);
@@ -174,7 +194,7 @@ export class GeminiClient implements ModelApi {
 			start: async (signal) => {
 				const params = await this.buildInteractionParams(request);
 				params.stream = true;
-				const stream = await this.interactionsClient.create(params, { signal });
+				const stream = await this.createInteraction(params, { signal });
 				activeStream = stream;
 				// cancel() may have fired while the create was pending — the
 				// signal already aborted the request; abort the stream's
@@ -198,6 +218,34 @@ export class GeminiClient implements ModelApi {
 	}
 
 	/**
+	 * `interactions.create`, retried once without `thinking_level` when the model
+	 * rejects the requested level. The levels each model accepts aren't
+	 * published per model, so the API's own 400 is the source of truth; dropping
+	 * the level falls back to the model's default depth while keeping
+	 * `thinking_summaries`.
+	 */
+	private async createInteraction(
+		params: Record<string, unknown>,
+		options?: { signal?: AbortSignal }
+	): ReturnType<GeminiClient['interactionsClient']['create']> {
+		try {
+			return await this.interactionsClient.create(params, options);
+		} catch (error) {
+			const generationConfig = params.generation_config as Record<string, unknown> | undefined;
+			const level = generationConfig?.thinking_level;
+			const message = error instanceof Error ? error.message : String(error);
+			if (!generationConfig || typeof level !== 'string' || !THINKING_LEVEL_REJECTED.test(message)) throw error;
+
+			this.rejectedThinkingLevels.add(`${String(params.model)}:${level}`);
+			this.plugin?.logger.warn(
+				`[GeminiClient] ${String(params.model)} rejected thinking_level "${level}"; retrying at the model default`
+			);
+			const { thinking_level: _dropped, ...rest } = generationConfig;
+			return this.interactionsClient.create({ ...params, generation_config: rest }, options);
+		}
+	}
+
+	/**
 	 * Build Interactions `create` params from our request format, emitting the
 	 * snake_case Interactions surface. Stateless: full history is replayed in
 	 * `input` and `store` is false, so no `previous_interaction_id` is used.
@@ -213,8 +261,8 @@ export class GeminiClient implements ModelApi {
 		};
 		// Interactions uses lowercase thinking levels; reuse the per-use-case map.
 		if (this.supportsThinking(model)) {
-			generationConfig.thinking_level =
-				THINKING_LEVEL_BY_USE_CASE[this.config.useCase ?? ModelUseCase.CHAT].toLowerCase();
+			const level = THINKING_LEVEL_BY_USE_CASE[this.config.useCase ?? ModelUseCase.CHAT].toLowerCase();
+			if (!this.rejectedThinkingLevels.has(`${model}:${level}`)) generationConfig.thinking_level = level;
 			generationConfig.thinking_summaries = 'auto';
 		}
 
@@ -298,11 +346,15 @@ export class GeminiClient implements ModelApi {
 	}
 
 	/**
-	 * Check if a model supports thinking/reasoning mode. Gated on this alone —
-	 * unlike `generateContent`, the Interactions API accepts `thinking_level`
-	 * for every thinking-capable model (Gemini 2.5, 3.x, thinking-exp) and
-	 * normalizes it server-side, so there is no separate "does this model take
-	 * the 3.x-only knob" check on this transport.
+	 * Check if a model supports thinking/reasoning mode. Which `thinking_level`
+	 * values a model accepts varies and isn't checked here; `createInteraction`
+	 * handles a rejected level.
+	 *
+	 * Every current Gemini model thinks, so this is a denylist of the legacy
+	 * pre-2.5 generations rather than an allowlist of versions: an allowlist
+	 * silently dropped thinking for each new generation (`gemini-4-argon`,
+	 * #1678) and for the version-less aliases (`gemini-flash-latest`,
+	 * `gemini-omni-*`).
 	 */
 	private supportsThinking(model: string | undefined): boolean {
 		if (!model) {
@@ -310,9 +362,10 @@ export class GeminiClient implements ModelApi {
 			return false;
 		}
 
-		const modelLower = model.toLowerCase();
+		const modelLower = model.trim().toLowerCase();
 		const isSupported =
-			modelLower.includes('gemini-2.5') || modelLower.includes('gemini-3') || modelLower.includes('thinking-exp');
+			modelLower.includes('thinking-exp') ||
+			(modelLower.includes('gemini') && !LEGACY_NON_THINKING_MODEL.test(modelLower));
 
 		if (isSupported) {
 			this.plugin?.logger.debug(`[GeminiClient] Enabling thinking mode for model: ${model}`);
