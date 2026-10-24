@@ -408,5 +408,12 @@ npm test        # Run tests
 ```
 
 ## Credits
+import { GoogleGenAI } from '@google/genai';
 
+const ai = new GoogleGenAI({});
+const response = await ai.models.generateContent({
+	model: 'gemini-3-flash-preview',
+	contents: 'Explain quantum computing',
+});
+console.log(response.text);
 Created by Allen Hutchison
