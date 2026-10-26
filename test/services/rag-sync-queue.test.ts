@@ -73,6 +73,12 @@ describe('RagSyncQueue', () => {
 			saveCache: vi.fn().mockResolvedValue(undefined),
 			incrementAndMaybeSaveCache: vi.fn().mockResolvedValue(0),
 			refreshIndexedCount: vi.fn(),
+			// Mirrors the real RagCache.recordFile so the cache-entry assertions
+			// below keep checking the entry the queue actually asked it to write.
+			recordFile: vi.fn((filePath: string, contentHash: string) => {
+				if (!mockCache.cache) return;
+				mockCache.cache.files[filePath] = { contentHash, lastIndexed: Date.now() };
+			}),
 		};
 
 		mockRateLimiter = {

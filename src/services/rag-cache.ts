@@ -150,6 +150,28 @@ export class RagCache {
 	}
 
 	/**
+	 * Stamp a file's cache entry: its content hash, indexed now.
+	 *
+	 * The three write sites (a freshly indexed file and an untracked skipped
+	 * file during a vault scan, and a created/modified file in the sync queue)
+	 * differ only in where the hash came from, so they pass it in. Owning the
+	 * entry shape here means a new `IndexedFileEntry` field is added once
+	 * rather than in two modules, where an optional one would compile with a
+	 * site missed.
+	 *
+	 * No-op when no cache is loaded. Deliberately does not touch
+	 * `indexedCount`: every caller is inside a batch that refreshes it once at
+	 * the end via `refreshIndexedCount()`.
+	 */
+	recordFile(filePath: string, contentHash: string): void {
+		if (!this._cache) return;
+		this._cache.files[filePath] = {
+			contentHash,
+			lastIndexed: Date.now(),
+		};
+	}
+
+	/**
 	 * Increment counter and save cache if threshold reached.
 	 * Returns the new counter value (reset to 0 after save, otherwise incremented).
 	 */

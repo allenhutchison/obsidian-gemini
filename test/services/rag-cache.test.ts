@@ -235,6 +235,53 @@ describe('RagCache', () => {
 		});
 	});
 
+	describe('recordFile', () => {
+		it('should stamp the entry with the hash and the current time', () => {
+			vi.useFakeTimers();
+			vi.setSystemTime(new Date('2026-10-26T00:00:00Z'));
+			cache.cache = { version: '1.0', storeName: 'test', lastSync: 0, files: {} };
+
+			cache.recordFile('Notes/a.md', 'hash-a');
+
+			expect(cache.cache?.files['Notes/a.md']).toEqual({
+				contentHash: 'hash-a',
+				lastIndexed: Date.parse('2026-10-26T00:00:00Z'),
+			});
+			vi.useRealTimers();
+		});
+
+		it('should overwrite an existing entry for the same path', () => {
+			cache.cache = {
+				version: '1.0',
+				storeName: 'test',
+				lastSync: 0,
+				files: { 'Notes/a.md': { contentHash: 'old', lastIndexed: 1 } },
+			};
+
+			cache.recordFile('Notes/a.md', 'new');
+
+			expect(cache.cache?.files['Notes/a.md'].contentHash).toBe('new');
+		});
+
+		// Callers are inside a batch that refreshes the count once at the end,
+		// so recording a file must not move it on its own.
+		it('should not touch indexedCount', () => {
+			cache.cache = { version: '1.0', storeName: 'test', lastSync: 0, files: {} };
+			cache.indexedCount = 7;
+
+			cache.recordFile('Notes/a.md', 'hash-a');
+
+			expect(cache.indexedCount).toBe(7);
+		});
+
+		it('should be a no-op when no cache is loaded', () => {
+			cache.cache = null;
+
+			expect(() => cache.recordFile('Notes/a.md', 'hash-a')).not.toThrow();
+			expect(cache.cache).toBeNull();
+		});
+	});
+
 	describe('incrementAndMaybeSaveCache', () => {
 		it('should increment counter below threshold', async () => {
 			cache.cache = { version: '1.0', storeName: 'test', lastSync: 0, files: {} };

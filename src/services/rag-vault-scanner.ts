@@ -27,6 +27,20 @@ export interface VaultScannerCallbacks {
 }
 
 /**
+ * The processed/total pair an upload progress event reports.
+ *
+ * "Processed" is completed + skipped: a smart-sync pass reports an unchanged
+ * file as skipped rather than completed, so counting only `completedFiles`
+ * would leave the progress bar stalled behind the work actually done.
+ */
+function progressFromEvent(event: UploadProgressEvent): Pick<IndexProgress, 'current' | 'total'> {
+	return {
+		current: (event.completedFiles || 0) + (event.skippedFiles || 0),
+		total: event.totalFiles || 0,
+	};
+}
+
+/**
  * Manages vault-wide indexing operations, file search store management,
  * and interrupted indexing recovery for the RAG indexing service.
  */
@@ -455,11 +469,14 @@ export class RagVaultScanner {
 
 					// Map gemini-utils progress events to our format
 					if (event.type === 'start') {
-						this.indexingProgress = { current: 0, total: event.totalFiles || 0 };
+						// Not progressFromEvent: completedFiles/skippedFiles are absent here,
+						// and pinning to 0 states the intent rather than trusting the uploader
+						// to have zeroed them.
+						const progress = { current: 0, total: event.totalFiles || 0 };
+						this.indexingProgress = progress;
 						this.callbacks.onNotifyListeners();
 						progressCallback?.({
-							current: 0,
-							total: event.totalFiles || 0,
+							...progress,
 							message: `Found ${event.totalFiles} files to index`,
 						});
 					} else if (event.type === 'file_start') {
@@ -472,23 +489,17 @@ export class RagVaultScanner {
 						// Update cache for newly indexed file
 						if (this.ragCache.cache && event.currentFile && vaultAdapter) {
 							const contentHash = await vaultAdapter.computeHash(event.currentFile);
-							this.ragCache.cache.files[event.currentFile] = {
-								contentHash,
-								lastIndexed: Date.now(),
-							};
+							this.ragCache.recordFile(event.currentFile, contentHash);
 							// Track last indexed file for resume capability
 							this.ragCache.cache.lastIndexedFile = event.currentFile;
 						}
 						// Incremental cache save for durability
 						filesSinceLastSave = await this.ragCache.incrementAndMaybeSaveCache(filesSinceLastSave);
-						this.indexingProgress = {
-							current: (event.completedFiles || 0) + (event.skippedFiles || 0),
-							total: event.totalFiles || 0,
-						};
+						const progress = progressFromEvent(event);
+						this.indexingProgress = progress;
 						this.callbacks.onNotifyListeners();
 						progressCallback?.({
-							current: (event.completedFiles || 0) + (event.skippedFiles || 0),
-							total: event.totalFiles || 0,
+							...progress,
 							currentFile: event.currentFile,
 						});
 						this.callbacks.onUpdateStatusBar();
@@ -504,17 +515,11 @@ export class RagVaultScanner {
 							vaultAdapter
 						) {
 							const contentHash = await vaultAdapter.computeHash(event.currentFile);
-							this.ragCache.cache.files[event.currentFile] = {
-								contentHash,
-								lastIndexed: Date.now(),
-							};
+							this.ragCache.recordFile(event.currentFile, contentHash);
 						}
 						// Incremental cache save for durability (count skipped files too)
 						filesSinceLastSave = await this.ragCache.incrementAndMaybeSaveCache(filesSinceLastSave);
-						this.indexingProgress = {
-							current: (event.completedFiles || 0) + (event.skippedFiles || 0),
-							total: event.totalFiles || 0,
-						};
+						this.indexingProgress = progressFromEvent(event);
 						this.callbacks.onNotifyListeners();
 						this.callbacks.onUpdateStatusBar();
 					} else if (event.type === 'file_error') {
@@ -538,6 +543,9 @@ export class RagVaultScanner {
 							throw event.error;
 						}
 					} else if (event.type === 'complete') {
+						// Also not progressFromEvent: this pins the bar to 100%, which is not
+						// completed + skipped when files errored (file_error increments
+						// neither counter).
 						this.currentFile = undefined;
 						this.callbacks.onNotifyListeners();
 						progressCallback?.({
