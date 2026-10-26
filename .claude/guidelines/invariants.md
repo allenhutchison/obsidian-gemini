@@ -34,8 +34,12 @@ src/main.ts → ModelClientFactory.createFromPlugin() → GeminiClient | OllamaC
   reverse; `featureModel` returns the stored string verbatim — default-model resolution lives in `models.ts`.
 - Routing is total over every `FeatureId` in `FEATURE_IDS` (`src/types/features.ts`) — keep features distinct.
   The factory serves the four use-case features via `FEATURE_FOR_USE_CASE` (`src/api/factory.ts`); the rest
-  (`webSearch`, `deepResearch`, `rag`, `imageGen`) resolve the same way at their own consumers (e.g. tool
-  registration gates in `src/tools/tool-registrar.ts`) via `featureProvider`/`featureRoute`.
+  (`webSearch`, `deepResearch`, `rag`, `imageGen`) resolve the same way at their own consumers via
+  `featureProvider`/`featureRoute`, or — where the consumer also needs the provider's credential to resolve on
+  this device — via `featureStatus` (`src/api/provider-status.ts`), which is route + support + usable-here in one
+  answer. The tool-registration gates in `src/services/tool-registrar.ts` take the latter form: `web`,
+  `deep-research` and `image` each ask `featureStatus` for their own feature rather than restating the pair, so a
+  provider name never appears in the gate.
 - `ModelUseCase.SEARCH` bills to `chat`, not the `webSearch` feature: it's a thinking-level tier for
   query-understanding calls on the chat path, and routing it to `webSearch` would make a local-only install's chat
   calls hunt for a provider serving web search and find none.

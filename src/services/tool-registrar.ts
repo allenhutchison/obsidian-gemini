@@ -3,7 +3,6 @@ import { Tool } from '../tools/types';
 import { Logger } from '../utils/logger';
 import { getVaultTools } from '../tools/vault';
 import type { ObsidianGemini } from '../types/plugin';
-import { featureProvider } from '../api/feature-routing';
 import { featureStatus } from '../api/provider-status';
 
 /**
@@ -31,12 +30,12 @@ interface ToolSource {
  * registration/unregistration. Eliminates duplication between
  * setupGeminiScribe() and teardownGeminiScribe().
  *
- * Capability-coupled sources (web search/fetch, maps, deep research, image
- * generation) register only when their `gate` passes: web/deep-research/image
- * are gated on the routed feature resolving to a provider that supports it
- * *and* on that provider being configured (settings redesign — each is its own
- * feature, not one shared use case), and maps is provider-bound (gated on the
- * Gemini key resolving on this device, regardless of routing).
+ * Capability-coupled sources register only when their `gate` passes.
+ * web/deep-research/image each ask `featureStatus` for their own feature — the
+ * same routed/supported/usable-here condition the Features page shows, whose
+ * truth table `src/api/provider-status.ts` owns (settings redesign — each is
+ * its own feature, not one shared use case). maps is provider-bound instead:
+ * gated on the Gemini key resolving on this device, regardless of routing.
  *
  * The credential half of that gate is not belt-and-braces: a tool registered
  * against a provider with no key is advertised to the model and can only fail
@@ -50,12 +49,7 @@ export class ToolRegistrar {
 		{ name: 'vault', getTools: () => getVaultTools() },
 		{
 			name: 'web',
-			// Google Search/URL-context is Gemini-only today, but the routed
-			// provider alone isn't enough: a stale/hand-edited route can still
-			// say 'gemini' with no key configured, and the tool would register
-			// only to fail at call time. Require the key too, matching 'maps'.
-			// eslint-disable-next-line no-restricted-syntax -- per-provider tool wiring (web-search tool exists only for specific providers)
-			gate: (plugin) => featureProvider(plugin.settings, 'webSearch') === 'gemini' && hasGeminiKey(plugin),
+			gate: (plugin) => featureStatus(plugin, 'webSearch') === 'ok',
 			getTools: () => import('../tools/web-tools').then((m) => m.getWebTools()),
 		},
 		{
@@ -67,22 +61,17 @@ export class ToolRegistrar {
 		},
 		{
 			name: 'deep-research',
-			// Same reasoning as 'web': require both the route and the key.
-			// eslint-disable-next-line no-restricted-syntax -- per-provider tool wiring (web-search tool exists only for specific providers)
-			gate: (plugin) => featureProvider(plugin.settings, 'deepResearch') === 'gemini' && hasGeminiKey(plugin),
+			gate: (plugin) => featureStatus(plugin, 'deepResearch') === 'ok',
 			getTools: () => import('../tools/web-tools').then((m) => m.getDeepResearchTools()),
 		},
 		{ name: 'memory', getTools: () => import('../tools/memory-tool').then((m) => m.getMemoryTools()) },
 		{
 			name: 'image',
-			// Same reasoning as 'web' and 'deep-research': the route alone isn't
-			// enough. `featureStatus` is the exact condition `LifecycleService`
-			// uses to construct `plugin.imageGeneration`, so gating on it keeps
-			// the two in step — otherwise a route to a provider with no key
-			// registers `generate_image` against a null service and the agent
-			// spends a turn on a tool that can only answer "not available".
-			// It reads the *resolved* key, the same thing `hasGeminiKey` reads
-			// above, so a named-but-unsynced secret closes this gate too.
+			// `featureStatus` is also the condition `LifecycleService` uses to
+			// construct `plugin.imageGeneration`, so gating on it keeps the two
+			// in step — otherwise a route to a provider with no key registers
+			// `generate_image` against a null service and the agent spends a
+			// turn on a tool that can only answer "not available".
 			gate: (plugin) => featureStatus(plugin, 'imageGen') === 'ok',
 			getTools: () => import('../tools/image-tools').then((m) => m.getImageTools()),
 		},

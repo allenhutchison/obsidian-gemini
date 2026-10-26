@@ -1,4 +1,5 @@
 import { ToolRegistrar } from '../../src/services/tool-registrar';
+import { providersSupporting } from '../../src/api/providers/registry';
 
 // Mock all tool source modules
 vi.mock('../../src/tools/vault', () => ({
@@ -150,10 +151,9 @@ describe('ToolRegistrar', () => {
 			expect(mockRegistry.registerTool).toHaveBeenCalledWith(expect.objectContaining({ name: 'generate_image' }));
 		});
 
-		// The route alone used to be the whole gate here, unlike 'web' and
-		// 'deep-research'. `LifecycleService` only builds `plugin.imageGeneration`
-		// when the routed provider is configured, so a route with no key
-		// registered `generate_image` against a null service.
+		// `LifecycleService` only builds `plugin.imageGeneration` when the
+		// routed provider is configured, so a route with no key would register
+		// `generate_image` against a null service.
 		it('skips image tools when imageGen is routed to openai with no key configured', async () => {
 			mockPlugin.settings.features.imageGen = { provider: 'openai', model: 'gpt-image-2.5-flare' };
 			mockPlugin.settings.openaiApiKeySecretName = '';
@@ -173,9 +173,8 @@ describe('ToolRegistrar', () => {
 		});
 
 		// A settings file synced from another machine names a secret that was
-		// never stored here. 'web'/'maps'/'deep-research' already read the
-		// resolved key via hasGeminiKey; image now agrees with them through
-		// featureStatus rather than stopping at the saved secret name.
+		// never stored here. Every credential-gated source fails closed on the
+		// *resolved* key, not the saved secret name.
 		it('skips every credential-gated source when the secret name resolves to no key', async () => {
 			mockPlugin.settings.apiKeySecretName = 'gemini-key';
 			mockPlugin.apiKey = '';
@@ -282,6 +281,22 @@ describe('ToolRegistrar', () => {
 			expect(mockRegistry.registerTool).toHaveBeenCalledWith(expect.objectContaining({ name: 'read_file' }));
 			expect(mockRegistry.registerTool).toHaveBeenCalledWith(expect.objectContaining({ name: 'google_search' }));
 			expect(mockRegistry.registerTool).toHaveBeenCalledWith(expect.objectContaining({ name: 'activate_skill' }));
+		});
+	});
+
+	// The 'web' and 'deep-research' gates ask only whether the *routed* provider
+	// supports the feature and is usable here, but the tools behind them are
+	// Gemini-bound (Google Search, Google's URL Context API, Deep Research).
+	// That gate is only equivalent to "routed to a configured Gemini" while
+	// Gemini is the sole provider declaring these capabilities. If a registry
+	// entry ever flips one of them on for another provider, these sources must
+	// become provider-aware (or grow provider-specific implementations) before
+	// that lands — otherwise they register against the Gemini API with no
+	// Gemini key and can only fail when the model calls them.
+	describe('capability assumptions behind the Gemini-bound gates', () => {
+		it('only Gemini declares webSearch and deepResearch', () => {
+			expect(providersSupporting('webSearch')).toEqual(['gemini']);
+			expect(providersSupporting('deepResearch')).toEqual(['gemini']);
 		});
 	});
 
