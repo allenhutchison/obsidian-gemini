@@ -232,12 +232,7 @@ export class RagSyncQueue {
 							const content = await vaultAdapter.readFileForUpload(file.path, file.path);
 							if (content) {
 								await fileUploader.uploadContent(content, storeName);
-								if (this.ragCache.cache) {
-									this.ragCache.cache.files[file.path] = {
-										contentHash: content.hash,
-										lastIndexed: Date.now(),
-									};
-								}
+								this.ragCache.recordFile(file.path, content.hash);
 								// Incremental cache save for durability
 								changesSinceLastSave = await this.ragCache.incrementAndMaybeSaveCache(changesSinceLastSave);
 							}
