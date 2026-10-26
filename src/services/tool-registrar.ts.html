@@ -32,7 +32,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>6/6</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
@@ -179,18 +179,7 @@
 <a name='L114'></a><a href='#L114'>114</a>
 <a name='L115'></a><a href='#L115'>115</a>
 <a name='L116'></a><a href='#L116'>116</a>
-<a name='L117'></a><a href='#L117'>117</a>
-<a name='L118'></a><a href='#L118'>118</a>
-<a name='L119'></a><a href='#L119'>119</a>
-<a name='L120'></a><a href='#L120'>120</a>
-<a name='L121'></a><a href='#L121'>121</a>
-<a name='L122'></a><a href='#L122'>122</a>
-<a name='L123'></a><a href='#L123'>123</a>
-<a name='L124'></a><a href='#L124'>124</a>
-<a name='L125'></a><a href='#L125'>125</a>
-<a name='L126'></a><a href='#L126'>126</a>
-<a name='L127'></a><a href='#L127'>127</a>
-<a name='L128'></a><a href='#L128'>128</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L117'></a><a href='#L117'>117</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -203,8 +192,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">41x</span>
+<span class="cline-any cline-yes">17x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -242,11 +230,6 @@
 <span class="cline-any cline-yes">19x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">17x</span>
 <span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -259,15 +242,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">17x</span>
 <span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">19x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -322,7 +300,6 @@ import { Tool } from '../tools/types';
 import { Logger } from '../utils/logger';
 import { getVaultTools } from '../tools/vault';
 import type { ObsidianGemini } from '../types/plugin';
-import { featureProvider } from '../api/feature-routing';
 import { featureStatus } from '../api/provider-status';
 &nbsp;
 /**
@@ -350,12 +327,12 @@ interface ToolSource {
  * registration/unregistration. Eliminates duplication between
  * setupGeminiScribe() and teardownGeminiScribe().
  *
- * Capability-coupled sources (web search/fetch, maps, deep research, image
- * generation) register only when their `gate` passes: web/deep-research/image
- * are gated on the routed feature resolving to a provider that supports it
- * *and* on that provider being configured (settings redesign — each is its own
- * feature, not one shared use case), and maps is provider-bound (gated on the
- * Gemini key resolving on this device, regardless of routing).
+ * Capability-coupled sources register only when their `gate` passes.
+ * web/deep-research/image each ask `featureStatus` for their own feature — the
+ * same routed/supported/usable-here condition the Features page shows, whose
+ * truth table `src/api/provider-status.ts` owns (settings redesign — each is
+ * its own feature, not one shared use case). maps is provider-bound instead:
+ * gated on the Gemini key resolving on this device, regardless of routing.
  *
  * The credential half of that gate is not belt-and-braces: a tool registered
  * against a provider with no key is advertised to the model and can only fail
@@ -369,12 +346,7 @@ export class ToolRegistrar {
 		{ name: 'vault', getTools: () =&gt; getVaultTools() },
 		{
 			name: 'web',
-			// Google Search/URL-context is Gemini-only today, but the routed
-			// provider alone isn't enough: a stale/hand-edited route can still
-			// say 'gemini' with no key configured, and the tool would register
-			// only to fail at call time. Require the key too, matching 'maps'.
-			// eslint-disable-next-line no-restricted-syntax -- per-provider tool wiring (web-search tool exists only for specific providers)
-			gate: (plugin) =&gt; featureProvider(plugin.settings, 'webSearch') === 'gemini' &amp;&amp; hasGeminiKey(plugin),
+			gate: (plugin) =&gt; featureStatus(plugin, 'webSearch') === 'ok',
 			getTools: () =&gt; import('../tools/web-tools').then((m) =&gt; m.getWebTools()),
 		},
 		{
@@ -386,22 +358,17 @@ export class ToolRegistrar {
 		},
 		{
 			name: 'deep-research',
-			// Same reasoning as 'web': require both the route and the key.
-			// eslint-disable-next-line no-restricted-syntax -- per-provider tool wiring (web-search tool exists only for specific providers)
-			gate: (plugin) =&gt; featureProvider(plugin.settings, 'deepResearch') === 'gemini' &amp;&amp; hasGeminiKey(plugin),
+			gate: (plugin) =&gt; featureStatus(plugin, 'deepResearch') === 'ok',
 			getTools: () =&gt; import('../tools/web-tools').then((m) =&gt; m.getDeepResearchTools()),
 		},
 		{ name: 'memory', getTools: () =&gt; import('../tools/memory-tool').then((m) =&gt; m.getMemoryTools()) },
 		{
 			name: 'image',
-			// Same reasoning as 'web' and 'deep-research': the route alone isn't
-			// enough. `featureStatus` is the exact condition `LifecycleService`
-			// uses to construct `plugin.imageGeneration`, so gating on it keeps
-			// the two in step — otherwise a route to a provider with no key
-			// registers `generate_image` against a null service and the agent
-			// spends a turn on a tool that can only answer "not available".
-			// It reads the *resolved* key, the same thing `hasGeminiKey` reads
-			// above, so a named-but-unsynced secret closes this gate too.
+			// `featureStatus` is also the condition `LifecycleService` uses to
+			// construct `plugin.imageGeneration`, so gating on it keeps the two
+			// in step — otherwise a route to a provider with no key registers
+			// `generate_image` against a null service and the agent spends a
+			// turn on a tool that can only answer "not available".
 			gate: (plugin) =&gt; featureStatus(plugin, 'imageGen') === 'ok',
 			getTools: () =&gt; import('../tools/image-tools').then((m) =&gt; m.getImageTools()),
 		},
@@ -451,7 +418,7 @@ export class ToolRegistrar {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-10-26T15:47:59.697Z
+                at 2026-10-26T20:01:47.341Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
