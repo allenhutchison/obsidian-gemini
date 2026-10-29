@@ -454,20 +454,15 @@ describe('GoogleMapsTool', () => {
 		});
 	});
 
-	describe('result.text fallback path', () => {
-		it('should extract text from result.text when candidates is missing', async () => {
-			const mockResponse = {
-				// no candidates
-				text: 'Fallback text from result.text',
-			};
-
-			mockGenAI.models.generateContent.mockResolvedValue(mockResponse);
+	describe('missing candidates', () => {
+		it('should return an empty answer when candidates is missing', async () => {
+			mockGenAI.models.generateContent.mockResolvedValue({});
 
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect((result.data as any).originalAnswer).toBe('Fallback text from result.text');
-			expect((result.data as any).answer).toBe('Fallback text from result.text');
+			expect((result.data as any).originalAnswer).toBe('');
+			expect((result.data as any).answer).toBe('');
 		});
 	});
 

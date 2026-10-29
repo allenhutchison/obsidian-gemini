@@ -482,41 +482,15 @@ describe('GoogleSearchTool', () => {
 		});
 	});
 
-	describe('result.text fallback path', () => {
-		it('should extract text from result.text when candidates is missing', async () => {
-			const mockResponse = {
-				// no candidates
-				text: 'Fallback text from result.text',
-			};
-
-			mockGenAI.models.generateContent.mockResolvedValue(mockResponse);
+	describe('missing candidates', () => {
+		it('should return an empty answer when candidates is missing', async () => {
+			mockGenAI.models.generateContent.mockResolvedValue({});
 
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect((result.data as any).originalAnswer).toBe('Fallback text from result.text');
-			expect((result.data as any).answer).toBe('Fallback text from result.text');
-		});
-
-		it('should catch and log error when result.text getter throws inside fallback', async () => {
-			// The `if (result.text)` check on line 80 of the source evaluates the getter.
-			// If it doesn't throw there but throws inside the try block, the inner
-			// catch handles it. However, when the getter always throws, the conditional
-			// itself triggers the outer catch (line 149), resulting in success: false.
-			const mockResponse = {
-				// no candidates
-				get text() {
-					throw new Error('Cannot access text');
-				},
-			};
-
-			mockGenAI.models.generateContent.mockResolvedValue(mockResponse);
-
-			const result = await tool.execute({ query: 'test' }, mockContext);
-
-			// The getter throw is caught by the outer try/catch
-			expect(result.success).toBe(false);
-			expect(result.error).toBe('Google search failed: Cannot access text');
+			expect((result.data as any).originalAnswer).toBe('');
+			expect((result.data as any).answer).toBe('');
 		});
 	});
 

@@ -2,6 +2,7 @@ import { ToolResult } from './types';
 import type { ObsidianGemini } from '../types/plugin';
 import { geminiGroundingModel } from '../models';
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
+import { collectResponseText } from '../api/providers/gemini/response-text';
 import { executeWithRetry } from '../utils/retry';
 import { getRawErrorMessage } from '../utils/error-utils';
 import type { GroundingChunk } from '@google/genai';
@@ -91,23 +92,7 @@ export async function runGroundingTool(plugin: ObsidianGemini, req: GroundingToo
 			{ operationName: req.operationName, logger: plugin.logger }
 		);
 
-		// Extract text from response
-		let text = '';
-		if (result.candidates?.[0]?.content?.parts) {
-			for (const part of result.candidates[0].content.parts) {
-				if (part.text) {
-					text += part.text;
-				}
-			}
-		} else if (result.text) {
-			// The text property might be a getter, not a function
-			try {
-				text = result.text;
-			} catch (e) {
-				// If it fails, it might be a legacy format
-				plugin.logger.warn('Failed to get text from result:', e);
-			}
-		}
+		const text = collectResponseText(result);
 
 		// Extract grounding metadata and citations if available
 		const groundingMetadata = result.candidates?.[0]?.groundingMetadata;
