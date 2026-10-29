@@ -144,27 +144,25 @@ describe('runGroundingTool', () => {
 			expect((result.data as any).searchGrounding).toBeUndefined();
 		});
 
-		it('falls back to result.text when candidates are missing', async () => {
-			mockGenAI.models.generateContent.mockResolvedValue({ text: 'Fallback text' });
+		it('returns an empty answer when candidates are missing', async () => {
+			mockGenAI.models.generateContent.mockResolvedValue({});
 
 			const result = await runGroundingTool(mockPlugin, makeRequest());
 
 			expect(result.success).toBe(true);
-			expect((result.data as any).originalAnswer).toBe('Fallback text');
-			expect((result.data as any).answer).toBe('Fallback text');
+			expect((result.data as any).originalAnswer).toBe('');
+			expect((result.data as any).answer).toBe('');
 		});
 
-		it('routes a throwing result.text getter into the outer catch', async () => {
+		it('excludes thought parts from the answer', async () => {
 			mockGenAI.models.generateContent.mockResolvedValue({
-				get text() {
-					throw new Error('Cannot access text');
-				},
+				candidates: [{ content: { parts: [{ text: 'reasoning', thought: true }, { text: 'Hello world' }] } }],
 			});
 
-			const result = await runGroundingTool(mockPlugin, makeRequest({ errorPrefix: 'Grounding failed: ' }));
+			const result = await runGroundingTool(mockPlugin, makeRequest());
 
-			expect(result.success).toBe(false);
-			expect(result.error).toBe('Grounding failed: Cannot access text');
+			expect(result.success).toBe(true);
+			expect((result.data as any).originalAnswer).toBe('Hello world');
 		});
 	});
 
