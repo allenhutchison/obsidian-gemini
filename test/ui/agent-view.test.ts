@@ -1488,4 +1488,75 @@ describe('AgentView UI Tests', () => {
 			expect(getSkillSummaries).toHaveBeenCalledTimes(2);
 		});
 	});
+	describe('Mobile layout fix (#1661)', () => {
+		// Lay out a chat (top at 100px) with an 80px input area directly below it,
+		// inside a container whose bottom is at 1000px — a tablet side panel that
+		// does not shrink when the keyboard opens.
+		function buildLayout() {
+			const div = (parent: HTMLElement, cls = '') => {
+				const el = parent.appendChild(document.createElement('div'));
+				el.className = cls;
+				(el as any).addClass = (c: string) => el.classList.add(c);
+				return el;
+			};
+			const container = div(div(document.body));
+			const chat = div(container, 'gemini-agent-chat');
+			const iarea = div(container, 'gemini-agent-input-area');
+			const chatHeight = () => parseFloat(chat.style.height) || 0;
+			Object.defineProperty(chat, 'offsetHeight', { get: chatHeight });
+			container.getBoundingClientRect = () => ({ bottom: 1000 }) as DOMRect;
+			iarea.getBoundingClientRect = () => ({ bottom: 100 + chatHeight() + 80 }) as DOMRect;
+			return { container, chat };
+		}
+
+		const listeners: Record<string, () => void> = {};
+		const viewport = {
+			offsetTop: 0,
+			height: 1000,
+			addEventListener: vi.fn((type: string, cb: () => void) => (listeners[type] = cb)),
+			removeEventListener: vi.fn(),
+		};
+
+		beforeEach(() => {
+			viewport.offsetTop = 0;
+			viewport.height = 1000;
+			Object.defineProperty(window, 'visualViewport', { configurable: true, value: viewport });
+			vi.stubGlobal(
+				'ResizeObserver',
+				class {
+					observe() {}
+					disconnect() {}
+				}
+			);
+			(agentView as any).register = vi.fn();
+		});
+
+		afterEach(() => {
+			delete (window as any).visualViewport;
+			vi.unstubAllGlobals();
+		});
+
+		it('docks the input at the container bottom when the keyboard is closed', () => {
+			const { container, chat } = buildLayout();
+
+			(agentView as any).applyMobileLayoutFix(container);
+
+			expect(chat.style.height).toBe('820px');
+		});
+
+		it('keeps the input above a keyboard that shrinks only the visual viewport', () => {
+			const { container, chat } = buildLayout();
+			(agentView as any).applyMobileLayoutFix(container);
+
+			// Keyboard opens: the panel stays 1000px tall, the visible area drops to 600px.
+			viewport.height = 600;
+			listeners.resize();
+			expect(chat.style.height).toBe('420px');
+
+			// iOS pans the visual viewport to reveal the input.
+			viewport.offsetTop = 50;
+			listeners.scroll();
+			expect(chat.style.height).toBe('470px');
+		});
+	});
 });
