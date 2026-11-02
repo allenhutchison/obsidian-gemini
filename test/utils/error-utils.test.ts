@@ -634,6 +634,14 @@ describe('error-utils', () => {
 		test('does not treat a non-404 status as not-found', () => {
 			expect(isNotFoundError(Object.assign(new Error('Request failed'), { status: 500 }))).toBe(false);
 		});
+
+		test('a known non-404 status wins over a message that mentions "not found"', () => {
+			// A server error whose message happens to contain the phrase is not a
+			// missing resource; answering true here would make RagVaultScanner
+			// recreate a File Search store that is perfectly fine.
+			expect(isNotFoundError(Object.assign(new Error('Backend cache entry Not Found'), { status: 500 }))).toBe(false);
+			expect(isNotFoundError({ message: 'NOT_FOUND in upstream log', response: { status: 503 } })).toBe(false);
+		});
 	});
 
 	describe('describeSdkApiError', () => {

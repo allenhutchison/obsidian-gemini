@@ -193,20 +193,24 @@ export function isRateLimitError(error: unknown): boolean {
  * Check if an error represents a "resource not found" failure (HTTP 404 /
  * NOT_FOUND).
  *
- * Structured status first, message substrings second. An SDK that reports the
- * status on the error object rather than in the message is invisible to a
- * message-only check, and `extractStatusCode` already owns the list of places
- * to look. (`isRateLimitError` checks 429 in the same order; it inspects only
- * objects, whereas this predicate also accepts a bare string.)
+ * **A structured status, when there is one, is the whole answer.** An SDK that
+ * reports the status on the error object rather than in the message is
+ * invisible to a message-only check, and `extractStatusCode` already owns the
+ * list of places to look. Equally, a known non-404 status settles it: a 500
+ * whose message happens to read `Backend cache entry Not Found` is a server
+ * error, not a missing resource, and answering `true` there would have the
+ * callers below recreate a store that is fine.
  *
- * The message arms stay because a bare `HTTP 404` carries no structured status
- * and `extractStatusCode`'s message fallback needs a `status:`/`code:` prefix.
- * All three arms are load-bearing even after case folding: lowercasing maps the
- * HTTP reason phrase `Not Found` onto `not found`, but Google's status enum
- * `NOT_FOUND` becomes `not_found`, which that arm does not match.
+ * The message arms are the fallback for errors that carry no status at all — a
+ * bare `HTTP 404`, or a plain string, neither of which `extractStatusCode`'s own
+ * message regex reaches (it needs a `status:`/`code:` prefix). All three arms
+ * are load-bearing even after case folding: lowercasing maps the HTTP reason
+ * phrase `Not Found` onto `not found`, but Google's status enum `NOT_FOUND`
+ * becomes `not_found`, which that arm does not match.
  */
 export function isNotFoundError(error: unknown): boolean {
-	if (extractStatusCode(error) === 404) return true;
+	const statusCode = extractStatusCode(error);
+	if (statusCode !== null) return statusCode === 404;
 
 	const message = getRawErrorMessage(error).toLowerCase();
 	return message.includes('404') || message.includes('not found') || message.includes('not_found');

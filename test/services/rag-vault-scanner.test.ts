@@ -60,7 +60,7 @@ vi.mock('../../src/utils/error-utils', () => ({
 	isNotFoundError: vi.fn((err: any) => {
 		// Mirrors the real predicate: structured status first, then case-folded
 		// message substrings (see src/utils/error-utils.ts).
-		if (err !== null && typeof err === 'object' && err.status === 404) return true;
+		if (err !== null && typeof err === 'object' && typeof err.status === 'number') return err.status === 404;
 		const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
 		return msg.includes('404') || msg.includes('not found') || msg.includes('not_found');
 	}),
