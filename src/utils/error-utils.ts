@@ -193,23 +193,29 @@ export function isRateLimitError(error: unknown): boolean {
  * Check if an error represents a "resource not found" failure (HTTP 404 /
  * NOT_FOUND).
  *
- * **A structured status, when there is one, is the whole answer.** An SDK that
- * reports the status on the error object rather than in the message is
- * invisible to a message-only check, and `extractStatusCode` already owns the
- * list of places to look. Equally, a known non-404 status settles it: a 500
- * whose message happens to read `Backend cache entry Not Found` is a server
- * error, not a missing resource, and answering `true` there would have the
- * callers below recreate a store that is fine.
+ * **A status the error states structurally is the whole answer.** An SDK that
+ * puts the status in a field rather than the message is invisible to a
+ * message-only check, and `structuredStatusCode` owns the list of fields to
+ * look in. A known non-404 settles it the other way too: a 500 whose message
+ * happens to read `Backend cache entry Not Found` is a server error, not a
+ * missing resource, and answering `true` would have the callers below recreate
+ * a store that is fine.
  *
- * The message arms are the fallback for errors that carry no status at all — a
- * bare `HTTP 404`, or a plain string, neither of which `extractStatusCode`'s own
- * message regex reaches (it needs a `status:`/`code:` prefix). All three arms
- * are load-bearing even after case folding: lowercasing maps the HTTP reason
- * phrase `Not Found` onto `not found`, but Google's status enum `NOT_FOUND`
- * becomes `not_found`, which that arm does not match.
+ * **Deliberately `structuredStatusCode`, not `extractStatusCode`.** The latter
+ * also scrapes a three-digit number following `status`/`code` out of the
+ * message, and such a number is not a statement about the response: in
+ * `HTTP 404: store with code 123 not found` it yields `123`, which as an
+ * authoritative status would answer `false` for an error that is plainly a
+ * not-found.
+ *
+ * The message arms are the fallback for errors carrying no structured status —
+ * a bare `HTTP 404`, or a plain string. All three stay load-bearing even after
+ * case folding: lowercasing maps the HTTP reason phrase `Not Found` onto
+ * `not found`, but Google's status enum `NOT_FOUND` becomes `not_found`, which
+ * that arm does not match.
  */
 export function isNotFoundError(error: unknown): boolean {
-	const statusCode = extractStatusCode(error);
+	const statusCode = structuredStatusCode(error);
 	if (statusCode !== null) return statusCode === 404;
 
 	const message = getRawErrorMessage(error).toLowerCase();
@@ -463,12 +469,26 @@ export function getErrorMessage(error: unknown): string {
 }
 
 /**
- * Extract HTTP status code from error object
+ * The status an error **states structurally**, in one of the numeric fields the
+ * SDKs put it in — never one scraped out of prose.
+ *
+ * Split out from `extractStatusCode` because the two are not equally
+ * trustworthy, and a caller that treats a status as decisive needs the
+ * difference. A field says "this response was a 500"; a three-digit number
+ * following the word `code` in a sentence might be anything, including an
+ * unrelated identifier in a message that is otherwise plainly a 404. Only
+ * `isNotFoundError` needs that distinction today, so this stays unexported and
+ * `extractStatusCode` keeps its existing behaviour by layering the prose
+ * fallback on top (#1720).
+ *
+ * Keeping the field list here, in one place, is the point: a caller that wanted
+ * structured-only and open-coded the fields would be the duplication #1719 is
+ * about.
  */
-export function extractStatusCode(error: unknown): number | null {
+function structuredStatusCode(error: unknown): number | null {
 	// Guard non-object inputs so callers passing `null`, `undefined`, or a
-	// primitive (this is an exported helper accepting `unknown`) don't trigger a
-	// secondary TypeError inside an already-failing error path.
+	// primitive (this is reached from an exported helper accepting `unknown`)
+	// don't trigger a secondary TypeError inside an already-failing error path.
 	if (!error || (typeof error !== 'object' && typeof error !== 'function')) {
 		return null;
 	}
@@ -503,6 +523,27 @@ export function extractStatusCode(error: unknown): number | null {
 	if (typeof response.status === 'number') {
 		return response.status;
 	}
+
+	return null;
+}
+
+/**
+ * Extract HTTP status code from error object, falling back to a three-digit
+ * number following `status`/`code` in the message when no field carries one.
+ *
+ * Unchanged in behaviour: structured fields first, in the same order, then the
+ * message. Callers for which a status must be authoritative want
+ * `structuredStatusCode` instead.
+ */
+export function extractStatusCode(error: unknown): number | null {
+	const structured = structuredStatusCode(error);
+	if (structured !== null) {
+		return structured;
+	}
+	if (!error || (typeof error !== 'object' && typeof error !== 'function')) {
+		return null;
+	}
+	const err = asRecord(error);
 
 	// Try to extract from error message
 	if (typeof err.message === 'string') {

@@ -5,6 +5,7 @@ import {
 	getErrorMessage,
 	getRawErrorMessage,
 	getRawErrorMessageOr,
+	extractStatusCode,
 	isNotFoundError,
 	isQuotaExhausted,
 	isRateLimitError,
@@ -633,6 +634,15 @@ describe('error-utils', () => {
 
 		test('does not treat a non-404 status as not-found', () => {
 			expect(isNotFoundError(Object.assign(new Error('Request failed'), { status: 500 }))).toBe(false);
+		});
+
+		test('a three-digit code scraped from the message is not an authoritative status', () => {
+			// `extractStatusCode` would yield 123 here, from "code 123". That is an
+			// identifier in a sentence, not a statement about the response, and the
+			// same message plainly says 404 / not found.
+			expect(isNotFoundError(new Error('HTTP 404: store with code 123 not found'))).toBe(true);
+			// `extractStatusCode` still reports the message-derived code, unchanged.
+			expect(extractStatusCode(new Error('HTTP 404: store with code 123 not found'))).toBe(123);
 		});
 
 		test('a known non-404 status wins over a message that mentions "not found"', () => {
