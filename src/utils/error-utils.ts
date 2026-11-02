@@ -191,12 +191,25 @@ export function isRateLimitError(error: unknown): boolean {
 
 /**
  * Check if an error represents a "resource not found" failure (HTTP 404 /
- * NOT_FOUND). Matches on message substrings so it works across the varying
- * error shapes the Google File Search API and SDK return.
+ * NOT_FOUND).
+ *
+ * Structured status first, message substrings second. An SDK that reports the
+ * status on the error object rather than in the message is invisible to a
+ * message-only check, and `extractStatusCode` already owns the list of places
+ * to look. (`isRateLimitError` checks 429 in the same order; it inspects only
+ * objects, whereas this predicate also accepts a bare string.)
+ *
+ * The message arms stay because a bare `HTTP 404` carries no structured status
+ * and `extractStatusCode`'s message fallback needs a `status:`/`code:` prefix.
+ * All three arms are load-bearing even after case folding: lowercasing maps the
+ * HTTP reason phrase `Not Found` onto `not found`, but Google's status enum
+ * `NOT_FOUND` becomes `not_found`, which that arm does not match.
  */
 export function isNotFoundError(error: unknown): boolean {
-	const message = getRawErrorMessage(error);
-	return message.includes('404') || message.includes('not found') || message.includes('NOT_FOUND');
+	if (extractStatusCode(error) === 404) return true;
+
+	const message = getRawErrorMessage(error).toLowerCase();
+	return message.includes('404') || message.includes('not found') || message.includes('not_found');
 }
 
 /**

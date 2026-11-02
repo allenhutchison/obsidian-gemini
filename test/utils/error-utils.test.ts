@@ -622,6 +622,18 @@ describe('error-utils', () => {
 			expect(isNotFoundError('plain 404 string')).toBe(true);
 			expect(isNotFoundError(null)).toBe(false);
 		});
+
+		test('detects the mixed-case HTTP reason phrase "Not Found"', () => {
+			expect(isNotFoundError(new Error('Request failed: Not Found'))).toBe(true);
+		});
+
+		test('detects a 404 reported only on the error object, not in the message', () => {
+			expect(isNotFoundError(Object.assign(new Error('Request failed'), { status: 404 }))).toBe(true);
+		});
+
+		test('does not treat a non-404 status as not-found', () => {
+			expect(isNotFoundError(Object.assign(new Error('Request failed'), { status: 500 }))).toBe(false);
+		});
 	});
 
 	describe('describeSdkApiError', () => {

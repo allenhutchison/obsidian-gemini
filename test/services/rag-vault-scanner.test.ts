@@ -58,8 +58,11 @@ vi.mock('../../src/utils/error-utils', () => ({
 	getRawErrorMessage: vi.fn((err: any) => (err instanceof Error ? err.message : String(err))),
 	isQuotaExhausted: vi.fn().mockReturnValue(false),
 	isNotFoundError: vi.fn((err: any) => {
-		const msg = err instanceof Error ? err.message : String(err);
-		return msg.includes('404') || msg.includes('not found') || msg.includes('NOT_FOUND');
+		// Mirrors the real predicate: structured status first, then case-folded
+		// message substrings (see src/utils/error-utils.ts).
+		if (err !== null && typeof err === 'object' && err.status === 404) return true;
+		const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+		return msg.includes('404') || msg.includes('not found') || msg.includes('not_found');
 	}),
 	extractStatusCode: vi.fn((err: any) => err?.status ?? null),
 }));
