@@ -86,6 +86,9 @@ class TestManager extends FileBackedFeatureManager<TestDef, TestEntryState> {
 	}
 
 	// Expose the protected seams for the test.
+	runIsDefinitionFile(file: TFile) {
+		return this.isDefinitionFile(file);
+	}
 	runDiscover() {
 		return this.discoverDefinitions();
 	}
@@ -107,7 +110,11 @@ class TestManager extends FileBackedFeatureManager<TestDef, TestEntryState> {
 }
 
 function mkFile(path: string): TFile {
-	return { path } as unknown as TFile;
+	// `extension` is derived rather than hardcoded so a non-markdown path can be
+	// handed to `isDefinitionFile`; a real Obsidian `TFile` always carries it.
+	const basename = path.split('/').pop() ?? path;
+	const dot = basename.lastIndexOf('.');
+	return { path, extension: dot > 0 ? basename.slice(dot + 1) : '' } as unknown as TFile;
 }
 
 // ─── Tests ──────────────────────────────────────────────────────────────────
@@ -131,6 +138,23 @@ describe('FileBackedFeatureManager', () => {
 		it('reflects a runtime historyFolder change (lazy resolution)', () => {
 			plugin.settings.historyFolder = 'other-folder';
 			expect(manager.stateFilePath).toBe('other-folder/Widgets/widgets-state.json');
+		});
+	});
+
+	describe('isDefinitionFile', () => {
+		// The folder bounds themselves are `isPathInFolder`'s contract (covered in
+		// test/utils/file-utils.test.ts) and `featureFolderPath`'s lazy resolution is
+		// covered above. What is this method's own is the conjunction: both bounds
+		// plus the markdown check, which is what the event handlers rely on.
+		it('accepts a markdown definition file and rejects each way it can fail', () => {
+			expect(manager.runIsDefinitionFile(mkFile('gemini-scribe/Widgets/a.md'))).toBe(true);
+			// In the feature folder, but a run output rather than a definition.
+			expect(manager.runIsDefinitionFile(mkFile('gemini-scribe/Widgets/Runs/a/2026-01-01.md'))).toBe(false);
+			// Outside the feature folder.
+			expect(manager.runIsDefinitionFile(mkFile('some-other-folder/c.md'))).toBe(false);
+			// In the feature folder, but not markdown — the arm the handlers need,
+			// since a vault event hands over whatever file was touched.
+			expect(manager.runIsDefinitionFile(mkFile('gemini-scribe/Widgets/widgets-state.json'))).toBe(false);
 		});
 	});
 

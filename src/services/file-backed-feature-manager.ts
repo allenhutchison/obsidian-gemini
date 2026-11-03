@@ -89,6 +89,40 @@ export abstract class FileBackedFeatureManager<TDef extends FileBackedDefinition
 		return normalizePath(`${this.featureFolderPath}/${this.featureConfig.stateFileName}`);
 	}
 
+	/**
+	 * A predicate for "is this path one of my definition files" — inside the
+	 * feature folder, outside the per-run output subtree — with both bounds
+	 * snapshotted once for a caller that tests many paths.
+	 *
+	 * The single owner of that pair of bounds. Both move with
+	 * `settings.historyFolder` at runtime and both are already owned here, so a
+	 * hand-written copy at a call site is one that can disagree — and nothing
+	 * would say so, since a guard that is merely stale at one of several call
+	 * sites passes lint, knip, madge and the suite alike.
+	 *
+	 * Returned as a closure rather than evaluated per path because the one
+	 * many-path caller filters `vault.getMarkdownFiles()` — the whole vault — and
+	 * re-deriving two normalized paths per file there costs ~8 ms per 10k notes
+	 * for no gain.
+	 */
+	protected definitionPathFilter(): (path: string) => boolean {
+		const featureFolder = this.featureFolderPath;
+		const runsFolder = this.runsFolder;
+		return (path) => isPathInFolder(path, featureFolder) && !isPathInFolder(path, runsFolder);
+	}
+
+	/**
+	 * Whether `file` is one of this feature's definition files.
+	 *
+	 * The form an event handler wants: a vault or metadata-cache event hands over
+	 * whatever file was touched, so the markdown check belongs here rather than at
+	 * each handler. `discoverDefinitions` does not use this one — its input is
+	 * already `getMarkdownFiles()` — and takes `definitionPathFilter` directly.
+	 */
+	protected isDefinitionFile(file: TFile): boolean {
+		return file.extension === 'md' && this.definitionPathFilter()(file.path);
+	}
+
 	// ── Subclass-supplied seams ──────────────────────────────────────────────
 
 	/**
@@ -129,12 +163,8 @@ export abstract class FileBackedFeatureManager<TDef extends FileBackedDefinition
 		if (isCurrent && !isCurrent()) return;
 		this.definitions.clear();
 
-		const featureFolder = this.featureFolderPath;
-		const runsFolder = this.runsFolder;
-
-		const files = this.plugin.app.vault
-			.getMarkdownFiles()
-			.filter((f) => isPathInFolder(f.path, featureFolder) && !isPathInFolder(f.path, runsFolder));
+		const isDefinitionPath = this.definitionPathFilter();
+		const files = this.plugin.app.vault.getMarkdownFiles().filter((f) => isDefinitionPath(f.path));
 
 		for (const file of files) {
 			try {

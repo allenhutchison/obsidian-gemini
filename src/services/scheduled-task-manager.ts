@@ -1,6 +1,5 @@
 import { TFile, normalizePath } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
-import { isPathInFolder } from '../utils/file-utils';
 import { validateFeatureSlug } from '../utils/feature-slug';
 import { FeatureToolPolicy } from '../types/tool-policy';
 import { formatToolPolicyYaml } from './feature-policy-yaml';
@@ -178,11 +177,7 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 		this.metadataCacheHandler = (...data: unknown[]) => {
 			const file = data[0];
 			if (!(file instanceof TFile)) return;
-			if (
-				isPathInFolder(file.path, this.scheduledTasksFolder) &&
-				!isPathInFolder(file.path, this.runsFolder) &&
-				file.extension === 'md'
-			) {
+			if (this.isDefinitionFile(file)) {
 				const slug = file.basename;
 				// Skip if the vault create handler already claimed this slug — it will
 				// parse the file after its 500 ms defer, so we don't need to do it here.
@@ -224,11 +219,7 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 			const abstractFile = data[0];
 			if (!(abstractFile instanceof TFile)) return;
 			const file = abstractFile;
-			if (
-				isPathInFolder(file.path, this.scheduledTasksFolder) &&
-				!isPathInFolder(file.path, this.runsFolder) &&
-				file.extension === 'md'
-			) {
+			if (this.isDefinitionFile(file)) {
 				// Claim the slug immediately so the metadataCache 'changed' handler
 				// (which fires before our 500 ms defer) skips this file.
 				this.recentlyCreated.add(file.basename);
