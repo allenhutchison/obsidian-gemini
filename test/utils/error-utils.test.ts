@@ -5,6 +5,7 @@ import {
 	getErrorMessage,
 	getRawErrorMessage,
 	getRawErrorMessageOr,
+	extractStatusCode,
 	isNotFoundError,
 	isQuotaExhausted,
 	isRateLimitError,
@@ -621,6 +622,35 @@ describe('error-utils', () => {
 		test('handles non-Error values via String()', () => {
 			expect(isNotFoundError('plain 404 string')).toBe(true);
 			expect(isNotFoundError(null)).toBe(false);
+		});
+
+		test('detects the mixed-case HTTP reason phrase "Not Found"', () => {
+			expect(isNotFoundError(new Error('Request failed: Not Found'))).toBe(true);
+		});
+
+		test('detects a 404 reported only on the error object, not in the message', () => {
+			expect(isNotFoundError(Object.assign(new Error('Request failed'), { status: 404 }))).toBe(true);
+		});
+
+		test('does not treat a non-404 status as not-found', () => {
+			expect(isNotFoundError(Object.assign(new Error('Request failed'), { status: 500 }))).toBe(false);
+		});
+
+		test('a three-digit code scraped from the message is not an authoritative status', () => {
+			// `extractStatusCode` would yield 123 here, from "code 123". That is an
+			// identifier in a sentence, not a statement about the response, and the
+			// same message plainly says 404 / not found.
+			expect(isNotFoundError(new Error('HTTP 404: store with code 123 not found'))).toBe(true);
+			// `extractStatusCode` still reports the message-derived code, unchanged.
+			expect(extractStatusCode(new Error('HTTP 404: store with code 123 not found'))).toBe(123);
+		});
+
+		test('a known non-404 status wins over a message that mentions "not found"', () => {
+			// A server error whose message happens to contain the phrase is not a
+			// missing resource; answering true here would make RagVaultScanner
+			// recreate a File Search store that is perfectly fine.
+			expect(isNotFoundError(Object.assign(new Error('Backend cache entry Not Found'), { status: 500 }))).toBe(false);
+			expect(isNotFoundError({ message: 'NOT_FOUND in upstream log', response: { status: 503 } })).toBe(false);
 		});
 	});
 
