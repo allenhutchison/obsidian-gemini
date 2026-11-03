@@ -30,9 +30,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">89.62% </span>
+                <span class="strong">89.14% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>121/135</span>
+                <span class='fraction'>115/129</span>
             </div>
         
             
@@ -697,17 +697,7 @@
 <a name='L632'></a><a href='#L632'>632</a>
 <a name='L633'></a><a href='#L633'>633</a>
 <a name='L634'></a><a href='#L634'>634</a>
-<a name='L635'></a><a href='#L635'>635</a>
-<a name='L636'></a><a href='#L636'>636</a>
-<a name='L637'></a><a href='#L637'>637</a>
-<a name='L638'></a><a href='#L638'>638</a>
-<a name='L639'></a><a href='#L639'>639</a>
-<a name='L640'></a><a href='#L640'>640</a>
-<a name='L641'></a><a href='#L641'>641</a>
-<a name='L642'></a><a href='#L642'>642</a>
-<a name='L643'></a><a href='#L643'>643</a>
-<a name='L644'></a><a href='#L644'>644</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L635'></a><a href='#L635'>635</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -831,7 +821,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">24x</span>
+<span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -887,10 +877,6 @@
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -933,10 +919,6 @@
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">6x</span>
@@ -1351,7 +1333,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { TFile, normalizePath } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
-import { isPathInFolder } from '../utils/file-utils';
 import { validateFeatureSlug } from '../utils/feature-slug';
 import { FeatureToolPolicy } from '../types/tool-policy';
 import { formatToolPolicyYaml } from './feature-policy-yaml';
@@ -1529,11 +1510,7 @@ export class ScheduledTaskManager extends FileBackedFeatureManager&lt;ScheduledT
 		this.metadataCacheHandler = (...data: unknown[]) =&gt; {
 			const file = data[0];
 			<span class="missing-if-branch" title="if path not taken" >I</span>if (!(file instanceof TFile)) <span class="cstat-no" title="statement not covered" >return;</span>
-			<span class="missing-if-branch" title="else path not taken" >E</span>if (
-				isPathInFolder(file.path, this.scheduledTasksFolder) &amp;&amp;
-				!isPathInFolder(file.path, this.runsFolder) &amp;&amp;
-				file.extension === 'md'
-			) {
+			<span class="missing-if-branch" title="else path not taken" >E</span>if (this.isDefinitionFile(file)) {
 				const slug = file.basename;
 				// Skip if the vault create handler already claimed this slug — it will
 				// parse the file after its 500 ms defer, so we don't need to do it here.
@@ -1575,11 +1552,7 @@ export class ScheduledTaskManager extends FileBackedFeatureManager&lt;ScheduledT
 			const abstractFile = data[0];
 			<span class="missing-if-branch" title="if path not taken" >I</span>if (!(abstractFile instanceof TFile)) <span class="cstat-no" title="statement not covered" >return;</span>
 			const file = abstractFile;
-			<span class="missing-if-branch" title="else path not taken" >E</span>if (
-				isPathInFolder(file.path, this.scheduledTasksFolder) &amp;&amp;
-				!isPathInFolder(file.path, this.runsFolder) &amp;&amp;
-				file.extension === 'md'
-			) {
+			<span class="missing-if-branch" title="else path not taken" >E</span>if (this.isDefinitionFile(file)) {
 				// Claim the slug immediately so the metadataCache 'changed' handler
 				// (which fires before our 500 ms defer) skips this file.
 				this.recentlyCreated.add(file.basename);
@@ -1999,7 +1972,7 @@ export class ScheduledTaskManager extends FileBackedFeatureManager&lt;ScheduledT
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-03T04:30:18.387Z
+                at 2026-11-03T04:30:33.455Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
