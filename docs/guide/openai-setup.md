@@ -47,7 +47,7 @@ The GPT-5.6 models are reasoning models, which constrains what Chat Completions 
 - Agent chat with streaming, tool calling, and conversation memory
 - Drag-and-drop / paste of **image** attachments to vision-capable models (auto-detected for known OpenAI models; off by default for unrecognized/compatible-server models)
 - File summarization, IDE-style completions, selection rewriting
-- Image generation from the command palette or `generate_image` agent tool, saved as PNG in the same background-task flow used by Gemini
+- Image generation from the command palette or `generate_image` agent tool, saved in the same background-task flow used by Gemini
 - Custom prompts, projects, agent skills, scheduled tasks, MCP servers
 - Retry with exponential backoff (fixed policy, not configurable) and streaming responses, identical to the Gemini and Ollama providers
 

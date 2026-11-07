@@ -5,6 +5,10 @@
  * bytes rather than a conversational ModelResponse.
  */
 export interface ImageGenerationApi {
-	/** Generate one PNG image and return its base64-encoded bytes. */
+	/**
+	 * Generate one image and return its base64-encoded bytes. The format is
+	 * whatever the provider returned (PNG, JPEG, WebP, ...); callers sniff it
+	 * from the bytes (`sniffImageFormat`) rather than assuming PNG.
+	 */
 	generateImage(prompt: string, model: string): Promise<string>;
 }

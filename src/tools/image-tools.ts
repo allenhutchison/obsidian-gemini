@@ -25,7 +25,7 @@ export class GenerateImageTool implements Tool {
 	classification = ToolClassification.WRITE;
 	description =
 		'Generate an image from a text prompt and save it to the vault. Returns the wikilink that can be used to embed the image in a note. IMPORTANT: This tool only generates and saves the image file - it does NOT insert the image into any note. To add the generated image to a note, you must use write_file to insert the returned wikilink into the note content. ' +
-		'Set background=true to submit as a background task and return immediately with { taskId, output_path }. The returned output_path is the exact vault location where the image will land — read it later with read_file.';
+		'Set background=true to submit as a background task and return immediately with { taskId, output_path }. The returned output_path is where the image will land, except that the file extension is set from the image data once it exists: the model may return JPEG, WebP or GIF, so the saved file can end in .jpg, .webp or .gif instead of .png. Read it later with read_file, trying those extensions if the .png path is missing.';
 
 	parameters = {
 		type: 'object' as const,
@@ -37,13 +37,13 @@ export class GenerateImageTool implements Tool {
 			output_path: {
 				type: 'string' as const,
 				description:
-					'Optional: Explicit vault path where the generated image file should be saved (e.g. "attachments/my-image.png"). When omitted, the image is saved under the plugin\'s Background-Tasks folder.',
+					'Optional: Explicit vault path where the generated image file should be saved (e.g. "attachments/my-image.png"). The extension is replaced to match the format of the generated image (e.g. .jpg for JPEG). When omitted, the image is saved under the plugin\'s Background-Tasks folder.',
 			},
 			background: {
 				type: 'boolean' as const,
 				description:
 					'When true, submit as a background task and return immediately with { taskId, output_path }. ' +
-					'The output_path in the response is the exact vault location where the image will be saved — pass it to read_file once the task completes.',
+					'The output_path in the response is where the image will be saved; its extension may change from .png to .jpg, .webp or .gif to match the image data. Pass it to read_file once the task completes.',
 			},
 		},
 		required: ['prompt'],
@@ -98,9 +98,10 @@ export class GenerateImageTool implements Tool {
 
 				// Pre-resolve the output path at submit time so the agent has a concrete
 				// vault path to read_file later. resolveOutputPath handles both the
-				// explicit-path case (validation + .png extension rewrite) and the
-				// default Background-Tasks fallback — so the path we return here always
-				// matches where the task will actually write.
+				// explicit-path case (validation + provisional .png extension) and the
+				// default Background-Tasks fallback. The image doesn't exist yet, so
+				// the extension can't be known: the save swaps .png for whatever the
+				// bytes turn out to be (.jpg, .webp, .gif) and keeps the rest.
 				let resolvedOutputPath: string;
 				try {
 					resolvedOutputPath = await plugin.imageGeneration.resolveOutputPath(prompt, outputPath);
@@ -122,7 +123,11 @@ export class GenerateImageTool implements Tool {
 
 				return {
 					success: true,
-					data: { taskId, output_path: resolvedOutputPath },
+					data: {
+						taskId,
+						output_path: resolvedOutputPath,
+						note: 'The extension is set from the generated image data, so the saved file may end in .jpg, .webp or .gif instead of .png.',
+					},
 				};
 			}
 
