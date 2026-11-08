@@ -283,6 +283,8 @@ When you ask the agent to read a binary file, it sends the file data directly to
 
 If a file doesn't exist, the agent receives a non-error response with `exists: false` and helpful suggestions for similar file names. This allows automation skills to probe for files without triggering error states.
 
+The plugin state folder is off limits to `read_file`, with one exception: `[state-folder]/Background-Tasks/`. Files there (generated images and deep-research reports) can be read by their exact path, so the agent can look at an image it generated in the background. The folder itself can't be listed, and fuzzy name matching never reaches into the state folder.
+
 #### list_files
 
 List files in a folder. Returns all file types (not just markdown):

@@ -1,7 +1,7 @@
 import { Tool, ToolResult, ToolExecutionContext } from '../types';
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
-import { TFolder, normalizePath } from 'obsidian';
+import { TFile, TFolder, normalizePath } from 'obsidian';
 import { shouldExcludePathForPlugin as shouldExcludePath, isPathInFolder } from '../../utils/file-utils';
 import { getRawErrorMessageOr } from '../../utils/error-utils';
 import {
@@ -55,18 +55,35 @@ export class ReadFileTool implements Tool {
 			// Allow reading agent session history files (needed by recall_sessions tool)
 			const agentSessionsFolder = stateFolderPath(plugin.settings, STATE_SUBFOLDERS.agentSessions);
 			const isAgentSessionPath = isPathInFolder(normalizedPath, agentSessionsFolder);
+			// Allow reading files the plugin generated for the agent (background
+			// image-gen and deep-research output), so a background generate_image
+			// result can be read back from the path the tool returned.
+			const backgroundTasksFolder = stateFolderPath(plugin.settings, STATE_SUBFOLDERS.backgroundTasks);
+			const isBackgroundTaskPath = isPathInFolder(normalizedPath, backgroundTasksFolder);
 			const isObsidianPath = isPathInFolder(normalizedPath, plugin.app.vault.configDir);
 
-			// Check if path is excluded (allow agent session files, but never the Obsidian config dir)
-			if ((isObsidianPath || !isAgentSessionPath) && shouldExcludePath(normalizedPath, plugin)) {
+			// Check if path is excluded (allow agent session and background-task files,
+			// but never the Obsidian config dir)
+			if (
+				(isObsidianPath || (!isAgentSessionPath && !isBackgroundTaskPath)) &&
+				shouldExcludePath(normalizedPath, plugin)
+			) {
 				return {
 					success: false,
 					error: `Cannot read from system folder: ${params.path}`,
 				};
 			}
 
-			// Try to resolve as either file or folder (with suggestions for errors)
-			const { item, suggestions } = resolvePathToFileOrFolder(params.path, plugin, true);
+			// Try to resolve as either file or folder (with suggestions for errors).
+			// The shared resolver skips everything under the state folder, so a
+			// Background-Tasks file is looked up by its exact path instead — files
+			// only, no folder listing and no fuzzy matching into the state folder.
+			const exactBackgroundFile =
+				isBackgroundTaskPath && !isObsidianPath ? plugin.app.vault.getAbstractFileByPath(normalizedPath) : null;
+			const { item, suggestions } =
+				exactBackgroundFile instanceof TFile
+					? { item: exactBackgroundFile, suggestions: undefined }
+					: resolvePathToFileOrFolder(params.path, plugin, true);
 
 			if (!item) {
 				// File not existing is information, not an error — the agent asked

@@ -48,6 +48,8 @@ When a task completes you'll see a notice in the bottom-right corner with an **O
 1. Clicking the status bar indicator → **Open result** in the Recent section
 2. Navigating directly to `[state-folder]/Background-Tasks/` in the file explorer (unless you set a custom `outputFile` path)
 
+The agent can also read a background result back with `read_file`, using the exact path the tool returned. For generated images, the extension may differ from the returned `.png` path when the model returns JPEG, WebP or GIF.
+
 ## Troubleshooting
 
 **Task shows as failed**
