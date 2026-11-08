@@ -1,3 +1,112 @@
+/*
+ * Themes. Light and Dark use Vitest's palette (https://vitest.dev) and
+ * follow `prefers-color-scheme` until a theme is picked, after which
+ * `theme.js` sets `data-theme` on <html>. Legacy keeps the classic
+ * istanbul colors.
+ */
+:root {
+  color-scheme: light dark;
+
+  --color-text: light-dark(#16171d, #ffffff);
+  --color-bg: light-dark(#ffffff, #16171d);
+  --color-quiet: #867e8e;
+  --color-link: light-dark(#008039, #22ff73);
+  --color-fraction: light-dark(#3b3440, #ffffff);
+  --color-fraction-bg: light-dark(#f4f3ec, #3b3440);
+  --color-border: light-dark(#e5e4e7, #3b3440);
+  --color-keyline: light-dark(#e5e4e7, #3b3440);
+  --color-empty: #867e8e;
+  --color-ignore-none: #6a737d;
+
+  --color-high: light-dark(rgba(16, 185, 129, 0.14), rgba(16, 185, 129, 0.16));
+  --color-high-strong: light-dark(#30a46c, #3dd68c);
+  --color-covered: light-dark(rgba(16, 185, 129, 0.3), rgba(16, 185, 129, 0.32));
+  --color-medium: light-dark(rgba(234, 179, 8, 0.14), rgba(234, 179, 8, 0.16));
+  --color-medium-strong: light-dark(#da8b17, #f9b44e);
+  --color-low: light-dark(rgba(244, 63, 94, 0.14), rgba(244, 63, 94, 0.16));
+  --color-low-strong: light-dark(#d5393e, #f14158);
+  --color-uncovered: light-dark(rgba(244, 63, 94, 0.28), rgba(244, 63, 94, 0.32));
+  --color-highlighted: light-dark(rgba(213, 57, 62, 0.6), rgba(241, 65, 88, 0.6));
+  --color-branch-no: var(--color-text);
+  --color-branch-no-bg: light-dark(rgba(234, 179, 8, 0.4), rgba(234, 179, 8, 0.4));
+  --color-missing-if: light-dark(#f9b44e, #16171d);
+  --color-missing-if-bg: light-dark(#16171d, #f9b44e);
+  --color-skip: var(--color-text);
+  --color-skip-bg: light-dark(#dddde3, #32363f);
+  --color-skip-if: var(--color-text);
+  --color-skip-if-bg: light-dark(#dddde3, #32363f);
+  --color-neutral: light-dark(rgba(142, 150, 170, 0.14), rgba(101, 117, 133, 0.16));
+  --color-cover-empty: light-dark(#e5e4e7, #3b3440);
+
+  /* syntax colors of the github-light and github-dark themes used in Vitest's docs */
+  --syntax-pln: light-dark(#24292e, #e1e4e8);
+  --syntax-str: light-dark(#032f62, #9ecbff);
+  --syntax-kwd: light-dark(#d73a49, #f97583);
+  --syntax-com: #6a737d;
+  --syntax-typ: light-dark(#6f42c1, #b392f0);
+  --syntax-lit: light-dark(#005cc5, #79b8ff);
+  --syntax-pun: light-dark(#24292e, #e1e4e8);
+  --syntax-tag: light-dark(#22863a, #85e89d);
+  --syntax-atn: light-dark(#6f42c1, #b392f0);
+  --syntax-atv: light-dark(#032f62, #9ecbff);
+  --syntax-var: light-dark(#e36209, #ffab70);
+  --syntax-fun: light-dark(#6f42c1, #b392f0);
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+:root[data-theme="legacy"] {
+  color-scheme: light;
+
+  --color-text: #333;
+  --color-bg: #fff;
+  --color-quiet: rgba(0, 0, 0, 0.5);
+  --color-link: #0074d9;
+  --color-fraction: #555;
+  --color-fraction-bg: #e8e8e8;
+  --color-border: #bbb;
+  --color-keyline: #ddd;
+  --color-empty: #888;
+  --color-ignore-none: #999;
+
+  --color-high: rgb(230, 245, 208);
+  --color-high-strong: rgb(77, 146, 33);
+  --color-covered: rgb(161, 215, 106);
+  --color-medium: #fff4c2;
+  --color-medium-strong: #f9cd0b;
+  --color-low: #fce1e5;
+  --color-low-strong: #c21f39;
+  --color-uncovered: #f6c6ce;
+  --color-highlighted: #c21f39;
+  --color-branch-no: #111;
+  --color-branch-no-bg: yellow;
+  --color-missing-if: yellow;
+  --color-missing-if-bg: #333;
+  --color-skip: #111;
+  --color-skip-bg: #ddd;
+  --color-skip-if: white;
+  --color-skip-if-bg: #ccc;
+  --color-neutral: #eaeaea;
+  --color-cover-empty: white;
+
+  /* prettify.css colors */
+  --syntax-pln: #000;
+  --syntax-str: #080;
+  --syntax-kwd: #008;
+  --syntax-com: #999;
+  --syntax-typ: #606;
+  --syntax-lit: #066;
+  --syntax-pun: #660;
+  --syntax-tag: #008;
+  --syntax-atn: #606;
+  --syntax-atv: #080;
+  --syntax-var: #606;
+  --syntax-fun: red;
+}
+
 body,
 html {
   margin: 0;
@@ -10,7 +119,8 @@ body {
     Helvetica,
     Arial;
   font-size: 14px;
-  color: #333;
+  color: var(--color-text);
+  background: var(--color-bg);
 }
 .small {
   font-size: 12px;
@@ -43,7 +153,7 @@ pre {
   tab-size: 2;
 }
 a {
-  color: #0074d9;
+  color: var(--color-link);
   text-decoration: none;
 }
 a:hover {
@@ -103,8 +213,7 @@ a:hover {
 }
 
 .quiet {
-  color: #7f7f7f;
-  color: rgba(0, 0, 0, 0.5);
+  color: var(--color-quiet);
 }
 .quiet a {
   opacity: 0.7;
@@ -113,8 +222,8 @@ a:hover {
 .fraction {
   font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
   font-size: 10px;
-  color: #555;
-  background: #e8e8e8;
+  color: var(--color-fraction);
+  background: var(--color-fraction-bg);
   padding: 4px 5px;
   border-radius: 3px;
   vertical-align: middle;
@@ -122,7 +231,7 @@ a:hover {
 
 div.path a:link,
 div.path a:visited {
-  color: #333;
+  color: var(--color-text);
 }
 table.coverage {
   border-collapse: collapse;
@@ -156,8 +265,8 @@ table.coverage td span.cline-any {
   border-radius: 3px;
   position: relative;
   padding: 0 4px;
-  background: #333;
-  color: yellow;
+  background: var(--color-missing-if-bg);
+  color: var(--color-missing-if);
 }
 
 .skip-if-branch {
@@ -165,8 +274,8 @@ table.coverage td span.cline-any {
   margin-right: 10px;
   position: relative;
   padding: 0 4px;
-  background: #ccc;
-  color: white;
+  background: var(--color-skip-if-bg);
+  color: var(--color-skip-if);
 }
 .missing-if-branch .typ,
 .skip-if-branch .typ {
@@ -177,20 +286,20 @@ table.coverage td span.cline-any {
   width: 100%;
 }
 .coverage-summary tr {
-  border-bottom: 1px solid #bbb;
+  border-bottom: 1px solid var(--color-border);
 }
 .keyline-all {
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-keyline);
 }
 .coverage-summary td,
 .coverage-summary th {
   padding: 10px;
 }
 .coverage-summary tbody {
-  border: 1px solid #bbb;
+  border: 1px solid var(--color-border);
 }
 .coverage-summary td {
-  border-right: 1px solid #bbb;
+  border-right: 1px solid var(--color-border);
 }
 .coverage-summary td:last-child {
   border-right: none;
@@ -238,81 +347,81 @@ table.coverage td span.cline-any {
 }
 /* yellow */
 .cbranch-no {
-  background: yellow !important;
-  color: #111;
+  background: var(--color-branch-no-bg) !important;
+  color: var(--color-branch-no);
 }
 /* dark red */
 .red.solid,
 .status-line.low,
 .low .cover-fill {
-  background: #c21f39;
+  background: var(--color-low-strong);
 }
 .low .chart {
-  border: 1px solid #c21f39;
+  border: 1px solid var(--color-low-strong);
 }
 .highlighted,
 .highlighted .cstat-no,
 .highlighted .fstat-no,
 .highlighted .cbranch-no {
-  background: #c21f39 !important;
+  background: var(--color-highlighted) !important;
 }
 /* medium red */
 .cstat-no,
 .fstat-no,
 .cbranch-no,
 .cbranch-no {
-  background: #f6c6ce;
+  background: var(--color-uncovered);
 }
 /* light red */
 .low,
 .cline-no {
-  background: #fce1e5;
+  background: var(--color-low);
 }
 /* light green */
 .high,
 .cline-yes {
-  background: rgb(230, 245, 208);
+  background: var(--color-high);
 }
 /* medium green */
 .cstat-yes {
-  background: rgb(161, 215, 106);
+  background: var(--color-covered);
 }
 /* dark green */
 .status-line.high,
 .high .cover-fill {
-  background: rgb(77, 146, 33);
+  background: var(--color-high-strong);
 }
 .high .chart {
-  border: 1px solid rgb(77, 146, 33);
+  border: 1px solid var(--color-high-strong);
 }
 /* dark yellow (gold) */
 .status-line.medium,
 .medium .cover-fill {
-  background: #f9cd0b;
+  background: var(--color-medium-strong);
 }
 .medium .chart {
-  border: 1px solid #f9cd0b;
+  border: 1px solid var(--color-medium-strong);
 }
 /* light yellow */
 .medium {
-  background: #fff4c2;
+  background: var(--color-medium);
 }
 
 .cstat-skip {
-  background: #ddd;
-  color: #111;
+  background: var(--color-skip-bg);
+  color: var(--color-skip);
 }
 .fstat-skip {
-  background: #ddd;
-  color: #111 !important;
+  background: var(--color-skip-bg);
+  color: var(--color-skip) !important;
 }
 .cbranch-skip {
-  background: #ddd !important;
-  color: #111;
+  background: var(--color-skip-bg) !important;
+  color: var(--color-skip);
 }
 
 span.cline-neutral {
-  background: #eaeaea;
+  background: var(--color-neutral);
 }
 
 .coverage-summary td.empty {
@@ -320,7 +429,7 @@ span.cline-neutral {
   padding-top: 4px;
   padding-bottom: 4px;
   line-height: 1;
-  color: #888;
+  color: var(--color-empty);
 }
 
 .cover-fill,
@@ -332,7 +441,7 @@ span.cline-neutral {
   line-height: 0;
 }
 .cover-empty {
-  background: white;
+  background: var(--color-cover-empty);
 }
 .cover-full {
   border-right: none !important;
@@ -343,10 +452,10 @@ pre.prettyprint {
   margin: 0 !important;
 }
 .com {
-  color: #999 !important;
+  color: var(--syntax-com) !important;
 }
 .ignore-none {
-  color: #999;
+  color: var(--color-ignore-none);
   font-weight: normal;
 }
 
@@ -359,4 +468,144 @@ pre.prettyprint {
 .footer,
 .push {
   height: 48px;
+}
+
+/* overrides the screen colors of prettify.css, which is loaded before this file */
+.pln {
+  color: var(--syntax-pln);
+}
+@media screen {
+  .str {
+    color: var(--syntax-str);
+  }
+  .kwd {
+    color: var(--syntax-kwd);
+  }
+  .typ {
+    color: var(--syntax-typ);
+  }
+  .lit {
+    color: var(--syntax-lit);
+  }
+  .pun,
+  .opn,
+  .clo {
+    color: var(--syntax-pun);
+  }
+  .tag {
+    color: var(--syntax-tag);
+  }
+  .atn {
+    color: var(--syntax-atn);
+  }
+  .atv {
+    color: var(--syntax-atv);
+  }
+  .dec,
+  .var {
+    color: var(--syntax-var);
+  }
+  .fun {
+    color: var(--syntax-fun);
+  }
+}
+
+/* sort-arrow-sprite.png is drawn for light backgrounds */
+:root[data-theme="dark"] .coverage-summary .sorter {
+  filter: invert(1);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .coverage-summary .sorter {
+    filter: invert(1);
+  }
+}
+
+.theme-select {
+  float: right;
+}
+/* the embedding page, e.g. Vitest UI, owns the theme, see theme.js */
+:root[data-theme-embedded] .theme-select {
+  display: none;
+}
+.theme-select select {
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  padding: 2px 4px;
+}
+
+/*
+ * Typography and shapes of Vitest for the Light and Dark themes: Vitest UI's
+ * font and the docs' shapes. Readex Pro is bundled under the SIL Open Font
+ * License, see readex-pro-license.txt.
+ */
+@font-face {
+  font-family: "Readex Pro Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 160 700;
+  src: url(readex-pro.woff2) format("woff2-variations");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+:root:not([data-theme="legacy"]) body {
+  font-family:
+    "Readex Pro Variable", "Readex Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+:root:not([data-theme="legacy"]) pre,
+:root:not([data-theme="legacy"]) .fraction {
+  font-family:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+:root:not([data-theme="legacy"]) h1 {
+  font-weight: 600;
+}
+:root:not([data-theme="legacy"]) .coverage-summary,
+:root:not([data-theme="legacy"]) .clearfix .strong {
+  font-variant-numeric: tabular-nums;
+}
+
+/* rounded table with horizontal dividers only */
+:root:not([data-theme="legacy"]) .coverage-summary {
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+:root:not([data-theme="legacy"]) .coverage-summary th {
+  background: light-dark(#f4f3ec, #0c0912);
+}
+:root:not([data-theme="legacy"]) .coverage-summary td {
+  border-top: 1px solid var(--color-border);
+  border-right: none;
+}
+
+:root:not([data-theme="legacy"]) .fraction {
+  border-radius: 4px;
+}
+:root:not([data-theme="legacy"]) .theme-select select,
+:root:not([data-theme="legacy"]) #fileSearch {
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 3px 8px;
+}
+
+/* crossfade between themes, started by theme.js */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 200ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(root),
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
 }
