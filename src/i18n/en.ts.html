@@ -4023,7 +4023,29 @@
 <a name='L3947'></a><a href='#L3947'>3947</a>
 <a name='L3948'></a><a href='#L3948'>3948</a>
 <a name='L3949'></a><a href='#L3949'>3949</a>
-<a name='L3950'></a><a href='#L3950'>3950</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L3950'></a><a href='#L3950'>3950</a>
+<a name='L3951'></a><a href='#L3951'>3951</a>
+<a name='L3952'></a><a href='#L3952'>3952</a>
+<a name='L3953'></a><a href='#L3953'>3953</a>
+<a name='L3954'></a><a href='#L3954'>3954</a>
+<a name='L3955'></a><a href='#L3955'>3955</a>
+<a name='L3956'></a><a href='#L3956'>3956</a>
+<a name='L3957'></a><a href='#L3957'>3957</a>
+<a name='L3958'></a><a href='#L3958'>3958</a>
+<a name='L3959'></a><a href='#L3959'>3959</a>
+<a name='L3960'></a><a href='#L3960'>3960</a>
+<a name='L3961'></a><a href='#L3961'>3961</a>
+<a name='L3962'></a><a href='#L3962'>3962</a>
+<a name='L3963'></a><a href='#L3963'>3963</a>
+<a name='L3964'></a><a href='#L3964'>3964</a>
+<a name='L3965'></a><a href='#L3965'>3965</a>
+<a name='L3966'></a><a href='#L3966'>3966</a>
+<a name='L3967'></a><a href='#L3967'>3967</a>
+<a name='L3968'></a><a href='#L3968'>3968</a>
+<a name='L3969'></a><a href='#L3969'>3969</a>
+<a name='L3970'></a><a href='#L3970'>3970</a>
+<a name='L3971'></a><a href='#L3971'>3971</a>
+<a name='L3972'></a><a href='#L3972'>3972</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -4038,7 +4060,29 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">124x</span>
+<span class="cline-any cline-yes">125x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -7996,6 +8040,16 @@ export const en = {
 		message: 'Your AI assistant that can actively work with your vault.',
 		context: 'Subtitle under the empty-state heading. "Vault" is the Obsidian term for a notes folder.',
 	},
+	'agent.empty.historyOff': {
+		message: "Session history is off, so this conversation won't be saved.",
+		context:
+			'Hint in the agent view empty state, shown when the "Keep session history" setting is off. Followed by a link to settings.',
+	},
+	'agent.empty.historyOffLink': {
+		message: 'Turn on "Keep session history" in settings',
+		context:
+			'Link after the session-history-off hint; opens the plugin settings tab. "Keep session history" is the name of the settings toggle.',
+	},
 	'agent.empty.capabilitiesTitle': {
 		message: 'What can the agent do?',
 		context: 'Section heading above a bullet list of agent capabilities.',
@@ -8142,7 +8196,7 @@ export const en = {
 	},
 	'settings.main.keepSessionHistoryDesc': {
 		message:
-			'Persist agent chat sessions as markdown files in your vault. Sessions are saved under Agent-Sessions/ with auto-generated titles.',
+			'Persist agent chat sessions as markdown files in your vault. Sessions are saved under Agent-Sessions/ with auto-generated titles. Off by default: while off, sessions are not saved anywhere.',
 		context:
 			'Settings toggle description. "Agent-Sessions/" is a literal folder name and must stay untranslated. "Vault" is the Obsidian term for a notes folder.',
 	},
@@ -8168,6 +8222,12 @@ export const en = {
 			'Folder where plugin data is stored. Agent sessions live under Agent-Sessions/, custom prompts under Prompts/, hooks under Hooks/, scheduled task state under Scheduled-Tasks/.',
 		context:
 			'Settings field description for the plugin state folder. The folder names ending in / are literal subfolder names and must stay untranslated.',
+	},
+	'settings.main.pluginFolderHiddenError': {
+		message:
+			"Folders starting with a dot aren't supported. Obsidian doesn't index hidden folders, so the plugin can't find its files there. Use a name without a leading dot.",
+		context:
+			'Inline validation error under the Plugin folder setting when the path contains a folder name starting with "." (a hidden folder).',
 	},
 	'settings.main.scheduledTasksName': {
 		message: 'Scheduled tasks',
@@ -10095,6 +10155,12 @@ export const en = {
 		context: 'Heading of the modal listing saved agent chat sessions.',
 	},
 	'agent.sessionList.empty': { message: 'No agent sessions found', context: 'Empty state of the session list modal.' },
+	'agent.sessionList.historyOff': {
+		message:
+			'Session history is off. New sessions aren\'t saved, and saved sessions open without their messages. Turn on "Keep session history" in settings to save and reopen them.',
+		context:
+			'Notice at the top of the session list modal when the "Keep session history" setting is off. "Keep session history" is the name of the settings toggle.',
+	},
 	'agent.sessionList.loadFailed': {
 		message: 'Failed to load agent sessions',
 		context: 'Error notice when the saved session list cannot be loaded.',
@@ -11928,7 +11994,7 @@ export type TranslationKey = keyof typeof en;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-08T23:47:38.095Z
+                at 2026-11-08T23:48:17.023Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
