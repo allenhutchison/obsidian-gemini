@@ -3,6 +3,7 @@ import {
 	RUNS_SUBFOLDER,
 	STATE_FILES,
 	STATE_SUBFOLDERS,
+	hasHiddenSegment,
 	stateFolderPath,
 } from '../../src/services/state-folder';
 
@@ -90,5 +91,23 @@ describe('the layout constants', () => {
 			debugLog: 'debug.log',
 			oldDebugLog: 'debug.log.old',
 		});
+	});
+});
+
+describe('hasHiddenSegment (#1730)', () => {
+	it('flags a dot-prefixed root folder', () => {
+		expect(hasHiddenSegment('.gemini-scribe')).toBe(true);
+	});
+
+	it('flags a dot-prefixed nested folder', () => {
+		expect(hasHiddenSegment('Resources/.scribe')).toBe(true);
+		expect(hasHiddenSegment('.hidden/gemini-scribe')).toBe(true);
+	});
+
+	it('accepts ordinary folders, including names with a dot inside', () => {
+		expect(hasHiddenSegment('gemini-scribe')).toBe(false);
+		expect(hasHiddenSegment('Resources/gemini-scribe')).toBe(false);
+		expect(hasHiddenSegment('Resources/gemini.scribe')).toBe(false);
+		expect(hasHiddenSegment('')).toBe(false);
 	});
 });

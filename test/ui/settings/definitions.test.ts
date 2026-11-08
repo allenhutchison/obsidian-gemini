@@ -99,6 +99,20 @@ describe('ObsidianGeminiSettingTab#getSettingDefinitions', () => {
 		});
 	});
 
+	it('the Plugin folder control rejects dot-prefixed folders (#1730)', () => {
+		const { tab } = buildTab();
+		let validate: ((value: string) => unknown) | undefined;
+		walk(tab.getSettingDefinitions(), (item) => {
+			const control = (item as { control?: { key: string; validate?: (value: string) => unknown } }).control;
+			if (control?.key === 'historyFolder') validate = control.validate;
+		});
+		expect(validate).toBeTypeOf('function');
+		expect(validate!('.gemini-scribe')).toBe(en['settings.main.pluginFolderHiddenError'].message);
+		expect(validate!('Resources/.scribe')).toBe(en['settings.main.pluginFolderHiddenError'].message);
+		expect(validate!('Resources/gemini-scribe')).toBeUndefined();
+		expect(validate!('gemini-scribe')).toBeUndefined();
+	});
+
 	it('Providers and Features top-level rows carry a reactive displayValue', () => {
 		const { tab } = buildTab();
 		const items = tab.getSettingDefinitions();

@@ -188,7 +188,7 @@ For detailed information about context files and advanced usage, see the [Contex
 ### Session Management
 
 - Each conversation is a separate session
-- Sessions persist across Obsidian restarts when the "Keep session history" setting is enabled (off by default — see [Settings Reference](/reference/settings))
+- Sessions persist across Obsidian restarts when the "Keep session history" setting is enabled (off by default — see [Settings Reference](/reference/settings)). While it is off, the empty agent view says so and links to the setting
 - Access previous sessions from the session menu (☰) in the agent header → **Browse sessions**, or the "Browse agent sessions" command
 - Delete a session from the **Browse sessions** list: click its trash icon and the row turns into an inline **Delete** / **Cancel** confirmation (press Escape to cancel without closing the list). Confirming moves the history file to the trash using your Obsidian deleted-files setting; deleting the session you currently have open starts a new session
 - Configure session-specific settings (see [Session Configuration](#session-configuration))

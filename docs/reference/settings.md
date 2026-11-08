@@ -236,6 +236,9 @@ default.
 - **Default**: `false`
 - **Description**: Store agent session history as markdown files in your vault, under
   `[Plugin folder]/Agent-Sessions/`, with auto-generated titles.
+- **Notes**: While this is off, sessions are not saved anywhere, so nothing appears in
+  `Agent-Sessions/` or in **Browse sessions**. The agent view's empty state and the
+  **Browse sessions** list both say when history is off and link to this setting.
 
 ### Review a diff before files are written
 
@@ -279,6 +282,10 @@ provider for this feature on the [Features](#features) page — Gemini only toda
 - **Notes**: The value is normalized on load and when saved (via `normalizePath` semantics) — a
   hand-typed trailing, leading, or duplicate slash is corrected automatically, so folder exclusion
   and subfolder paths never break on a malformed path. Uses Obsidian's native folder suggester.
+  Folders whose name starts with a dot (such as `.gemini-scribe` or `Resources/.scribe`) are
+  rejected: Obsidian doesn't index hidden folders, so the plugin couldn't find its own files there.
+  To keep the folder out of the way, nest it under a regular folder (for example
+  `Resources/gemini-scribe`) and add it to **Settings → Files and links → Excluded files**.
 - **Structure**:
   ```text
   gemini-scribe/

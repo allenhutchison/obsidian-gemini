@@ -12,6 +12,7 @@ import { hooksPage } from './page-hooks';
 import { mcpPage } from './page-mcp';
 import { toolPermissionsPage } from './page-tool-permissions';
 import { advancedPage } from './page-advanced';
+import { hasHiddenSegment } from '../../services/state-folder';
 
 /**
  * Settings tab, rebuilt on Obsidian 1.13's declarative `getSettingDefinitions()`
@@ -70,7 +71,14 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab implement
 					{
 						name: t('settings.main.pluginFolderName'),
 						desc: t('settings.main.pluginFolderDesc'),
-						control: { type: 'folder', key: 'historyFolder' },
+						control: {
+							type: 'folder',
+							key: 'historyFolder',
+							// Obsidian never indexes dot-prefixed folders, so a plugin
+							// folder there silently loses every session (#1730).
+							validate: (value: string) =>
+								hasHiddenSegment(value.trim()) ? t('settings.main.pluginFolderHiddenError') : undefined,
+						},
 					},
 				],
 			},

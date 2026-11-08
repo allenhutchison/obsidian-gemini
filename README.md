@@ -368,7 +368,7 @@ The plugin UI follows **Obsidian's interface language** (Settings → About → 
   - Try typing a few words and pausing to trigger the suggestion
   - Check that you're in a Markdown file
   - Disable other completion plugins that might conflict
-- **Sessions Not Loading:** Ensure "Keep session history" is on and the "Plugin folder" path is correct. Sessions live under `[Plugin state folder]/Agent-Sessions/`.
+- **Sessions Not Loading:** Ensure "Keep session history" is on (it is off by default, and while off nothing is saved) and the "Plugin folder" path is correct. Sessions live under `[Plugin state folder]/Agent-Sessions/`. The plugin folder can't be a hidden folder (one whose name starts with a dot), because Obsidian doesn't index those; nest it under a regular folder such as `Resources/gemini-scribe` instead.
 - **Custom Prompts Not Working:**
   - Verify the prompt file exists in the `[Plugin state folder]/Prompts/` folder
   - Check that the prompt is selected in session settings (gear icon)

@@ -81,7 +81,9 @@ export class SessionListModal extends Modal {
 
 		if (this.sessions.length === 0) {
 			listContainer.createEl('p', {
-				text: t('agent.sessionList.empty'),
+				// With history off nothing is ever saved, so "no sessions found"
+				// would read as a bug (#1730); name the actual reason instead.
+				text: this.plugin.settings.chatHistory ? t('agent.sessionList.empty') : t('agent.sessionList.historyOff'),
 				cls: 'gemini-agent-empty-state',
 			});
 		} else {

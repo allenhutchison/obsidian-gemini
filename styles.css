@@ -2005,6 +2005,34 @@ body.theme-dark {
 	max-width: 400px;
 }
 
+/* Session-history-off hint in the agent empty state (#1730) */
+.gemini-agent-history-off {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: var(--gs-space-1);
+	margin: 0 0 var(--gs-space-4) 0;
+	max-width: 400px;
+	font-size: var(--font-ui-small);
+	color: var(--gs-text-muted);
+}
+
+.gemini-agent-history-off-icon {
+	display: inline-flex;
+	color: var(--gs-text-faint);
+}
+
+.gemini-agent-history-off-icon svg {
+	width: var(--gs-icon-sm);
+	height: var(--gs-icon-sm);
+}
+
+.gemini-agent-history-off-link {
+	color: var(--gs-accent);
+	cursor: pointer;
+}
+
 .gemini-agent-suggestions {
 	display: flex;
 	flex-direction: column;
