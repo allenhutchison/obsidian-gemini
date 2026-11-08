@@ -76,6 +76,16 @@ export class SessionListModal extends Modal {
 			this.renderFilterBar(filterContainer);
 		}
 
+		// With history off, new sessions aren't saved and saved ones open without
+		// their messages (SessionHistory skips reads too), so say so up front
+		// whether or not the list is empty (#1730).
+		if (!this.plugin.settings.chatHistory) {
+			contentEl.createEl('p', {
+				text: t('agent.sessionList.historyOff'),
+				cls: 'gemini-session-history-off',
+			});
+		}
+
 		// Create session list
 		const listContainer = contentEl.createDiv({ cls: 'gemini-session-list' });
 

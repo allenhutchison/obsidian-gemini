@@ -101,7 +101,7 @@ interface Harness {
 	contentEl: HTMLElement;
 }
 
-async function openModal(sessions: ChatSession[]): Promise<Harness> {
+async function openModal(sessions: ChatSession[], chatHistory = true): Promise<Harness> {
 	const files = sessions.map((s, i) => sessionFile(s.historyPath, 2000 - i));
 	const byPath = new Map(files.map((f) => [f.path, f]));
 
@@ -123,7 +123,7 @@ async function openModal(sessions: ChatSession[]): Promise<Harness> {
 
 	const releaseSession = vi.fn();
 	const plugin = {
-		settings: { historyFolder: 'gemini-scribe' },
+		settings: { historyFolder: 'gemini-scribe', chatHistory },
 		sessionManager: {
 			releaseSession,
 			loadSession: vi.fn((path: string) => Promise.resolve(sessions.find((s) => s.historyPath === path) ?? null)),
@@ -322,5 +322,30 @@ describe('SessionListModal inline delete confirmation', () => {
 		rows(contentEl)[0].dispatchEvent(escape);
 
 		expect(escape.defaultPrevented).toBe(false);
+	});
+});
+
+describe('SessionListModal history-off notice (#1730)', () => {
+	beforeEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	it('shows no notice when history is on', async () => {
+		const { contentEl } = await openModal([], true);
+		expect(contentEl.querySelector('.gemini-session-history-off')).toBeNull();
+		expect(contentEl.querySelector('.gemini-agent-empty-state')?.textContent).toBe('No agent sessions found');
+	});
+
+	it('shows the notice when history is off and the list is empty', async () => {
+		const { contentEl } = await openModal([], false);
+		const text = contentEl.querySelector('.gemini-session-history-off')?.textContent ?? '';
+		expect(text).toContain('Session history is off');
+		expect(text).toContain('Keep session history');
+	});
+
+	it('still shows the notice when history is off but saved sessions are listed', async () => {
+		const { contentEl } = await openModal([makeSession('a', 'Alpha')], false);
+		expect(rows(contentEl)).toHaveLength(1);
+		expect(contentEl.querySelector('.gemini-session-history-off')).not.toBeNull();
 	});
 });

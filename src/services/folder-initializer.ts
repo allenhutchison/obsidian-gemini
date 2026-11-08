@@ -2,7 +2,13 @@ import { TFolder } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { ensureFolderExists } from '../utils/file-utils';
 import { getRawErrorMessage } from '../utils/error-utils';
-import { EAGER_SUBFOLDERS, LEGACY_SKILLS_SUBFOLDER, STATE_SUBFOLDERS, stateFolderPath } from './state-folder';
+import {
+	EAGER_SUBFOLDERS,
+	LEGACY_SKILLS_SUBFOLDER,
+	STATE_SUBFOLDERS,
+	hasHiddenSegment,
+	stateFolderPath,
+} from './state-folder';
 
 /**
  * Centralizes creation of all plugin state folders.
@@ -24,6 +30,16 @@ export class FolderInitializer {
 		const vault = this.plugin.app.vault;
 		const logger = this.plugin.logger;
 		const root = this.plugin.settings.historyFolder;
+
+		// A dot-prefixed folder is invisible to Obsidian's vault index, so
+		// nothing written there can be found again (#1730). The settings
+		// control rejects new values like this; a persisted one (hand-edited
+		// data.json, or saved before the check) gets an always-visible warning.
+		if (hasHiddenSegment(root)) {
+			logger.warn(
+				`Plugin folder "${root}" starts with a dot. Obsidian does not index hidden folders, so sessions, prompts, and skills stored there will not be found. Choose a folder name without a leading dot.`
+			);
+		}
 
 		// Create the plugin state root first
 		await ensureFolderExists(vault, root, 'plugin state', logger);

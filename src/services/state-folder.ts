@@ -98,3 +98,19 @@ export function stateFolderPath(
 	const parts = [settings.historyFolder, ...segments].filter((segment) => segment !== '');
 	return normalizePath(parts.join('/'));
 }
+
+/**
+ * Whether a vault path has a dot-prefixed segment (`.gemini-scribe`,
+ * `Resources/.scribe`, …).
+ *
+ * Obsidian's vault index never tracks dot-prefixed files or folders, so
+ * `getAbstractFileByPath` returns null for everything under such a path. A
+ * plugin folder there writes nothing the plugin can find again: sessions,
+ * prompts, and skills all silently vanish (#1730). The settings control
+ * rejects these values and `FolderInitializer` warns about a persisted one.
+ */
+export function hasHiddenSegment(path: string): boolean {
+	// Split on both separators: the setting writer runs `normalizePath`, which
+	// turns `Resources\.scribe` into `Resources/.scribe` after validation.
+	return path.split(/[\\/]/).some((segment) => segment.startsWith('.'));
+}

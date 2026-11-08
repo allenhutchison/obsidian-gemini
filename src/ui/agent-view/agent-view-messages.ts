@@ -10,6 +10,7 @@ import { t, getResolvedLocale } from '../../i18n';
 import { isToolExecutionMessage, parseToolSections } from './tool-section-parser';
 import { TOOL_ICONS } from './tool-icons';
 import { wireCollapsibleToggle } from './collapsible';
+import { openPluginSettingsTab } from '../../utils/obsidian-settings';
 
 // Documentation and help content
 const DOCS_BASE_URL = 'https://allenhutchison.github.io/obsidian-gemini';
@@ -518,6 +519,25 @@ export class AgentViewMessages {
 				text: t('agent.empty.description'),
 				cls: 'gemini-agent-empty-desc',
 			});
+
+			// Session history is off by default, and with it off nothing is
+			// written and no error appears, so users assume the plugin folder is
+			// broken (#1730). Say so where the conversation starts.
+			if (!this.plugin.settings.chatHistory) {
+				const historyOff = emptyState.createDiv({ cls: 'gemini-agent-history-off' });
+				const historyOffIcon = historyOff.createSpan({ cls: 'gemini-agent-history-off-icon' });
+				setIcon(historyOffIcon, 'history');
+				historyOff.createSpan({ text: t('agent.empty.historyOff') + ' ' });
+				const settingsLink = historyOff.createEl('a', {
+					text: t('agent.empty.historyOffLink'),
+					cls: 'gemini-agent-history-off-link',
+				});
+				settingsLink.href = '#';
+				settingsLink.addEventListener('click', (e) => {
+					e.preventDefault();
+					openPluginSettingsTab(this.plugin.app, this.plugin.manifest.id);
+				});
+			}
 
 			// What can the agent do section
 			const capabilities = emptyState.createDiv({ cls: 'gemini-agent-capabilities' });

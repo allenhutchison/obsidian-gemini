@@ -22,6 +22,16 @@ export const en = {
 		message: 'Your AI assistant that can actively work with your vault.',
 		context: 'Subtitle under the empty-state heading. "Vault" is the Obsidian term for a notes folder.',
 	},
+	'agent.empty.historyOff': {
+		message: "Session history is off, so this conversation won't be saved.",
+		context:
+			'Hint in the agent view empty state, shown when the "Keep session history" setting is off. Followed by a link to settings.',
+	},
+	'agent.empty.historyOffLink': {
+		message: 'Turn on "Keep session history" in settings',
+		context:
+			'Link after the session-history-off hint; opens the plugin settings tab. "Keep session history" is the name of the settings toggle.',
+	},
 	'agent.empty.capabilitiesTitle': {
 		message: 'What can the agent do?',
 		context: 'Section heading above a bullet list of agent capabilities.',
@@ -168,7 +178,7 @@ export const en = {
 	},
 	'settings.main.keepSessionHistoryDesc': {
 		message:
-			'Persist agent chat sessions as markdown files in your vault. Sessions are saved under Agent-Sessions/ with auto-generated titles.',
+			'Persist agent chat sessions as markdown files in your vault. Sessions are saved under Agent-Sessions/ with auto-generated titles. Off by default: while off, sessions are not saved anywhere.',
 		context:
 			'Settings toggle description. "Agent-Sessions/" is a literal folder name and must stay untranslated. "Vault" is the Obsidian term for a notes folder.',
 	},
@@ -194,6 +204,12 @@ export const en = {
 			'Folder where plugin data is stored. Agent sessions live under Agent-Sessions/, custom prompts under Prompts/, hooks under Hooks/, scheduled task state under Scheduled-Tasks/.',
 		context:
 			'Settings field description for the plugin state folder. The folder names ending in / are literal subfolder names and must stay untranslated.',
+	},
+	'settings.main.pluginFolderHiddenError': {
+		message:
+			"Folders starting with a dot aren't supported. Obsidian doesn't index hidden folders, so the plugin can't find its files there. Use a name without a leading dot.",
+		context:
+			'Inline validation error under the Plugin folder setting when the path contains a folder name starting with "." (a hidden folder).',
 	},
 	'settings.main.scheduledTasksName': {
 		message: 'Scheduled tasks',
@@ -2121,6 +2137,12 @@ export const en = {
 		context: 'Heading of the modal listing saved agent chat sessions.',
 	},
 	'agent.sessionList.empty': { message: 'No agent sessions found', context: 'Empty state of the session list modal.' },
+	'agent.sessionList.historyOff': {
+		message:
+			'Session history is off. New sessions aren\'t saved, and saved sessions open without their messages. Turn on "Keep session history" in settings to save and reopen them.',
+		context:
+			'Notice at the top of the session list modal when the "Keep session history" setting is off. "Keep session history" is the name of the settings toggle.',
+	},
 	'agent.sessionList.loadFailed': {
 		message: 'Failed to load agent sessions',
 		context: 'Error notice when the saved session list cannot be loaded.',

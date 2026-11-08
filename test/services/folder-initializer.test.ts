@@ -48,6 +48,17 @@ describe('FolderInitializer', () => {
 		folderInitializer = new FolderInitializer(mockPlugin);
 	});
 
+	it('warns when the plugin folder is dot-prefixed (#1730)', async () => {
+		mockPlugin.settings.historyFolder = '.gemini-scribe';
+		await folderInitializer.initializeAll();
+		expect(mockPlugin.logger.warn).toHaveBeenCalledWith(expect.stringContaining('starts with a dot'));
+	});
+
+	it('does not warn for an ordinary plugin folder', async () => {
+		await folderInitializer.initializeAll();
+		expect(mockPlugin.logger.warn).not.toHaveBeenCalled();
+	});
+
 	it('should create all plugin state folders in one pass', async () => {
 		await folderInitializer.initializeAll();
 
