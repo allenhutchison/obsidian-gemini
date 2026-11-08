@@ -236,9 +236,10 @@ default.
 - **Default**: `false`
 - **Description**: Store agent session history as markdown files in your vault, under
   `[Plugin folder]/Agent-Sessions/`, with auto-generated titles.
-- **Notes**: While this is off, sessions are not saved anywhere, so nothing appears in
-  `Agent-Sessions/` or in **Browse sessions**. The agent view's empty state and the
-  **Browse sessions** list both say when history is off and link to this setting.
+- **Notes**: While this is off, new sessions are not saved anywhere, and sessions saved
+  earlier still appear in **Browse sessions** but open without their messages. The agent
+  view's empty state says when history is off and links to this setting; **Browse sessions**
+  shows the same notice.
 
 ### Review a diff before files are written
 

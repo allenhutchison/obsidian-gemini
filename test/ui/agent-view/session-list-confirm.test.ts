@@ -325,20 +325,27 @@ describe('SessionListModal inline delete confirmation', () => {
 	});
 });
 
-describe('SessionListModal empty state (#1730)', () => {
+describe('SessionListModal history-off notice (#1730)', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
 	});
 
-	it('says no sessions were found when history is on', async () => {
+	it('shows no notice when history is on', async () => {
 		const { contentEl } = await openModal([], true);
+		expect(contentEl.querySelector('.gemini-session-history-off')).toBeNull();
 		expect(contentEl.querySelector('.gemini-agent-empty-state')?.textContent).toBe('No agent sessions found');
 	});
 
-	it('names the off setting as the reason when history is off', async () => {
+	it('shows the notice when history is off and the list is empty', async () => {
 		const { contentEl } = await openModal([], false);
-		const text = contentEl.querySelector('.gemini-agent-empty-state')?.textContent ?? '';
+		const text = contentEl.querySelector('.gemini-session-history-off')?.textContent ?? '';
 		expect(text).toContain('Session history is off');
 		expect(text).toContain('Keep session history');
+	});
+
+	it('still shows the notice when history is off but saved sessions are listed', async () => {
+		const { contentEl } = await openModal([makeSession('a', 'Alpha')], false);
+		expect(rows(contentEl)).toHaveLength(1);
+		expect(contentEl.querySelector('.gemini-session-history-off')).not.toBeNull();
 	});
 });

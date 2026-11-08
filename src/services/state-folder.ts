@@ -110,5 +110,7 @@ export function stateFolderPath(
  * rejects these values and `FolderInitializer` warns about a persisted one.
  */
 export function hasHiddenSegment(path: string): boolean {
-	return path.split('/').some((segment) => segment.startsWith('.'));
+	// Split on both separators: the setting writer runs `normalizePath`, which
+	// turns `Resources\.scribe` into `Resources/.scribe` after validation.
+	return path.split(/[\\/]/).some((segment) => segment.startsWith('.'));
 }

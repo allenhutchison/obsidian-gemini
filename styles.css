@@ -2005,6 +2005,13 @@ body.theme-dark {
 	max-width: 400px;
 }
 
+/* Session-history-off notice in the session list modal (#1730) */
+.gemini-session-history-off {
+	margin: 0 0 var(--gs-space-3) 0;
+	font-size: var(--font-ui-small);
+	color: var(--gs-text-muted);
+}
+
 /* Session-history-off hint in the agent empty state (#1730) */
 .gemini-agent-history-off {
 	display: flex;

@@ -2134,9 +2134,9 @@ export const en = {
 	'agent.sessionList.empty': { message: 'No agent sessions found', context: 'Empty state of the session list modal.' },
 	'agent.sessionList.historyOff': {
 		message:
-			'Session history is off, so no sessions are saved. Turn on "Keep session history" in settings to save them.',
+			'Session history is off. New sessions aren\'t saved, and saved sessions open without their messages. Turn on "Keep session history" in settings to save and reopen them.',
 		context:
-			'Empty state of the session list modal when the "Keep session history" setting is off. "Keep session history" is the name of the settings toggle.',
+			'Notice at the top of the session list modal when the "Keep session history" setting is off. "Keep session history" is the name of the settings toggle.',
 	},
 	'agent.sessionList.loadFailed': {
 		message: 'Failed to load agent sessions',
