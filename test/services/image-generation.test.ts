@@ -544,6 +544,15 @@ describe('ImageGeneration.saveImageToVault – format sniffed from the bytes', (
 		expect(service.findImageWithSameStem('attachments/other.png')).toBeNull();
 	});
 
+	it('treats a reserved stem as taken until it is released', () => {
+		(service as any).plugin.app.vault.getAbstractFileByPath = () => null;
+
+		const release = service.reserveImageStem('attachments/desk.png');
+		expect(service.findImageWithSameStem('attachments/desk.jpg')).toBe('attachments/desk.jpg');
+		release();
+		expect(service.findImageWithSameStem('attachments/desk.jpg')).toBeNull();
+	});
+
 	it('flows through generateImage: a JPEG from the client lands as .jpg', async () => {
 		mockGenerateImageBytes.mockResolvedValue(toBase64(JPEG_BYTES));
 		const result = await service.generateImage('a desk', 'gemini-scribe/Background-Tasks/desk.png');

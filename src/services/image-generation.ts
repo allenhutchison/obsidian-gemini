@@ -13,6 +13,8 @@ export class ImageGeneration {
 	private plugin: ObsidianGemini;
 	private client: ImageGenerationApi;
 	private prompts: GeminiPrompts;
+	/** Stems (path without extension) of background images still being generated. */
+	private pendingStems = new Set<string>();
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
@@ -218,17 +220,37 @@ export class ImageGeneration {
 	 * extension for the real format, so the agent finds the result by trying
 	 * those extensions. That is only unambiguous when no other file already uses
 	 * the stem; otherwise it could pick up an older image. Callers reject the
-	 * path up front in that case.
+	 * path up front in that case. A stem reserved by a still-running background
+	 * task (see `reserveImageStem`) counts as taken too, so two concurrent
+	 * requests can't share one provisional path.
 	 */
 	findImageWithSameStem(path: string): string | null {
-		const dotIndex = path.lastIndexOf('.');
-		const slashIndex = path.lastIndexOf('/');
-		const stem = dotIndex > slashIndex + 1 ? path.slice(0, dotIndex) : path;
+		const stem = this.stemOf(path);
+		if (this.pendingStems.has(stem)) return path;
 		for (const extension of SNIFFED_IMAGE_EXTENSIONS) {
 			const candidate = `${stem}.${extension}`;
 			if (this.plugin.app.vault.getAbstractFileByPath(candidate)) return candidate;
 		}
 		return null;
+	}
+
+	/**
+	 * Reserve `path`'s stem for a background task until the returned release
+	 * function is called. Pair with `findImageWithSameStem`, and release in a
+	 * `finally` so a failed or cancelled task frees the name.
+	 */
+	reserveImageStem(path: string): () => void {
+		const stem = this.stemOf(path);
+		this.pendingStems.add(stem);
+		return () => {
+			this.pendingStems.delete(stem);
+		};
+	}
+
+	private stemOf(path: string): string {
+		const dotIndex = path.lastIndexOf('.');
+		const slashIndex = path.lastIndexOf('/');
+		return dotIndex > slashIndex + 1 ? path.slice(0, dotIndex) : path;
 	}
 
 	/**

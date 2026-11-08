@@ -6,6 +6,7 @@ const mockImageGeneration = {
 	generateImage: vi.fn(),
 	resolveOutputPath: vi.fn(),
 	findImageWithSameStem: vi.fn().mockReturnValue(null),
+	reserveImageStem: vi.fn().mockReturnValue(() => undefined),
 };
 
 const mockBackgroundTaskManager = {
@@ -298,6 +299,19 @@ describe('ImageTools', () => {
 				'gemini-scribe/Background-Tasks/result.png'
 			);
 			expect(returnedPath).toBe('gemini-scribe/Background-Tasks/result.png');
+		});
+
+		it('releases the reserved stem when the task settles, even on failure', async () => {
+			const release = vi.fn();
+			mockImageGeneration.reserveImageStem.mockReturnValueOnce(release);
+			mockImageGeneration.generateImage.mockRejectedValueOnce(new Error('quota'));
+
+			await tool.execute({ prompt: 'a sunset', background: true }, mockContext);
+			expect(release).not.toHaveBeenCalled();
+
+			const callback = mockBackgroundTaskManager.submit.mock.calls[0][2];
+			await expect(callback(() => false)).rejects.toThrow('quota');
+			expect(release).toHaveBeenCalledTimes(1);
 		});
 
 		it('callback returns undefined when cancelled', async () => {
