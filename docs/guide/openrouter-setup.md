@@ -15,7 +15,7 @@ This uses API-key billing: you need an OpenRouter API key and credits (or a free
 ## Models
 
 - **How the list is built** — The plugin reads OpenRouter's public catalog, `GET https://openrouter.ai/api/v1/models`, for text models and `GET https://openrouter.ai/api/v1/images/models` for image models. Each model shows its OpenRouter display name (for example "Anthropic: Claude Sonnet 5"), and its context window and image-input support come straight from the catalog, so context compaction and attachments follow the model you pick.
-- **Defaults** — OpenRouter's catalog changes constantly, so the defaults are chosen from the live list rather than pinned: the newest Gemini Flash model for Chat, Summaries, and Rewrite, the newest Gemini Flash Lite for Completions, and the newest image model for Image generation. Pick any other model to override a default.
+- **Defaults** — OpenRouter's catalog changes constantly, so the defaults are chosen from the live list rather than pinned. Chat uses the newest Gemini Flash model that supports tool calling (if none does, the newest tool-capable Gemini Pro, and failing that the first model in the catalog). Summaries and Rewrite use the newest Gemini Flash, Completions the newest Gemini Flash Lite (or Flash if there is none), and Image generation the newest image model. Pick any other model to override a default.
 - **No key yet** — Without a key the card reads **Not set up** and no request is made to OpenRouter, not even for the model list.
 - **Refresh** — Click **Refresh** on the OpenRouter card to pick up newly listed models.
 
@@ -37,7 +37,7 @@ This uses API-key billing: you need an OpenRouter API key and credits (or a free
 
 ## What does not work
 
-- **Gemini-only features** — Google Search, Google Maps, URL Context (web fetch), Deep Research, and the vault search index call Google's own APIs. They aren't available on OpenRouter, even for Gemini models. Route them to the Gemini provider instead. See the [Provider Capabilities reference](/reference/provider-capabilities) for the full matrix.
+- **Gemini-only features** — Google Search, URL Context (web fetch), Deep Research, and the vault search index call Google's own APIs. They aren't available on OpenRouter, even for Gemini models; route them to the Gemini provider on the Features page instead. **Google Maps** isn't a routed feature: its tool is offered whenever a Gemini API key is set on the Gemini card, even while chat runs on OpenRouter, and a Maps lookup the agent makes goes to Google. See the [Provider Capabilities reference](/reference/provider-capabilities) for the full matrix.
 - **PDF, audio, and video attachments** — Only images are sent. Route chat to Gemini (or Anthropic, for PDFs) for those.
 - **Tool calling on every model** — Some models on OpenRouter don't support tools. The agent can't use vault tools with them; pick a model whose OpenRouter page lists "tools" support.
 - **Custom base URL** — Not supported. Requests always go to `openrouter.ai`.
@@ -50,7 +50,7 @@ On the **Features page**, each feature can use a different provider. For example
 2. Add your Gemini **API key** on the Gemini card. Any feature routed to Gemini needs it, even while chat stays on OpenRouter.
 3. On the **Features** page, set **Web search** (and any other Google-backed feature you want) to **Gemini**.
 
-Nothing moves between providers unless you move it. A feature routed to a provider that can't serve it, or that isn't connected, stays off; the plugin never swaps in another provider.
+Nothing moves between providers unless you move it (Google Maps, above, follows the Gemini key rather than a route). A feature routed to a provider that can't serve it, or that isn't connected, stays off; the plugin never swaps in another provider.
 
 ## Privacy
 

@@ -149,13 +149,13 @@ Rows, grouped:
 | Media            | Image generation                                   |
 
 - **Chat and agent** (`features.chat`) — interactive chat, agent sessions, scheduled tasks,
-  hooks. All four providers support it.
+  hooks. All five providers support it.
 - **Summaries** (`features.summary`) — the "Summarize active file" command and conversation
-  compaction. All four providers support it.
-- **Completions** (`features.completions`) — IDE-style inline suggestions. All four providers
+  compaction. All five providers support it.
+- **Completions** (`features.completions`) — IDE-style inline suggestions. All five providers
   support it.
 - **Rewrite** (`features.rewrite`) — rewriting selected text. Has its own model field (it no
-  longer silently borrows the chat model). All four providers support it.
+  longer silently borrows the chat model). All five providers support it.
 - **Web search** (`features.webSearch`) — Google Search grounding and the web-fetch (URL
   context) tool ride together on this row. Gemini only today.
 - **Deep research** (`features.deepResearch`) — the Deep Research managed agent. Gemini only;
@@ -166,7 +166,8 @@ Rows, grouped:
   the [Vault search index](#vault-search-index) page's own "Index this vault" toggle is off,
   even if a provider is routed.
 - **Image generation** (`features.imageGen`) — the `generate_image` tool and **Generate image**
-  command. Supported by Gemini and OpenAI; OpenAI uses its dedicated Images API.
+  command. Supported by Gemini, OpenAI, and OpenRouter; OpenAI and OpenRouter each use their
+  own Images API.
 
 **Google Maps grounding is not a routed feature.** It is provider-bound to Gemini and listed
 under the Gemini card's "Includes" line — see [Provider-bound grounding](#provider-bound-grounding).
