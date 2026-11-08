@@ -43,7 +43,7 @@ export class GenerateImageTool implements Tool {
 				type: 'boolean' as const,
 				description:
 					'When true, submit as a background task and return immediately with { taskId, output_path }. ' +
-					'The output_path in the response is where the image will be saved; its extension may change from .png to .jpg, .webp or .gif to match the image data. Pass it to read_file once the task completes.',
+					'The output_path in the response is where the image will be saved; its extension may change from .png to .jpg, .webp or .gif to match the image data. Once the task completes, read_file it, and if the .png path is missing, try the same path with those extensions.',
 			},
 		},
 		required: ['prompt'],
