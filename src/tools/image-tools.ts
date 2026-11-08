@@ -155,7 +155,29 @@ export class GenerateImageTool implements Tool {
 			}
 
 			// ── Foreground mode (default) ────────────────────────────────────────
-			const imagePath = await plugin.imageGeneration.generateImage(prompt, outputPath);
+			// Without an explicit path the default name is unique, so there is
+			// nothing to guard. With one, respect a stem a pending background image
+			// has reserved, and reserve it ourselves while generating, so neither
+			// request can save a same-stem file the other then finds by extension.
+			let imagePath: string;
+			if (outputPath) {
+				const imageGeneration = plugin.imageGeneration;
+				const resolvedOutputPath = await imageGeneration.resolveOutputPath(prompt, outputPath);
+				if (imageGeneration.isImageStemReserved(resolvedOutputPath)) {
+					return {
+						success: false,
+						error: `An image with the same name is still being generated at "${resolvedOutputPath}". Choose an output_path with a different file name, or wait for that task to finish.`,
+					};
+				}
+				const releaseStem = imageGeneration.reserveImageStem(resolvedOutputPath);
+				try {
+					imagePath = await imageGeneration.generateImage(prompt, outputPath);
+				} finally {
+					releaseStem();
+				}
+			} else {
+				imagePath = await plugin.imageGeneration.generateImage(prompt, outputPath);
+			}
 
 			return {
 				success: true,

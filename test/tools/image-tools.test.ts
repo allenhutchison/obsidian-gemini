@@ -7,6 +7,7 @@ const mockImageGeneration = {
 	resolveOutputPath: vi.fn(),
 	findImageWithSameStem: vi.fn().mockReturnValue(null),
 	reserveImageStem: vi.fn().mockReturnValue(() => undefined),
+	isImageStemReserved: vi.fn().mockReturnValue(false),
 };
 
 const mockBackgroundTaskManager = {
@@ -86,6 +87,44 @@ describe('ImageTools', () => {
 				wikilink: `![[${imagePath}]]`,
 			});
 			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith('a mountain', 'attachments/my-custom-image.png');
+		});
+
+		it('refuses an explicit output_path whose stem a pending background image has reserved', async () => {
+			mockImageGeneration.resolveOutputPath.mockResolvedValueOnce('attachments/cat.png');
+			mockImageGeneration.isImageStemReserved.mockReturnValueOnce(true);
+
+			const result = await tool.execute({ prompt: 'a cat', output_path: 'attachments/cat.png' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('still being generated');
+			expect(mockImageGeneration.isImageStemReserved).toHaveBeenCalledWith('attachments/cat.png');
+			expect(mockImageGeneration.generateImage).not.toHaveBeenCalled();
+			expect(mockImageGeneration.reserveImageStem).not.toHaveBeenCalled();
+		});
+
+		it('reserves an explicit output_path stem while generating and releases it on failure', async () => {
+			const release = vi.fn();
+			mockImageGeneration.resolveOutputPath.mockResolvedValueOnce('attachments/cat.png');
+			mockImageGeneration.reserveImageStem.mockReturnValueOnce(release);
+			mockImageGeneration.generateImage.mockImplementationOnce(async () => {
+				expect(release).not.toHaveBeenCalled();
+				throw new Error('quota');
+			});
+
+			const result = await tool.execute({ prompt: 'a cat', output_path: 'attachments/cat.png' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(mockImageGeneration.reserveImageStem).toHaveBeenCalledWith('attachments/cat.png');
+			expect(release).toHaveBeenCalledTimes(1);
+		});
+
+		it('does not reserve a stem for the unique default path', async () => {
+			mockImageGeneration.generateImage.mockResolvedValueOnce('gemini-scribe/Background-Tasks/x.png');
+
+			await tool.execute({ prompt: 'a cat' }, mockContext);
+
+			expect(mockImageGeneration.resolveOutputPath).not.toHaveBeenCalled();
+			expect(mockImageGeneration.reserveImageStem).not.toHaveBeenCalled();
 		});
 
 		it('should return error when image generation service is not available', async () => {

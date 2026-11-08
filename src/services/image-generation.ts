@@ -235,9 +235,19 @@ export class ImageGeneration {
 	}
 
 	/**
-	 * Reserve `path`'s stem for a background task until the returned release
-	 * function is called. Pair with `findImageWithSameStem`, and release in a
-	 * `finally` so a failed or cancelled task frees the name.
+	 * Whether a generation still in flight (see `reserveImageStem`) has
+	 * reserved `path`'s stem. Unlike `findImageWithSameStem`, files already on
+	 * disk don't count.
+	 */
+	isImageStemReserved(path: string): boolean {
+		return this.pendingStems.has(this.stemOf(path));
+	}
+
+	/**
+	 * Reserve `path`'s stem for an in-flight generation until the returned
+	 * release function is called. Pair with `findImageWithSameStem` (background)
+	 * or `isImageStemReserved` (foreground), and release in a `finally` so a
+	 * failed or cancelled generation frees the name.
 	 */
 	reserveImageStem(path: string): () => void {
 		const stem = this.stemOf(path);
