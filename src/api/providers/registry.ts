@@ -23,7 +23,7 @@
  * `models.ts` re-exports it for backward compatibility, and `types/features.ts`
  * imports it directly for the same reason.
  */
-export type ModelProvider = 'gemini' | 'ollama' | 'openai' | 'anthropic';
+export type ModelProvider = 'gemini' | 'ollama' | 'openai' | 'anthropic' | 'openrouter';
 
 /**
  * Capability keys a provider is asked about — kept in lockstep with `FeatureId`
@@ -173,10 +173,38 @@ export const PROVIDERS: Record<ModelProvider, ProviderDefinition> = {
 			defaultInputTokenLimit: 200_000,
 		},
 	},
+	openrouter: {
+		id: 'openrouter',
+		labelKey: 'settings.general.providerOptionOpenrouter',
+		docsUrl: 'https://allenhutchison.github.io/obsidian-gemini/guide/openrouter-setup.html',
+		capabilities: {
+			chat: true,
+			summary: true,
+			completions: true,
+			rewrite: true,
+			webSearch: false,
+			deepResearch: false,
+			rag: false,
+			imageGen: true,
+			maps: false,
+			nativeTokenCount: false,
+			customBaseUrl: false,
+			perUseCaseModels: true,
+			requiresApiKey: true,
+			/** Conservative floor; every catalog entry reports its own `context_length`. */
+			defaultInputTokenLimit: 128_000,
+		},
+	},
 };
 
 /** Every known provider id, in display order. */
-export const PROVIDER_IDS: readonly ModelProvider[] = ['gemini', 'ollama', 'openai', 'anthropic'] as const;
+export const PROVIDER_IDS: readonly ModelProvider[] = [
+	'gemini',
+	'ollama',
+	'openai',
+	'anthropic',
+	'openrouter',
+] as const;
 
 /**
  * Capabilities for a provider, defaulting to Gemini for an unrecognized id

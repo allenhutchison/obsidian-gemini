@@ -47,6 +47,7 @@ describe('getApiKeyErrorMessage', () => {
 		const base = { lastInitError: null, apiKeySecretName: '', ollamaBaseUrl: 'http://localhost:11434' };
 		expect(getApiKeyErrorMessage({ ...base, provider: 'openai' })).toContain('No OpenAI API key configured');
 		expect(getApiKeyErrorMessage({ ...base, provider: 'anthropic' })).toContain('No Anthropic API key configured');
+		expect(getApiKeyErrorMessage({ ...base, provider: 'openrouter' })).toContain('No OpenRouter API key configured');
 	});
 
 	test('falls back to the key-retrieval-failed message for Gemini when a key is configured but unreadable', () => {

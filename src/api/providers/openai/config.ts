@@ -17,4 +17,6 @@ export interface OpenAIClientConfig {
 	apiKey: string;
 	baseUrl: string;
 	model?: string;
+	/** Extra headers sent on every request (OpenRouter's app-attribution headers). */
+	defaultHeaders?: Record<string, string>;
 }

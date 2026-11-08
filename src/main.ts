@@ -94,6 +94,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	openaiBaseUrl: DEFAULT_OPENAI_BASE_URL,
 	openaiApiKeySecretName: '',
 	anthropicApiKeySecretName: '',
+	openrouterApiKeySecretName: '',
 	summaryFrontmatterKey: 'summary',
 	userName: 'User',
 	chatHistory: false,
@@ -162,6 +163,13 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		return this.app.secretStorage.getSecret(secretName) ?? '';
 	}
 
+	/** The configured OpenRouter API key, mirroring `apiKey` above. */
+	get openrouterApiKey(): string {
+		const secretName = this.settings?.openrouterApiKeySecretName;
+		if (!secretName) return '';
+		return this.app.secretStorage.getSecret(secretName) ?? '';
+	}
+
 	/**
 	 * The open agent view, looked up from the workspace on each read rather than
 	 * held on the plugin (Obsidian's guidance: plugins must not keep references to
@@ -222,6 +230,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	private previousApiKey: string = '';
 	private previousOpenaiApiKey: string = '';
 	private previousAnthropicApiKey: string = '';
+	private previousOpenrouterApiKey: string = '';
 	private previousRagEnabled: boolean = false;
 	/**
 	 * Serialized provider routing (default provider + every feature's resolved
@@ -368,7 +377,15 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		const chatProvider = this.settings.features.chat.provider;
 		const apiKey =
 			// eslint-disable-next-line no-restricted-syntax -- credential plumbing predating the registry; cleared as #1308/#703 land
-			chatProvider === 'openai' ? this.openaiApiKey : chatProvider === 'anthropic' ? this.anthropicApiKey : this.apiKey;
+			chatProvider === 'openai'
+				? this.openaiApiKey
+				: // eslint-disable-next-line no-restricted-syntax -- credential plumbing predating the registry; cleared as #1308/#703 land
+					chatProvider === 'anthropic'
+					? this.anthropicApiKey
+					: // eslint-disable-next-line no-restricted-syntax -- credential plumbing predating the registry; cleared as #1308/#703 land
+						chatProvider === 'openrouter'
+						? this.openrouterApiKey
+						: this.apiKey;
 		return {
 			apiKey,
 			requiresApiKey: getCapabilities(chatProvider === 'none' ? null : chatProvider).requiresApiKey,
@@ -395,7 +412,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 			chatProvider === 'openai'
 				? this.settings.openaiBaseUrl
 				: // eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
-					chatProvider === 'anthropic'
+					chatProvider === 'anthropic' || chatProvider === 'openrouter'
 					? undefined
 					: // eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
 						chatProvider === 'ollama'
@@ -421,6 +438,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		this.previousApiKey = this.apiKey;
 		this.previousOpenaiApiKey = this.openaiApiKey;
 		this.previousAnthropicApiKey = this.anthropicApiKey;
+		this.previousOpenrouterApiKey = this.openrouterApiKey;
 		this.previousRagEnabled = this.settings.ragIndexing.enabled;
 		this.previousRoutingKey = routingKey(this.settings);
 		this.previousOllamaBaseUrl = this.settings.ollamaBaseUrl;
@@ -711,7 +729,8 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 			this.isGeminiInitialized &&
 			(this.previousApiKey !== this.apiKey ||
 				this.previousOpenaiApiKey !== this.openaiApiKey ||
-				this.previousAnthropicApiKey !== this.anthropicApiKey);
+				this.previousAnthropicApiKey !== this.anthropicApiKey ||
+				this.previousOpenrouterApiKey !== this.openrouterApiKey);
 		// Any change to *which provider serves which use case* re-inits: tool
 		// registration, RAG, and image generation are all keyed off the resolved
 		// providers, not just the primary.

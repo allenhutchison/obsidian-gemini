@@ -6,7 +6,7 @@ diff against. Breaking one of these is a correctness or architecture regression,
 ## API layer: Factory + Decorator, capability-routed
 
 ```text
-src/main.ts → ModelClientFactory.createFromPlugin() → GeminiClient | OllamaClient | OpenAIClient | AnthropicClient → RetryDecorator → ModelApi
+src/main.ts → ModelClientFactory.createFromPlugin() → GeminiClient | OllamaClient | OpenAIClient | AnthropicClient | OpenRouterClient → RetryDecorator → ModelApi
 ```
 
 - Each call resolves its provider **independently** via `featureProvider(settings, featureId)` in the leaf module
@@ -24,7 +24,7 @@ src/main.ts → ModelClientFactory.createFromPlugin() → GeminiClient | OllamaC
   Substituting a cloud provider for a capability a local one lacks would send vault data somewhere the user never
   opted into.
 - All provider implementations conform to the `ModelApi` interface; provider-specific code stays encapsulated under
-  `src/api/providers/{gemini,ollama,openai,anthropic}/` — one package per `ModelProvider` id. Two shared
+  `src/api/providers/{gemini,ollama,openai,anthropic,openrouter}/` — one package per `ModelProvider` id. Two shared
   cross-provider leaves deliberately live at that package root, outside the per-provider packages: `history-walk.ts`
   (decoding of incoming conversation history, called by all three non-Gemini clients — Anthropic passes
   `{ acceptsPdf: true }`) and `tool-id-ledger.ts` (called by Anthropic and OpenAI). Don't leak provider specifics upward: the capability matrix (which

@@ -26,6 +26,7 @@ function makePlugin(opts: {
 	apiKeySecretName?: string;
 	openaiApiKeySecretName?: string;
 	anthropicApiKeySecretName?: string;
+	openrouterApiKeySecretName?: string;
 	openaiBaseUrl?: string;
 	features: FeatureRoutes;
 }): ObsidianGemini {
@@ -34,12 +35,14 @@ function makePlugin(opts: {
 			apiKeySecretName: opts.apiKeySecretName ?? '',
 			openaiApiKeySecretName: opts.openaiApiKeySecretName ?? '',
 			anthropicApiKeySecretName: opts.anthropicApiKeySecretName ?? '',
+			openrouterApiKeySecretName: opts.openrouterApiKeySecretName ?? '',
 			openaiBaseUrl: opts.openaiBaseUrl ?? DEFAULT_OPENAI_BASE_URL,
 			features: opts.features,
 		},
 		apiKey: opts.apiKeySecretName ? 'secret-value' : '',
 		openaiApiKey: opts.openaiApiKeySecretName ? 'secret-value' : '',
 		anthropicApiKey: opts.anthropicApiKeySecretName ? 'secret-value' : '',
+		openrouterApiKey: opts.openrouterApiKeySecretName ? 'secret-value' : '',
 	} as unknown as ObsidianGemini;
 }
 
@@ -62,6 +65,15 @@ describe('providerConnection', () => {
 		expect(
 			providerConnection(makePlugin({ openaiBaseUrl: 'http://localhost:1234/v1', features: routes({}) }), 'openai')
 		).toBe('unknown');
+	});
+
+	it('openrouter: needs-key until its own secret is configured', () => {
+		expect(providerConnection(makePlugin({ openaiApiKeySecretName: 'k', features: routes({}) }), 'openrouter')).toBe(
+			'needs-key'
+		);
+		expect(
+			providerConnection(makePlugin({ openrouterApiKeySecretName: 'k', features: routes({}) }), 'openrouter')
+		).toBe('connected');
 	});
 
 	it('anthropic: needs-key until its own secret is configured', () => {
@@ -178,6 +190,15 @@ describe('providerMissingKey', () => {
 		const keyed = makePlugin({ apiKeySecretName: 'g', anthropicApiKeySecretName: 'a', features: routes({}) });
 		expect(providerMissingKey(keyed, 'gemini')).toBe(false);
 		expect(providerMissingKey(keyed, 'anthropic')).toBe(false);
+	});
+
+	it('reports openrouter by its own resolved key', () => {
+		expect(providerMissingKey(makePlugin({ openaiApiKeySecretName: 'o', features: routes({}) }), 'openrouter')).toBe(
+			true
+		);
+		expect(
+			providerMissingKey(makePlugin({ openrouterApiKeySecretName: 'r', features: routes({}) }), 'openrouter')
+		).toBe(false);
 	});
 });
 

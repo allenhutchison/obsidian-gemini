@@ -49,6 +49,8 @@ export interface ObsidianGeminiSettings {
 	openaiApiKeySecretName: string;
 	/** SecretStorage key holding the Anthropic API key, mirroring `apiKeySecretName`. */
 	anthropicApiKeySecretName: string;
+	/** SecretStorage key holding the OpenRouter API key, mirroring `apiKeySecretName`. */
+	openrouterApiKeySecretName: string;
 	summaryFrontmatterKey: string;
 	userName: string;
 	chatHistory: boolean;

@@ -104,9 +104,9 @@ describe('capability matrix', () => {
 
 describe('lookup helpers', () => {
 	it('providersSupporting lists candidates in display order', () => {
-		expect(providersSupporting('chat')).toEqual(['gemini', 'ollama', 'openai', 'anthropic']);
+		expect(providersSupporting('chat')).toEqual(['gemini', 'ollama', 'openai', 'anthropic', 'openrouter']);
 		expect(providersSupporting('rag')).toEqual(['gemini']);
-		expect(providersSupporting('imageGen')).toEqual(['gemini', 'openai']);
+		expect(providersSupporting('imageGen')).toEqual(['gemini', 'openai', 'openrouter']);
 		expect(providersSupporting('deepResearch')).toEqual(['gemini']);
 	});
 

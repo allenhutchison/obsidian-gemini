@@ -44,14 +44,17 @@ describe('provider card model-count probe', () => {
 		(Notice as unknown as Mock).mockClear();
 	});
 
-	it.each(['openai', 'anthropic'] as const)('does not fetch %s models when the provider has no API key', (id) => {
-		const { ctx, getModels } = buildCtx();
+	it.each(['openai', 'anthropic', 'openrouter'] as const)(
+		'does not fetch %s models when the provider has no API key',
+		(id) => {
+			const { ctx, getModels } = buildCtx();
 
-		const page = providerCardPage(ctx, cardSpec(id));
+			const page = providerCardPage(ctx, cardSpec(id));
 
-		expect(getModels(id)).not.toHaveBeenCalled();
-		expect(modelsRow(page).desc).toBe(en['settings.providers.statusNeedsKey'].message);
-	});
+			expect(getModels(id)).not.toHaveBeenCalled();
+			expect(modelsRow(page).desc).toBe(en['settings.providers.statusNeedsKey'].message);
+		}
+	);
 
 	it('probes a keyed provider when the card renders', async () => {
 		const { ctx, getModels, tab } = buildCtx({ openaiApiKeySecretName: 'openai-key' });

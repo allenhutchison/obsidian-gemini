@@ -222,6 +222,14 @@ describe('error-utils', () => {
 				);
 			});
 
+			test('an OpenRouter 401 (numeric error code) gets OpenRouter-specific key guidance', () => {
+				const error = new Error('401 No auth credentials found') as Error & Record<string, unknown>;
+				Object.assign(error, { status: 401, code: 401, error: { code: 401, message: 'No auth credentials found' } });
+				expect(getErrorMessage(error)).toBe(
+					'Invalid OpenRouter API key. Please check the API key in Settings → Gemini Scribe.'
+				);
+			});
+
 			test('404 mentions the endpoint rather than the generic model-not-found wording', () => {
 				const error = fakeOpenAIError(404, 'The model `gpt-9` does not exist', { code: 'model_not_found' });
 				expect(getErrorMessage(error)).toBe(

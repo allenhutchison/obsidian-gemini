@@ -110,6 +110,11 @@ export const en = {
 		message: 'Anthropic (cloud)',
 		context: 'Dropdown option label for the Anthropic (Claude) cloud provider. "Anthropic" is a product name.',
 	},
+	'settings.general.providerOptionOpenrouter': {
+		message: 'OpenRouter (cloud)',
+		context:
+			'Dropdown option label for the OpenRouter cloud provider, a gateway that serves many vendors\' models through one API key. "OpenRouter" is a product name.',
+	},
 	'settings.general.modelListUpdated': {
 		message: 'Model list updated: {count} models.',
 		context: 'Notice after a successful Gemini model list refresh. {count} is the number of models (0 or 2+).',
@@ -2361,6 +2366,12 @@ export const en = {
 		context:
 			'Error notice when the user has not configured an Anthropic API key yet (Anthropic serves chat). "Gemini Scribe" is the plugin name and stays untranslated.',
 	},
+	'notice.main.noApiKeyOpenrouter': {
+		message:
+			'No OpenRouter API key configured. Open Settings → Gemini Scribe to add one. Get a key at openrouter.ai/keys',
+		context:
+			'Error notice when the user has not configured an OpenRouter API key yet (OpenRouter serves chat). "Gemini Scribe" is the plugin name and stays untranslated.',
+	},
 	'notice.main.apiKeyRetrieveFailed': {
 		message:
 			'Could not retrieve your API key from secure storage. Try re-entering it in Settings → Gemini Scribe → Providers → Google Gemini → API key.',
@@ -3163,6 +3174,15 @@ export const en = {
 		message: 'OpenAI returned no image data.',
 		context: 'Error shown when an OpenAI image-generation response contains no base64-encoded image.',
 	},
+	'provider.openrouter.noModelSelected': {
+		message: 'No OpenRouter model selected. Choose a model in settings.',
+		context:
+			'Error shown when an OpenRouter-routed feature runs with no model configured. "settings" is Obsidian\'s settings window.',
+	},
+	'provider.openrouter.noImageData': {
+		message: 'OpenRouter returned no image data.',
+		context: 'Error shown when an OpenRouter image-generation response contains no base64-encoded image.',
+	},
 	'provider.unsupportedAttachment': {
 		message:
 			'{provider} only supports image attachments; received {mimeType}. Switch to the Gemini provider for PDF, audio, or video input.',
@@ -3213,6 +3233,11 @@ export const en = {
 		message: 'Invalid Anthropic API key. Please check the API key in Settings → Gemini Scribe.',
 		context:
 			'HTTP 401 from the Anthropic API. "Gemini Scribe" is the plugin name and stays untranslated; "Settings" is Obsidian\'s settings window.',
+	},
+	'error.openrouterInvalidKey': {
+		message: 'Invalid OpenRouter API key. Please check the API key in Settings → Gemini Scribe.',
+		context:
+			'HTTP 401 from the OpenRouter API. "Gemini Scribe" is the plugin name and stays untranslated; "Settings" is Obsidian\'s settings window.',
 	},
 	'error.modelNotOnEndpoint': {
 		message: 'Model not available on this endpoint. Please check your model settings or the configured base URL.',
@@ -3763,6 +3788,11 @@ export const en = {
 		context:
 			'Short provider name for Anthropic (Claude), used on its provider card and in routing rows. "Anthropic" is a product name.',
 	},
+	'settings.providers.shortLabel.openrouter': {
+		message: 'OpenRouter',
+		context:
+			'Short provider name for OpenRouter, used on its provider card and in routing rows. "OpenRouter" is a product name.',
+	},
 	'settings.providers.cardNameGemini': {
 		message: 'Google Gemini',
 		context: 'Title of the Gemini provider card on the Providers settings page. "Google Gemini" is a product name.',
@@ -3895,9 +3925,9 @@ export const en = {
 	},
 	'settings.providers.privacyNoticeDesc': {
 		message:
-			'Only the providers your features actually use ever receive your content. Ollama keeps requests on this machine, except for models marked "cloud", which it forwards to ollama.com. Gemini, OpenAI, and Anthropic send the request to that company\'s servers.',
+			'Only the providers your features actually use ever receive your content. Ollama keeps requests on this machine, except for models marked "cloud", which it forwards to ollama.com. Gemini, OpenAI, and Anthropic send the request to that company\'s servers. OpenRouter forwards it to whichever company serves the model you pick.',
 		context:
-			'The single privacy note on the Providers page, replacing four separate variants from the previous settings layout. "Ollama", "Gemini", "OpenAI", and "Anthropic" are product names.',
+			'The single privacy note on the Providers page, replacing four separate variants from the previous settings layout. "Ollama", "Gemini", "OpenAI", "Anthropic", and "OpenRouter" are product names.',
 	},
 	'settings.providers.defaultMoved': {
 		message: '{count} features moved to the new default provider.',

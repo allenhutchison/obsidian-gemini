@@ -14,14 +14,18 @@
  *  - streaming chat with cancellation via AbortController
  *  - image attachments as `image_url` content parts (vision-capable models only)
  *  - usageMetadata derived from `usage.prompt_tokens` / `usage.completion_tokens`
- *  - `reasoning_content` -> thoughts, for OpenAI-compatible servers that return
- *    it (not part of the official OpenAI API surface; read via a narrow local
- *    type rather than widening the SDK's own types)
+ *  - `reasoning_content` (or OpenRouter's `reasoning`) -> thoughts, for
+ *    OpenAI-compatible servers that return it (not part of the official OpenAI
+ *    API surface; read via a narrow local type rather than widening the SDK's
+ *    own types)
+ *  - `reasoning_details` replayed on tool-calling turns, for gateways
+ *    (OpenRouter) that require it — see `reasoning-replay.ts`
  *
  * Out of scope (no Chat Completions equivalent, or deferred to a later phase):
  *  - cachedContentTokenCount (not exposed on CompletionUsage)
  *  - search grounding / rendered HTML (Gemini-only)
- *  - thoughtSignature / thought part fields (Gemini's thinking-mode replay markers)
+ *  - Gemini's own thoughtSignature values (only this client's encoded
+ *    `reasoning_details` are replayed)
  *  - non-image inline attachments (audio/video/pdf) — this client only supports
  *    image vision input, matching the OpenAI-compatible servers it targets
  */
@@ -49,6 +53,13 @@ import type { ResolvedToolCall } from '../tool-id-ledger';
 import { describeSdkApiError } from '../../../utils/error-utils';
 import { t } from '../../../i18n';
 import type { ImageGenerationApi } from '../../interfaces/image-generation-api';
+import {
+	decodeReasoningDetails,
+	encodeReasoningDetails,
+	mergeReasoningDetails,
+	readReasoningDetails,
+	type ReasoningDetail,
+} from './reasoning-replay';
 
 type ChatMessage = OpenAI.ChatCompletionMessageParam;
 type ChatTool = OpenAI.ChatCompletionTool;
@@ -58,12 +69,24 @@ type TextContentPart = OpenAI.ChatCompletionContentPartText;
 /**
  * Some OpenAI-compatible servers (e.g. reasoning-capable local models served
  * through LM Studio/Ollama) return a non-standard `reasoning_content` field
- * on the assistant message / streaming delta. The official SDK types don't
- * declare it, so these local types widen just enough to read it without an
- * `any` cast at every call site.
+ * on the assistant message / streaming delta; OpenRouter names the same text
+ * `reasoning` (accepting `reasoning_content` as an alias) and adds structured
+ * `reasoning_details`. The official SDK types declare none of them, so these
+ * local types widen just enough to read them without an `any` cast at every
+ * call site.
  */
-type MessageWithReasoning = OpenAI.ChatCompletionMessage & { reasoning_content?: string | null };
-type DeltaWithReasoning = OpenAI.ChatCompletionChunk.Choice.Delta & { reasoning_content?: string | null };
+interface ReasoningFields {
+	reasoning_content?: string | null;
+	reasoning?: string | null;
+	reasoning_details?: unknown;
+}
+type MessageWithReasoning = OpenAI.ChatCompletionMessage & ReasoningFields;
+type DeltaWithReasoning = OpenAI.ChatCompletionChunk.Choice.Delta & ReasoningFields;
+
+/** The reasoning text on a message or delta, preferring `reasoning_content` when a server sends both. */
+function reasoningText(source: ReasoningFields | undefined): string | undefined {
+	return source?.reasoning_content || source?.reasoning || undefined;
+}
 
 /** Accumulator for one in-progress tool call across streaming deltas, keyed by `index`. */
 interface StreamingToolCallAccumulator {
@@ -80,10 +103,10 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 	 */
 	private static readonly GPT56_MODEL_PATTERN = /^gpt-5\.6/;
 
-	private client: OpenAI;
-	private config: OpenAIClientConfig;
+	protected client: OpenAI;
+	protected config: OpenAIClientConfig;
 	private prompts: GeminiPrompts;
-	private plugin?: ObsidianGemini;
+	protected plugin?: ObsidianGemini;
 
 	constructor(config: OpenAIClientConfig, prompts?: GeminiPrompts, plugin?: ObsidianGemini) {
 		this.config = config;
@@ -94,14 +117,25 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 			baseURL: this.config.baseUrl,
 			dangerouslyAllowBrowser: true,
 			maxRetries: 0,
+			...(this.config.defaultHeaders && { defaultHeaders: this.config.defaultHeaders }),
 		});
+	}
+
+	/** Display name used in attachment errors; subclasses for other gateways override it. */
+	protected get providerName(): string {
+		return 'OpenAI';
+	}
+
+	/** Error text for a request with no model configured; overridden per gateway. */
+	protected noModelSelectedMessage(): string {
+		return t('provider.openai.noModelSelected');
 	}
 
 	/** Generate one PNG through the OpenAI Images API and return its base64 bytes. */
 	async generateImage(prompt: string, model: string): Promise<string> {
 		try {
 			if (!model) {
-				throw new Error(t('provider.openai.noModelSelected'));
+				throw new Error(this.noModelSelectedMessage());
 			}
 			const response = await this.client.images.generate({ model, prompt });
 			const image = response.data?.[0]?.b64_json;
@@ -124,7 +158,7 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 		// e.g. a summary request to the chat model when `config.model` is empty.
 		const model = request.model || this.config.model;
 		if (!model) {
-			throw new Error(t('provider.openai.noModelSelected'));
+			throw new Error(this.noModelSelectedMessage());
 		}
 
 		try {
@@ -163,12 +197,16 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 		const state = {
 			accumulatedText: '',
 			accumulatedThoughts: '',
+			reasoningDetails: [] as ReasoningDetail[],
 			toolCallAccumulators: new Map<number, StreamingToolCallAccumulator>(),
 			usage: undefined as OpenAI.CompletionUsage | undefined,
 		};
 
 		const finalize = (): ModelResponse => {
-			const toolCalls = this.finalizeToolCalls(state.toolCallAccumulators);
+			const toolCalls = this.attachReasoningDetails(
+				this.finalizeToolCalls(state.toolCallAccumulators),
+				state.reasoningDetails
+			);
 			const usageMetadata = this.toUsageMetadata(state.usage);
 			return {
 				markdown: state.accumulatedText,
@@ -186,7 +224,7 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 		return runCancellableStream<OpenAI.ChatCompletionChunk>({
 			start: async (signal) => {
 				if (!model) {
-					throw new Error(t('provider.openai.noModelSelected'));
+					throw new Error(this.noModelSelectedMessage());
 				}
 				if (!isExtended) {
 					return this.client.chat.completions.create(
@@ -217,6 +255,7 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 				this.accumulateStreamChunk(
 					chunk,
 					state.toolCallAccumulators,
+					state.reasoningDetails,
 					(text) => {
 						state.accumulatedText += text;
 						onChunk({ text });
@@ -301,7 +340,7 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 			if (att.mimeType.startsWith('image/')) {
 				imageParts.push(this.toImageContentPart(att));
 			} else {
-				throw new Error(t('provider.unsupportedAttachment', { provider: 'OpenAI', mimeType: att.mimeType }));
+				throw new Error(t('provider.unsupportedAttachment', { provider: this.providerName, mimeType: att.mimeType }));
 			}
 		}
 
@@ -335,7 +374,7 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 	 * here. This method keeps the provider-specific orphan-drop log line.
 	 */
 	private convertHistoryEntry(entry: unknown, ledger: ToolIdLedger): ChatMessage[] | null {
-		const walked = walkHistoryEntry(entry, 'OpenAI');
+		const walked = walkHistoryEntry(entry, this.providerName);
 		if (!walked) return null;
 
 		const { calls: resolvedCalls, responses: resolvedResponses } = ledger.resolveEntry(
@@ -349,10 +388,16 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 		// the assistant message declaring `tool_calls` to precede the tool-role
 		// messages that answer it.
 		if (walked.role === 'assistant' && (walked.hasText || resolvedCalls.length)) {
-			const message: OpenAI.ChatCompletionAssistantMessageParam = {
+			const message: OpenAI.ChatCompletionAssistantMessageParam & { reasoning_details?: ReasoningDetail[] } = {
 				role: 'assistant',
 				content: walked.text || null,
 			};
+			const reasoningDetails = decodeReasoningDetails(
+				resolvedCalls.find((call) => call.thoughtSignature)?.thoughtSignature
+			);
+			if (reasoningDetails.length) {
+				message.reasoning_details = reasoningDetails;
+			}
 			if (resolvedCalls.length) {
 				message.tool_calls = resolvedCalls.map((tc: ResolvedToolCall) => ({
 					id: tc.id,
@@ -371,7 +416,7 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 		// rejects a `tool` message with an unknown `tool_call_id`.
 		for (const tr of resolvedResponses) {
 			if (tr.id === null) {
-				this.plugin?.logger?.log('OpenAI history: dropping orphaned tool response', tr.name);
+				this.plugin?.logger?.log(`${this.providerName} history: dropping orphaned tool response`, tr.name);
 				continue;
 			}
 			const responseText = typeof tr.response === 'string' ? tr.response : JSON.stringify(tr.response);
@@ -410,15 +455,35 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 
 	private toModelResponse(completion: OpenAI.ChatCompletion): ModelResponse {
 		const message = completion.choices?.[0]?.message as MessageWithReasoning | undefined;
-		const toolCalls = this.toolCallsFromMessage(message);
+		const toolCalls = this.attachReasoningDetails(
+			this.toolCallsFromMessage(message),
+			readReasoningDetails(message?.reasoning_details)
+		);
 		const usageMetadata = this.toUsageMetadata(completion.usage);
+		const thoughts = reasoningText(message);
 		return {
 			markdown: message?.content ?? '',
 			rendered: '',
-			...(message?.reasoning_content && { thoughts: message.reasoning_content }),
+			...(thoughts && { thoughts }),
 			...(toolCalls && toolCalls.length && { toolCalls }),
 			...(usageMetadata && { usageMetadata }),
 		};
+	}
+
+	/**
+	 * Stash the turn's `reasoning_details` on its first tool call's
+	 * `thoughtSignature` so the agent loop replays them with the tool round
+	 * (see `reasoning-replay.ts`). A turn without tool calls has nothing to
+	 * replay.
+	 */
+	private attachReasoningDetails(
+		toolCalls: ToolCall[] | undefined,
+		details: readonly ReasoningDetail[]
+	): ToolCall[] | undefined {
+		if (!toolCalls?.length) return toolCalls;
+		const thoughtSignature = encodeReasoningDetails(details);
+		if (!thoughtSignature) return toolCalls;
+		return [{ ...toolCalls[0], thoughtSignature }, ...toolCalls.slice(1)];
 	}
 
 	private toolCallsFromMessage(message: OpenAI.ChatCompletionMessage | undefined): ToolCall[] | undefined {
@@ -460,6 +525,7 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 	private accumulateStreamChunk(
 		chunk: OpenAI.ChatCompletionChunk,
 		toolCallAccumulators: Map<number, StreamingToolCallAccumulator>,
+		reasoningDetails: ReasoningDetail[],
 		onText: (text: string) => void,
 		onThought: (thought: string) => void
 	): void {
@@ -469,8 +535,12 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 		if (delta.content) {
 			onText(delta.content);
 		}
-		if (delta.reasoning_content) {
-			onThought(delta.reasoning_content);
+		const thought = reasoningText(delta);
+		if (thought) {
+			onThought(thought);
+		}
+		if (delta.reasoning_details) {
+			mergeReasoningDetails(reasoningDetails, delta.reasoning_details);
 		}
 		if (delta.tool_calls?.length) {
 			for (const tc of delta.tool_calls) {

@@ -79,6 +79,7 @@ const WRITABLE_SCALAR_PATHS: readonly string[] = [
 	'apiKeySecretName',
 	'openaiApiKeySecretName',
 	'anthropicApiKeySecretName',
+	'openrouterApiKeySecretName',
 	'customBaseUrl',
 	'ollamaBaseUrl',
 	'openaiBaseUrl',
@@ -198,6 +199,8 @@ const CREDENTIAL_PATH_PROVIDER: Record<string, ModelProvider> = {
 	ollamaBaseUrl: 'ollama',
 	// eslint-disable-next-line no-restricted-syntax -- settings-key map for provider-specific setting keys; historical keys, not dispatch
 	anthropicApiKeySecretName: 'anthropic',
+	// eslint-disable-next-line no-restricted-syntax -- settings-key map for provider-specific setting keys; historical keys, not dispatch
+	openrouterApiKeySecretName: 'openrouter',
 };
 
 /**
@@ -230,6 +233,7 @@ export const SETTING_WRITERS: Record<string, SettingWriter> = {
 	apiKeySecretName: writeCredentialField,
 	openaiApiKeySecretName: writeCredentialField,
 	anthropicApiKeySecretName: writeCredentialField,
+	openrouterApiKeySecretName: writeCredentialField,
 	customBaseUrl: writeCredentialField,
 	ollamaBaseUrl: writeCredentialField,
 	openaiBaseUrl: writeCredentialField,
