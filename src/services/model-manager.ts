@@ -13,6 +13,7 @@ import { ModelListProvider, RefreshResult } from './model-list-provider';
 import { OllamaModelsService } from './ollama-models-service';
 import { OpenAIModelsService } from './openai-models-service';
 import { AnthropicModelsService } from './anthropic-models-service';
+import { OpenRouterModelsService } from './openrouter-models-service';
 
 export interface ModelUpdateOptions {
 	forceRefresh?: boolean;
@@ -30,6 +31,7 @@ export class ModelManager {
 	private ollamaModelsService: OllamaModelsService;
 	private openaiModelsService: OpenAIModelsService;
 	private anthropicModelsService: AnthropicModelsService;
+	private openrouterModelsService: OpenRouterModelsService;
 	private static staticModels: GeminiModel[] = [...DEFAULT_GEMINI_MODELS];
 
 	constructor(plugin: ObsidianGemini) {
@@ -38,6 +40,7 @@ export class ModelManager {
 		this.ollamaModelsService = new OllamaModelsService(plugin);
 		this.openaiModelsService = new OpenAIModelsService(plugin);
 		this.anthropicModelsService = new AnthropicModelsService(plugin);
+		this.openrouterModelsService = new OpenRouterModelsService(plugin);
 	}
 
 	/**
@@ -112,11 +115,13 @@ export class ModelManager {
 	getProviderModelsService(
 		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
 		provider: Exclude<ModelProvider, 'gemini'>
-	): OllamaModelsService | OpenAIModelsService | AnthropicModelsService {
+	): OllamaModelsService | OpenAIModelsService | AnthropicModelsService | OpenRouterModelsService {
 		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
 		if (provider === 'ollama') return this.ollamaModelsService;
 		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
 		if (provider === 'openai') return this.openaiModelsService;
+		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
+		if (provider === 'openrouter') return this.openrouterModelsService;
 		return this.anthropicModelsService;
 	}
 

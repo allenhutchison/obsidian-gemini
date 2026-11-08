@@ -9,6 +9,7 @@ const {
 	MockOllamaClient,
 	MockOpenAIClient,
 	MockAnthropicClient,
+	MockOpenRouterClient,
 	MockRetryDecorator,
 	MockGeminiPrompts,
 } = vi.hoisted(() => {
@@ -24,6 +25,9 @@ const {
 	const MockAnthropicClient = vi.fn().mockImplementation(function () {
 		return { generateModelResponse: vi.fn() };
 	});
+	const MockOpenRouterClient = vi.fn().mockImplementation(function () {
+		return { generateModelResponse: vi.fn(), generateImage: vi.fn() };
+	});
 	const MockRetryDecorator = vi.fn().mockImplementation(function (_client: any) {
 		return { _wrappedClient: _client };
 	});
@@ -35,6 +39,7 @@ const {
 		MockOllamaClient,
 		MockOpenAIClient,
 		MockAnthropicClient,
+		MockOpenRouterClient,
 		MockRetryDecorator,
 		MockGeminiPrompts,
 	};
@@ -54,6 +59,10 @@ vi.mock('../../src/api/providers/openai/client', () => ({
 
 vi.mock('../../src/api/providers/anthropic/client', () => ({
 	AnthropicClient: MockAnthropicClient,
+}));
+
+vi.mock('../../src/api/providers/openrouter/client', () => ({
+	OpenRouterClient: MockOpenRouterClient,
 }));
 
 vi.mock('../../src/api/retry-decorator', () => ({
@@ -85,6 +94,7 @@ function createMockPlugin(overrides?: { features?: Partial<FeatureRoutes>; setti
 		apiKey: 'test-api-key',
 		openaiApiKey: 'sk-test-key',
 		anthropicApiKey: 'sk-ant-test-key',
+		openrouterApiKey: 'sk-or-test-key',
 		settings: {
 			defaultProvider: 'gemini',
 			features: routes(overrides?.features ?? {}),
@@ -264,6 +274,33 @@ describe('ModelClientFactory', () => {
 			expect(MockGeminiClient).not.toHaveBeenCalled();
 			expect(MockRetryDecorator).toHaveBeenCalledTimes(1);
 			expect(MockAnthropicClient.mock.calls[0][0]).toEqual({ apiKey: 'sk-ant-test-key', model: 'claude-sonnet-5' });
+		});
+	});
+
+	describe('openrouter routing', () => {
+		it('creates an OpenRouterClient with the OpenRouter key and the feature model', () => {
+			const plugin = createMockPlugin({
+				features: { chat: { provider: 'openrouter', model: 'google/gemini-3.5-flash' } },
+			});
+			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
+
+			expect(MockOpenRouterClient).toHaveBeenCalledTimes(1);
+			expect(MockOpenAIClient).not.toHaveBeenCalled();
+			expect(MockRetryDecorator).toHaveBeenCalledTimes(1);
+			expect(MockOpenRouterClient.mock.calls[0][0]).toEqual({
+				apiKey: 'sk-or-test-key',
+				model: 'google/gemini-3.5-flash',
+			});
+		});
+
+		it('creates an OpenRouterClient for image generation', () => {
+			const plugin = createMockPlugin({
+				features: { imageGen: { provider: 'openrouter', model: 'openai/gpt-image-2.6-flare' } },
+			});
+			ModelClientFactory.createImageGenerationClient(plugin);
+
+			expect(MockOpenRouterClient).toHaveBeenCalledTimes(1);
+			expect(MockOpenRouterClient.mock.calls[0][0]).toEqual({ apiKey: 'sk-or-test-key' });
 		});
 	});
 

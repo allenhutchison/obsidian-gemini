@@ -41,7 +41,7 @@ export function providerConnection(plugin: ObsidianGemini, p: ModelProvider): Pr
 		}
 		return apiKeySecretNameFor(settings, p) ? 'connected' : 'needs-key';
 	}
-	// gemini, anthropic
+	// gemini, anthropic, openrouter
 	return apiKeySecretNameFor(plugin.settings, p) ? 'connected' : 'needs-key';
 }
 
@@ -61,6 +61,8 @@ export function providerMissingKey(plugin: ObsidianGemini, p: ModelProvider): bo
 			return !plugin.openaiApiKey && isOpenAIHostedEndpoint(plugin.settings.openaiBaseUrl || DEFAULT_OPENAI_BASE_URL);
 		case 'anthropic':
 			return !plugin.anthropicApiKey;
+		case 'openrouter':
+			return !plugin.openrouterApiKey;
 		case 'ollama':
 			return false;
 	}

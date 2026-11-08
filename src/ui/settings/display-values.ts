@@ -31,6 +31,7 @@ export const PROVIDER_SHORT_LABEL_KEY: Record<ModelProvider, TranslationKey> = {
 	ollama: 'settings.providers.shortLabel.ollama',
 	openai: 'settings.providers.shortLabel.openai',
 	anthropic: 'settings.providers.shortLabel.anthropic',
+	openrouter: 'settings.providers.shortLabel.openrouter',
 };
 
 /**

@@ -1,30 +1,32 @@
 # Provider Capabilities
 
-Gemini Scribe can run on the **Google Gemini (cloud)**, **Ollama** (models pulled to your machine, plus optional Ollama cloud models), **OpenAI (cloud)**, or **Anthropic (cloud)** provider. Connect one or more providers on the Providers page, pick a **default provider** for anything you haven't routed elsewhere, and route individual features to a specific provider on the [Features page](/reference/settings#features). Some features depend on Gemini-specific cloud APIs and are unavailable on Ollama, OpenAI, and Anthropic. This page is the single source of truth for what works where; `docs/guide/ollama-setup.md`, `docs/guide/openai-setup.md`, and `docs/guide/anthropic-setup.md` link here instead of duplicating the table.
+Gemini Scribe can run on the **Google Gemini (cloud)**, **Ollama** (models pulled to your machine, plus optional Ollama cloud models), **OpenAI (cloud)**, **Anthropic (cloud)**, or **OpenRouter (cloud)** provider. Connect one or more providers on the Providers page, pick a **default provider** for anything you haven't routed elsewhere, and route individual features to a specific provider on the [Features page](/reference/settings#features). Some features depend on Gemini-specific cloud APIs and are unavailable on Ollama, OpenAI, Anthropic, and OpenRouter. This page is the single source of truth for what works where; `docs/guide/ollama-setup.md`, `docs/guide/openai-setup.md`, `docs/guide/anthropic-setup.md`, and `docs/guide/openrouter-setup.md` link here instead of duplicating the table.
 
 ## Capability matrix
 
-| Feature                         | Gemini | Ollama                                                                              | OpenAI                                           | Anthropic                          |
-| ------------------------------- | :----: | ----------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------- |
-| Chat                            |   ✓    | ✓                                                                                   | ✓                                                | ✓                                  |
-| Tool calling (agent mode)       |   ✓    | ✓ (model-dependent)                                                                 | ✓ (model-dependent on compatible servers)        | ✓                                  |
-| Vision (image attachments)      |   ✓    | ✓ (model-dependent, auto-detected)                                                  | ✓ (model-dependent, auto-detected)               | ✓                                  |
-| Scheduled tasks                 |   ✓    | ✓ (inherits the model's tool/vision limits)                                         | ✓ (inherits the model's tool/vision limits)      | ✓                                  |
-| Summaries                       |   ✓    | ✓                                                                                   | ✓                                                | ✓                                  |
-| Completions                     |   ✓    | ✓                                                                                   | ✓                                                | ✓                                  |
-| Rewrite                         |   ✓    | ✓                                                                                   | ✓                                                | ✓                                  |
-| RAG / Vault Semantic Search     |   ✓    | ✗ — tracked in [#705](https://github.com/allenhutchison/obsidian-gemini/issues/705) | ✗                                                | ✗                                  |
-| Image generation                |   ✓    | ✗ — tracked in [#706](https://github.com/allenhutchison/obsidian-gemini/issues/706) | ✓ (GPT Image via the Images API)                 | ✗                                  |
-| Google Search grounding         |   ✓    | ✗                                                                                   | ✗                                                | ✗                                  |
-| Google Maps grounding           |   ✓    | ✗                                                                                   | ✗                                                | ✗                                  |
-| URL Context (web fetch tool)    |   ✓    | ✗                                                                                   | ✗                                                | ✗                                  |
-| Deep Research                   |   ✓    | ✗                                                                                   | ✗                                                | ✗                                  |
-| PDF / audio / video attachments |   ✓    | ✗ (images only)                                                                     | ✗ (images only)                                  | ✗ (images and PDF; no audio/video) |
-| Custom base URL                 |   ✓    | ✗ (uses its own `ollamaBaseUrl` setting)                                            | ✓ (also targets OpenAI-compatible local servers) | ✗                                  |
+| Feature                         | Gemini | Ollama                                                                              | OpenAI                                           | Anthropic                          | OpenRouter                                   |
+| ------------------------------- | :----: | ----------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------- | -------------------------------------------- |
+| Chat                            |   ✓    | ✓                                                                                   | ✓                                                | ✓                                  | ✓                                            |
+| Tool calling (agent mode)       |   ✓    | ✓ (model-dependent)                                                                 | ✓ (model-dependent on compatible servers)        | ✓                                  | ✓ (model-dependent)                          |
+| Vision (image attachments)      |   ✓    | ✓ (model-dependent, auto-detected)                                                  | ✓ (model-dependent, auto-detected)               | ✓                                  | ✓ (model-dependent, from the catalog)        |
+| Scheduled tasks                 |   ✓    | ✓ (inherits the model's tool/vision limits)                                         | ✓ (inherits the model's tool/vision limits)      | ✓                                  | ✓ (inherits the model's tool/vision limits)  |
+| Summaries                       |   ✓    | ✓                                                                                   | ✓                                                | ✓                                  | ✓                                            |
+| Completions                     |   ✓    | ✓                                                                                   | ✓                                                | ✓                                  | ✓                                            |
+| Rewrite                         |   ✓    | ✓                                                                                   | ✓                                                | ✓                                  | ✓                                            |
+| RAG / Vault Semantic Search     |   ✓    | ✗ — tracked in [#705](https://github.com/allenhutchison/obsidian-gemini/issues/705) | ✗                                                | ✗                                  | ✗                                            |
+| Image generation                |   ✓    | ✗ — tracked in [#706](https://github.com/allenhutchison/obsidian-gemini/issues/706) | ✓ (GPT Image via the Images API)                 | ✗                                  | ✓ (models served by OpenRouter's Images API) |
+| Google Search grounding         |   ✓    | ✗                                                                                   | ✗                                                | ✗                                  | ✗                                            |
+| Google Maps grounding           |   ✓    | ✗                                                                                   | ✗                                                | ✗                                  | ✗                                            |
+| URL Context (web fetch tool)    |   ✓    | ✗                                                                                   | ✗                                                | ✗                                  | ✗                                            |
+| Deep Research                   |   ✓    | ✗                                                                                   | ✗                                                | ✗                                  | ✗                                            |
+| PDF / audio / video attachments |   ✓    | ✗ (images only)                                                                     | ✗ (images only)                                  | ✗ (images and PDF; no audio/video) | ✗ (images only)                              |
+| Custom base URL                 |   ✓    | ✗ (uses its own `ollamaBaseUrl` setting)                                            | ✓ (also targets OpenAI-compatible local servers) | ✗                                  | ✗                                            |
 
 OpenAI's row covers both the real `api.openai.com` endpoint (billed with your own OpenAI API key) and any OpenAI-compatible server reachable at a custom base URL — LM Studio, an MLX-served endpoint, Ollama's own OpenAI-compatible endpoint, and similar. See the [OpenAI Setup Guide](/guide/openai-setup) for both paths. This is API-key billing only — there is no "Sign in with ChatGPT" / ChatGPT-subscription auth.
 
 Anthropic's column covers Claude models on `api.anthropic.com`, billed with your own Anthropic API key. It has no custom base URL. Offered models report their own context window (1M tokens for all but Haiku 4.5's 200k); 200k is the fallback for a model the list can't identify. Token counts are estimated rather than fetched from a counting endpoint. See the [Anthropic Setup Guide](/guide/anthropic-setup).
+
+OpenRouter's column covers every model OpenRouter serves (Claude, Gemini, GPT, Llama, DeepSeek, and many more), billed to your OpenRouter account with one API key. Requests go to `openrouter.ai`, which forwards them to the company that serves the chosen model. Context windows and image-input support come from OpenRouter's model catalog, so each model reports its own; 128k is the fallback for a model the list can't identify. Whether tool calling works depends on the model. See the [OpenRouter Setup Guide](/guide/openrouter-setup).
 
 ## Features page
 
@@ -45,7 +47,7 @@ shown as a `<provider> · <model>` row:
 Opening a row gives exactly two controls: a provider dropdown (listing only providers that
 actually support that feature, plus an explicit **Off**) and, where the feature has a model, a
 model dropdown filtered to that provider. Chat and agent, Summaries, Completions, and Rewrite
-each list Gemini, Ollama, OpenAI, and Anthropic. Image generation lists Gemini and OpenAI; Web
+each list Gemini, Ollama, OpenAI, Anthropic, and OpenRouter. Image generation lists Gemini, OpenAI, and OpenRouter; Web
 search, Deep research, and Vault search index list Gemini only today.
 
 **Google Maps grounding is not on this page.** It's provider-bound to Gemini and listed under
@@ -75,14 +77,15 @@ Consequences worth knowing:
   on a non-local provider.
 - Choosing OpenAI for a feature means that feature's requests go to `api.openai.com` (or
   whatever base URL you've configured) instead. Choosing Anthropic sends them to
-  `api.anthropic.com`.
+  `api.anthropic.com`. Choosing OpenRouter sends them to `openrouter.ai`, which forwards them to
+  whichever company serves the model you picked.
 - **Vault search index** is the broadest of these: enabling it uploads note content to a cloud
   file-search store, not just the text of a single request.
 - Each provider card only needs its own credential: the Gemini card's API key is required only
   once some feature is actually routed to Gemini (not only when Gemini is your default provider);
-  the OpenAI and Anthropic cards' API key fields work the same way for their providers.
+  the OpenAI, Anthropic, and OpenRouter cards' API key fields work the same way for their providers.
 - A hosted provider that needs an API key gets **no traffic at all** until you add one — not even
-  a model-list request. The OpenAI and Anthropic cards only query `/models` once an API key is
+  a model-list request. The OpenAI, Anthropic, and OpenRouter cards only query `/models` once an API key is
   configured (or, for OpenAI, once the base URL points at a custom server).
 - Ollama needs no key, so its card always checks the configured Ollama URL (`localhost` by
   default) for pulled models, even if no feature is routed to Ollama.
@@ -109,7 +112,9 @@ model on every switch — worth it for a small, fast completions model, rarely w
 OpenAI has no such constraint: each feature resolves its own default model when left on "Default
 for this provider" (chat, summaries, and completions each have a different OpenAI default), and
 switching between them costs nothing extra. Anthropic works the same way (Opus 5 for chat and
-rewrite, Sonnet 5 for summaries, Haiku 4.5 for completions).
+rewrite, Sonnet 5 for summaries, Haiku 4.5 for completions). OpenRouter's defaults are picked
+from the live catalog: the newest Gemini Flash model for chat, summaries, and rewrite, and the
+newest Gemini Flash Lite for completions.
 
 ## Notes
 
@@ -121,8 +126,9 @@ rewrite, Sonnet 5 for summaries, Haiku 4.5 for completions).
 - **Context limits and token counting** follow the model in hand, not a global setting — a Gemini model is counted through Google's `countTokens` endpoint against a 1M-token window, while a local, OpenAI, or Anthropic model uses a calibrated chars-per-token estimate against that model's own window. In a mixed setup each applies to its own model.
 - **Ollama context window** — Resolved per model from the daemon rather than assumed: the runtime allocation from `/api/ps` when the model is loaded, the model's advertised maximum from `/api/show` before that, and a conservative 32k fallback only when the daemon is unreachable. This matters because Ollama's own default window is VRAM-derived (4k under 24 GiB) and often a small fraction of what the model supports — see [Set the context window first](/guide/ollama-setup#set-the-context-window-first).
 - **OpenAI reasoning** — the Chat Completions API doesn't return model "thinking" the way Gemini and Ollama can, so no reasoning is shown for `api.openai.com`. A compatible server that emits a `reasoning_content` field on its responses will have that content shown as thoughts, same as the other providers.
+- **OpenRouter reasoning** — For models that reason, OpenRouter's `reasoning` text is shown as thoughts. Its structured `reasoning_details` (Claude thinking blocks, Gemini thought signatures, encrypted OpenAI reasoning) are sent back with each tool round, as OpenRouter requires, so a reasoning model keeps its train of thought through a tool chain.
 - **Anthropic reasoning** — Claude models other than Haiku 4.5 run with adaptive thinking, and a summary of that reasoning is shown as thoughts. Opus 5 and Fable 5.1 also opt into Anthropic's server-side refusal fallback — see the [Anthropic Setup Guide](/guide/anthropic-setup#how-requests-are-made).
 
 Changing the default provider or any feature's provider takes effect immediately — no data is lost, and each provider's model choices persist across changes (`providerModelMemory` restores the model you had the last time a feature was on that provider).
 
-See the [Ollama Setup Guide](/guide/ollama-setup), the [OpenAI Setup Guide](/guide/openai-setup), and the [Anthropic Setup Guide](/guide/anthropic-setup) for installation/configuration steps and provider-specific tips.
+See the [Ollama Setup Guide](/guide/ollama-setup), the [OpenAI Setup Guide](/guide/openai-setup), the [Anthropic Setup Guide](/guide/anthropic-setup), and the [OpenRouter Setup Guide](/guide/openrouter-setup) for installation/configuration steps and provider-specific tips.

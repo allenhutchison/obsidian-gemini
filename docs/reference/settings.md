@@ -43,7 +43,7 @@ Top-level rows, in order:
 ## Providers
 
 The Providers page holds one **connection card** per account/endpoint: Gemini, Ollama, OpenAI,
-and Anthropic. **A card never assigns a provider to a feature** — that only
+Anthropic, and OpenRouter. **A card never assigns a provider to a feature** — that only
 happens on the [Features](#features) page. Each card's `displayValue` on the Providers list
 summarizes its connection state (Connected / Not set up / Unreachable).
 
@@ -101,10 +101,22 @@ summarizes its connection state (Connected / Not set up / Unreachable).
 
 See the [Anthropic Setup Guide](/guide/anthropic-setup) for the model list and request behavior.
 
+### OpenRouter card
+
+- **API key** (`openrouterApiKeySecretName`) — String, SecretStorage key name, default `""`. Get
+  one at [openrouter.ai/keys](https://openrouter.ai/keys). There is no base URL setting —
+  requests always go to `openrouter.ai`.
+- **Available models** — count + **Refresh** button, re-querying OpenRouter's
+  `GET /api/v1/models` (text models) and `GET /api/v1/images/models` (image models). Without a
+  key the row reads **Not set up** and no request is made.
+- **Used by** — read-only list of the features currently routed to OpenRouter.
+
+See the [OpenRouter Setup Guide](/guide/openrouter-setup) for setup and request behavior.
+
 ### Default provider
 
 - **Setting**: `defaultProvider`
-- **Type**: `'gemini' | 'ollama' | 'openai' | 'anthropic'`
+- **Type**: `'gemini' | 'ollama' | 'openai' | 'anthropic' | 'openrouter'`
 - **Default**: `'gemini'`
 - **Description**: The provider used by any feature you have not routed elsewhere. Changing it
   re-points every feature that was on the _previous_ default and that the new default can serve;
@@ -206,6 +218,10 @@ Model discovery is automatic — no user-configurable settings are required.
 - **Anthropic** — a curated list of Claude models, narrowed by `GET https://api.anthropic.com/v1/models`
   to what your key can use, with display names and context windows from that response. Click
   **Refresh** on the Anthropic card after your organization's model access changes.
+- **OpenRouter** — the full OpenRouter catalog from `GET https://openrouter.ai/api/v1/models`,
+  with each model's own name, context window, and image-input support, plus the image models
+  from `GET https://openrouter.ai/api/v1/images/models`. Click **Refresh** on the OpenRouter card
+  to pick up newly listed models.
 
 When Google retires a model (the API starts returning 404 "no longer available"), it is removed
 from the catalog and any route or remembered model still pointing at it is migrated
@@ -564,7 +580,9 @@ or a project's `toolPolicy` ([Projects → Tool Policy](/guide/projects#tool-pol
    loading a different model in a compatible server.
 5. For Anthropic: click **Refresh** on the Anthropic card. Only curated Claude models are offered,
    and only those your key's organization can access.
-6. Check console for errors (with Debug mode enabled).
+6. For OpenRouter: click **Refresh** on the OpenRouter card. Image models only appear on the
+   Image generation row, and text models only on the text rows.
+7. Check console for errors (with Debug mode enabled).
 
 ### A feature shows a warning on the Features page
 

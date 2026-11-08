@@ -19,7 +19,11 @@ import { includesLine, usedByLine, providerCardDisplay } from './display-values'
 import { modelCountCache, modelCountGeneration, bumpGeneration, invalidateModelCount } from './model-count-cache';
 
 export type AuthRow =
-	| { kind: 'secret'; settingsKey: 'apiKeySecretName' | 'openaiApiKeySecretName' | 'anthropicApiKeySecretName' }
+	| {
+			kind: 'secret';
+			settingsKey:
+				'apiKeySecretName' | 'openaiApiKeySecretName' | 'anthropicApiKeySecretName' | 'openrouterApiKeySecretName';
+	  }
 	| { kind: 'baseUrl'; settingsKey: 'customBaseUrl' | 'ollamaBaseUrl' | 'openaiBaseUrl'; optional: boolean };
 
 export interface ProviderCardSpec {
@@ -58,6 +62,12 @@ export const PROVIDER_CARDS: ProviderCardSpec[] = [
 		id: 'anthropic',
 		labelKey: 'settings.providers.shortLabel.anthropic',
 		auth: [{ kind: 'secret', settingsKey: 'anthropicApiKeySecretName' }],
+	},
+	{
+		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini sync-cache special case; card ids are display data keyed by provider
+		id: 'openrouter',
+		labelKey: 'settings.providers.shortLabel.openrouter',
+		auth: [{ kind: 'secret', settingsKey: 'openrouterApiKeySecretName' }],
 	},
 ];
 

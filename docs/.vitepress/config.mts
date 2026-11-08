@@ -36,6 +36,7 @@ export default defineConfig({
 						{ text: 'Ollama (Local Models)', link: '/guide/ollama-setup' },
 						{ text: 'OpenAI', link: '/guide/openai-setup' },
 						{ text: 'Anthropic (Claude)', link: '/guide/anthropic-setup' },
+						{ text: 'OpenRouter', link: '/guide/openrouter-setup' },
 						{ text: 'FAQ', link: '/guide/faq' },
 					],
 				},

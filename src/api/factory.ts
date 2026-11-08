@@ -16,6 +16,7 @@ import { OpenAIClient } from './providers/openai/client';
 import { DEFAULT_OPENAI_BASE_URL, type OpenAIClientConfig } from './providers/openai/config';
 import { AnthropicClient } from './providers/anthropic/client';
 import type { AnthropicClientConfig } from './providers/anthropic/config';
+import { OpenRouterClient } from './providers/openrouter/client';
 import { ModelApi } from './interfaces/model-api';
 import type { ImageGenerationApi } from './interfaces/image-generation-api';
 import { GeminiPrompts } from '../prompts';
@@ -80,6 +81,10 @@ export class ModelClientFactory {
 				prompts,
 				plugin
 			);
+		}
+
+		if (provider === 'openrouter') {
+			return new OpenRouterClient({ apiKey: plugin.openrouterApiKey }, prompts, plugin);
 		}
 
 		if (provider === 'gemini') {
@@ -152,6 +157,15 @@ export class ModelClientFactory {
 				...overrides,
 			};
 			const client = new AnthropicClient(config, prompts, plugin);
+			return new RetryDecorator(client, plugin.logger);
+		}
+
+		if (provider === 'openrouter') {
+			const client = new OpenRouterClient(
+				{ apiKey: plugin.openrouterApiKey, model: overrides?.model ?? modelName },
+				prompts,
+				plugin
+			);
 			return new RetryDecorator(client, plugin.logger);
 		}
 

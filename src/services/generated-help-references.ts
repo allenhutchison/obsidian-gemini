@@ -22,6 +22,7 @@ import refLifecycleHooks from '../../docs/guide/lifecycle-hooks.md';
 import refMcpServers from '../../docs/guide/mcp-servers.md';
 import refOllamaSetup from '../../docs/guide/ollama-setup.md';
 import refOpenaiSetup from '../../docs/guide/openai-setup.md';
+import refOpenrouterSetup from '../../docs/guide/openrouter-setup.md';
 import refProjects from '../../docs/guide/projects.md';
 import refScheduledTasks from '../../docs/guide/scheduled-tasks.md';
 import refSelectionPrompts from '../../docs/guide/selection-prompts.md';
@@ -48,6 +49,7 @@ export const helpResources = new Map<string, string>([
 	['references/mcp-servers.md', refMcpServers],
 	['references/ollama-setup.md', refOllamaSetup],
 	['references/openai-setup.md', refOpenaiSetup],
+	['references/openrouter-setup.md', refOpenrouterSetup],
 	['references/projects.md', refProjects],
 	['references/scheduled-tasks.md', refScheduledTasks],
 	['references/selection-prompts.md', refSelectionPrompts],
@@ -76,6 +78,7 @@ export const helpReferencesTable = `| Reference | Topic |
 | \`references/mcp-servers.md\` | MCP servers |
 | \`references/ollama-setup.md\` | Ollama (Local Models) |
 | \`references/openai-setup.md\` | OpenAI |
+| \`references/openrouter-setup.md\` | OpenRouter |
 | \`references/projects.md\` | Projects |
 | \`references/scheduled-tasks.md\` | Scheduled tasks |
 | \`references/selection-prompts.md\` | Selection Prompts |

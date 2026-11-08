@@ -164,7 +164,8 @@ const PROVIDER_LITERAL_RULE = {
 	'no-restricted-syntax': [
 		'error',
 		{
-			selector: "Literal[value='gemini'], Literal[value='ollama'], Literal[value='openai'], Literal[value='anthropic']",
+			selector:
+				"Literal[value='gemini'], Literal[value='ollama'], Literal[value='openai'], Literal[value='anthropic'], Literal[value='openrouter']",
 			message:
 				"Don't branch on a provider-name literal: ask the provider registry (getCapabilities/featureProvider/PROVIDER_IDS from src/api/providers/registry.ts) instead, so a new provider doesn't require hand-editing this ladder. If this site legitimately owns provider identity, add an eslint-disable-next-line with a reason explaining why.",
 		},

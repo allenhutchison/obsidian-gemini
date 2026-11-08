@@ -40,7 +40,20 @@ export function asRecord(value: unknown): Record<string, unknown> {
  * tells their 401s apart.
  */
 function isSdkApiError(error: Record<string, unknown>): boolean {
-	return typeof error.status === 'number' && (typeof error.type === 'string' || typeof error.code === 'string');
+	return (
+		typeof error.status === 'number' &&
+		(typeof error.type === 'string' || typeof error.code === 'string' || isOpenRouterApiError(error))
+	);
+}
+
+/**
+ * An OpenRouter error, as the openai SDK surfaces it. OpenRouter's error body
+ * is `{ error: { code: <HTTP status as a number>, message } }`, so the SDK's
+ * `code` is numeric — OpenAI's own codes are strings (or null), and Anthropic
+ * reports `type` instead, so a numeric code never collides with either.
+ */
+function isOpenRouterApiError(error: Record<string, unknown>): boolean {
+	return typeof error.code === 'number';
 }
 
 /**
@@ -286,7 +299,9 @@ export function getErrorMessage(error: unknown): string {
 		if (isSdkApiError(asRecord(error))) {
 			const statusCode = extractStatusCode(error);
 			if (statusCode === 401) {
-				return isAnthropicAuthError(asRecord(error)) ? t('error.anthropicInvalidKey') : t('error.openaiInvalidKey');
+				if (isAnthropicAuthError(asRecord(error))) return t('error.anthropicInvalidKey');
+				if (isOpenRouterApiError(asRecord(error))) return t('error.openrouterInvalidKey');
+				return t('error.openaiInvalidKey');
 			}
 			if (statusCode === 404) {
 				return t('error.modelNotOnEndpoint');
