@@ -34,16 +34,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">95.23% </span>
+                <span class="strong">93.93% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>60/63</span>
+                <span class='fraction'>62/66</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">94.11% </span>
+                <span class="strong">91.66% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>32/34</span>
+                <span class='fraction'>33/36</span>
             </div>
         
             
@@ -55,9 +55,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">94.54% </span>
+                <span class="strong">94.73% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>52/55</span>
+                <span class='fraction'>54/57</span>
             </div>
         
             
@@ -306,7 +306,14 @@
 <a name='L230'></a><a href='#L230'>230</a>
 <a name='L231'></a><a href='#L231'>231</a>
 <a name='L232'></a><a href='#L232'>232</a>
-<a name='L233'></a><a href='#L233'>233</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L233'></a><a href='#L233'>233</a>
+<a name='L234'></a><a href='#L234'>234</a>
+<a name='L235'></a><a href='#L235'>235</a>
+<a name='L236'></a><a href='#L236'>236</a>
+<a name='L237'></a><a href='#L237'>237</a>
+<a name='L238'></a><a href='#L238'>238</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -341,6 +348,7 @@
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">36x</span>
 <span class="cline-any cline-yes">36x</span>
 <span class="cline-any cline-yes">36x</span>
 <span class="cline-any cline-yes">36x</span>
@@ -425,6 +433,8 @@
 <span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -553,6 +563,7 @@ import { ModelListProvider, RefreshResult } from './model-list-provider';
 import { OllamaModelsService } from './ollama-models-service';
 import { OpenAIModelsService } from './openai-models-service';
 import { AnthropicModelsService } from './anthropic-models-service';
+import { OpenRouterModelsService } from './openrouter-models-service';
 &nbsp;
 export interface ModelUpdateOptions {
 	forceRefresh?: boolean;
@@ -570,6 +581,7 @@ export class ModelManager {
 	private ollamaModelsService: OllamaModelsService;
 	private openaiModelsService: OpenAIModelsService;
 	private anthropicModelsService: AnthropicModelsService;
+	private openrouterModelsService: OpenRouterModelsService;
 	private static staticModels: GeminiModel[] = [...DEFAULT_GEMINI_MODELS];
 &nbsp;
 	constructor(plugin: ObsidianGemini) {
@@ -578,6 +590,7 @@ export class ModelManager {
 		this.ollamaModelsService = new OllamaModelsService(plugin);
 		this.openaiModelsService = new OpenAIModelsService(plugin);
 		this.anthropicModelsService = new AnthropicModelsService(plugin);
+		this.openrouterModelsService = new OpenRouterModelsService(plugin);
 	}
 &nbsp;
 	/**
@@ -652,11 +665,13 @@ export class ModelManager {
 	getProviderModelsService(
 		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
 		provider: Exclude&lt;ModelProvider, 'gemini'&gt;
-	): OllamaModelsService | OpenAIModelsService | AnthropicModelsService {
+	): OllamaModelsService | OpenAIModelsService | AnthropicModelsService | OpenRouterModelsService {
 		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
 		if (provider === 'ollama') return this.ollamaModelsService;
 		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
 		if (provider === 'openai') return this.openaiModelsService;
+		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
+		<span class="missing-if-branch" title="if path not taken" >I</span>if (provider === 'openrouter') <span class="cstat-no" title="statement not covered" >return this.openrouterModelsService;</span>
 		return this.anthropicModelsService;
 	}
 &nbsp;
@@ -777,7 +792,7 @@ export class ModelManager {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-08T23:01:17.799Z
+                at 2026-11-08T23:47:38.095Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
