@@ -48,7 +48,7 @@ When a task completes you'll see a notice in the bottom-right corner with an **O
 1. Clicking the status bar indicator → **Open result** in the Recent section
 2. Navigating directly to `[state-folder]/Background-Tasks/` in the file explorer (unless you set a custom `outputFile` path)
 
-The agent can also read a background result back with `read_file`. For deep research, the path the tool returned is the final one. For a generated image, the returned `.png` path is provisional: if the model returns JPEG, WebP or GIF, the file is saved with that extension at the same location. Use the path from **Open result**, or try the same name ending in `.jpg`, `.webp` or `.gif`.
+The agent can also read a background result back with `read_file`. For deep research, the path the tool returned is the final one. For a generated image, the returned `.png` path is provisional: if the model returns JPEG, WebP or GIF, the file is saved with that extension at the same location. Use the path from **Open result**, or try the same name ending in `.jpg`, `.webp` or `.gif`. That lookup is unambiguous: default image names are unique, and a background request for an explicit path is refused if another image already uses the same name with any of those extensions.
 
 ## Troubleshooting
 

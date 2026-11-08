@@ -112,6 +112,17 @@ export class GenerateImageTool implements Tool {
 					};
 				}
 
+				// The extension of the saved file isn't known until the image exists, so
+				// the agent locates it by stem. Refuse a stem another image already uses,
+				// so that lookup can't land on an older file.
+				const existing = plugin.imageGeneration.findImageWithSameStem(resolvedOutputPath);
+				if (existing) {
+					return {
+						success: false,
+						error: `An image with the same name already exists at "${existing}". Choose an output_path with a different file name.`,
+					};
+				}
+
 				const imageGeneration = plugin.imageGeneration;
 				const label = prompt.length > 40 ? prompt.slice(0, 37) + '…' : prompt;
 				const taskId = plugin.backgroundTaskManager.submit('image-generation', label, async (isCancelled) => {

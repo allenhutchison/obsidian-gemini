@@ -5,6 +5,7 @@ import { ToolExecutionContext } from '../../src/tools/types';
 const mockImageGeneration = {
 	generateImage: vi.fn(),
 	resolveOutputPath: vi.fn(),
+	findImageWithSameStem: vi.fn().mockReturnValue(null),
 };
 
 const mockBackgroundTaskManager = {
@@ -192,6 +193,19 @@ describe('ImageTools', () => {
 			expect((result.data as any).taskId).toBe('bg-task-1');
 			expect((result.data as any).output_path).toBe('attachments/cat.png');
 			expect(mockImageGeneration.generateImage).not.toHaveBeenCalled();
+		});
+
+		it('refuses an output_path whose stem another image already uses', async () => {
+			mockImageGeneration.findImageWithSameStem.mockReturnValueOnce('attachments/cat.jpg');
+
+			const result = await tool.execute(
+				{ prompt: 'a cat', background: true, output_path: 'attachments/cat.png' },
+				mockContext
+			);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('attachments/cat.jpg');
+			expect(mockBackgroundTaskManager.submit).not.toHaveBeenCalled();
 		});
 
 		it('submits to BackgroundTaskManager with correct type and label', async () => {

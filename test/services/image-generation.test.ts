@@ -536,6 +536,14 @@ describe('ImageGeneration.saveImageToVault – format sniffed from the bytes', (
 		expect(await save(toBase64(gif), 'x', 'a/anim.png')).toBe('a/anim.gif');
 	});
 
+	it('findImageWithSameStem reports an existing file under any sniffable extension', () => {
+		const existing = new Set(['attachments/desk.webp']);
+		(service as any).plugin.app.vault.getAbstractFileByPath = (p: string) => (existing.has(p) ? { path: p } : null);
+
+		expect(service.findImageWithSameStem('attachments/desk.png')).toBe('attachments/desk.webp');
+		expect(service.findImageWithSameStem('attachments/other.png')).toBeNull();
+	});
+
 	it('flows through generateImage: a JPEG from the client lands as .jpg', async () => {
 		mockGenerateImageBytes.mockResolvedValue(toBase64(JPEG_BYTES));
 		const result = await service.generateImage('a desk', 'gemini-scribe/Background-Tasks/desk.png');

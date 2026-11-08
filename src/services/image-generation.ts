@@ -6,7 +6,7 @@ import { resolveFeatureModel } from '../models';
 import { getErrorMessage, getRawErrorMessageOr } from '../utils/error-utils';
 import { ensureParentFolderExists, validateGeneratedOutputPath } from '../utils/file-utils';
 import { t } from '../i18n';
-import { sniffImageFormat } from '../utils/image-format';
+import { SNIFFED_IMAGE_EXTENSIONS, sniffImageFormat } from '../utils/image-format';
 import { STATE_SUBFOLDERS, stateFolderPath } from './state-folder';
 
 export class ImageGeneration {
@@ -207,6 +207,28 @@ export class ImageGeneration {
 			return this.validateOutputPath(outputPath);
 		}
 		return this.resolveDefaultOutputPath(prompt);
+	}
+
+	/**
+	 * Return the path of an existing file that shares `path`'s folder and stem
+	 * under any extension the save can produce (`.png`, `.jpg`, `.webp`, `.gif`),
+	 * or `null` when there is none.
+	 *
+	 * Background mode promises a provisional `.png` path and the save swaps the
+	 * extension for the real format, so the agent finds the result by trying
+	 * those extensions. That is only unambiguous when no other file already uses
+	 * the stem; otherwise it could pick up an older image. Callers reject the
+	 * path up front in that case.
+	 */
+	findImageWithSameStem(path: string): string | null {
+		const dotIndex = path.lastIndexOf('.');
+		const slashIndex = path.lastIndexOf('/');
+		const stem = dotIndex > slashIndex + 1 ? path.slice(0, dotIndex) : path;
+		for (const extension of SNIFFED_IMAGE_EXTENSIONS) {
+			const candidate = `${stem}.${extension}`;
+			if (this.plugin.app.vault.getAbstractFileByPath(candidate)) return candidate;
+		}
+		return null;
 	}
 
 	/**
