@@ -395,6 +395,47 @@ describe('ReadFileTool', () => {
 		expect(result.error).toContain('Cannot read from system folder');
 	});
 
+	it('reads a generated image under [state-folder]/Background-Tasks/ by its exact path', async () => {
+		const image = new TFile();
+		(image as any).path = 'test-history-folder/Background-Tasks/generated-desk-1-abc.jpg';
+		(image as any).name = 'generated-desk-1-abc.jpg';
+		(image as any).extension = 'jpg';
+		(image as any).stat = { size: 4, mtime: Date.now(), ctime: Date.now() };
+		mockVault.getAbstractFileByPath.mockReturnValue(image);
+		mockVault.readBinary.mockResolvedValue(new Uint8Array([0xff, 0xd8, 0xff, 0xe0]).buffer);
+
+		const result = await tool.execute(
+			{ path: 'test-history-folder/Background-Tasks/generated-desk-1-abc.jpg' },
+			mockContext
+		);
+
+		expect(result.success).toBe(true);
+		expect((result.data as any)?.type).toBe('binary_file');
+		expect(result.inlineData?.[0].mimeType).toBe('image/jpeg');
+	});
+
+	it('does not list the Background-Tasks folder itself', async () => {
+		const folder = new TFolder();
+		folder.path = 'test-history-folder/Background-Tasks';
+		folder.name = 'Background-Tasks';
+		folder.children = [];
+		mockVault.getAbstractFileByPath.mockReturnValue(folder);
+		mockVault.getFiles.mockReturnValue([]);
+		mockMetadataCache.getFirstLinkpathDest.mockReturnValue(null);
+
+		const result = await tool.execute({ path: 'test-history-folder/Background-Tasks' }, mockContext);
+
+		expect(result.success).toBe(true);
+		expect((result.data as any)?.exists).toBe(false);
+	});
+
+	it('still hard-blocks sibling folders that only share the Background-Tasks prefix', async () => {
+		const result = await tool.execute({ path: 'test-history-folder/Background-Tasks-Other/x.png' }, mockContext);
+
+		expect(result.success).toBe(false);
+		expect(result.error).toContain('Cannot read from system folder');
+	});
+
 	it('should block reading .obsidian files even if they exist', async () => {
 		const obsidianFile = new TFile();
 		(obsidianFile as any).path = '.obsidian/app.json';

@@ -6,12 +6,15 @@ import { resolveFeatureModel } from '../models';
 import { getErrorMessage, getRawErrorMessageOr } from '../utils/error-utils';
 import { ensureParentFolderExists, validateGeneratedOutputPath } from '../utils/file-utils';
 import { t } from '../i18n';
+import { SNIFFED_IMAGE_EXTENSIONS, sniffImageFormat } from '../utils/image-format';
 import { STATE_SUBFOLDERS, stateFolderPath } from './state-folder';
 
 export class ImageGeneration {
 	private plugin: ObsidianGemini;
 	private client: ImageGenerationApi;
 	private prompts: GeminiPrompts;
+	/** Stems (path without extension) of background images still being generated. */
+	private pendingStems = new Set<string>();
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
@@ -187,14 +190,14 @@ export class ImageGeneration {
 	 * explicit caller-supplied path or the Background-Tasks default.
 	 *
 	 * When `outputPath` is provided, validates it and rewrites the extension
-	 * to `.png` (saveImageToVault writes PNG bytes unconditionally). When it
-	 * isn't, falls back to [state-folder]/Background-Tasks/<generated-filename>.
+	 * to `.png`. When it isn't, falls back to
+	 * [state-folder]/Background-Tasks/<generated-filename>.png.
 	 *
 	 * Used by background mode of GenerateImageTool to pre-compute the path at
-	 * submit time and return it synchronously — the agent relies on this path
-	 * being the exact location it can later `read_file`. Must stay in sync
-	 * with saveImageToVault so the promise-at-submit matches the
-	 * actual-write.
+	 * submit time, before the image exists. The format isn't known yet, so the
+	 * `.png` here is provisional: saveImageToVault swaps it for the extension
+	 * the returned bytes actually carry (e.g. `.jpg`), keeping the rest of the
+	 * path. Folder and name must stay in sync with saveImageToVault.
 	 *
 	 * Throws synchronously on an invalid explicit path (vault escape,
 	 * protected folder, etc.).
@@ -202,10 +205,62 @@ export class ImageGeneration {
 	async resolveOutputPath(prompt: string, outputPath?: string): Promise<string> {
 		if (outputPath) {
 			// Runs the same validation/normalisation saveImageToVault uses,
-			// including rewriting any non-.png extension to .png.
+			// with the provisional .png extension.
 			return this.validateOutputPath(outputPath);
 		}
 		return this.resolveDefaultOutputPath(prompt);
+	}
+
+	/**
+	 * Return the path of an existing file that shares `path`'s folder and stem
+	 * under any extension the save can produce (`.png`, `.jpg`, `.webp`, `.gif`),
+	 * or `null` when there is none.
+	 *
+	 * Background mode promises a provisional `.png` path and the save swaps the
+	 * extension for the real format, so the agent finds the result by trying
+	 * those extensions. That is only unambiguous when no other file already uses
+	 * the stem; otherwise it could pick up an older image. Callers reject the
+	 * path up front in that case. A stem reserved by a still-running background
+	 * task (see `reserveImageStem`) counts as taken too, so two concurrent
+	 * requests can't share one provisional path.
+	 */
+	findImageWithSameStem(path: string): string | null {
+		const stem = this.stemOf(path);
+		if (this.pendingStems.has(stem)) return path;
+		for (const extension of SNIFFED_IMAGE_EXTENSIONS) {
+			const candidate = `${stem}.${extension}`;
+			if (this.plugin.app.vault.getAbstractFileByPath(candidate)) return candidate;
+		}
+		return null;
+	}
+
+	/**
+	 * Whether a generation still in flight (see `reserveImageStem`) has
+	 * reserved `path`'s stem. Unlike `findImageWithSameStem`, files already on
+	 * disk don't count.
+	 */
+	isImageStemReserved(path: string): boolean {
+		return this.pendingStems.has(this.stemOf(path));
+	}
+
+	/**
+	 * Reserve `path`'s stem for an in-flight generation until the returned
+	 * release function is called. Pair with `findImageWithSameStem` (background)
+	 * or `isImageStemReserved` (foreground), and release in a `finally` so a
+	 * failed or cancelled generation frees the name.
+	 */
+	reserveImageStem(path: string): () => void {
+		const stem = this.stemOf(path);
+		this.pendingStems.add(stem);
+		return () => {
+			this.pendingStems.delete(stem);
+		};
+	}
+
+	private stemOf(path: string): string {
+		const dotIndex = path.lastIndexOf('.');
+		const slashIndex = path.lastIndexOf('/');
+		return dotIndex > slashIndex + 1 ? path.slice(0, dotIndex) : path;
 	}
 
 	/**
@@ -217,8 +272,8 @@ export class ImageGeneration {
 	 * explicit path — it handles both branches consistently. This method is
 	 * kept public for callers that specifically want the default flow.
 	 */
-	async resolveDefaultOutputPath(prompt: string): Promise<string> {
-		const filename = this.buildDefaultFilename(prompt);
+	async resolveDefaultOutputPath(prompt: string, extension = 'png'): Promise<string> {
+		const filename = this.buildDefaultFilename(prompt, extension);
 		const backgroundTasksFolder = stateFolderPath(this.plugin.settings, STATE_SUBFOLDERS.backgroundTasks);
 		return normalizePath(`${backgroundTasksFolder}/${filename}`);
 	}
@@ -234,14 +289,14 @@ export class ImageGeneration {
 	 * drops collision probability to ~1-in-2-billion per same-millisecond
 	 * submission with the same prompt slice.
 	 */
-	private buildDefaultFilename(prompt: string): string {
+	private buildDefaultFilename(prompt: string, extension: string): string {
 		const sanitizedPrompt = prompt
 			.substring(0, 50)
 			.replace(/[^a-zA-Z0-9\-_]/g, '-')
 			.replace(/-+/g, '-')
 			.replace(/^-|-$/g, '');
 		const randomSuffix = Math.random().toString(36).substring(2, 8);
-		return `generated-${sanitizedPrompt}-${Date.now()}-${randomSuffix}.png`;
+		return `generated-${sanitizedPrompt}-${Date.now()}-${randomSuffix}.${extension}`;
 	}
 
 	/**
@@ -249,18 +304,19 @@ export class ImageGeneration {
 	 * Rejects paths that escape the vault, target protected system folders, or
 	 * land inside the plugin state folder — important because GenerateImageTool
 	 * can be invoked autonomously by the agent (#634).
-	 * Always returns a path ending with ".png" since the code always writes PNG bytes.
+	 * Always returns a path ending with `.<extension>`, so the file's name
+	 * matches the format of the bytes written to it.
 	 */
-	private validateOutputPath(outputPath: string): string {
+	private validateOutputPath(outputPath: string, extension = 'png'): string {
 		// The reject set is shared with deep-research's write path via
-		// `validateGeneratedOutputPath` (#1401); the `.png` rewrite below is the
+		// `validateGeneratedOutputPath` (#1401); the extension rewrite below is the
 		// only part that is genuinely this validator's own.
 		return validateGeneratedOutputPath(outputPath, {
 			configDir: this.plugin.app.vault.configDir,
 			historyFolder: this.plugin.settings.historyFolder,
 			allowedSubfolder: STATE_SUBFOLDERS.backgroundTasks,
-			// Always ensure the file ends with .png — the code always writes PNG
-			// bytes. The helper applies this before the state-folder check so the
+			// Always ensure the file ends with the extension of the bytes being
+			// written. The helper applies this before the state-folder check so the
 			// validated path matches what will actually be written (e.g. a bare
 			// "Background-Tasks" → "Background-Tasks.png", which is outside the
 			// allowed subfolder and must still be rejected).
@@ -268,7 +324,8 @@ export class ImageGeneration {
 				const dotIndex = normalized.lastIndexOf('.');
 				const slashIndex = normalized.lastIndexOf('/');
 				const hasExtension = dotIndex > slashIndex + 1;
-				return hasExtension ? normalized.slice(0, dotIndex) + '.png' : normalized + '.png';
+				const stem = hasExtension ? normalized.slice(0, dotIndex) : normalized;
+				return `${stem}.${extension}`;
 			},
 			messages: {
 				'missing-filename': (path) => `Output path must include a filename: "${path}"`,
@@ -301,18 +358,27 @@ export class ImageGeneration {
 		// Convert binary string to Uint8Array
 		const bytes = Uint8Array.from(binaryData, (c) => c.charCodeAt(0));
 
+		// Name the file after what the bytes actually are. Image models can return
+		// JPEG (or WebP/GIF) even when PNG is expected, and a .png file holding
+		// JPEG data is rejected by anything that checks magic bytes.
+		const format = sniffImageFormat(bytes);
+		if (!format) {
+			this.plugin.logger.warn('[ImageGeneration] Unrecognised image format; saving with a .png extension');
+		}
+		const extension = format?.extension ?? 'png';
+
 		let resolvedPath: string;
 
 		if (outputPath) {
 			// Caller specified an explicit path — validate and normalize before use.
 			// Rejects vault-escaping and protected-folder paths (see validateOutputPath).
-			resolvedPath = this.validateOutputPath(outputPath);
+			resolvedPath = this.validateOutputPath(outputPath, extension);
 
 			// Ensure the parent folder exists before writing — createBinary will fail
 			// if any intermediate directory in the path is missing.
 			await ensureParentFolderExists(this.plugin.app.vault, resolvedPath, 'image output folder', this.plugin.logger);
 		} else {
-			resolvedPath = await this.resolveDefaultOutputPath(prompt);
+			resolvedPath = await this.resolveDefaultOutputPath(prompt, extension);
 		}
 
 		// Save to vault

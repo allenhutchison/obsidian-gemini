@@ -5,6 +5,9 @@ import { ToolExecutionContext } from '../../src/tools/types';
 const mockImageGeneration = {
 	generateImage: vi.fn(),
 	resolveOutputPath: vi.fn(),
+	findImageWithSameStem: vi.fn().mockReturnValue(null),
+	reserveImageStem: vi.fn().mockReturnValue(() => undefined),
+	isImageStemReserved: vi.fn().mockReturnValue(false),
 };
 
 const mockBackgroundTaskManager = {
@@ -84,6 +87,44 @@ describe('ImageTools', () => {
 				wikilink: `![[${imagePath}]]`,
 			});
 			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith('a mountain', 'attachments/my-custom-image.png');
+		});
+
+		it('refuses an explicit output_path whose stem a pending background image has reserved', async () => {
+			mockImageGeneration.resolveOutputPath.mockResolvedValueOnce('attachments/cat.png');
+			mockImageGeneration.isImageStemReserved.mockReturnValueOnce(true);
+
+			const result = await tool.execute({ prompt: 'a cat', output_path: 'attachments/cat.png' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('still being generated');
+			expect(mockImageGeneration.isImageStemReserved).toHaveBeenCalledWith('attachments/cat.png');
+			expect(mockImageGeneration.generateImage).not.toHaveBeenCalled();
+			expect(mockImageGeneration.reserveImageStem).not.toHaveBeenCalled();
+		});
+
+		it('reserves an explicit output_path stem while generating and releases it on failure', async () => {
+			const release = vi.fn();
+			mockImageGeneration.resolveOutputPath.mockResolvedValueOnce('attachments/cat.png');
+			mockImageGeneration.reserveImageStem.mockReturnValueOnce(release);
+			mockImageGeneration.generateImage.mockImplementationOnce(async () => {
+				expect(release).not.toHaveBeenCalled();
+				throw new Error('quota');
+			});
+
+			const result = await tool.execute({ prompt: 'a cat', output_path: 'attachments/cat.png' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(mockImageGeneration.reserveImageStem).toHaveBeenCalledWith('attachments/cat.png');
+			expect(release).toHaveBeenCalledTimes(1);
+		});
+
+		it('does not reserve a stem for the unique default path', async () => {
+			mockImageGeneration.generateImage.mockResolvedValueOnce('gemini-scribe/Background-Tasks/x.png');
+
+			await tool.execute({ prompt: 'a cat' }, mockContext);
+
+			expect(mockImageGeneration.resolveOutputPath).not.toHaveBeenCalled();
+			expect(mockImageGeneration.reserveImageStem).not.toHaveBeenCalled();
 		});
 
 		it('should return error when image generation service is not available', async () => {
@@ -194,6 +235,19 @@ describe('ImageTools', () => {
 			expect(mockImageGeneration.generateImage).not.toHaveBeenCalled();
 		});
 
+		it('refuses an output_path whose stem another image already uses', async () => {
+			mockImageGeneration.findImageWithSameStem.mockReturnValueOnce('attachments/cat.jpg');
+
+			const result = await tool.execute(
+				{ prompt: 'a cat', background: true, output_path: 'attachments/cat.png' },
+				mockContext
+			);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('attachments/cat.jpg');
+			expect(mockBackgroundTaskManager.submit).not.toHaveBeenCalled();
+		});
+
 		it('submits to BackgroundTaskManager with correct type and label', async () => {
 			await tool.execute({ prompt: 'a mountain at sunrise', background: true }, mockContext);
 
@@ -284,6 +338,19 @@ describe('ImageTools', () => {
 				'gemini-scribe/Background-Tasks/result.png'
 			);
 			expect(returnedPath).toBe('gemini-scribe/Background-Tasks/result.png');
+		});
+
+		it('releases the reserved stem when the task settles, even on failure', async () => {
+			const release = vi.fn();
+			mockImageGeneration.reserveImageStem.mockReturnValueOnce(release);
+			mockImageGeneration.generateImage.mockRejectedValueOnce(new Error('quota'));
+
+			await tool.execute({ prompt: 'a sunset', background: true }, mockContext);
+			expect(release).not.toHaveBeenCalled();
+
+			const callback = mockBackgroundTaskManager.submit.mock.calls[0][2];
+			await expect(callback(() => false)).rejects.toThrow('quota');
+			expect(release).toHaveBeenCalledTimes(1);
 		});
 
 		it('callback returns undefined when cancelled', async () => {

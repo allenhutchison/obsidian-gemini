@@ -25,7 +25,7 @@ export class GenerateImageTool implements Tool {
 	classification = ToolClassification.WRITE;
 	description =
 		'Generate an image from a text prompt and save it to the vault. Returns the wikilink that can be used to embed the image in a note. IMPORTANT: This tool only generates and saves the image file - it does NOT insert the image into any note. To add the generated image to a note, you must use write_file to insert the returned wikilink into the note content. ' +
-		'Set background=true to submit as a background task and return immediately with { taskId, output_path }. The returned output_path is the exact vault location where the image will land — read it later with read_file.';
+		'Set background=true to submit as a background task and return immediately with { taskId, output_path }. The returned output_path is where the image will land, except that the file extension is set from the image data once it exists: the model may return JPEG, WebP or GIF, so the saved file can end in .jpg, .webp or .gif instead of .png. Read it later with read_file, trying those extensions if the .png path is missing.';
 
 	parameters = {
 		type: 'object' as const,
@@ -37,13 +37,13 @@ export class GenerateImageTool implements Tool {
 			output_path: {
 				type: 'string' as const,
 				description:
-					'Optional: Explicit vault path where the generated image file should be saved (e.g. "attachments/my-image.png"). When omitted, the image is saved under the plugin\'s Background-Tasks folder.',
+					'Optional: Explicit vault path where the generated image file should be saved (e.g. "attachments/my-image.png"). The extension is replaced to match the format of the generated image (e.g. .jpg for JPEG). When omitted, the image is saved under the plugin\'s Background-Tasks folder.',
 			},
 			background: {
 				type: 'boolean' as const,
 				description:
 					'When true, submit as a background task and return immediately with { taskId, output_path }. ' +
-					'The output_path in the response is the exact vault location where the image will be saved — pass it to read_file once the task completes.',
+					'The output_path in the response is where the image will be saved; its extension may change from .png to .jpg, .webp or .gif to match the image data. Once the task completes, read_file it, and if the .png path is missing, try the same path with those extensions.',
 			},
 		},
 		required: ['prompt'],
@@ -98,9 +98,10 @@ export class GenerateImageTool implements Tool {
 
 				// Pre-resolve the output path at submit time so the agent has a concrete
 				// vault path to read_file later. resolveOutputPath handles both the
-				// explicit-path case (validation + .png extension rewrite) and the
-				// default Background-Tasks fallback — so the path we return here always
-				// matches where the task will actually write.
+				// explicit-path case (validation + provisional .png extension) and the
+				// default Background-Tasks fallback. The image doesn't exist yet, so
+				// the extension can't be known: the save swaps .png for whatever the
+				// bytes turn out to be (.jpg, .webp, .gif) and keeps the rest.
 				let resolvedOutputPath: string;
 				try {
 					resolvedOutputPath = await plugin.imageGeneration.resolveOutputPath(prompt, outputPath);
@@ -111,23 +112,72 @@ export class GenerateImageTool implements Tool {
 					};
 				}
 
+				// The extension of the saved file isn't known until the image exists, so
+				// the agent locates it by stem. Refuse a stem another image already uses
+				// (or that another pending background image has reserved), so that lookup
+				// can't land on a different file.
+				const existing = plugin.imageGeneration.findImageWithSameStem(resolvedOutputPath);
+				if (existing) {
+					return {
+						success: false,
+						error: `An image with the same name already exists or is still being generated at "${existing}". Choose an output_path with a different file name.`,
+					};
+				}
+
 				const imageGeneration = plugin.imageGeneration;
 				const label = prompt.length > 40 ? prompt.slice(0, 37) + '…' : prompt;
-				const taskId = plugin.backgroundTaskManager.submit('image-generation', label, async (isCancelled) => {
-					if (isCancelled()) return undefined;
-					// Always pass the pre-resolved path as the explicit outputPath so the
-					// task writes exactly where we told the agent it would land.
-					return imageGeneration.generateImage(prompt, resolvedOutputPath);
-				});
+				const releaseStem = imageGeneration.reserveImageStem(resolvedOutputPath);
+				let taskId: string;
+				try {
+					taskId = plugin.backgroundTaskManager.submit('image-generation', label, async (isCancelled) => {
+						try {
+							if (isCancelled()) return undefined;
+							// Always pass the pre-resolved path as the explicit outputPath so the
+							// task writes exactly where we told the agent it would land.
+							return await imageGeneration.generateImage(prompt, resolvedOutputPath);
+						} finally {
+							releaseStem();
+						}
+					});
+				} catch (error) {
+					releaseStem();
+					throw error;
+				}
 
 				return {
 					success: true,
-					data: { taskId, output_path: resolvedOutputPath },
+					data: {
+						taskId,
+						output_path: resolvedOutputPath,
+						note: 'The extension is set from the generated image data, so the saved file may end in .jpg, .webp or .gif instead of .png.',
+					},
 				};
 			}
 
 			// ── Foreground mode (default) ────────────────────────────────────────
-			const imagePath = await plugin.imageGeneration.generateImage(prompt, outputPath);
+			// Without an explicit path the default name is unique, so there is
+			// nothing to guard. With one, respect a stem a pending background image
+			// has reserved, and reserve it ourselves while generating, so neither
+			// request can save a same-stem file the other then finds by extension.
+			let imagePath: string;
+			if (outputPath) {
+				const imageGeneration = plugin.imageGeneration;
+				const resolvedOutputPath = await imageGeneration.resolveOutputPath(prompt, outputPath);
+				if (imageGeneration.isImageStemReserved(resolvedOutputPath)) {
+					return {
+						success: false,
+						error: `An image with the same name is still being generated at "${resolvedOutputPath}". Choose an output_path with a different file name, or wait for that task to finish.`,
+					};
+				}
+				const releaseStem = imageGeneration.reserveImageStem(resolvedOutputPath);
+				try {
+					imagePath = await imageGeneration.generateImage(prompt, outputPath);
+				} finally {
+					releaseStem();
+				}
+			} else {
+				imagePath = await plugin.imageGeneration.generateImage(prompt, outputPath);
+			}
 
 			return {
 				success: true,

@@ -476,6 +476,102 @@ describe('ImageGeneration.saveImageToVault (private)', () => {
 	});
 });
 
+describe('ImageGeneration.saveImageToVault – format sniffed from the bytes', () => {
+	let service: ImageGeneration;
+	let createBinaryMock: ReturnType<typeof vi.fn>;
+
+	// A JPEG/JFIF header (FF D8 FF E0 .. "JFIF") followed by filler. This is
+	// what Gemini image models can return even though nothing in the response
+	// says so — the API layer hands back bare base64 with no MIME type.
+	const JPEG_BYTES = [0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x00, 0x00];
+	const toBase64 = (values: number[]) => btoa(String.fromCharCode(...values));
+	const writtenBytes = (): Uint8Array => new Uint8Array(createBinaryMock.mock.calls[0][1] as ArrayBuffer);
+
+	const save = (base64: string, prompt: string, outputPath?: string): Promise<string> =>
+		(service as any).saveImageToVault(base64, prompt, outputPath);
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		createBinaryMock = vi.fn().mockResolvedValue(undefined);
+		service = new ImageGeneration({
+			apiKey: 'test-key',
+			settings: { historyFolder: 'gemini-scribe' },
+			logger: { log: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
+			app: { vault: { configDir: '.obsidian', createBinary: createBinaryMock } },
+		} as any);
+	});
+
+	it('saves JPEG bytes under a default .jpg name, not .png', async () => {
+		const result = await save(toBase64(JPEG_BYTES), 'A laptop on a worn wooden desk at dusk');
+
+		expect(result).toMatch(
+			/^gemini-scribe\/Background-Tasks\/generated-A-laptop-on-a-worn-wooden-desk-at-dusk-\d+-[a-z0-9]+\.jpg$/
+		);
+		expect(createBinaryMock).toHaveBeenCalledWith(result, expect.any(ArrayBuffer));
+		expect(Array.from(writtenBytes().slice(0, 3))).toEqual([0xff, 0xd8, 0xff]);
+	});
+
+	it('rewrites an explicit .png path to .jpg when the bytes are JPEG', async () => {
+		const result = await save(toBase64(JPEG_BYTES), 'a desk', 'attachments/desk.png');
+
+		expect(result).toBe('attachments/desk.jpg');
+		expect(createBinaryMock).toHaveBeenCalledWith('attachments/desk.jpg', expect.any(ArrayBuffer));
+		expect(Array.from(writtenBytes().slice(0, 3))).toEqual([0xff, 0xd8, 0xff]);
+	});
+
+	it('keeps .png for real PNG bytes', async () => {
+		const png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00];
+		expect(await save(toBase64(png), 'a desk', 'attachments/desk.jpg')).toBe('attachments/desk.png');
+	});
+
+	it('uses .webp and .gif for those signatures', async () => {
+		const webp = [...'RIFF']
+			.map((c) => c.charCodeAt(0))
+			.concat(
+				[0, 0, 0, 0],
+				[...'WEBP'].map((c) => c.charCodeAt(0))
+			);
+		const gif = [...'GIF89a'].map((c) => c.charCodeAt(0));
+		expect(await save(toBase64(webp), 'x', 'a/img.png')).toBe('a/img.webp');
+		expect(await save(toBase64(gif), 'x', 'a/anim.png')).toBe('a/anim.gif');
+	});
+
+	it('findImageWithSameStem reports an existing file under any sniffable extension', () => {
+		const existing = new Set(['attachments/desk.webp']);
+		(service as any).plugin.app.vault.getAbstractFileByPath = (p: string) => (existing.has(p) ? { path: p } : null);
+
+		expect(service.findImageWithSameStem('attachments/desk.png')).toBe('attachments/desk.webp');
+		expect(service.findImageWithSameStem('attachments/other.png')).toBeNull();
+	});
+
+	it('treats a reserved stem as taken until it is released', () => {
+		(service as any).plugin.app.vault.getAbstractFileByPath = () => null;
+
+		const release = service.reserveImageStem('attachments/desk.png');
+		expect(service.findImageWithSameStem('attachments/desk.jpg')).toBe('attachments/desk.jpg');
+		release();
+		expect(service.findImageWithSameStem('attachments/desk.jpg')).toBeNull();
+	});
+
+	it('isImageStemReserved ignores files on disk and tracks only reservations', () => {
+		(service as any).plugin.app.vault.getAbstractFileByPath = () => ({ path: 'attachments/desk.png' });
+
+		expect(service.isImageStemReserved('attachments/desk.webp')).toBe(false);
+		const release = service.reserveImageStem('attachments/desk.png');
+		expect(service.isImageStemReserved('attachments/desk.webp')).toBe(true);
+		release();
+		expect(service.isImageStemReserved('attachments/desk.webp')).toBe(false);
+	});
+
+	it('flows through generateImage: a JPEG from the client lands as .jpg', async () => {
+		mockGenerateImageBytes.mockResolvedValue(toBase64(JPEG_BYTES));
+		const result = await service.generateImage('a desk', 'gemini-scribe/Background-Tasks/desk.png');
+
+		expect(result).toBe('gemini-scribe/Background-Tasks/desk.jpg');
+		expect(Array.from(writtenBytes().slice(0, 3))).toEqual([0xff, 0xd8, 0xff]);
+	});
+});
+
 describe('ImageGeneration.suggestPromptFromPage', () => {
 	let service: ImageGeneration;
 	let mockPlugin: any;

@@ -283,6 +283,8 @@ When you ask the agent to read a binary file, it sends the file data directly to
 
 If a file doesn't exist, the agent receives a non-error response with `exists: false` and helpful suggestions for similar file names. This allows automation skills to probe for files without triggering error states.
 
+The plugin state folder is off limits to `read_file`, with one exception: `[state-folder]/Background-Tasks/`. Files there (generated images and deep-research reports) can be read by their exact path, so the agent can look at an image it generated in the background. The folder itself can't be listed, and fuzzy name matching never reaches into the state folder.
+
 #### list_files
 
 List files in a folder. Returns all file types (not just markdown):
@@ -414,6 +416,8 @@ Research the latest developments in quantum error correction and save it to Rese
 #### generate_image
 
 Generate an image from a prompt and save it to your vault. The agent picks a default attachment path if you don't specify one. Like `deep_research`, it defaults to running as a background task — the agent only generates inline when the image needs to appear in the same turn. Requires the **Image generation** feature to be routed to a provider that supports it — Gemini or OpenAI — and that provider to have a key configured; otherwise the tool isn't offered to the agent at all (see [Provider Capabilities](/reference/provider-capabilities)).
+
+The saved file's extension matches the image data the model actually returned (`.png`, `.jpg`, `.webp` or `.gif`), read from the file's magic bytes. Image models can return JPEG even when PNG is expected, so if you give a path ending in `.png` and the model returns JPEG, the file is saved as `.jpg` at the same location.
 
 ```text
 Generate a watercolor diagram of a Zettelkasten workflow and embed it in my notes
