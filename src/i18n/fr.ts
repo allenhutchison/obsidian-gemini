@@ -6,6 +6,8 @@ import type { TranslationKey } from './en';
 export const fr: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.title': 'Démarrer une conversation',
 	'agent.empty.description': 'Votre assistant IA qui peut travailler activement avec votre coffre.',
+	'agent.empty.historyOff': "L'historique des sessions est désactivé, cette conversation ne sera donc pas enregistrée.",
+	'agent.empty.historyOffLink': "Activez « Conserver l'historique des sessions » dans les paramètres",
 	'agent.empty.capabilitiesTitle': "Que peut faire l'agent ?",
 	'agent.empty.capability.search': 'Rechercher et lire des fichiers dans votre coffre',
 	'agent.empty.capability.organize': 'Créer, modifier et organiser des notes',
@@ -28,6 +30,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (cloud)',
 	'settings.general.providerOptionAnthropic': 'Anthropic (cloud)',
+	'settings.general.providerOptionOpenrouter': 'OpenRouter (cloud)',
 	'settings.general.modelListUpdated': 'Liste des modèles mise à jour : {count} modèles.',
 	'settings.general.modelListUpdatedSingular': 'Liste des modèles mise à jour : {count} modèle.',
 	'settings.general.refreshSkippedOffline': 'Ignoré : hors ligne',
@@ -42,7 +45,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 		"Votre nom utilisé dans les instructions système afin que l'IA puisse s'adresser à vous personnellement lors des conversations.",
 	'settings.main.keepSessionHistoryName': "Conserver l'historique des sessions",
 	'settings.main.keepSessionHistoryDesc':
-		"Conserver les sessions de chat de l'agent sous forme de fichiers Markdown dans votre coffre. Les sessions sont enregistrées sous Agent-Sessions/ avec des titres générés automatiquement.",
+		"Conservez les sessions de discussion de l'agent sous forme de fichiers Markdown dans votre coffre. Les sessions sont enregistrées dans Agent-Sessions/ avec des titres générés automatiquement. Désactivé par défaut : lorsqu'il est désactivé, les sessions ne sont enregistrées nulle part.",
 	'settings.main.reviewDiffName': "Examiner un diff avant l'écriture des fichiers",
 	'settings.main.reviewDiffDesc':
 		"Ouvrir automatiquement une vue diff lorsque l'agent propose des modifications de fichiers, au lieu de devoir cliquer sur un bouton.",
@@ -50,6 +53,8 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'settings.main.pluginFolderName': 'Dossier du plugin',
 	'settings.main.pluginFolderDesc':
 		"Dossier dans lequel sont stockées les données du plugin. Les sessions de l'agent sont situées sous Agent-Sessions/, les invites personnalisées sous Prompts/, les hooks sous Hooks/ et l'état des tâches planifiées sous Scheduled-Tasks/.",
+	'settings.main.pluginFolderHiddenError':
+		"Les dossiers commençant par un point ne sont pas pris en charge. Obsidian n'indexe pas les dossiers masqués, le plugin ne peut donc pas y trouver ses fichiers. Utilisez un nom ne commençant pas par un point.",
 	'settings.main.scheduledTasksName': 'Tâches planifiées',
 	'settings.main.lifecycleHooksName': 'Hooks de cycle de vie',
 	'settings.main.mcpServersName': 'Serveurs MCP',
@@ -615,6 +620,8 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'agent.projectPicker.vaultRoot': '(racine du coffre)',
 	'agent.sessionList.title': "Sessions de l'agent",
 	'agent.sessionList.empty': "Aucune session d'agent trouvée",
+	'agent.sessionList.historyOff':
+		"L'historique des sessions est désactivé. Les nouvelles sessions ne sont pas enregistrées et les sessions enregistrées s'ouvrent sans leurs messages. Activez « Conserver l'historique des sessions » dans les paramètres pour les enregistrer et les rouvrir.",
 	'agent.sessionList.loadFailed': "Échec du chargement des sessions de l'agent",
 	'agent.sessionList.filterLabel': 'Projet :',
 	'agent.sessionList.filterAll': 'Tous les projets',
@@ -678,6 +685,8 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 		"Aucune clé d'API OpenAI configurée. Ouvrez Paramètres → Gemini Scribe pour en ajouter une. Obtenez une clé sur platform.openai.com/api-keys",
 	'notice.main.noApiKeyAnthropic':
 		"Aucune clé d'API Anthropic configurée. Ouvrez Paramètres → Gemini Scribe pour en ajouter une. Obtenez une clé sur platform.claude.com/settings/keys",
+	'notice.main.noApiKeyOpenrouter':
+		"Aucune clé d'API OpenRouter configurée. Ouvrez Paramètres → Gemini Scribe pour en ajouter une. Obtenez une clé sur openrouter.ai/keys",
 	'notice.main.apiKeyRetrieveFailed':
 		"Impossible de récupérer votre clé d'API depuis le stockage sécurisé. Réessayez de la saisir dans Paramètres → Gemini Scribe → Fournisseurs → Google Gemini → Clé d'API.",
 	'notice.main.initFailedConsole':
@@ -879,6 +888,9 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'selection.emptyResponse': "L'IA a renvoyé une réponse vide. Veuillez réessayer.",
 	'provider.openai.noModelSelected': 'Aucun modèle OpenAI sélectionné. Choisissez un modèle dans les paramètres.',
 	'provider.openai.noImageData': "OpenAI n'a renvoyé aucune donnée d'image.",
+	'provider.openrouter.noModelSelected':
+		'Aucun modèle OpenRouter sélectionné. Choisissez un modèle dans les paramètres.',
+	'provider.openrouter.noImageData': "OpenRouter n'a renvoyé aucune donnée d'image.",
 	'provider.unsupportedAttachment':
 		"{provider} ne prend en charge que les pièces jointes d'images ; {mimeType} reçu. Passez au fournisseur Gemini pour les fichiers PDF, audio ou vidéo.",
 	'provider.anthropic.noModelSelected': 'Aucun modèle Anthropic sélectionné. Choisissez un modèle dans les paramètres.',
@@ -893,6 +905,8 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'error.openaiInvalidKey': 'Clé API OpenAI non valide. Veuillez vérifier la clé API dans Paramètres → Gemini Scribe.',
 	'error.anthropicInvalidKey':
 		"Clé d'API Anthropic non valide. Veuillez vérifier la clé d'API dans Paramètres → Gemini Scribe.",
+	'error.openrouterInvalidKey':
+		"Clé d'API OpenRouter non valide. Veuillez vérifier la clé d'API dans Paramètres → Gemini Scribe.",
 	'error.modelNotOnEndpoint':
 		"Modèle non disponible sur ce point de terminaison. Veuillez vérifier vos paramètres de modèle ou l'URL de base configurée.",
 	'error.serverUnreachable':
@@ -1048,6 +1062,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.shortLabel.ollama': 'Ollama',
 	'settings.providers.shortLabel.openai': 'OpenAI',
 	'settings.providers.shortLabel.anthropic': 'Anthropic',
+	'settings.providers.shortLabel.openrouter': 'OpenRouter',
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'Clé API',
 	'settings.providers.apiKeyDesc':
@@ -1082,7 +1097,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': "Utilisé par toute fonctionnalité qui n'est pas redirigée ailleurs.",
 	'settings.providers.privacyNoticeName': 'Confidentialité',
 	'settings.providers.privacyNoticeDesc':
-		"Seuls les fournisseurs réellement utilisés par vos fonctionnalités reçoivent votre contenu. Ollama conserve les requêtes sur cette machine, à l'exception des modèles marqués \"cloud\", qu'il transmet à ollama.com. Gemini, OpenAI et Anthropic envoient la requête aux serveurs de l'entreprise concernée.",
+		"Seuls les fournisseurs que vos fonctionnalités utilisent réellement reçoivent votre contenu. Ollama conserve les requêtes sur cette machine, à l'exception des modèles marqués « cloud », qu'il transfère à ollama.com. Gemini, OpenAI et Anthropic envoient la requête aux serveurs de l'entreprise correspondante. OpenRouter la transfère à l'entreprise qui héberge le modèle choisi.",
 	'settings.providers.defaultMoved': '{count} fonctionnalités déplacées vers le nouveau fournisseur par défaut.',
 	'settings.providers.groupOnProvider': '{group} sur {provider}',
 	'settings.features.modelMissingHelp':

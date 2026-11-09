@@ -6,6 +6,8 @@ import type { TranslationKey } from './en';
 export const ko: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.title': '대화 시작하기',
 	'agent.empty.description': '보관소에서 능동적으로 작업할 수 있는 AI 비서입니다.',
+	'agent.empty.historyOff': '세션 기록이 꺼져 있어 이 대화는 저장되지 않습니다.',
+	'agent.empty.historyOffLink': '설정에서 "세션 기록 유지" 켜기',
 	'agent.empty.capabilitiesTitle': '에이전트가 무엇을 할 수 있나요?',
 	'agent.empty.capability.search': '보관소 내 파일 검색 및 읽기',
 	'agent.empty.capability.organize': '노트 생성, 수정 및 정리',
@@ -26,6 +28,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (클라우드)',
 	'settings.general.providerOptionAnthropic': 'Anthropic (클라우드)',
+	'settings.general.providerOptionOpenrouter': 'OpenRouter (클라우드)',
 	'settings.general.modelListUpdated': '모델 목록 업데이트됨: {count}개 모델.',
 	'settings.general.modelListUpdatedSingular': '모델 목록 업데이트됨: {count}개 모델.',
 	'settings.general.refreshSkippedOffline': '건너뜀: 오프라인',
@@ -39,13 +42,15 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'settings.main.yourNameDesc': 'AI가 대화에서 사용자를 부를 수 있도록 시스템 지침에 사용되는 사용자 이름입니다.',
 	'settings.main.keepSessionHistoryName': '세션 기록 유지',
 	'settings.main.keepSessionHistoryDesc':
-		'에이전트 채팅 세션을 보관함에 마크다운 파일로 저장합니다. 세션은 자동으로 생성된 제목과 함께 Agent-Sessions/ 아래에 저장됩니다.',
+		'에이전트 대화 세션을 보관함에 마크다운 파일로 저장합니다. 세션은 자동으로 생성된 제목과 함께 Agent-Sessions/ 아래에 저장됩니다. 기본값은 꺼짐이며, 꺼져 있는 동안에는 세션이 어디에도 저장되지 않습니다.',
 	'settings.main.reviewDiffName': '파일 작성 전 diff 검토',
 	'settings.main.reviewDiffDesc': '에이전트가 파일 변경을 제안할 때 버튼을 클릭하지 않아도 자동으로 diff 뷰를 엽니다.',
 	'settings.main.vaultSearchIndexName': '보관함 검색 인덱스',
 	'settings.main.pluginFolderName': '플러그인 폴더',
 	'settings.main.pluginFolderDesc':
 		'플러그인 데이터가 저장되는 폴더입니다. 에이전트 세션은 Agent-Sessions/, 사용자 정의 프롬프트는 Prompts/, 훅은 Hooks/, 예약된 작업 상태는 Scheduled-Tasks/ 아래에 저장됩니다.',
+	'settings.main.pluginFolderHiddenError':
+		'점으로 시작하는 폴더는 지원되지 않습니다. Obsidian은 숨김 폴더를 색인하지 않으므로 플러그인이 해당 위치에서 파일을 찾을 수 없습니다. 앞에 점이 없는 이름을 사용하세요.',
 	'settings.main.scheduledTasksName': '예약된 작업',
 	'settings.main.lifecycleHooksName': '라이프사이클 훅',
 	'settings.main.mcpServersName': 'MCP 서버',
@@ -597,6 +602,8 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'agent.projectPicker.vaultRoot': '(보관소 루트)',
 	'agent.sessionList.title': '에이전트 세션',
 	'agent.sessionList.empty': '에이전트 세션을 찾을 수 없습니다',
+	'agent.sessionList.historyOff':
+		'세션 기록이 꺼져 있습니다. 새 세션은 저장되지 않으며, 저장된 세션을 열어도 메시지가 표시되지 않습니다. 세션을 저장하고 다시 열려면 설정에서 "세션 기록 유지"를 켜세요.',
 	'agent.sessionList.loadFailed': '에이전트 세션을 불러오지 못했습니다',
 	'agent.sessionList.filterLabel': '프로젝트:',
 	'agent.sessionList.filterAll': '모든 프로젝트',
@@ -659,6 +666,8 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 		'OpenAI API 키가 설정되지 않았습니다. 설정 → Gemini Scribe에서 키를 추가하세요. platform.openai.com/api-keys 에서 키를 발급받을 수 있습니다.',
 	'notice.main.noApiKeyAnthropic':
 		'Anthropic API 키가 설정되지 않았습니다. 설정 → Gemini Scribe에서 키를 추가하세요. 키는 platform.claude.com/settings/keys 에서 발급받을 수 있습니다.',
+	'notice.main.noApiKeyOpenrouter':
+		'OpenRouter API 키가 설정되지 않았습니다. 설정 → Gemini Scribe에서 키를 추가하세요. 키는 openrouter.ai/keys에서 받을 수 있습니다.',
 	'notice.main.apiKeyRetrieveFailed':
 		'보안 저장소에서 API 키를 가져올 수 없습니다. 설정 → Gemini Scribe → 제공자 → Google Gemini → API 키에서 다시 입력해 보세요.',
 	'notice.main.initFailedConsole': 'Gemini Scribe 초기화 실패: {error}. 자세한 내용은 콘솔을 확인하세요.',
@@ -853,6 +862,8 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'selection.emptyResponse': 'AI가 빈 응답을 반환했습니다. 다시 시도해 주세요.',
 	'provider.openai.noModelSelected': '선택된 OpenAI 모델이 없습니다. 설정에서 모델을 선택하세요.',
 	'provider.openai.noImageData': 'OpenAI에서 이미지 데이터를 반환하지 않았습니다.',
+	'provider.openrouter.noModelSelected': '선택된 OpenRouter 모델이 없습니다. 설정에서 모델을 선택하세요.',
+	'provider.openrouter.noImageData': 'OpenRouter에서 반환된 이미지 데이터가 없습니다.',
 	'provider.unsupportedAttachment':
 		'{provider}에서는 이미지 첨부 파일만 지원합니다({mimeType} 수신됨). PDF, 오디오 또는 비디오를 입력하려면 Gemini 제공자로 전환하세요.',
 	'provider.anthropic.noModelSelected': '선택된 Anthropic 모델이 없습니다. 설정에서 모델을 선택하세요.',
@@ -866,6 +877,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'error.unknown': '알 수 없는 오류가 발생했습니다',
 	'error.openaiInvalidKey': '올바르지 않은 OpenAI API 키입니다. 설정 → Gemini Scribe에서 API 키를 확인해 주세요.',
 	'error.anthropicInvalidKey': '유효하지 않은 Anthropic API 키입니다. 설정 → Gemini Scribe에서 API 키를 확인해 주세요.',
+	'error.openrouterInvalidKey': '유효하지 않은 OpenRouter API 키입니다. 설정 → Gemini Scribe에서 API 키를 확인하세요.',
 	'error.modelNotOnEndpoint':
 		'이 엔드포인트에서 모델을 사용할 수 없습니다. 모델 설정 또는 구성된 기본 URL을 확인해 주세요.',
 	'error.serverUnreachable':
@@ -1004,6 +1016,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.shortLabel.ollama': 'Ollama',
 	'settings.providers.shortLabel.openai': 'OpenAI',
 	'settings.providers.shortLabel.anthropic': 'Anthropic',
+	'settings.providers.shortLabel.openrouter': 'OpenRouter',
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'API 키',
 	'settings.providers.apiKeyDesc': 'Obsidian의 보안 저장소에 저장되며, 이 보관함의 데이터에는 저장되지 않습니다.',
@@ -1036,7 +1049,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': '다른 곳으로 라우팅하지 않은 모든 기능에 사용됩니다.',
 	'settings.providers.privacyNoticeName': '개인정보 보호',
 	'settings.providers.privacyNoticeDesc':
-		'실제로 기능에 사용하는 제공업체에만 콘텐츠가 전송됩니다. Ollama는 "cloud"로 표시된 모델(ollama.com으로 전송됨)을 제외하고 요청을 이 기기에만 보관합니다. Gemini, OpenAI, Anthropic은 각 회사의 서버로 요청을 전송합니다.',
+		'기능에서 실제로 사용하는 제공자에게만 콘텐츠가 전송됩니다. Ollama는 "cloud"로 표시된 모델(ollama.com으로 전달됨)을 제외하고 이 기기 내에서 요청을 처리합니다. Gemini, OpenAI, Anthropic은 해당 회사의 서버로 요청을 전송합니다. OpenRouter는 선택한 모델을 제공하는 회사로 요청을 전달합니다.',
 	'settings.providers.defaultMoved': '{count}개 기능이 새 기본 제공자로 이동되었습니다.',
 	'settings.providers.groupOnProvider': '{provider}의 {group}',
 	'settings.features.modelMissingHelp':

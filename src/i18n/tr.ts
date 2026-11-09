@@ -6,6 +6,8 @@ import type { TranslationKey } from './en';
 export const tr: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.title': 'Bir sohbet başlatın',
 	'agent.empty.description': 'Kasanızla aktif olarak çalışabilen yapay zeka asistanınız.',
+	'agent.empty.historyOff': 'Oturum geçmişi kapalı, bu nedenle bu konuşma kaydedilmeyecek.',
+	'agent.empty.historyOffLink': 'Ayarlardan "Keep session history" seçeneğini açın',
 	'agent.empty.capabilitiesTitle': 'Ajan ne yapabilir?',
 	'agent.empty.capability.search': 'Kasanızdaki dosyaları arama ve okuma',
 	'agent.empty.capability.organize': 'Not oluşturma, düzenleme ve organize etme',
@@ -27,6 +29,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (bulut)',
 	'settings.general.providerOptionAnthropic': 'Anthropic (bulut)',
+	'settings.general.providerOptionOpenrouter': 'OpenRouter (bulut)',
 	'settings.general.modelListUpdated': 'Model listesi güncellendi: {count} model.',
 	'settings.general.modelListUpdatedSingular': 'Model listesi güncellendi: {count} model.',
 	'settings.general.refreshSkippedOffline': 'Atlandı: çevrimdışı',
@@ -41,7 +44,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 		'Yapay zekanın konuşmalarda size kişisel olarak hitap edebilmesi için sistem talimatlarında kullanılan adınız.',
 	'settings.main.keepSessionHistoryName': 'Oturum geçmişini sakla',
 	'settings.main.keepSessionHistoryDesc':
-		'Temsilci sohbet oturumlarını kasanızda markdown dosyaları olarak saklayın. Oturumlar, otomatik oluşturulan başlıklarla Agent-Sessions/ altına kaydedilir.',
+		'Ajan sohbet oturumlarını kasanızda markdown dosyaları olarak saklayın. Oturumlar, otomatik oluşturulan başlıklarla Agent-Sessions/ altına kaydedilir. Varsayılan olarak kapalıdır: kapalıyken oturumlar hiçbir yere kaydedilmez.',
 	'settings.main.reviewDiffName': 'Dosyalar yazılmadan önce farkı incele',
 	'settings.main.reviewDiffDesc':
 		'Temsilci dosya değişiklikleri önerdiğinde, düğmeye tıklama gerektirmeden fark görünümünü otomatik olarak aç.',
@@ -49,6 +52,8 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.main.pluginFolderName': 'Eklenti klasörü',
 	'settings.main.pluginFolderDesc':
 		'Eklenti verilerinin saklandığı klasör. Temsilci oturumları Agent-Sessions/, özel istemler Prompts/, kancalar Hooks/, zamanlanmış görev durumu Scheduled-Tasks/ altında bulunur.',
+	'settings.main.pluginFolderHiddenError':
+		'Nokta ile başlayan klasörler desteklenmez. Obsidian gizli klasörleri dizine eklemediğinden, eklenti dosyalarını orada bulamaz. Başında nokta olmayan bir ad kullanın.',
 	'settings.main.scheduledTasksName': 'Zamanlanmış görevler',
 	'settings.main.lifecycleHooksName': 'Yaşam döngüsü kancaları',
 	'settings.main.mcpServersName': 'MCP sunucuları',
@@ -610,6 +615,8 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'agent.projectPicker.vaultRoot': '(vault kökü)',
 	'agent.sessionList.title': 'Temsilci oturumları',
 	'agent.sessionList.empty': 'Temsilci oturumu bulunamadı',
+	'agent.sessionList.historyOff':
+		'Oturum geçmişi kapalı. Yeni oturumlar kaydedilmez ve kayıtlı oturumlar iletileri olmadan açılır. Kaydetmek ve yeniden açmak için ayarlardan "Keep session history" seçeneğini açın.',
 	'agent.sessionList.loadFailed': 'Temsilci oturumları yüklenemedi',
 	'agent.sessionList.filterLabel': 'Proje:',
 	'agent.sessionList.filterAll': 'Tüm projeler',
@@ -673,6 +680,8 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 		'Yapılandırılmış OpenAI API anahtarı yok. Eklemek için Ayarlar → Gemini Scribe menüsünü açın. platform.openai.com/api-keys adresinden bir anahtar edinin.',
 	'notice.main.noApiKeyAnthropic':
 		'Yapılandırılmış Anthropic API anahtarı yok. Eklemek için Ayarlar → Gemini Scribe bölümünü açın. platform.claude.com/settings/keys adresinden bir anahtar edinin.',
+	'notice.main.noApiKeyOpenrouter':
+		'OpenRouter API anahtarı yapılandırılmadı. Eklemek için Ayarlar → Gemini Scribe bölümünü açın. openrouter.ai/keys adresinden bir anahtar edinin',
 	'notice.main.apiKeyRetrieveFailed':
 		'API anahtarınız güvenli depolamadan alınamadı. Ayarlar → Gemini Scribe → Sağlayıcılar → Google Gemini → API anahtarı bölümünden tekrar girmeyi deneyin.',
 	'notice.main.initFailedConsole': 'Gemini Scribe başlatılamadı: {error}. Detaylar için konsolu kontrol edin.',
@@ -867,6 +876,8 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'selection.emptyResponse': 'Yapay zeka boş bir yanıt döndürdü. Lütfen tekrar deneyin.',
 	'provider.openai.noModelSelected': 'Hiçbir OpenAI modeli seçilmedi. Ayarlardan bir model seçin.',
 	'provider.openai.noImageData': 'OpenAI hiçbir görsel verisi döndürmedi.',
+	'provider.openrouter.noModelSelected': 'Hiçbir OpenRouter modeli seçilmedi. Ayarlardan bir model seçin.',
+	'provider.openrouter.noImageData': 'OpenRouter hiçbir görsel verisi döndürmedi.',
 	'provider.unsupportedAttachment':
 		'{provider} yalnızca görsel eklerini destekler; {mimeType} alındı. PDF, ses veya video girdisi için Gemini sağlayıcısına geçin.',
 	'provider.anthropic.noModelSelected': 'Anthropic modeli seçilmedi. Ayarlardan bir model seçin.',
@@ -882,6 +893,8 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 		'Geçersiz OpenAI API anahtarı. Lütfen Ayarlar → Gemini Scribe altındaki API anahtarını kontrol edin.',
 	'error.anthropicInvalidKey':
 		'Geçersiz Anthropic API anahtarı. Lütfen Ayarlar → Gemini Scribe bölümündeki API anahtarını kontrol edin.',
+	'error.openrouterInvalidKey':
+		'Geçersiz OpenRouter API anahtarı. Lütfen Ayarlar → Gemini Scribe altındaki API anahtarını kontrol edin.',
 	'error.modelNotOnEndpoint':
 		"Model bu uç noktada mevcut değil. Lütfen model ayarlarınızı veya yapılandırılmış temel URL'yi kontrol edin.",
 	'error.serverUnreachable':
@@ -1031,6 +1044,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.shortLabel.ollama': 'Ollama',
 	'settings.providers.shortLabel.openai': 'OpenAI',
 	'settings.providers.shortLabel.anthropic': 'Anthropic',
+	'settings.providers.shortLabel.openrouter': 'OpenRouter',
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'API anahtarı',
 	'settings.providers.apiKeyDesc': "Obsidian'ın gizli depolama alanına kaydedilir, bu kasanın verilerine değil.",
@@ -1064,7 +1078,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Başka bir yere yönlendirmediğiniz tüm özellikler tarafından kullanılır.',
 	'settings.providers.privacyNoticeName': 'Gizlilik',
 	'settings.providers.privacyNoticeDesc':
-		'Yalnızca özelliklerinizin fiilen kullandığı sağlayıcılar içeriğinizi alır. Ollama, ollama.com adresine ilettiği "bulut" olarak işaretlenmiş modeller haricinde istekleri bu makinede tutar. Gemini, OpenAI ve Anthropic ise istekleri ilgili şirketin sunucularına gönderir.',
+		'İçeriğinizi yalnızca özelliklerinizin fiilen kullandığı sağlayıcılar alır. Ollama, "cloud" olarak işaretlenen modeller haricinde istekleri bu makinede tutar; bunları ise ollama.com adresine iletir. Gemini, OpenAI ve Anthropic istekleri ilgili şirketin sunucularına gönderir. OpenRouter ise seçtiğiniz modeli hangi şirket sunuyorsa oraya yönlendirir.',
 	'settings.providers.defaultMoved': '{count} özellik yeni varsayılan sağlayıcıya taşındı.',
 	'settings.providers.groupOnProvider': '{provider} üzerinde {group}',
 	'settings.features.modelMissingHelp': '{model} artık bu sağlayıcıda mevcut değil. Başka birini seçin.',
