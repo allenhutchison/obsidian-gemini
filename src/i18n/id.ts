@@ -6,6 +6,8 @@ import type { TranslationKey } from './en';
 export const id: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.title': 'Mulai percakapan',
 	'agent.empty.description': 'Asisten AI Anda yang dapat bekerja secara aktif dengan vault Anda.',
+	'agent.empty.historyOff': 'Riwayat sesi nonaktif, jadi percakapan ini tidak akan disimpan.',
+	'agent.empty.historyOffLink': 'Aktifkan "Keep session history" di pengaturan',
 	'agent.empty.capabilitiesTitle': 'Apa yang bisa dilakukan agen?',
 	'agent.empty.capability.search': 'Cari dan baca file di dalam vault Anda',
 	'agent.empty.capability.organize': 'Buat, ubah, dan atur catatan',
@@ -26,6 +28,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (cloud)',
 	'settings.general.providerOptionAnthropic': 'Anthropic (cloud)',
+	'settings.general.providerOptionOpenrouter': 'OpenRouter (cloud)',
 	'settings.general.modelListUpdated': 'Daftar model diperbarui: {count} model.',
 	'settings.general.modelListUpdatedSingular': 'Daftar model diperbarui: {count} model.',
 	'settings.general.refreshSkippedOffline': 'Dilewati: offline',
@@ -40,7 +43,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 		'Nama Anda yang digunakan dalam instruksi sistem agar AI dapat menyapa Anda secara pribadi dalam percakapan.',
 	'settings.main.keepSessionHistoryName': 'Simpan riwayat sesi',
 	'settings.main.keepSessionHistoryDesc':
-		'Simpan sesi obrolan agen sebagai berkas markdown di vault Anda. Sesi disimpan di bawah Agent-Sessions/ dengan judul yang dibuat secara otomatis.',
+		'Simpan sesi obrolan agen sebagai file markdown di vault Anda. Sesi disimpan di Agent-Sessions/ dengan judul yang dibuat otomatis. Nonaktif secara default: saat nonaktif, sesi tidak disimpan di mana pun.',
 	'settings.main.reviewDiffName': 'Tinjau diff sebelum berkas ditulis',
 	'settings.main.reviewDiffDesc':
 		'Buka tampilan diff secara otomatis saat agen mengusulkan perubahan berkas, tanpa perlu mengeklik tombol.',
@@ -48,6 +51,8 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'settings.main.pluginFolderName': 'Folder plugin',
 	'settings.main.pluginFolderDesc':
 		'Folder tempat data plugin disimpan. Sesi agen berada di bawah Agent-Sessions/, prompt kustom di bawah Prompts/, hook di bawah Hooks/, status tugas terjadwal di bawah Scheduled-Tasks/.',
+	'settings.main.pluginFolderHiddenError':
+		'Folder yang diawali dengan titik tidak didukung. Obsidian tidak mengindeks folder tersembunyi, sehingga plugin tidak dapat menemukan filenya di sana. Gunakan nama tanpa titik di awal.',
 	'settings.main.scheduledTasksName': 'Tugas terjadwal',
 	'settings.main.lifecycleHooksName': 'Hook siklus hidup',
 	'settings.main.mcpServersName': 'Server MCP',
@@ -604,6 +609,8 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'agent.projectPicker.vaultRoot': '(root vault)',
 	'agent.sessionList.title': 'Sesi agen',
 	'agent.sessionList.empty': 'Tidak ada sesi agen yang ditemukan',
+	'agent.sessionList.historyOff':
+		'Riwayat sesi nonaktif. Sesi baru tidak disimpan, dan sesi tersimpan akan terbuka tanpa pesannya. Aktifkan "Keep session history" di pengaturan untuk menyimpan dan membukanya kembali.',
 	'agent.sessionList.loadFailed': 'Gagal memuat sesi agen',
 	'agent.sessionList.filterLabel': 'Proyek:',
 	'agent.sessionList.filterAll': 'Semua proyek',
@@ -667,6 +674,8 @@ export const id: Partial<Record<TranslationKey, string>> = {
 		'Kunci API OpenAI belum dikonfigurasi. Buka Pengaturan → Gemini Scribe untuk menambahkannya. Dapatkan kunci di platform.openai.com/api-keys',
 	'notice.main.noApiKeyAnthropic':
 		'Kunci API Anthropic belum dikonfigurasi. Buka Pengaturan → Gemini Scribe untuk menambahkannya. Dapatkan kunci di platform.claude.com/settings/keys',
+	'notice.main.noApiKeyOpenrouter':
+		'Kunci API OpenRouter belum dikonfigurasi. Buka Pengaturan → Gemini Scribe untuk menambahkannya. Dapatkan kunci di openrouter.ai/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Tidak dapat mengambil kunci API Anda dari penyimpanan aman. Coba masukkan kembali di Pengaturan → Gemini Scribe → Penyedia → Google Gemini → Kunci API.',
 	'notice.main.initFailedConsole': 'Gemini Scribe gagal diinisialisasi: {error}. Periksa konsol untuk detailnya.',
@@ -861,6 +870,8 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'selection.emptyResponse': 'AI mengembalikan respons kosong. Silakan coba lagi.',
 	'provider.openai.noModelSelected': 'Tidak ada model OpenAI yang dipilih. Pilih model di pengaturan.',
 	'provider.openai.noImageData': 'OpenAI tidak mengembalikan data gambar.',
+	'provider.openrouter.noModelSelected': 'Tidak ada model OpenRouter yang dipilih. Pilih model di pengaturan.',
+	'provider.openrouter.noImageData': 'OpenRouter tidak mengembalikan data gambar.',
 	'provider.unsupportedAttachment':
 		'{provider} hanya mendukung lampiran gambar; menerima {mimeType}. Beralih ke penyedia Gemini untuk input PDF, audio, atau video.',
 	'provider.anthropic.noModelSelected': 'Tidak ada model Anthropic yang dipilih. Pilih model di pengaturan.',
@@ -875,6 +886,8 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'error.openaiInvalidKey': 'Kunci API OpenAI tidak valid. Silakan periksa kunci API di Pengaturan → Gemini Scribe.',
 	'error.anthropicInvalidKey':
 		'Kunci API Anthropic tidak valid. Silakan periksa kunci API di Pengaturan → Gemini Scribe.',
+	'error.openrouterInvalidKey':
+		'Kunci API OpenRouter tidak valid. Silakan periksa kunci API di Pengaturan → Gemini Scribe.',
 	'error.modelNotOnEndpoint':
 		'Model tidak tersedia di endpoint ini. Silakan periksa pengaturan model Anda atau URL dasar yang dikonfigurasi.',
 	'error.serverUnreachable':
@@ -1020,6 +1033,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.shortLabel.ollama': 'Ollama',
 	'settings.providers.shortLabel.openai': 'OpenAI',
 	'settings.providers.shortLabel.anthropic': 'Anthropic',
+	'settings.providers.shortLabel.openrouter': 'OpenRouter',
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'Kunci API',
 	'settings.providers.apiKeyDesc': 'Disimpan di penyimpanan rahasia Obsidian, bukan di data vault ini.',
@@ -1052,7 +1066,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Digunakan oleh fitur apa pun yang belum Anda arahkan ke tempat lain.',
 	'settings.providers.privacyNoticeName': 'Privasi',
 	'settings.providers.privacyNoticeDesc':
-		'Hanya penyedia yang benar-benar digunakan oleh fitur Anda yang akan menerima konten Anda. Ollama menyimpan permintaan di perangkat ini, kecuali untuk model yang ditandai "cloud", yang diteruskan ke ollama.com. Gemini, OpenAI, dan Anthropic mengirimkan permintaan ke server perusahaan tersebut.',
+		'Hanya penyedia yang benar-benar digunakan oleh fitur Anda yang akan menerima konten Anda. Ollama menyimpan permintaan di perangkat ini, kecuali untuk model bertanda "cloud", yang diteruskannya ke ollama.com. Gemini, OpenAI, dan Anthropic mengirim permintaan ke server masing-masing perusahaan tersebut. OpenRouter meneruskannya ke perusahaan mana pun yang menyediakan model yang Anda pilih.',
 	'settings.providers.defaultMoved': '{count} fitur dipindahkan ke penyedia default yang baru.',
 	'settings.providers.groupOnProvider': '{group} di {provider}',
 	'settings.features.modelMissingHelp': '{model} tidak lagi tersedia dari penyedia ini. Pilih yang lain.',

@@ -6,6 +6,8 @@ import type { TranslationKey } from './en';
 export const no: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.title': 'Start en samtale',
 	'agent.empty.description': 'Din AI-assistent som kan jobbe aktivt med hvelvet ditt.',
+	'agent.empty.historyOff': 'Økthistorikk er slått av, så denne samtalen blir ikke lagret.',
+	'agent.empty.historyOffLink': 'Slå på "Behold økthistorikk" i innstillinger',
 	'agent.empty.capabilitiesTitle': 'Hva kan agenten gjøre?',
 	'agent.empty.capability.search': 'Søke i og lese filer i hvelvet ditt',
 	'agent.empty.capability.organize': 'Opprette, endre og organisere notater',
@@ -27,6 +29,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (sky)',
 	'settings.general.providerOptionAnthropic': 'Anthropic (sky)',
+	'settings.general.providerOptionOpenrouter': 'OpenRouter (sky)',
 	'settings.general.modelListUpdated': 'Modelliste oppdatert: {count} modeller.',
 	'settings.general.modelListUpdatedSingular': 'Modelliste oppdatert: {count} modell.',
 	'settings.general.refreshSkippedOffline': 'Hoppet over: frakoblet',
@@ -41,7 +44,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 		'Navnet ditt som brukes i systeminstruksjoner slik at AI-en kan henvende seg personlig til deg i samtaler.',
 	'settings.main.keepSessionHistoryName': 'Behold økthistorikk',
 	'settings.main.keepSessionHistoryDesc':
-		'Lagre agent-samtaleøkter som markdown-filer i hvelvet ditt. Økter lagres under Agent-Sessions/ med autogenererte titler.',
+		'Lagre agentchatsamtaler som markdown-filer i hvelvet ditt. Økter lagres under Agent-Sessions/ med autogenererte titler. Av som standard: når den er slått av, blir ikke økter lagret noe sted.',
 	'settings.main.reviewDiffName': 'Gjennomgå en diff før filer skrives',
 	'settings.main.reviewDiffDesc':
 		'Åpne automatisk en diff-visning når agenten foreslår filendringer, i stedet for å kreve et knappeklikk.',
@@ -49,6 +52,8 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'settings.main.pluginFolderName': 'Programtilleggsmappe',
 	'settings.main.pluginFolderDesc':
 		'Mappe der data for programtillegget lagres. Agentøkter ligger under Agent-Sessions/, egendefinerte ledetekster under Prompts/, hooks under Hooks/, og status for planlagte oppgaver under Scheduled-Tasks/.',
+	'settings.main.pluginFolderHiddenError':
+		'Mapper som starter med et punktum støttes ikke. Obsidian indekserer ikke skjulte mapper, så programtillegget kan ikke finne filene sine der. Bruk et navn uten innledende punktum.',
 	'settings.main.scheduledTasksName': 'Planlagte oppgaver',
 	'settings.main.lifecycleHooksName': 'Livssyklus-hooks',
 	'settings.main.mcpServersName': 'MCP-servere',
@@ -605,6 +610,8 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'agent.projectPicker.vaultRoot': '(hvelvrot)',
 	'agent.sessionList.title': 'Agentøkter',
 	'agent.sessionList.empty': 'Ingen agent-økter funnet',
+	'agent.sessionList.historyOff':
+		'Økthistorikk er slått av. Nye økter blir ikke lagret, og lagrede økter åpnes uten meldingene sine. Slå på "Behold økthistorikk" i innstillinger for å lagre og gjenåpne dem.',
 	'agent.sessionList.loadFailed': 'Kunne ikke laste inn agent-økter',
 	'agent.sessionList.filterLabel': 'Prosjekt:',
 	'agent.sessionList.filterAll': 'Alle prosjekter',
@@ -668,6 +675,8 @@ export const no: Partial<Record<TranslationKey, string>> = {
 		'Ingen OpenAI API-nøkkel er konfigurert. Åpne Innstillinger → Gemini Scribe for å legge til en. Hent en nøkkel på platform.openai.com/api-keys',
 	'notice.main.noApiKeyAnthropic':
 		'Ingen Anthropic-API-nøkkel er konfigurert. Åpne Innstillinger → Gemini Scribe for å legge til en. Få en nøkkel på platform.claude.com/settings/keys',
+	'notice.main.noApiKeyOpenrouter':
+		'Ingen OpenRouter-API-nøkkel er konfigurert. Åpne Innstillinger → Gemini Scribe for å legge til en. Hent en nøkkel på openrouter.ai/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Kunne ikke hente API-nøkkelen din fra sikker lagring. Prøv å skrive den inn på nytt under Innstillinger → Gemini Scribe → Tilbydere → Google Gemini → API-nøkkel.',
 	'notice.main.initFailedConsole': 'Gemini Scribe kunne ikke initialiseres: {error}. Sjekk konsollen for detaljer.',
@@ -862,6 +871,8 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'selection.emptyResponse': 'AI-en returnerte et tomt svar. Prøv igjen.',
 	'provider.openai.noModelSelected': 'Ingen OpenAI-modell er valgt. Velg en modell i innstillingene.',
 	'provider.openai.noImageData': 'OpenAI returnerte ingen bildedata.',
+	'provider.openrouter.noModelSelected': 'Ingen OpenRouter-modell er valgt. Velg en modell i innstillinger.',
+	'provider.openrouter.noImageData': 'OpenRouter returnerte ingen bildedata.',
 	'provider.unsupportedAttachment':
 		'{provider} støtter bare bildevedlegg; mottok {mimeType}. Bytt til Gemini-leverandøren for PDF-, lyd- eller videoinndata.',
 	'provider.anthropic.noModelSelected': 'Ingen Anthropic-modell er valgt. Velg en modell i innstillinger.',
@@ -875,6 +886,8 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'error.unknown': 'En ukjent feil oppstod',
 	'error.openaiInvalidKey': 'Ugyldig OpenAI API-nøkkel. Vennligst sjekk API-nøkkelen i Innstillinger → Gemini Scribe.',
 	'error.anthropicInvalidKey': 'Ugyldig Anthropic-API-nøkkel. Kontroller API-nøkkelen i Innstillinger → Gemini Scribe.',
+	'error.openrouterInvalidKey':
+		'Ugyldig OpenRouter-API-nøkkel. Vennligst sjekk API-nøkkelen i Innstillinger → Gemini Scribe.',
 	'error.modelNotOnEndpoint':
 		'Modellen er ikke tilgjengelig på dette endepunktet. Vennligst sjekk modellinnstillingene eller den konfigurerte base-URL-en.',
 	'error.serverUnreachable':
@@ -1024,6 +1037,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.shortLabel.ollama': 'Ollama',
 	'settings.providers.shortLabel.openai': 'OpenAI',
 	'settings.providers.shortLabel.anthropic': 'Anthropic',
+	'settings.providers.shortLabel.openrouter': 'OpenRouter',
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'API-nøkkel',
 	'settings.providers.apiKeyDesc': 'Lagret i Obsidians hemmelige lagring, ikke i dette hvelvets data.',
@@ -1056,7 +1070,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Brukes av funksjoner du ikke har rutet andre steder.',
 	'settings.providers.privacyNoticeName': 'Personvern',
 	'settings.providers.privacyNoticeDesc':
-		'Kun leverandørene funksjonene dine faktisk bruker, mottar innholdet ditt. Ollama beholder forespørsler på denne maskinen, bortsett fra modeller merket «sky», som videresendes til ollama.com. Gemini, OpenAI og Anthropic sender forespørselen til det aktuelle selskapets servere.',
+		'Bare leverandørene som funksjonene dine faktisk bruker, vil noensinne motta innholdet ditt. Ollama beholder forespørsler på denne maskinen, bortsett fra modeller merket "cloud", som videresendes til ollama.com. Gemini, OpenAI og Anthropic sender forespørselen til det respektive selskapets servere. OpenRouter videresender den til selskapet som leverer modellen du velger.',
 	'settings.providers.defaultMoved': '{count} funksjoner ble flyttet til den nye standardleverandøren.',
 	'settings.providers.groupOnProvider': '{group} på {provider}',
 	'settings.features.modelMissingHelp': '{model} er ikke lenger tilgjengelig fra denne leverandøren. Velg en annen.',

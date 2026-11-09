@@ -6,6 +6,8 @@ import type { TranslationKey } from './en';
 export const da: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.title': 'Start en samtale',
 	'agent.empty.description': 'Din AI-assistent, der kan arbejde aktivt med din vault.',
+	'agent.empty.historyOff': 'Sessionshistorik er slået fra, så denne samtale bliver ikke gemt.',
+	'agent.empty.historyOffLink': 'Slå "Bevar sessionshistorik" til i Indstillinger',
 	'agent.empty.capabilitiesTitle': 'Hvad kan agenten gøre?',
 	'agent.empty.capability.search': 'Søge i og læse filer i din vault',
 	'agent.empty.capability.organize': 'Oprette, ændre og organisere noter',
@@ -26,6 +28,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (cloud)',
 	'settings.general.providerOptionAnthropic': 'Anthropic (cloud)',
+	'settings.general.providerOptionOpenrouter': 'OpenRouter (cloud)',
 	'settings.general.modelListUpdated': 'Modelliste opdateret: {count} modeller.',
 	'settings.general.modelListUpdatedSingular': 'Modelliste opdateret: {count} model.',
 	'settings.general.refreshSkippedOffline': 'Sprunget over: offline',
@@ -40,7 +43,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 		"Dit navn brugt i systeminstruktioner, så AI'en kan henvende sig til dig personligt i samtaler.",
 	'settings.main.keepSessionHistoryName': 'Behold sessionshistorik',
 	'settings.main.keepSessionHistoryDesc':
-		'Gem agentchatsessioner som markdown-filer i din vault. Sessioner gemmes under Agent-Sessions/ med automatisk genererede titler.',
+		'Gem agentchatsessioner som markdown-filer i din vault. Sessioner gemmes under Agent-Sessions/ med automatisk genererede titler. Deaktiveret som standard: når den er slået fra, gemmes sessioner ikke noget sted.',
 	'settings.main.reviewDiffName': 'Gennemse en diff, før filer skrives',
 	'settings.main.reviewDiffDesc':
 		'Åbn automatisk en diff-visning, når agenten foreslår filændringer, i stedet for at kræve et klik på en knap.',
@@ -48,6 +51,8 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'settings.main.pluginFolderName': 'Plugin-mappe',
 	'settings.main.pluginFolderDesc':
 		'Mappe hvor plugin-data gemmes. Agentsessioner findes under Agent-Sessions/, tilpassede prompts under Prompts/, hooks under Hooks/, og status for planlagte opgaver under Scheduled-Tasks/.',
+	'settings.main.pluginFolderHiddenError':
+		'Mapper, der starter med et punktum, understøttes ikke. Obsidian indekserer ikke skjulte mapper, så pluginnet kan ikke finde sine filer der. Brug et navn uden et foranstillet punktum.',
 	'settings.main.scheduledTasksName': 'Planlagte opgaver',
 	'settings.main.lifecycleHooksName': 'Livscyklus-hooks',
 	'settings.main.mcpServersName': 'MCP-servere',
@@ -609,6 +614,8 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'agent.projectPicker.vaultRoot': '(vault-rod)',
 	'agent.sessionList.title': 'Agentsessioner',
 	'agent.sessionList.empty': 'Ingen agent-sessioner fundet',
+	'agent.sessionList.historyOff':
+		'Sessionshistorik er slået fra. Nye sessioner gemmes ikke, og gemte sessioner åbnes uden deres beskeder. Slå "Bevar sessionshistorik" til i Indstillinger for at gemme og genåbne dem.',
 	'agent.sessionList.loadFailed': 'Kunne ikke indlæse agent-sessioner',
 	'agent.sessionList.filterLabel': 'Projekt:',
 	'agent.sessionList.filterAll': 'Alle projekter',
@@ -672,6 +679,8 @@ export const da: Partial<Record<TranslationKey, string>> = {
 		'Ingen OpenAI API-nøgle konfigureret. Åbn Indstillinger → Gemini Scribe for at tilføje en. Hent en nøgle på platform.openai.com/api-keys',
 	'notice.main.noApiKeyAnthropic':
 		'Ingen Anthropic API-nøgle konfigureret. Åbn Indstillinger → Gemini Scribe for at tilføje en. Få en nøgle på platform.claude.com/settings/keys',
+	'notice.main.noApiKeyOpenrouter':
+		'Ingen OpenRouter-API-nøgle konfigureret. Åbn Indstillinger → Gemini Scribe for at tilføje en. Få en nøgle på openrouter.ai/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Kunne ikke hente din API-nøgle fra sikker lagring. Prøv at indtaste den igen under Indstillinger → Gemini Scribe → Udbydere → Google Gemini → API-nøgle.',
 	'notice.main.initFailedConsole': 'Gemini Scribe kunne ikke initialiseres: {error}. Se konsollen for detaljer.',
@@ -865,6 +874,8 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'selection.emptyResponse': "AI'en returnerede et tomt svar. Prøv venligst igen.",
 	'provider.openai.noModelSelected': 'Ingen OpenAI-model valgt. Vælg en model i indstillingerne.',
 	'provider.openai.noImageData': 'OpenAI returnerede ingen billeddata.',
+	'provider.openrouter.noModelSelected': 'Ingen OpenRouter-model valgt. Vælg en model i indstillingerne.',
+	'provider.openrouter.noImageData': 'OpenRouter returnerede ingen billeddata.',
 	'provider.unsupportedAttachment':
 		'{provider} understøtter kun billedvedhæftninger; modtog {mimeType}. Skift til Gemini-udbyderen for PDF-, lyd- eller videoinput.',
 	'provider.anthropic.noModelSelected': 'Ingen Anthropic-model valgt. Vælg en model i indstillinger.',
@@ -879,6 +890,8 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'error.openaiInvalidKey': 'Ugyldig OpenAI API-nøgle. Kontroller venligst API-nøglen i Indstillinger → Gemini Scribe.',
 	'error.anthropicInvalidKey':
 		'Ugyldig Anthropic API-nøgle. Tjek venligst API-nøglen under Indstillinger → Gemini Scribe.',
+	'error.openrouterInvalidKey':
+		'Ugyldig OpenRouter-API-nøgle. Tjek venligst API-nøglen under Indstillinger → Gemini Scribe.',
 	'error.modelNotOnEndpoint':
 		'Modellen er ikke tilgængelig på dette slutpunkt. Kontroller venligst dine modelindstillinger eller den konfigurerede base-URL.',
 	'error.serverUnreachable':
@@ -1028,6 +1041,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.shortLabel.ollama': 'Ollama',
 	'settings.providers.shortLabel.openai': 'OpenAI',
 	'settings.providers.shortLabel.anthropic': 'Anthropic',
+	'settings.providers.shortLabel.openrouter': 'OpenRouter',
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'API-nøgle',
 	'settings.providers.apiKeyDesc': "Gemt i Obsidians hemmelige lager, ikke i denne boks' data.",
@@ -1060,7 +1074,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Bruges af alle funktioner, du ikke har dirigeret andetsteds hen.',
 	'settings.providers.privacyNoticeName': 'Privatliv',
 	'settings.providers.privacyNoticeDesc':
-		'Kun de udbydere, dine funktioner rent faktisk bruger, modtager dit indhold. Ollama beholder forespørgsler på denne maskine, undtagen modeller markeret med "cloud", som videresendes til ollama.com. Gemini, OpenAI og Anthropic sender forespørgslen til den pågældende virksomheds servere.',
+		'Kun de udbydere, som dine funktioner rent faktisk bruger, modtager dit indhold. Ollama beholder anmodninger på denne maskine, med undtagelse af modeller mærket med "cloud", som videresendes til ollama.com. Gemini, OpenAI og Anthropic sender anmodningen til det pågældende firmas servere. OpenRouter videresender den til det firma, der hoster den model, du vælger.',
 	'settings.providers.defaultMoved': '{count} funktioner flyttet til den nye standardudbyder.',
 	'settings.providers.groupOnProvider': '{group} på {provider}',
 	'settings.features.modelMissingHelp': '{model} er ikke længere tilgængelig fra denne udbyder. Vælg en anden.',
