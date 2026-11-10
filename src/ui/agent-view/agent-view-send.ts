@@ -1052,10 +1052,6 @@ To reference an attachment in your response, use the path shown above.`;
 		return this.cancellationRequested;
 	}
 
-	getTurnToolCallCount(): number {
-		return this.turnToolCallCount;
-	}
-
 	incrementToolCallCount(count: number): void {
 		this.turnToolCallCount += count;
 	}

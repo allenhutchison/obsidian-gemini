@@ -38,10 +38,6 @@ export class BackgroundStatusBar {
 		this.update();
 	}
 
-	get pendingCatchUpCount(): number {
-		return this._pendingCatchUpCount;
-	}
-
 	/** Attach the status bar item to the Obsidian status bar. */
 	setup(): void {
 		if (this.statusBarItem) return;

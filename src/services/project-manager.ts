@@ -116,32 +116,6 @@ export class ProjectManager {
 	}
 
 	/**
-	 * Update a project's frontmatter config fields.
-	 */
-	async updateProjectConfig(filePath: string, updates: Partial<ProjectConfig>): Promise<void> {
-		const file = this.plugin.app.vault.getAbstractFileByPath(filePath);
-		if (!(file instanceof TFile)) return;
-
-		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
-			if (updates.name !== undefined) frontmatter.name = updates.name;
-			if (updates.skills !== undefined) frontmatter.skills = updates.skills;
-			if ('toolPolicy' in updates) {
-				const serialized = serializeToolPolicy(updates.toolPolicy);
-				if (serialized) {
-					frontmatter.toolPolicy = serialized;
-				} else {
-					delete frontmatter.toolPolicy;
-				}
-				// Drop the legacy field whenever we write the new shape.
-				delete frontmatter.permissions;
-			}
-		});
-
-		// Cache refresh is handled by the vault 'modify' event listener
-		// which defers 500ms for the metadata cache to update.
-	}
-
-	/**
 	 * Create a new project file with template frontmatter and instructions.
 	 * If `<name>.md` already exists in the folder, the next free `<name> N.md`
 	 * is used instead, and the project's `name` follows the file name.
