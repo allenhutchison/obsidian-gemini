@@ -1164,12 +1164,42 @@
 <a name='L1088'></a><a href='#L1088'>1088</a>
 <a name='L1089'></a><a href='#L1089'>1089</a>
 <a name='L1090'></a><a href='#L1090'>1090</a>
-<a name='L1091'></a><a href='#L1091'>1091</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L1091'></a><a href='#L1091'>1091</a>
+<a name='L1092'></a><a href='#L1092'>1092</a>
+<a name='L1093'></a><a href='#L1093'>1093</a>
+<a name='L1094'></a><a href='#L1094'>1094</a>
+<a name='L1095'></a><a href='#L1095'>1095</a>
+<a name='L1096'></a><a href='#L1096'>1096</a>
+<a name='L1097'></a><a href='#L1097'>1097</a>
+<a name='L1098'></a><a href='#L1098'>1098</a>
+<a name='L1099'></a><a href='#L1099'>1099</a>
+<a name='L1100'></a><a href='#L1100'>1100</a>
+<a name='L1101'></a><a href='#L1101'>1101</a>
+<a name='L1102'></a><a href='#L1102'>1102</a>
+<a name='L1103'></a><a href='#L1103'>1103</a>
+<a name='L1104'></a><a href='#L1104'>1104</a>
+<a name='L1105'></a><a href='#L1105'>1105</a>
+<a name='L1106'></a><a href='#L1106'>1106</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">125x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2262,6 +2292,8 @@ import type { TranslationKey } from './en';
 export const fr: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'agent.empty.title': 'Démarrer une conversation',
 	'agent.empty.description': 'Votre assistant IA qui peut travailler activement avec votre coffre.',
+	'agent.empty.historyOff': "L'historique des sessions est désactivé, cette conversation ne sera donc pas enregistrée.",
+	'agent.empty.historyOffLink': "Activez « Conserver l'historique des sessions » dans les paramètres",
 	'agent.empty.capabilitiesTitle': "Que peut faire l'agent ?",
 	'agent.empty.capability.search': 'Rechercher et lire des fichiers dans votre coffre',
 	'agent.empty.capability.organize': 'Créer, modifier et organiser des notes',
@@ -2284,6 +2316,7 @@ export const fr: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (cloud)',
 	'settings.general.providerOptionAnthropic': 'Anthropic (cloud)',
+	'settings.general.providerOptionOpenrouter': 'OpenRouter (cloud)',
 	'settings.general.modelListUpdated': 'Liste des modèles mise à jour : {count} modèles.',
 	'settings.general.modelListUpdatedSingular': 'Liste des modèles mise à jour : {count} modèle.',
 	'settings.general.refreshSkippedOffline': 'Ignoré : hors ligne',
@@ -2298,7 +2331,7 @@ export const fr: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 		"Votre nom utilisé dans les instructions système afin que l'IA puisse s'adresser à vous personnellement lors des conversations.",
 	'settings.main.keepSessionHistoryName': "Conserver l'historique des sessions",
 	'settings.main.keepSessionHistoryDesc':
-		"Conserver les sessions de chat de l'agent sous forme de fichiers Markdown dans votre coffre. Les sessions sont enregistrées sous Agent-Sessions/ avec des titres générés automatiquement.",
+		"Conservez les sessions de discussion de l'agent sous forme de fichiers Markdown dans votre coffre. Les sessions sont enregistrées dans Agent-Sessions/ avec des titres générés automatiquement. Désactivé par défaut : lorsqu'il est désactivé, les sessions ne sont enregistrées nulle part.",
 	'settings.main.reviewDiffName': "Examiner un diff avant l'écriture des fichiers",
 	'settings.main.reviewDiffDesc':
 		"Ouvrir automatiquement une vue diff lorsque l'agent propose des modifications de fichiers, au lieu de devoir cliquer sur un bouton.",
@@ -2306,6 +2339,8 @@ export const fr: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'settings.main.pluginFolderName': 'Dossier du plugin',
 	'settings.main.pluginFolderDesc':
 		"Dossier dans lequel sont stockées les données du plugin. Les sessions de l'agent sont situées sous Agent-Sessions/, les invites personnalisées sous Prompts/, les hooks sous Hooks/ et l'état des tâches planifiées sous Scheduled-Tasks/.",
+	'settings.main.pluginFolderHiddenError':
+		"Les dossiers commençant par un point ne sont pas pris en charge. Obsidian n'indexe pas les dossiers masqués, le plugin ne peut donc pas y trouver ses fichiers. Utilisez un nom ne commençant pas par un point.",
 	'settings.main.scheduledTasksName': 'Tâches planifiées',
 	'settings.main.lifecycleHooksName': 'Hooks de cycle de vie',
 	'settings.main.mcpServersName': 'Serveurs MCP',
@@ -2871,6 +2906,8 @@ export const fr: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'agent.projectPicker.vaultRoot': '(racine du coffre)',
 	'agent.sessionList.title': "Sessions de l'agent",
 	'agent.sessionList.empty': "Aucune session d'agent trouvée",
+	'agent.sessionList.historyOff':
+		"L'historique des sessions est désactivé. Les nouvelles sessions ne sont pas enregistrées et les sessions enregistrées s'ouvrent sans leurs messages. Activez « Conserver l'historique des sessions » dans les paramètres pour les enregistrer et les rouvrir.",
 	'agent.sessionList.loadFailed': "Échec du chargement des sessions de l'agent",
 	'agent.sessionList.filterLabel': 'Projet :',
 	'agent.sessionList.filterAll': 'Tous les projets',
@@ -2934,6 +2971,8 @@ export const fr: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 		"Aucune clé d'API OpenAI configurée. Ouvrez Paramètres → Gemini Scribe pour en ajouter une. Obtenez une clé sur platform.openai.com/api-keys",
 	'notice.main.noApiKeyAnthropic':
 		"Aucune clé d'API Anthropic configurée. Ouvrez Paramètres → Gemini Scribe pour en ajouter une. Obtenez une clé sur platform.claude.com/settings/keys",
+	'notice.main.noApiKeyOpenrouter':
+		"Aucune clé d'API OpenRouter configurée. Ouvrez Paramètres → Gemini Scribe pour en ajouter une. Obtenez une clé sur openrouter.ai/keys",
 	'notice.main.apiKeyRetrieveFailed':
 		"Impossible de récupérer votre clé d'API depuis le stockage sécurisé. Réessayez de la saisir dans Paramètres → Gemini Scribe → Fournisseurs → Google Gemini → Clé d'API.",
 	'notice.main.initFailedConsole':
@@ -3135,6 +3174,9 @@ export const fr: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'selection.emptyResponse': "L'IA a renvoyé une réponse vide. Veuillez réessayer.",
 	'provider.openai.noModelSelected': 'Aucun modèle OpenAI sélectionné. Choisissez un modèle dans les paramètres.',
 	'provider.openai.noImageData': "OpenAI n'a renvoyé aucune donnée d'image.",
+	'provider.openrouter.noModelSelected':
+		'Aucun modèle OpenRouter sélectionné. Choisissez un modèle dans les paramètres.',
+	'provider.openrouter.noImageData': "OpenRouter n'a renvoyé aucune donnée d'image.",
 	'provider.unsupportedAttachment':
 		"{provider} ne prend en charge que les pièces jointes d'images ; {mimeType} reçu. Passez au fournisseur Gemini pour les fichiers PDF, audio ou vidéo.",
 	'provider.anthropic.noModelSelected': 'Aucun modèle Anthropic sélectionné. Choisissez un modèle dans les paramètres.',
@@ -3149,6 +3191,8 @@ export const fr: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'error.openaiInvalidKey': 'Clé API OpenAI non valide. Veuillez vérifier la clé API dans Paramètres → Gemini Scribe.',
 	'error.anthropicInvalidKey':
 		"Clé d'API Anthropic non valide. Veuillez vérifier la clé d'API dans Paramètres → Gemini Scribe.",
+	'error.openrouterInvalidKey':
+		"Clé d'API OpenRouter non valide. Veuillez vérifier la clé d'API dans Paramètres → Gemini Scribe.",
 	'error.modelNotOnEndpoint':
 		"Modèle non disponible sur ce point de terminaison. Veuillez vérifier vos paramètres de modèle ou l'URL de base configurée.",
 	'error.serverUnreachable':
@@ -3304,6 +3348,7 @@ export const fr: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'settings.providers.shortLabel.ollama': 'Ollama',
 	'settings.providers.shortLabel.openai': 'OpenAI',
 	'settings.providers.shortLabel.anthropic': 'Anthropic',
+	'settings.providers.shortLabel.openrouter': 'OpenRouter',
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'Clé API',
 	'settings.providers.apiKeyDesc':
@@ -3338,7 +3383,7 @@ export const fr: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'settings.providers.defaultProviderDesc': "Utilisé par toute fonctionnalité qui n'est pas redirigée ailleurs.",
 	'settings.providers.privacyNoticeName': 'Confidentialité',
 	'settings.providers.privacyNoticeDesc':
-		"Seuls les fournisseurs réellement utilisés par vos fonctionnalités reçoivent votre contenu. Ollama conserve les requêtes sur cette machine, à l'exception des modèles marqués \"cloud\", qu'il transmet à ollama.com. Gemini, OpenAI et Anthropic envoient la requête aux serveurs de l'entreprise concernée.",
+		"Seuls les fournisseurs que vos fonctionnalités utilisent réellement reçoivent votre contenu. Ollama conserve les requêtes sur cette machine, à l'exception des modèles marqués « cloud », qu'il transfère à ollama.com. Gemini, OpenAI et Anthropic envoient la requête aux serveurs de l'entreprise correspondante. OpenRouter la transfère à l'entreprise qui héberge le modèle choisi.",
 	'settings.providers.defaultMoved': '{count} fonctionnalités déplacées vers le nouveau fournisseur par défaut.',
 	'settings.providers.groupOnProvider': '{group} sur {provider}',
 	'settings.features.modelMissingHelp':
@@ -3351,7 +3396,7 @@ export const fr: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-14T23:49:20.994Z
+                at 2026-11-14T23:57:15.902Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -1143,12 +1143,40 @@
 <a name='L1067'></a><a href='#L1067'>1067</a>
 <a name='L1068'></a><a href='#L1068'>1068</a>
 <a name='L1069'></a><a href='#L1069'>1069</a>
-<a name='L1070'></a><a href='#L1070'>1070</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L1070'></a><a href='#L1070'>1070</a>
+<a name='L1071'></a><a href='#L1071'>1071</a>
+<a name='L1072'></a><a href='#L1072'>1072</a>
+<a name='L1073'></a><a href='#L1073'>1073</a>
+<a name='L1074'></a><a href='#L1074'>1074</a>
+<a name='L1075'></a><a href='#L1075'>1075</a>
+<a name='L1076'></a><a href='#L1076'>1076</a>
+<a name='L1077'></a><a href='#L1077'>1077</a>
+<a name='L1078'></a><a href='#L1078'>1078</a>
+<a name='L1079'></a><a href='#L1079'>1079</a>
+<a name='L1080'></a><a href='#L1080'>1080</a>
+<a name='L1081'></a><a href='#L1081'>1081</a>
+<a name='L1082'></a><a href='#L1082'>1082</a>
+<a name='L1083'></a><a href='#L1083'>1083</a>
+<a name='L1084'></a><a href='#L1084'>1084</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">125x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2220,6 +2248,8 @@ import type { TranslationKey } from './en';
 export const uk: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'agent.empty.title': 'Почати розмову',
 	'agent.empty.description': 'Ваш AI-помічник, який може активно працювати з вашим сховищем.',
+	'agent.empty.historyOff': 'Історію сесій вимкнено, тому цю розмову не буде збережено.',
+	'agent.empty.historyOffLink': 'Увімкніть «Зберігати історію сесій» у налаштуваннях',
 	'agent.empty.capabilitiesTitle': 'Що вміє агент?',
 	'agent.empty.capability.search': 'Шукати та читати файли у вашому сховищі',
 	'agent.empty.capability.organize': 'Створювати, змінювати та впорядковувати нотатки',
@@ -2240,6 +2270,7 @@ export const uk: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (хмара)',
 	'settings.general.providerOptionAnthropic': 'Anthropic (хмара)',
+	'settings.general.providerOptionOpenrouter': 'OpenRouter (хмара)',
 	'settings.general.modelListUpdated': 'Список моделей оновлено: {count} моделей.',
 	'settings.general.modelListUpdatedSingular': 'Список моделей оновлено: {count} модель.',
 	'settings.general.refreshSkippedOffline': 'Пропущено: офлайн',
@@ -2254,7 +2285,7 @@ export const uk: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 		"Ваше ім'я, яке використовуватиметься в системних інструкціях, щоб ШІ міг звертатися до вас особисто під час розмови.",
 	'settings.main.keepSessionHistoryName': 'Зберігати історію сесій',
 	'settings.main.keepSessionHistoryDesc':
-		'Зберігати сесії чату агента як файли markdown у вашому сховищі. Сесії зберігаються в Agent-Sessions/ з автоматично згенерованими назвами.',
+		'Зберігайте сесії чату агента як файли markdown у вашому сховищі. Сесії зберігаються в Agent-Sessions/ з автоматично згенерованими назвами. За замовчуванням вимкнено: доки вимкнено, сесії ніде не зберігаються.',
 	'settings.main.reviewDiffName': 'Переглядати різницю перед записом файлів',
 	'settings.main.reviewDiffDesc':
 		'Автоматично відкривати режим перегляду різниці, коли агент пропонує зміни у файлах, замість натискання кнопки.',
@@ -2262,6 +2293,8 @@ export const uk: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'settings.main.pluginFolderName': 'Тека плагіна',
 	'settings.main.pluginFolderDesc':
 		'Тека, де зберігаються дані плагіна. Сесії агента зберігаються в Agent-Sessions/, власні промпти — у Prompts/, хуки — у Hooks/, стан запланованих завдань — у Scheduled-Tasks/.',
+	'settings.main.pluginFolderHiddenError':
+		'Папки, назви яких починаються з крапки, не підтримуються. Obsidian не індексує приховані папки, тому плагін не зможе знайти свої файли там. Використовуйте назву без крапки на початку.',
 	'settings.main.scheduledTasksName': 'Заплановані завдання',
 	'settings.main.lifecycleHooksName': 'Хуки життєвого циклу',
 	'settings.main.mcpServersName': 'Сервери MCP',
@@ -2823,6 +2856,8 @@ export const uk: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'agent.projectPicker.vaultRoot': '(корінь сховища)',
 	'agent.sessionList.title': 'Сесії агента',
 	'agent.sessionList.empty': 'Сесій агента не знайдено',
+	'agent.sessionList.historyOff':
+		'Історію сесій вимкнено. Нові сесії не зберігаються, а збережені сесії відкриваються без своїх повідомлень. Увімкніть «Зберігати історію сесій» у налаштуваннях, щоб зберігати та повторно відкривати їх.',
 	'agent.sessionList.loadFailed': 'Не вдалося завантажити сесії агента',
 	'agent.sessionList.filterLabel': 'Проєкт:',
 	'agent.sessionList.filterAll': 'Усі проєкти',
@@ -2886,6 +2921,8 @@ export const uk: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 		'API-ключ OpenAI не налаштовано. Перейдіть у Налаштування → Gemini Scribe, щоб додати його. Отримайте ключ на platform.openai.com/api-keys',
 	'notice.main.noApiKeyAnthropic':
 		'API-ключ Anthropic не налаштовано. Відкрийте Налаштування → Gemini Scribe, щоб додати його. Отримайте ключ на platform.claude.com/settings/keys',
+	'notice.main.noApiKeyOpenrouter':
+		'Ключ API OpenRouter не налаштовано. Відкрийте Налаштування → Gemini Scribe, щоб додати його. Отримайте ключ на openrouter.ai/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Не вдалося отримати ваш ключ API з безпечного сховища. Спробуйте ввести його знову в Налаштування → Gemini Scribe → Провайдери → Google Gemini → Ключ API.',
 	'notice.main.initFailedConsole':
@@ -3082,6 +3119,8 @@ export const uk: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'selection.emptyResponse': 'ШІ повернув порожню відповідь. Будь ласка, спробуйте знову.',
 	'provider.openai.noModelSelected': 'Модель OpenAI не вибрано. Виберіть модель у налаштуваннях.',
 	'provider.openai.noImageData': 'OpenAI не повернув даних зображення.',
+	'provider.openrouter.noModelSelected': 'Модель OpenRouter не вибрано. Виберіть модель у налаштуваннях.',
+	'provider.openrouter.noImageData': 'OpenRouter не повернув даних зображення.',
 	'provider.unsupportedAttachment':
 		'{provider} підтримує лише вкладення-зображення; отримано {mimeType}. Перемкніться на постачальника Gemini для роботи з PDF, аудіо або відео.',
 	'provider.anthropic.noModelSelected': 'Не вибрано модель Anthropic. Оберіть модель у налаштуваннях.',
@@ -3096,6 +3135,8 @@ export const uk: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'error.openaiInvalidKey':
 		'Недійсний API-ключ OpenAI. Будь ласка, перевірте API-ключ у меню Налаштування → Gemini Scribe.',
 	'error.anthropicInvalidKey': 'Недійсний API-ключ Anthropic. Перевірте API-ключ у меню Налаштування → Gemini Scribe.',
+	'error.openrouterInvalidKey':
+		'Недійсний ключ API OpenRouter. Будь ласка, перевірте ключ API в Налаштування → Gemini Scribe.',
 	'error.modelNotOnEndpoint':
 		'Модель недоступна на цій кінцевій точці. Будь ласка, перевірте налаштування моделі або налаштовану базову URL-адресу.',
 	'error.serverUnreachable':
@@ -3243,6 +3284,7 @@ export const uk: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'settings.providers.shortLabel.ollama': 'Ollama',
 	'settings.providers.shortLabel.openai': 'OpenAI',
 	'settings.providers.shortLabel.anthropic': 'Anthropic',
+	'settings.providers.shortLabel.openrouter': 'OpenRouter',
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'Ключ API',
 	'settings.providers.apiKeyDesc': 'Зберігається в сховищі секретів Obsidian, а не в даних цього сховища.',
@@ -3276,7 +3318,7 @@ export const uk: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'settings.providers.defaultProviderDesc': 'Використовується для будь-якої функції, не призначеної іншому провайдеру.',
 	'settings.providers.privacyNoticeName': 'Конфіденційність',
 	'settings.providers.privacyNoticeDesc':
-		'Лише постачальники, які дійсно використовуються вашими функціями, отримують ваш вміст. Ollama зберігає запити на цьому пристрої, за винятком моделей із позначкою "cloud", які надсилаються на ollama.com. Gemini, OpenAI та Anthropic надсилають запит на сервери відповідної компанії.',
+		'Лише ті постачальники, чиї функції ви фактично використовуєте, отримують ваш вміст. Ollama залишає запити на цьому пристрої, за винятком моделей із позначкою «cloud», які надсилаються на ollama.com. Gemini, OpenAI та Anthropic надсилають запит на сервери відповідних компаній. OpenRouter пересилає його тій компанії, яка обслуговує вибрану вами модель.',
 	'settings.providers.defaultMoved': '{count} функцій перенесено до нового провайдера за замовчуванням.',
 	'settings.providers.groupOnProvider': '{group} на {provider}',
 	'settings.features.modelMissingHelp': '{model} більше недоступна у цього провайдера. Виберіть іншу.',
@@ -3288,7 +3330,7 @@ export const uk: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-14T23:49:20.994Z
+                at 2026-11-14T23:57:15.902Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

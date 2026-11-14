@@ -1141,12 +1141,40 @@
 <a name='L1065'></a><a href='#L1065'>1065</a>
 <a name='L1066'></a><a href='#L1066'>1066</a>
 <a name='L1067'></a><a href='#L1067'>1067</a>
-<a name='L1068'></a><a href='#L1068'>1068</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L1068'></a><a href='#L1068'>1068</a>
+<a name='L1069'></a><a href='#L1069'>1069</a>
+<a name='L1070'></a><a href='#L1070'>1070</a>
+<a name='L1071'></a><a href='#L1071'>1071</a>
+<a name='L1072'></a><a href='#L1072'>1072</a>
+<a name='L1073'></a><a href='#L1073'>1073</a>
+<a name='L1074'></a><a href='#L1074'>1074</a>
+<a name='L1075'></a><a href='#L1075'>1075</a>
+<a name='L1076'></a><a href='#L1076'>1076</a>
+<a name='L1077'></a><a href='#L1077'>1077</a>
+<a name='L1078'></a><a href='#L1078'>1078</a>
+<a name='L1079'></a><a href='#L1079'>1079</a>
+<a name='L1080'></a><a href='#L1080'>1080</a>
+<a name='L1081'></a><a href='#L1081'>1081</a>
+<a name='L1082'></a><a href='#L1082'>1082</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">125x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2216,6 +2244,8 @@ import type { TranslationKey } from './en';
 export const cs: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'agent.empty.title': 'Zahájit konverzaci',
 	'agent.empty.description': 'Váš AI asistent, který dokáže aktivně pracovat s vaším vaultem.',
+	'agent.empty.historyOff': 'Historie relací je vypnutá, takže se tato konverzace neuloží.',
+	'agent.empty.historyOffLink': 'Zapněte „Uchovávat historii relací“ v nastavení',
 	'agent.empty.capabilitiesTitle': 'Co agent dokáže?',
 	'agent.empty.capability.search': 'Vyhledávat a číst soubory ve vašem vaultu',
 	'agent.empty.capability.organize': 'Vytvářet, upravovat a organizovat poznámky',
@@ -2236,6 +2266,7 @@ export const cs: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (cloud)',
 	'settings.general.providerOptionAnthropic': 'Anthropic (cloud)',
+	'settings.general.providerOptionOpenrouter': 'OpenRouter (cloud)',
 	'settings.general.modelListUpdated': 'Seznam modelů aktualizován: {count} modelů.',
 	'settings.general.modelListUpdatedSingular': 'Seznam modelů aktualizován: {count} model.',
 	'settings.general.refreshSkippedOffline': 'Přeskočeno: offline',
@@ -2250,7 +2281,7 @@ export const cs: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 		'Vaše jméno použité v systémových instrukcích, aby vás AI mohla v konverzacích oslovovat osobně.',
 	'settings.main.keepSessionHistoryName': 'Uchovávat historii relací',
 	'settings.main.keepSessionHistoryDesc':
-		'Ukládat relace chatu agenta jako soubory markdown ve vašem trezoru. Relace se ukládají do složky Agent-Sessions/ s automaticky generovanými názvy.',
+		'Uchovávat chatovací relace agenta jako soubory markdown ve vašem trezoru. Relace se ukládají do složky Agent-Sessions/ s automaticky generovanými názvy. Ve výchozím stavu vypnuto: pokud je funkce vypnutá, relace se nikam neukládají.',
 	'settings.main.reviewDiffName': 'Zkontrolovat diff před zápisem souborů',
 	'settings.main.reviewDiffDesc':
 		'Automaticky otevřít zobrazení diffu, když agent navrhne změny souborů, namísto nutnosti kliknout na tlačítko.',
@@ -2258,6 +2289,8 @@ export const cs: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'settings.main.pluginFolderName': 'Složka doplňku',
 	'settings.main.pluginFolderDesc':
 		'Složka, do které se ukládají data doplňku. Relace agenta se nacházejí v Agent-Sessions/, vlastní prompty v Prompts/, hooky v Hooks/ a stav naplánovaných úloh v Scheduled-Tasks/.',
+	'settings.main.pluginFolderHiddenError':
+		'Složky začínající tečkou nejsou podporovány. Obsidian neindexuje skryté složky, takže plugin v nich nemůže najít své soubory. Použijte název bez počáteční tečky.',
 	'settings.main.scheduledTasksName': 'Naplánované úlohy',
 	'settings.main.lifecycleHooksName': 'Hooky životního cyklu',
 	'settings.main.mcpServersName': 'Servery MCP',
@@ -2816,6 +2849,8 @@ export const cs: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'agent.projectPicker.vaultRoot': '(kořen vaultu)',
 	'agent.sessionList.title': 'Relace agenta',
 	'agent.sessionList.empty': 'Nebyly nalezeny žádné relace agenta',
+	'agent.sessionList.historyOff':
+		'Historie relací je vypnutá. Nové relace se neukládají a uložené relace se otevřou bez svých zpráv. Chcete-li je ukládat a znovu otevírat, zapněte v nastavení možnost „Uchovávat historii relací“.',
 	'agent.sessionList.loadFailed': 'Nepodařilo se načíst relace agenta',
 	'agent.sessionList.filterLabel': 'Projekt:',
 	'agent.sessionList.filterAll': 'Všechny projekty',
@@ -2878,6 +2913,8 @@ export const cs: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 		'Není nakonfigurován žádný API klíč OpenAI. Otevřete Nastavení → Gemini Scribe a přidejte jej. Klíč získáte na platform.openai.com/api-keys',
 	'notice.main.noApiKeyAnthropic':
 		'Není nakonfigurován žádný API klíč pro Anthropic. Přidejte jej v Nastavení → Gemini Scribe. Klíč získáte na platform.claude.com/settings/keys',
+	'notice.main.noApiKeyOpenrouter':
+		'Není nakonfigurován žádný API klíč pro OpenRouter. Přidejte jej v Nastavení → Gemini Scribe. Klíč získáte na openrouter.ai/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Klíč API se nepodařilo načíst ze zabezpečeného úložiště. Zkuste jej zadat znovu v Nastavení → Gemini Scribe → Poskytovatelé → Google Gemini → Klíč API.',
 	'notice.main.initFailedConsole': 'Inicializace Gemini Scribe selhala: {error}. Podrobnosti naleznete v konzoli.',
@@ -3074,6 +3111,8 @@ export const cs: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'selection.emptyResponse': 'AI vrátila prázdnou odpověď. Zkuste to prosím znovu.',
 	'provider.openai.noModelSelected': 'Není vybrán žádný model OpenAI. Vyberte model v nastavení.',
 	'provider.openai.noImageData': 'OpenAI nevrátila žádná obrazová data.',
+	'provider.openrouter.noModelSelected': 'Není vybrán žádný model OpenRouter. Vyberte model v nastavení.',
+	'provider.openrouter.noImageData': 'OpenRouter nevrátil žádná obrazová data.',
 	'provider.unsupportedAttachment':
 		'{provider} podporuje pouze obrázkové přílohy; byl přijat typ {mimeType}. Pro vstup ve formátu PDF, zvuku nebo videa přepněte na poskytovatele Gemini.',
 	'provider.anthropic.noModelSelected': 'Není vybrán žádný model Anthropic. Vyberte model v nastavení.',
@@ -3088,6 +3127,8 @@ export const cs: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'error.openaiInvalidKey': 'Neplatný API klíč OpenAI. Zkontrolujte prosím API klíč v Nastavení → Gemini Scribe.',
 	'error.anthropicInvalidKey':
 		'Neplatný API klíč pro Anthropic. Zkontrolujte prosím API klíč v Nastavení → Gemini Scribe.',
+	'error.openrouterInvalidKey':
+		'Neplatný API klíč OpenRouter. Zkontrolujte prosím API klíč v Nastavení → Gemini Scribe.',
 	'error.modelNotOnEndpoint':
 		'Model není na tomto koncovém bodu k dispozici. Zkontrolujte prosím nastavení modelu nebo nakonfigurovanou základní URL.',
 	'error.serverUnreachable':
@@ -3237,6 +3278,7 @@ export const cs: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'settings.providers.shortLabel.ollama': 'Ollama',
 	'settings.providers.shortLabel.openai': 'OpenAI',
 	'settings.providers.shortLabel.anthropic': 'Anthropic',
+	'settings.providers.shortLabel.openrouter': 'OpenRouter',
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'Klíč API',
 	'settings.providers.apiKeyDesc': 'Uloženo v zabezpečeném úložišti Obsidianu, nikoli v datech tohoto trezoru.',
@@ -3270,7 +3312,7 @@ export const cs: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
 	'settings.providers.defaultProviderDesc': 'Použije se pro všechny funkce, které nejsou výslovně směrovány jinam.',
 	'settings.providers.privacyNoticeName': 'Soukromí',
 	'settings.providers.privacyNoticeDesc':
-		'Váš obsah obdrží pouze ti poskytovatelé, které vaše funkce skutečně využívají. Ollama uchovává požadavky na tomto zařízení, s výjimkou modelů označených jako "cloud", které přeposílá na ollama.com. Gemini, OpenAI a Anthropic odesílají požadavky na servery dané společnosti.',
+		'Váš obsah přijímají pouze ti poskytovatelé, které vaše funkce skutečně využívají. Ollama uchovává požadavky na tomto počítači, s výjimkou modelů označených jako „cloud“, které přeposílá na ollama.com. Gemini, OpenAI a Anthropic odesílají požadavky na servery dané společnosti. OpenRouter je přeposílá společnosti, která provozuje vámi vybraný model.',
 	'settings.providers.defaultMoved': '{count} funkcí bylo přesunuto k novému výchozímu poskytovateli.',
 	'settings.providers.groupOnProvider': '{group} na {provider}',
 	'settings.features.modelMissingHelp': 'Model {model} již není u tohoto poskytovatele k dispozici. Zvolte jiný.',
@@ -3282,7 +3324,7 @@ export const cs: Partial&lt;Record&lt;TranslationKey, string&gt;&gt; = {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-14T23:49:20.994Z
+                at 2026-11-14T23:57:15.902Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
