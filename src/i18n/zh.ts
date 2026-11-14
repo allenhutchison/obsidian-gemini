@@ -6,6 +6,8 @@ import type { TranslationKey } from './en';
 export const zh: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.title': '开始对话',
 	'agent.empty.description': '可以主动在您的 vault 中工作的 AI 助手。',
+	'agent.empty.historyOff': '会话历史记录已关闭，因此本次对话将不会被保存。',
+	'agent.empty.historyOffLink': '在设置中开启“保留会话历史记录”',
 	'agent.empty.capabilitiesTitle': '智能体可以做什么？',
 	'agent.empty.capability.search': '搜索并阅读您 vault 中的文件',
 	'agent.empty.capability.organize': '创建、修改和整理笔记',
@@ -26,6 +28,7 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (云端)',
 	'settings.general.providerOptionAnthropic': 'Anthropic (云端)',
+	'settings.general.providerOptionOpenrouter': 'OpenRouter（云端）',
 	'settings.general.modelListUpdated': '模型列表已更新：{count} 个模型。',
 	'settings.general.modelListUpdatedSingular': '模型列表已更新：{count} 个模型。',
 	'settings.general.refreshSkippedOffline': '已跳过：离线',
@@ -39,13 +42,15 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'settings.main.yourNameDesc': '在系统指令中使用的名称，以便 AI 在对话中称呼您。',
 	'settings.main.keepSessionHistoryName': '保留会话历史',
 	'settings.main.keepSessionHistoryDesc':
-		'将智能体对话会话以 Markdown 文件形式保存在仓库中。会话将自动生成标题并保存至 Agent-Sessions/。',
+		'将 Agent 聊天会话以 Markdown 文件形式保存在你的仓库中。会话将保存在 Agent-Sessions/ 目录下，并自动生成标题。默认关闭：关闭时，会话将不会保存在任何地方。',
 	'settings.main.reviewDiffName': '在写入文件前审查差异',
 	'settings.main.reviewDiffDesc': '当智能体提议更改文件时自动打开差异视图，无需手动点击按钮。',
 	'settings.main.vaultSearchIndexName': '仓库搜索索引',
 	'settings.main.pluginFolderName': '插件文件夹',
 	'settings.main.pluginFolderDesc':
 		'存储插件数据的文件夹。智能体会话保存在 Agent-Sessions/，自定义提示词保存在 Prompts/，钩子保存在 Hooks/，定时任务状态保存在 Scheduled-Tasks/。',
+	'settings.main.pluginFolderHiddenError':
+		'不支持以点（.）开头的文件夹。Obsidian 不会对隐藏文件夹建立索引，因此插件无法在其中找到文件。请使用不以点开头的名称。',
 	'settings.main.scheduledTasksName': '定时任务',
 	'settings.main.lifecycleHooksName': '生命周期钩子',
 	'settings.main.mcpServersName': 'MCP 服务器',
@@ -578,6 +583,8 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'agent.projectPicker.vaultRoot': '(vault 根目录)',
 	'agent.sessionList.title': 'Agent 会话',
 	'agent.sessionList.empty': '未找到 Agent 会话',
+	'agent.sessionList.historyOff':
+		'会话历史记录已关闭。新会话将不会被保存，已保存的会话打开时也不会显示消息。请在设置中开启“保留会话历史记录”以便保存并重新打开它们。',
 	'agent.sessionList.loadFailed': '加载 Agent 会话失败',
 	'agent.sessionList.filterLabel': '项目：',
 	'agent.sessionList.filterAll': '所有项目',
@@ -639,6 +646,8 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 		'未配置 OpenAI API 密钥。请打开 设置 → Gemini Scribe 进行添加。请在 platform.openai.com/api-keys 获取密钥',
 	'notice.main.noApiKeyAnthropic':
 		'未配置 Anthropic API 密钥。请打开 设置 → Gemini Scribe 进行添加。可在 platform.claude.com/settings/keys 获取密钥',
+	'notice.main.noApiKeyOpenrouter':
+		'未配置 OpenRouter API 密钥。请打开“设置 → Gemini Scribe”进行添加。可前往 openrouter.ai/keys 获取密钥',
 	'notice.main.apiKeyRetrieveFailed':
 		'无法从安全存储中获取您的 API 密钥。请尝试在 设置 → Gemini Scribe → 服务商 → Google Gemini → API 密钥 中重新输入。',
 	'notice.main.initFailedConsole': 'Gemini Scribe 初始化失败: {error}。请检查控制台以获取详细信息。',
@@ -827,6 +836,8 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'selection.emptyResponse': 'AI 返回了空响应。请重试。',
 	'provider.openai.noModelSelected': '未选择 OpenAI 模型。请在设置中选择一个模型。',
 	'provider.openai.noImageData': 'OpenAI 未返回图像数据。',
+	'provider.openrouter.noModelSelected': '未选择 OpenRouter 模型。请在设置中选择一个模型。',
+	'provider.openrouter.noImageData': 'OpenRouter 未返回任何图像数据。',
 	'provider.unsupportedAttachment':
 		'{provider} 仅支持图片附件；当前接收到的是 {mimeType}。如需输入 PDF、音频或视频，请切换至 Gemini 提供商。',
 	'provider.anthropic.noModelSelected': '未选择 Anthropic 模型。请在设置中选择一个模型。',
@@ -840,6 +851,7 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'error.unknown': '发生未知错误',
 	'error.openaiInvalidKey': '无效的 OpenAI API 密钥。请检查 设置 → Gemini Scribe 中的 API 密钥。',
 	'error.anthropicInvalidKey': 'Anthropic API 密钥无效。请在 设置 → Gemini Scribe 中检查 API 密钥。',
+	'error.openrouterInvalidKey': 'OpenRouter API 密钥无效。请在“设置 → Gemini Scribe”中检查该 API 密钥。',
 	'error.modelNotOnEndpoint': '此端点上没有可用的模型。请检查您的模型设置或配置的基础 URL。',
 	'error.serverUnreachable':
 		'无法连接到模型服务器。如果您配置了自定义基础 URL（LM Studio、MLX 等），请确保服务器正在运行且设置中的基础 URL 正确。',
@@ -971,6 +983,7 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.shortLabel.ollama': 'Ollama',
 	'settings.providers.shortLabel.openai': 'OpenAI',
 	'settings.providers.shortLabel.anthropic': 'Anthropic',
+	'settings.providers.shortLabel.openrouter': 'OpenRouter',
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'API 密钥',
 	'settings.providers.apiKeyDesc': '保存在 Obsidian 的机密存储中，而非此 vault 的数据中。',
@@ -1003,7 +1016,7 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': '供未明确路由至其他服务商的任何功能使用。',
 	'settings.providers.privacyNoticeName': '隐私',
 	'settings.providers.privacyNoticeDesc':
-		'只有各功能实际使用的提供商才会接收您的内容。Ollama 会将请求保留在本地设备上，但标记为“cloud”的模型除外（此类模型将被转发至 ollama.com）。Gemini、OpenAI 和 Anthropic 会将请求发送至各自公司的服务器。',
+		'只有你所使用功能对应的服务商才会接收你的内容。Ollama 会将请求保留在本机，但标记为“cloud”的模型除外（此类请求将转发至 ollama.com）。Gemini、OpenAI 和 Anthropic 会将请求发送至各自公司的服务器。OpenRouter 则会将请求转发至提供你所选模型的对应公司。',
 	'settings.providers.defaultMoved': '{count} 项功能已迁移至新的默认服务商。',
 	'settings.providers.groupOnProvider': '{group}（{provider}）',
 	'settings.features.modelMissingHelp': '此服务商已不再提供 {model}。请选择其他模型。',

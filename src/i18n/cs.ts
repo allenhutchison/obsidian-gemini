@@ -6,6 +6,8 @@ import type { TranslationKey } from './en';
 export const cs: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.title': 'Zahájit konverzaci',
 	'agent.empty.description': 'Váš AI asistent, který dokáže aktivně pracovat s vaším vaultem.',
+	'agent.empty.historyOff': 'Historie relací je vypnutá, takže se tato konverzace neuloží.',
+	'agent.empty.historyOffLink': 'Zapněte „Uchovávat historii relací“ v nastavení',
 	'agent.empty.capabilitiesTitle': 'Co agent dokáže?',
 	'agent.empty.capability.search': 'Vyhledávat a číst soubory ve vašem vaultu',
 	'agent.empty.capability.organize': 'Vytvářet, upravovat a organizovat poznámky',
@@ -26,6 +28,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (cloud)',
 	'settings.general.providerOptionAnthropic': 'Anthropic (cloud)',
+	'settings.general.providerOptionOpenrouter': 'OpenRouter (cloud)',
 	'settings.general.modelListUpdated': 'Seznam modelů aktualizován: {count} modelů.',
 	'settings.general.modelListUpdatedSingular': 'Seznam modelů aktualizován: {count} model.',
 	'settings.general.refreshSkippedOffline': 'Přeskočeno: offline',
@@ -40,7 +43,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 		'Vaše jméno použité v systémových instrukcích, aby vás AI mohla v konverzacích oslovovat osobně.',
 	'settings.main.keepSessionHistoryName': 'Uchovávat historii relací',
 	'settings.main.keepSessionHistoryDesc':
-		'Ukládat relace chatu agenta jako soubory markdown ve vašem trezoru. Relace se ukládají do složky Agent-Sessions/ s automaticky generovanými názvy.',
+		'Uchovávat chatovací relace agenta jako soubory markdown ve vašem trezoru. Relace se ukládají do složky Agent-Sessions/ s automaticky generovanými názvy. Ve výchozím stavu vypnuto: pokud je funkce vypnutá, relace se nikam neukládají.',
 	'settings.main.reviewDiffName': 'Zkontrolovat diff před zápisem souborů',
 	'settings.main.reviewDiffDesc':
 		'Automaticky otevřít zobrazení diffu, když agent navrhne změny souborů, namísto nutnosti kliknout na tlačítko.',
@@ -48,6 +51,8 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.main.pluginFolderName': 'Složka doplňku',
 	'settings.main.pluginFolderDesc':
 		'Složka, do které se ukládají data doplňku. Relace agenta se nacházejí v Agent-Sessions/, vlastní prompty v Prompts/, hooky v Hooks/ a stav naplánovaných úloh v Scheduled-Tasks/.',
+	'settings.main.pluginFolderHiddenError':
+		'Složky začínající tečkou nejsou podporovány. Obsidian neindexuje skryté složky, takže plugin v nich nemůže najít své soubory. Použijte název bez počáteční tečky.',
 	'settings.main.scheduledTasksName': 'Naplánované úlohy',
 	'settings.main.lifecycleHooksName': 'Hooky životního cyklu',
 	'settings.main.mcpServersName': 'Servery MCP',
@@ -606,6 +611,8 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'agent.projectPicker.vaultRoot': '(kořen vaultu)',
 	'agent.sessionList.title': 'Relace agenta',
 	'agent.sessionList.empty': 'Nebyly nalezeny žádné relace agenta',
+	'agent.sessionList.historyOff':
+		'Historie relací je vypnutá. Nové relace se neukládají a uložené relace se otevřou bez svých zpráv. Chcete-li je ukládat a znovu otevírat, zapněte v nastavení možnost „Uchovávat historii relací“.',
 	'agent.sessionList.loadFailed': 'Nepodařilo se načíst relace agenta',
 	'agent.sessionList.filterLabel': 'Projekt:',
 	'agent.sessionList.filterAll': 'Všechny projekty',
@@ -668,6 +675,8 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 		'Není nakonfigurován žádný API klíč OpenAI. Otevřete Nastavení → Gemini Scribe a přidejte jej. Klíč získáte na platform.openai.com/api-keys',
 	'notice.main.noApiKeyAnthropic':
 		'Není nakonfigurován žádný API klíč pro Anthropic. Přidejte jej v Nastavení → Gemini Scribe. Klíč získáte na platform.claude.com/settings/keys',
+	'notice.main.noApiKeyOpenrouter':
+		'Není nakonfigurován žádný API klíč pro OpenRouter. Přidejte jej v Nastavení → Gemini Scribe. Klíč získáte na openrouter.ai/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Klíč API se nepodařilo načíst ze zabezpečeného úložiště. Zkuste jej zadat znovu v Nastavení → Gemini Scribe → Poskytovatelé → Google Gemini → Klíč API.',
 	'notice.main.initFailedConsole': 'Inicializace Gemini Scribe selhala: {error}. Podrobnosti naleznete v konzoli.',
@@ -864,6 +873,8 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'selection.emptyResponse': 'AI vrátila prázdnou odpověď. Zkuste to prosím znovu.',
 	'provider.openai.noModelSelected': 'Není vybrán žádný model OpenAI. Vyberte model v nastavení.',
 	'provider.openai.noImageData': 'OpenAI nevrátila žádná obrazová data.',
+	'provider.openrouter.noModelSelected': 'Není vybrán žádný model OpenRouter. Vyberte model v nastavení.',
+	'provider.openrouter.noImageData': 'OpenRouter nevrátil žádná obrazová data.',
 	'provider.unsupportedAttachment':
 		'{provider} podporuje pouze obrázkové přílohy; byl přijat typ {mimeType}. Pro vstup ve formátu PDF, zvuku nebo videa přepněte na poskytovatele Gemini.',
 	'provider.anthropic.noModelSelected': 'Není vybrán žádný model Anthropic. Vyberte model v nastavení.',
@@ -878,6 +889,8 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'error.openaiInvalidKey': 'Neplatný API klíč OpenAI. Zkontrolujte prosím API klíč v Nastavení → Gemini Scribe.',
 	'error.anthropicInvalidKey':
 		'Neplatný API klíč pro Anthropic. Zkontrolujte prosím API klíč v Nastavení → Gemini Scribe.',
+	'error.openrouterInvalidKey':
+		'Neplatný API klíč OpenRouter. Zkontrolujte prosím API klíč v Nastavení → Gemini Scribe.',
 	'error.modelNotOnEndpoint':
 		'Model není na tomto koncovém bodu k dispozici. Zkontrolujte prosím nastavení modelu nebo nakonfigurovanou základní URL.',
 	'error.serverUnreachable':
@@ -1027,6 +1040,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.shortLabel.ollama': 'Ollama',
 	'settings.providers.shortLabel.openai': 'OpenAI',
 	'settings.providers.shortLabel.anthropic': 'Anthropic',
+	'settings.providers.shortLabel.openrouter': 'OpenRouter',
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'Klíč API',
 	'settings.providers.apiKeyDesc': 'Uloženo v zabezpečeném úložišti Obsidianu, nikoli v datech tohoto trezoru.',
@@ -1060,7 +1074,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Použije se pro všechny funkce, které nejsou výslovně směrovány jinam.',
 	'settings.providers.privacyNoticeName': 'Soukromí',
 	'settings.providers.privacyNoticeDesc':
-		'Váš obsah obdrží pouze ti poskytovatelé, které vaše funkce skutečně využívají. Ollama uchovává požadavky na tomto zařízení, s výjimkou modelů označených jako "cloud", které přeposílá na ollama.com. Gemini, OpenAI a Anthropic odesílají požadavky na servery dané společnosti.',
+		'Váš obsah přijímají pouze ti poskytovatelé, které vaše funkce skutečně využívají. Ollama uchovává požadavky na tomto počítači, s výjimkou modelů označených jako „cloud“, které přeposílá na ollama.com. Gemini, OpenAI a Anthropic odesílají požadavky na servery dané společnosti. OpenRouter je přeposílá společnosti, která provozuje vámi vybraný model.',
 	'settings.providers.defaultMoved': '{count} funkcí bylo přesunuto k novému výchozímu poskytovateli.',
 	'settings.providers.groupOnProvider': '{group} na {provider}',
 	'settings.features.modelMissingHelp': 'Model {model} již není u tohoto poskytovatele k dispozici. Zvolte jiný.',

@@ -6,6 +6,8 @@ import type { TranslationKey } from './en';
 export const nl: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.title': 'Start een gesprek',
 	'agent.empty.description': 'Je AI-assistent die actief met je vault kan werken.',
+	'agent.empty.historyOff': 'Sessiegeschiedenis staat uit, dus dit gesprek wordt niet opgeslagen.',
+	'agent.empty.historyOffLink': 'Schakel "Sessiegeschiedenis behouden" in bij de instellingen',
 	'agent.empty.capabilitiesTitle': 'Wat kan de agent doen?',
 	'agent.empty.capability.search': 'Bestanden in je vault zoeken en lezen',
 	'agent.empty.capability.organize': 'Notities maken, wijzigen en organiseren',
@@ -26,6 +28,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (cloud)',
 	'settings.general.providerOptionAnthropic': 'Anthropic (cloud)',
+	'settings.general.providerOptionOpenrouter': 'OpenRouter (cloud)',
 	'settings.general.modelListUpdated': 'Modellijst bijgewerkt: {count} modellen.',
 	'settings.general.modelListUpdatedSingular': 'Modellijst bijgewerkt: {count} model.',
 	'settings.general.refreshSkippedOffline': 'Overgeslagen: offline',
@@ -40,7 +43,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 		'Je naam voor gebruik in systeeminstructies, zodat de AI je persoonlijk kan aanspreken in gesprekken.',
 	'settings.main.keepSessionHistoryName': 'Sessiegeschiedenis bewaren',
 	'settings.main.keepSessionHistoryDesc':
-		'Sla agent-chatsessies op als Markdown-bestanden in je vault. Sessies worden opgeslagen onder Agent-Sessions/ met automatisch gegenereerde titels.',
+		'Sla agent-chatsessies op als Markdown-bestanden in je vault. Sessies worden opgeslagen onder Agent-Sessions/ met automatisch gegenereerde titels. Standaard uitgeschakeld: wanneer dit uit staat, worden sessies nergens opgeslagen.',
 	'settings.main.reviewDiffName': 'Diff bekijken voordat bestanden worden geschreven',
 	'settings.main.reviewDiffDesc':
 		'Automatisch een diff-weergave openen wanneer de agent bestandswijzigingen voorstelt, in plaats van een knopklik te vereisen.',
@@ -48,6 +51,8 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'settings.main.pluginFolderName': 'Plug-inmap',
 	'settings.main.pluginFolderDesc':
 		'Map waarin plug-ingegevens worden opgeslagen. Agentsessies worden opgeslagen onder Agent-Sessions/, aangepaste prompts onder Prompts/, hooks onder Hooks/ en geplande taakstatussen onder Scheduled-Tasks/.',
+	'settings.main.pluginFolderHiddenError':
+		'Mappen die beginnen met een punt worden niet ondersteund. Obsidian indexeert verborgen mappen niet, waardoor de plugin zijn bestanden daar niet kan vinden. Gebruik een naam zonder punt aan het begin.',
 	'settings.main.scheduledTasksName': 'Geplande taken',
 	'settings.main.lifecycleHooksName': 'Levenscyclus-hooks',
 	'settings.main.mcpServersName': 'MCP-servers',
@@ -611,6 +616,8 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'agent.projectPicker.vaultRoot': '(vault-root)',
 	'agent.sessionList.title': 'Agent-sessies',
 	'agent.sessionList.empty': 'Geen agent-sessies gevonden',
+	'agent.sessionList.historyOff':
+		'Sessiegeschiedenis staat uit. Nieuwe sessies worden niet opgeslagen en opgeslagen sessies openen zonder hun berichten. Schakel "Sessiegeschiedenis behouden" in bij de instellingen om ze op te slaan en opnieuw te openen.',
 	'agent.sessionList.loadFailed': 'Laden van agent-sessies mislukt',
 	'agent.sessionList.filterLabel': 'Project:',
 	'agent.sessionList.filterAll': 'Alle projecten',
@@ -674,6 +681,8 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 		'Geen OpenAI-API-sleutel geconfigureerd. Open Instellingen → Gemini Scribe om er een toe te voegen. Verkrijg een sleutel op platform.openai.com/api-keys',
 	'notice.main.noApiKeyAnthropic':
 		'Geen Anthropic API-sleutel geconfigureerd. Open Instellingen → Gemini Scribe om er een toe te voegen. Vraag een sleutel aan via platform.claude.com/settings/keys',
+	'notice.main.noApiKeyOpenrouter':
+		'Geen OpenRouter-API-sleutel geconfigureerd. Ga naar Instellingen → Gemini Scribe om er een toe te voegen. Vraag een sleutel aan via openrouter.ai/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Kon je API-sleutel niet ophalen uit de veilige opslag. Probeer deze opnieuw in te voeren via Instellingen → Gemini Scribe → Providers → Google Gemini → API-sleutel.',
 	'notice.main.initFailedConsole':
@@ -869,6 +878,8 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'selection.emptyResponse': 'De AI gaf een leeg antwoord terug. Probeer het opnieuw.',
 	'provider.openai.noModelSelected': 'Geen OpenAI-model geselecteerd. Kies een model in de instellingen.',
 	'provider.openai.noImageData': 'OpenAI heeft geen afbeeldingsgegevens geretourneerd.',
+	'provider.openrouter.noModelSelected': 'Geen OpenRouter-model geselecteerd. Kies een model in de instellingen.',
+	'provider.openrouter.noImageData': 'OpenRouter heeft geen afbeeldingsgegevens geretourneerd.',
 	'provider.unsupportedAttachment':
 		'{provider} ondersteunt alleen afbeeldingsbijlagen; {mimeType} ontvangen. Schakel over naar de Gemini-provider voor PDF-, audio- of video-invoer.',
 	'provider.anthropic.noModelSelected': 'Geen Anthropic-model geselecteerd. Kies een model in de instellingen.',
@@ -884,6 +895,8 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'error.openaiInvalidKey': 'Ongeldige OpenAI API-sleutel. Controleer de API-sleutel in Instellingen → Gemini Scribe.',
 	'error.anthropicInvalidKey':
 		'Ongeldige Anthropic API-sleutel. Controleer de API-sleutel in Instellingen → Gemini Scribe.',
+	'error.openrouterInvalidKey':
+		'Ongeldige OpenRouter-API-sleutel. Controleer de API-sleutel in Instellingen → Gemini Scribe.',
 	'error.modelNotOnEndpoint':
 		'Model niet beschikbaar op dit eindpunt. Controleer je modelinstellingen of de geconfigureerde basis-URL.',
 	'error.serverUnreachable':
@@ -1031,6 +1044,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.shortLabel.ollama': 'Ollama',
 	'settings.providers.shortLabel.openai': 'OpenAI',
 	'settings.providers.shortLabel.anthropic': 'Anthropic',
+	'settings.providers.shortLabel.openrouter': 'OpenRouter',
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'API-sleutel',
 	'settings.providers.apiKeyDesc': 'Opgeslagen in de geheime opslag van Obsidian, niet in de gegevens van deze vault.',
@@ -1064,7 +1078,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Wordt gebruikt door elke functie die je niet elders hebt toegewezen.',
 	'settings.providers.privacyNoticeName': 'Privacy',
 	'settings.providers.privacyNoticeDesc':
-		'Alleen de providers die daadwerkelijk door je functies worden gebruikt, ontvangen je inhoud. Ollama bewaart verzoeken op dit apparaat, behalve voor modellen gemarkeerd als "cloud", die worden doorgestuurd naar ollama.com. Gemini, OpenAI en Anthropic sturen het verzoek naar de servers van het desbetreffende bedrijf.',
+		'Alleen de providers die je functies daadwerkelijk gebruiken, ontvangen je inhoud. Ollama houdt verzoeken op dit apparaat, behalve voor modellen gemarkeerd als "cloud", die worden doorgestuurd naar ollama.com. Gemini, OpenAI en Anthropic sturen het verzoek naar de servers van dat bedrijf. OpenRouter stuurt het door naar het bedrijf dat het door jou gekozen model aanbiedt.',
 	'settings.providers.defaultMoved': '{count} functies verplaatst naar de nieuwe standaardprovider.',
 	'settings.providers.groupOnProvider': '{group} op {provider}',
 	'settings.features.modelMissingHelp': '{model} is niet langer beschikbaar bij deze provider. Kies een andere.',

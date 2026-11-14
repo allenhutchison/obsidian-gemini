@@ -6,6 +6,8 @@ import type { TranslationKey } from './en';
 export const ru: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.title': 'Начать беседу',
 	'agent.empty.description': 'Ваш ИИ-ассистент, который может активно работать с вашим хранилищем.',
+	'agent.empty.historyOff': 'История сессий отключена, поэтому этот диалог не будет сохранён.',
+	'agent.empty.historyOffLink': 'Включите «Сохранять историю сессий» в настройках',
 	'agent.empty.capabilitiesTitle': 'Что умеет агент?',
 	'agent.empty.capability.search': 'Искать и читать файлы в вашем хранилище',
 	'agent.empty.capability.organize': 'Создавать, изменять и организовывать заметки',
@@ -26,6 +28,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (облако)',
 	'settings.general.providerOptionAnthropic': 'Anthropic (облако)',
+	'settings.general.providerOptionOpenrouter': 'OpenRouter (облачный)',
 	'settings.general.modelListUpdated': 'Список моделей обновлён: {count} моделей.',
 	'settings.general.modelListUpdatedSingular': 'Список моделей обновлён: {count} модель.',
 	'settings.general.refreshSkippedOffline': 'Пропущено: офлайн',
@@ -40,7 +43,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 		'Ваше имя, используемое в системных инструкциях, чтобы ИИ мог обращаться к вам лично в беседах.',
 	'settings.main.keepSessionHistoryName': 'Сохранять историю сессий',
 	'settings.main.keepSessionHistoryDesc':
-		'Сохранять сессии чата с агентом в виде Markdown-файлов в вашем хранилище. Сессии сохраняются в папке Agent-Sessions/ с автоматически созданными названиями.',
+		'Сохранять сессии чата агента в виде markdown-файлов в вашем хранилище. Сессии сохраняются в Agent-Sessions/ с автоматически созданными названиями. По умолчанию отключено: пока опция выключена, сессии нигде не сохраняются.',
 	'settings.main.reviewDiffName': 'Просматривать изменения перед записью файлов',
 	'settings.main.reviewDiffDesc':
 		'Автоматически открывать просмотр различий, когда агент предлагает изменения в файлах, без необходимости нажимать кнопку.',
@@ -48,6 +51,8 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.main.pluginFolderName': 'Папка плагина',
 	'settings.main.pluginFolderDesc':
 		'Папка для хранения данных плагина. Сессии агента хранятся в Agent-Sessions/, пользовательские промпты — в Prompts/, хуки — в Hooks/, состояние запланированных задач — в Scheduled-Tasks/.',
+	'settings.main.pluginFolderHiddenError':
+		'Папки, начинающиеся с точки, не поддерживаются. Obsidian не индексирует скрытые папки, поэтому плагин не сможет найти в них свои файлы. Используйте имя без точки в начале.',
 	'settings.main.scheduledTasksName': 'Запланированные задачи',
 	'settings.main.lifecycleHooksName': 'Хуки жизненного цикла',
 	'settings.main.mcpServersName': 'Серверы MCP',
@@ -611,6 +616,8 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'agent.projectPicker.vaultRoot': '(корень хранилища)',
 	'agent.sessionList.title': 'Сессии агента',
 	'agent.sessionList.empty': 'Сессии агента не найдены',
+	'agent.sessionList.historyOff':
+		'История сессий отключена. Новые сессии не сохраняются, а сохранённые открываются без сообщений. Включите «Сохранять историю сессий» в настройках, чтобы сохранять и повторно открывать их.',
 	'agent.sessionList.loadFailed': 'Не удалось загрузить сессии агента',
 	'agent.sessionList.filterLabel': 'Проект:',
 	'agent.sessionList.filterAll': 'Все проекты',
@@ -674,6 +681,8 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 		'API-ключ OpenAI не настроен. Откройте Настройки → Gemini Scribe, чтобы добавить его. Получить ключ можно на platform.openai.com/api-keys',
 	'notice.main.noApiKeyAnthropic':
 		'API-ключ Anthropic не настроен. Откройте Настройки → Gemini Scribe, чтобы добавить его. Получите ключ на platform.claude.com/settings/keys',
+	'notice.main.noApiKeyOpenrouter':
+		'API-ключ OpenRouter не настроен. Откройте «Настройки» → Gemini Scribe, чтобы добавить его. Получить ключ можно на openrouter.ai/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Не удалось получить ключ API из защищённого хранилища. Попробуйте ввести его заново в меню: Настройки → Gemini Scribe → Провайдеры → Google Gemini → Ключ API.',
 	'notice.main.initFailedConsole':
@@ -870,6 +879,8 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'selection.emptyResponse': 'ИИ вернул пустой ответ. Пожалуйста, попробуйте снова.',
 	'provider.openai.noModelSelected': 'Модель OpenAI не выбрана. Выберите модель в настройках.',
 	'provider.openai.noImageData': 'OpenAI не вернул данные изображения.',
+	'provider.openrouter.noModelSelected': 'Модель OpenRouter не выбрана. Выберите модель в настройках.',
+	'provider.openrouter.noImageData': 'OpenRouter не вернул данные изображения.',
 	'provider.unsupportedAttachment':
 		'{provider} поддерживает только вложения изображений; получено: {mimeType}. Переключитесь на провайдера Gemini для работы с PDF, аудио или видео.',
 	'provider.anthropic.noModelSelected': 'Модель Anthropic не выбрана. Выберите модель в настройках.',
@@ -884,6 +895,8 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'error.openaiInvalidKey':
 		'Неверный API-ключ OpenAI. Пожалуйста, проверьте API-ключ в меню Настройки → Gemini Scribe.',
 	'error.anthropicInvalidKey': 'Неверный API-ключ Anthropic. Проверьте API-ключ в Настройки → Gemini Scribe.',
+	'error.openrouterInvalidKey':
+		'Неверный API-ключ OpenRouter. Проверьте API-ключ в разделе «Настройки» → Gemini Scribe.',
 	'error.modelNotOnEndpoint':
 		'Модель недоступна на этом эндпоинте. Пожалуйста, проверьте настройки модели или настроенный базовый URL.',
 	'error.serverUnreachable':
@@ -1035,6 +1048,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.shortLabel.ollama': 'Ollama',
 	'settings.providers.shortLabel.openai': 'OpenAI',
 	'settings.providers.shortLabel.anthropic': 'Anthropic',
+	'settings.providers.shortLabel.openrouter': 'OpenRouter',
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'API-ключ',
 	'settings.providers.apiKeyDesc': 'Сохраняется в хранилище секретов Obsidian, а не в данных этого хранилища.',
@@ -1068,7 +1082,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Используется для всех функций, которым явно не назначен другой провайдер.',
 	'settings.providers.privacyNoticeName': 'Конфиденциальность',
 	'settings.providers.privacyNoticeDesc':
-		'Ваш контент получают только те провайдеры, которые непосредственно используются вашими функциями. Ollama обрабатывает запросы локально на этом устройстве, кроме моделей с пометкой «cloud», перенаправляемых на ollama.com. Gemini, OpenAI и Anthropic отправляют запросы на серверы соответствующих компаний.',
+		'Ваш контент передаётся только тем поставщикам, функции которых вы фактически используете. Ollama обрабатывает запросы локально на этом устройстве, за исключением моделей с пометкой «cloud», которые отправляются на ollama.com. Gemini, OpenAI и Anthropic отправляют запросы на серверы соответствующих компаний. OpenRouter перенаправляет запрос той компании, которая обслуживает выбранную вами модель.',
 	'settings.providers.defaultMoved': 'Функций перенесено на нового провайдера по умолчанию: {count}.',
 	'settings.providers.groupOnProvider': '{group} на {provider}',
 	'settings.features.modelMissingHelp': '{model} больше недоступна у этого провайдера. Выберите другую.',

@@ -6,6 +6,8 @@ import type { TranslationKey } from './en';
 export const ja: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.title': '会話を開始する',
 	'agent.empty.description': '保管庫と連携して能動的に動作するAIアシスタント。',
+	'agent.empty.historyOff': 'セッション履歴が無効になっているため、この会話は保存されません。',
+	'agent.empty.historyOffLink': '設定で「セッション履歴を保持」を有効にする',
 	'agent.empty.capabilitiesTitle': 'エージェントにできること',
 	'agent.empty.capability.search': '保管庫内のファイルを検索・読み込み',
 	'agent.empty.capability.organize': 'ノートの作成、変更、整理',
@@ -27,6 +29,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (クラウド)',
 	'settings.general.providerOptionAnthropic': 'Anthropic (クラウド)',
+	'settings.general.providerOptionOpenrouter': 'OpenRouter (クラウド)',
 	'settings.general.modelListUpdated': 'モデルリストを更新しました: {count}個のモデル。',
 	'settings.general.modelListUpdatedSingular': 'モデルリストを更新しました: {count}個のモデル。',
 	'settings.general.refreshSkippedOffline': 'スキップ: オフライン',
@@ -40,7 +43,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.main.yourNameDesc': '会話内でAIがあなたに呼びかけるために、システム指示で使用される名前。',
 	'settings.main.keepSessionHistoryName': 'セッション履歴を保持',
 	'settings.main.keepSessionHistoryDesc':
-		'エージェントのチャットセッションをMarkdownファイルとして保管庫に保存します。セッションは自動生成されたタイトルでAgent-Sessions/配下に保存されます。',
+		'エージェントのチャットセッションをMarkdownファイルとして保管庫に保存します。セッションは自動生成されたタイトルで Agent-Sessions/ 配下に保存されます。デフォルトはオフです。オフの間はセッションはどこにも保存されません。',
 	'settings.main.reviewDiffName': 'ファイル書き込み前に差分を確認',
 	'settings.main.reviewDiffDesc':
 		'ボタンのクリックを必要とせず、エージェントがファイルの変更を提案した際に差分ビューを自動的に開きます。',
@@ -48,6 +51,8 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.main.pluginFolderName': 'プラグインフォルダー',
 	'settings.main.pluginFolderDesc':
 		'プラグインデータが保存されるフォルダー。エージェントセッションはAgent-Sessions/、カスタムプロンプトはPrompts/、フックはHooks/、スケジュールされたタスクの状態はScheduled-Tasks/に保存されます。',
+	'settings.main.pluginFolderHiddenError':
+		'ドットで始まるフォルダーはサポートされていません。Obsidianは隠しフォルダーのインデックスを作成しないため、プラグインがそのファイルを見つけることができません。先頭にドットがない名前を使用してください。',
 	'settings.main.scheduledTasksName': 'スケジュールされたタスク',
 	'settings.main.lifecycleHooksName': 'ライフサイクルフック',
 	'settings.main.mcpServersName': 'MCPサーバー',
@@ -608,6 +613,8 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'agent.projectPicker.vaultRoot': '(保管庫のルート)',
 	'agent.sessionList.title': 'エージェントセッション',
 	'agent.sessionList.empty': 'エージェントセッションが見つかりません',
+	'agent.sessionList.historyOff':
+		'セッション履歴が無効になっています。新しいセッションは保存されず、保存されたセッションを開いてもメッセージは表示されません。保存して再度開くには、設定で「セッション履歴を保持」を有効にしてください。',
 	'agent.sessionList.loadFailed': 'エージェントセッションの読み込みに失敗しました',
 	'agent.sessionList.filterLabel': 'プロジェクト:',
 	'agent.sessionList.filterAll': 'すべてのプロジェクト',
@@ -671,6 +678,8 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 		'OpenAI APIキーが設定されていません。「設定」→「Gemini Scribe」を開いて追加してください。キーは platform.openai.com/api-keys で取得できます。',
 	'notice.main.noApiKeyAnthropic':
 		'Anthropic APIキーが設定されていません。設定 → Gemini Scribe を開いて追加してください。キーは platform.claude.com/settings/keys で取得できます。',
+	'notice.main.noApiKeyOpenrouter':
+		'OpenRouter APIキーが設定されていません。設定 → Gemini Scribe を開いて追加してください。キーの取得先: openrouter.ai/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'安全なストレージからAPIキーを取得できませんでした。設定 → Gemini Scribe → プロバイダー → Google Gemini → APIキー で再入力してください。',
 	'notice.main.initFailedConsole': 'Gemini Scribeの初期化に失敗しました: {error}。詳細はコンソールを確認してください。',
@@ -865,6 +874,8 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'selection.emptyResponse': 'AIから空の応答が返されました。もう一度お試しください。',
 	'provider.openai.noModelSelected': 'OpenAIモデルが選択されていません。設定でモデルを選択してください。',
 	'provider.openai.noImageData': 'OpenAIから画像データが返されませんでした。',
+	'provider.openrouter.noModelSelected': 'OpenRouterモデルが選択されていません。設定でモデルを選択してください。',
+	'provider.openrouter.noImageData': 'OpenRouterから画像データが返されませんでした。',
 	'provider.unsupportedAttachment':
 		'{provider}は画像の添付のみに対応しています（受信した形式: {mimeType}）。PDF、音声、動画を入力するにはGeminiプロバイダーに切り替えてください。',
 	'provider.anthropic.noModelSelected': 'Anthropicモデルが選択されていません。設定でモデルを選択してください。',
@@ -878,6 +889,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'error.unknown': '不明なエラーが発生しました',
 	'error.openaiInvalidKey': '無効なOpenAI APIキーです。設定 → Gemini Scribe でAPIキーを確認してください。',
 	'error.anthropicInvalidKey': '無効なAnthropic APIキーです。設定 → Gemini Scribe でAPIキーを確認してください。',
+	'error.openrouterInvalidKey': '無効なOpenRouter APIキーです。設定 → Gemini Scribe でAPIキーを確認してください。',
 	'error.modelNotOnEndpoint':
 		'このエンドポイントではモデルを利用できません。モデルの設定または設定されたベースURLを確認してください。',
 	'error.serverUnreachable':
@@ -1021,6 +1033,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.shortLabel.ollama': 'Ollama',
 	'settings.providers.shortLabel.openai': 'OpenAI',
 	'settings.providers.shortLabel.anthropic': 'Anthropic',
+	'settings.providers.shortLabel.openrouter': 'OpenRouter',
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'APIキー',
 	'settings.providers.apiKeyDesc': 'Obsidianのシークレットストレージに保存され、この保管庫のデータには保存されません。',
@@ -1054,7 +1067,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': '個別に割り当てられていないすべての機能で使用されます。',
 	'settings.providers.privacyNoticeName': 'プライバシー',
 	'settings.providers.privacyNoticeDesc':
-		'コンテンツは、機能で実際に使用されているプロバイダーにのみ送信されます。Ollamaはリクエストをこのマシン内に保持しますが、「クラウド」とマークされたモデルは ollama.com に転送されます。Gemini、OpenAI、Anthropicは各社のサーバーにリクエストを送信します。',
+		'コンテンツを受信するのは、機能で実際に使用しているプロバイダーのみです。Ollamaは「cloud」と表記されたモデル（ollama.comへ転送）を除き、リクエストをこのマシン内に留めます。Gemini、OpenAI、Anthropicは各社のサーバーにリクエストを送信します。OpenRouterは選択したモデルを提供する各社へリクエストを転送します。',
 	'settings.providers.defaultMoved': '{count}件の機能が新しいデフォルトのプロバイダーに移行しました。',
 	'settings.providers.groupOnProvider': '{group} ({provider})',
 	'settings.features.modelMissingHelp':

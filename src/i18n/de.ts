@@ -6,6 +6,8 @@ import type { TranslationKey } from './en';
 export const de: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.title': 'Unterhaltung starten',
 	'agent.empty.description': 'Dein KI-Assistent, der aktiv mit deinem Vault arbeiten kann.',
+	'agent.empty.historyOff': 'Der Sitzungsverlauf ist deaktiviert, daher wird diese Unterhaltung nicht gespeichert.',
+	'agent.empty.historyOffLink': '"Sitzungsverlauf beibehalten" in den Einstellungen aktivieren',
 	'agent.empty.capabilitiesTitle': 'Was kann der Agent tun?',
 	'agent.empty.capability.search': 'Dateien in deinem Vault suchen und lesen',
 	'agent.empty.capability.organize': 'Notizen erstellen, ändern und organisieren',
@@ -28,6 +30,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (Cloud)',
 	'settings.general.providerOptionAnthropic': 'Anthropic (Cloud)',
+	'settings.general.providerOptionOpenrouter': 'OpenRouter (Cloud)',
 	'settings.general.modelListUpdated': 'Modellliste aktualisiert: {count} Modelle.',
 	'settings.general.modelListUpdatedSingular': 'Modellliste aktualisiert: {count} Modell.',
 	'settings.general.refreshSkippedOffline': 'Übersprungen: Offline',
@@ -42,7 +45,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 		'Dein Name für Systemanweisungen, damit die KI dich in Unterhaltungen persönlich ansprechen kann.',
 	'settings.main.keepSessionHistoryName': 'Sitzungsverlauf speichern',
 	'settings.main.keepSessionHistoryDesc':
-		'Speichert Agent-Chat-Sitzungen als Markdown-Dateien in deinem Vault. Sitzungen werden unter Agent-Sessions/ mit automatisch generierten Titeln gespeichert.',
+		'Agent-Chat-Sitzungen als Markdown-Dateien in deinem Vault speichern. Sitzungen werden unter Agent-Sessions/ mit automatisch generierten Titeln gespeichert. Standardmäßig deaktiviert: Wenn deaktiviert, werden Sitzungen nirgends gespeichert.',
 	'settings.main.reviewDiffName': 'Diff vor dem Schreiben von Dateien überprüfen',
 	'settings.main.reviewDiffDesc':
 		'Öffnet automatisch eine Diff-Ansicht, wenn der Agent Dateiänderungen vorschlägt, anstatt einen Klick zu erfordern.',
@@ -50,6 +53,8 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'settings.main.pluginFolderName': 'Plugin-Ordner',
 	'settings.main.pluginFolderDesc':
 		'Ordner, in dem Plugin-Daten gespeichert werden. Agent-Sitzungen befinden sich unter Agent-Sessions/, eigene Prompts unter Prompts/, Hooks unter Hooks/, Status geplanter Aufgaben unter Scheduled-Tasks/.',
+	'settings.main.pluginFolderHiddenError':
+		'Ordner, die mit einem Punkt beginnen, werden nicht unterstützt. Obsidian indiziert versteckte Ordner nicht, daher kann das Plugin seine Dateien dort nicht finden. Verwende einen Namen ohne führenden Punkt.',
 	'settings.main.scheduledTasksName': 'Geplante Aufgaben',
 	'settings.main.lifecycleHooksName': 'Lifecycle-Hooks',
 	'settings.main.mcpServersName': 'MCP-Server',
@@ -615,6 +620,8 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'agent.projectPicker.vaultRoot': '(Vault-Root)',
 	'agent.sessionList.title': 'Agenten-Sitzungen',
 	'agent.sessionList.empty': 'Keine Agenten-Sitzungen gefunden',
+	'agent.sessionList.historyOff':
+		'Der Sitzungsverlauf ist deaktiviert. Neue Sitzungen werden nicht gespeichert und gespeicherte Sitzungen öffnen sich ohne ihre Nachrichten. Aktiviere "Sitzungsverlauf beibehalten" in den Einstellungen, um sie zu speichern und wieder zu öffnen.',
 	'agent.sessionList.loadFailed': 'Agenten-Sitzungen konnten nicht geladen werden',
 	'agent.sessionList.filterLabel': 'Projekt:',
 	'agent.sessionList.filterAll': 'Alle Projekte',
@@ -678,6 +685,8 @@ export const de: Partial<Record<TranslationKey, string>> = {
 		'Kein OpenAI-API-Schlüssel konfiguriert. Öffnen Sie die Einstellungen → Gemini Scribe, um einen hinzuzufügen. Holen Sie sich einen Schlüssel unter platform.openai.com/api-keys',
 	'notice.main.noApiKeyAnthropic':
 		'Kein Anthropic-API-Schlüssel konfiguriert. Öffne Einstellungen → Gemini Scribe, um einen hinzuzufügen. Einen Schlüssel erhältst du unter platform.claude.com/settings/keys',
+	'notice.main.noApiKeyOpenrouter':
+		'Kein OpenRouter-API-Schlüssel konfiguriert. Öffne Einstellungen → Gemini Scribe, um einen hinzuzufügen. Erhalte einen Schlüssel unter openrouter.ai/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Dein API-Schlüssel konnte nicht aus dem sicheren Speicher abgerufen werden. Versuche, ihn unter Einstellungen → Gemini Scribe → Anbieter → Google Gemini → API-Schlüssel erneut einzugeben.',
 	'notice.main.initFailedConsole':
@@ -874,6 +883,8 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'selection.emptyResponse': 'Die KI hat eine leere Antwort zurückgegeben. Bitte versuchen Sie es erneut.',
 	'provider.openai.noModelSelected': 'Kein OpenAI-Modell ausgewählt. Wählen Sie ein Modell in den Einstellungen.',
 	'provider.openai.noImageData': 'OpenAI hat keine Bilddaten zurückgegeben.',
+	'provider.openrouter.noModelSelected': 'Kein OpenRouter-Modell ausgewählt. Wähle ein Modell in den Einstellungen.',
+	'provider.openrouter.noImageData': 'OpenRouter hat keine Bilddaten zurückgegeben.',
 	'provider.unsupportedAttachment':
 		'{provider} unterstützt nur Bildanhänge; {mimeType} empfangen. Wechseln Sie zum Gemini-Provider für PDF-, Audio- oder Video-Eingaben.',
 	'provider.anthropic.noModelSelected': 'Kein Anthropic-Modell ausgewählt. Wähle ein Modell in den Einstellungen.',
@@ -890,6 +901,8 @@ export const de: Partial<Record<TranslationKey, string>> = {
 		'Ungültiger OpenAI-API-Schlüssel. Bitte überprüfe den API-Schlüssel in Einstellungen → Gemini Scribe.',
 	'error.anthropicInvalidKey':
 		'Ungültiger Anthropic-API-Schlüssel. Bitte überprüfe den API-Schlüssel in Einstellungen → Gemini Scribe.',
+	'error.openrouterInvalidKey':
+		'Ungültiger OpenRouter-API-Schlüssel. Bitte überprüfe den API-Schlüssel in Einstellungen → Gemini Scribe.',
 	'error.modelNotOnEndpoint':
 		'Modell an diesem Endpunkt nicht verfügbar. Bitte überprüfe deine Modelleinstellungen oder die konfigurierte Basis-URL.',
 	'error.serverUnreachable':
@@ -1045,6 +1058,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.shortLabel.ollama': 'Ollama',
 	'settings.providers.shortLabel.openai': 'OpenAI',
 	'settings.providers.shortLabel.anthropic': 'Anthropic',
+	'settings.providers.shortLabel.openrouter': 'OpenRouter',
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'API-Schlüssel',
 	'settings.providers.apiKeyDesc': 'Im Secret-Speicher von Obsidian gespeichert, nicht in den Daten dieses Vaults.',
@@ -1079,7 +1093,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 		'Wird für alle Funktionen verwendet, die nicht anderweitig zugewiesen wurden.',
 	'settings.providers.privacyNoticeName': 'Datenschutz',
 	'settings.providers.privacyNoticeDesc':
-		'Nur Anbieter, die deine Funktionen tatsächlich nutzen, erhalten deine Inhalte. Ollama belässt Anfragen auf diesem Gerät, mit Ausnahme von als "cloud" markierten Modellen, die an ollama.com weitergeleitet werden. Gemini, OpenAI und Anthropic senden die Anfrage an die Server des jeweiligen Unternehmens.',
+		'Nur die Anbieter, die deine Funktionen tatsächlich nutzen, erhalten deine Inhalte. Ollama behält Anfragen auf diesem Gerät, mit Ausnahme von Modellen, die als "Cloud" gekennzeichnet sind und an ollama.com weitergeleitet werden. Gemini, OpenAI und Anthropic senden die Anfrage an die Server des jeweiligen Unternehmens. OpenRouter leitet sie an das Unternehmen weiter, das das von dir ausgewählte Modell bereitstellt.',
 	'settings.providers.defaultMoved': '{count} Funktionen zum neuen Standardanbieter verschoben.',
 	'settings.providers.groupOnProvider': '{group} über {provider}',
 	'settings.features.modelMissingHelp': '{model} ist bei diesem Anbieter nicht mehr verfügbar. Wähle ein anderes aus.',

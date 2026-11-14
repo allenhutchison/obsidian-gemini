@@ -6,6 +6,8 @@ import type { TranslationKey } from './en';
 export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.title': '開始對話',
 	'agent.empty.description': '能主動與您的 vault 協作的 AI 助理。',
+	'agent.empty.historyOff': '工作階段歷程記錄已關閉，因此不會儲存此對話。',
+	'agent.empty.historyOffLink': '在設定中開啟「保留工作階段歷程記錄」',
 	'agent.empty.capabilitiesTitle': 'Agent 可以做什麼？',
 	'agent.empty.capability.search': '搜尋並讀取您 vault 中的檔案',
 	'agent.empty.capability.organize': '建立、修改與整理筆記',
@@ -26,6 +28,7 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (雲端)',
 	'settings.general.providerOptionAnthropic': 'Anthropic (雲端)',
+	'settings.general.providerOptionOpenrouter': 'OpenRouter (雲端)',
 	'settings.general.modelListUpdated': '模型清單已更新：共 {count} 個模型。',
 	'settings.general.modelListUpdatedSingular': '模型清單已更新：共 {count} 個模型。',
 	'settings.general.refreshSkippedOffline': '已略過：離線',
@@ -39,13 +42,15 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'settings.main.yourNameDesc': '用於系統提示的名稱，讓 AI 可以在對話中稱呼您。',
 	'settings.main.keepSessionHistoryName': '保留對話階段紀錄',
 	'settings.main.keepSessionHistoryDesc':
-		'將 Agent 對話階段以 Markdown 檔案儲存在您的 vault 中。對話階段將儲存於 Agent-Sessions/ 下，並自動產生標題。',
+		'將 Agent 對話工作階段儲存為 vault 中的 Markdown 檔案。工作階段將以自動產生的標題儲存在 Agent-Sessions/ 資料夾下。預設為關閉：關閉時，工作階段不會儲存於任何地方。',
 	'settings.main.reviewDiffName': '寫入檔案前檢閱差異',
 	'settings.main.reviewDiffDesc': '當 Agent 提議變更檔案時自動開啟差異檢視，無需手動點擊按鈕。',
 	'settings.main.vaultSearchIndexName': 'Vault 搜尋索引',
 	'settings.main.pluginFolderName': '外掛程式資料夾',
 	'settings.main.pluginFolderDesc':
 		'儲存外掛程式資料的資料夾。Agent 對話階段儲存於 Agent-Sessions/、自訂提示儲存於 Prompts/、Hooks 儲存於 Hooks/、排程任務狀態儲存於 Scheduled-Tasks/。',
+	'settings.main.pluginFolderHiddenError':
+		'不支援以句點開頭的資料夾。Obsidian 不會為隱藏資料夾建立索引，因此外掛無法在該處找到其檔案。請使用開頭不含句點的名稱。',
 	'settings.main.scheduledTasksName': '排程任務',
 	'settings.main.lifecycleHooksName': '生命週期 Hooks',
 	'settings.main.mcpServersName': 'MCP 伺服器',
@@ -578,6 +583,8 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'agent.projectPicker.vaultRoot': '(vault 根目錄)',
 	'agent.sessionList.title': 'Agent 工作階段',
 	'agent.sessionList.empty': '未找到 Agent 工作階段',
+	'agent.sessionList.historyOff':
+		'工作階段歷程記錄已關閉。系統不會儲存新的工作階段，且開啟已儲存的工作階段時不會載入其中的訊息。請在設定中開啟「保留工作階段歷程記錄」以儲存並重新開啟對話。',
 	'agent.sessionList.loadFailed': '無法載入 Agent 工作階段',
 	'agent.sessionList.filterLabel': '專案:',
 	'agent.sessionList.filterAll': '所有專案',
@@ -639,6 +646,8 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 		'未設定 OpenAI API 金鑰。請前往「設定」→「Gemini Scribe」以新增金鑰。請至 platform.openai.com/api-keys 取得金鑰',
 	'notice.main.noApiKeyAnthropic':
 		'未設定 Anthropic API 金鑰。請前往「設定」→「Gemini Scribe」進行新增。可在 platform.claude.com/settings/keys 取得金鑰',
+	'notice.main.noApiKeyOpenrouter':
+		'未設定 OpenRouter API 金鑰。請開啟「設定」→「Gemini Scribe」新增金鑰。可在 openrouter.ai/keys 取得金鑰',
 	'notice.main.apiKeyRetrieveFailed':
 		'無法從安全儲存空間擷取您的 API 金鑰。請嘗試前往「設定 → Gemini Scribe → 提供者 → Google Gemini → API 金鑰」重新輸入。',
 	'notice.main.initFailedConsole': 'Gemini Scribe 初始化失敗：{error}。請檢查主控台以取得詳細資訊。',
@@ -828,6 +837,8 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'selection.emptyResponse': 'AI 回傳了空白內容。請再試一次。',
 	'provider.openai.noModelSelected': '尚未選擇 OpenAI 模型。請至設定中選擇模型。',
 	'provider.openai.noImageData': 'OpenAI 未回傳圖片資料。',
+	'provider.openrouter.noModelSelected': '未選取 OpenRouter 模型。請在設定中選擇模型。',
+	'provider.openrouter.noImageData': 'OpenRouter 未傳回任何圖片資料。',
 	'provider.unsupportedAttachment':
 		'{provider} 僅支援圖片附件；接收到的格式為 {mimeType}。如需輸入 PDF、音訊或影片，請切換至 Gemini 提供者。',
 	'provider.anthropic.noModelSelected': '未選取 Anthropic 模型。請在設定中選擇模型。',
@@ -841,6 +852,7 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'error.unknown': '發生未知錯誤',
 	'error.openaiInvalidKey': '無效的 OpenAI API 金鑰。請至 設定 → Gemini Scribe 檢查 API 金鑰。',
 	'error.anthropicInvalidKey': 'Anthropic API 金鑰無效。請至「設定」→「Gemini Scribe」檢查 API 金鑰。',
+	'error.openrouterInvalidKey': '無效的 OpenRouter API 金鑰。請檢查「設定」→「Gemini Scribe」中的 API 金鑰。',
 	'error.modelNotOnEndpoint': '此端點未提供該模型。請檢查您的模型設定或配置的 Base URL。',
 	'error.serverUnreachable':
 		'無法連線至模型伺服器。如果您配置了自訂的 Base URL（如 LM Studio、MLX 等），請確保伺服器正在執行，且設定中的 Base URL 正確無誤。',
@@ -971,6 +983,7 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.shortLabel.ollama': 'Ollama',
 	'settings.providers.shortLabel.openai': 'OpenAI',
 	'settings.providers.shortLabel.anthropic': 'Anthropic',
+	'settings.providers.shortLabel.openrouter': 'OpenRouter',
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'API 金鑰',
 	'settings.providers.apiKeyDesc': '儲存於 Obsidian 的機密儲存庫中，而非儲存在此 vault 的資料中。',
@@ -1003,7 +1016,7 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': '供任何未明確路由至其他提供者的功能使用。',
 	'settings.providers.privacyNoticeName': '隱私權',
 	'settings.providers.privacyNoticeDesc':
-		'只有您功能實際使用到的提供者才會接收到您的內容。Ollama 會將請求保留在本機，但標記為「cloud」的模型除外，其會轉發至 ollama.com。Gemini、OpenAI 和 Anthropic 則會將請求傳送至該公司的伺服器。',
+		'只有您的功能實際使用的提供者才會接收您的內容。Ollama 會將請求保留在此裝置上，但標記為「cloud」的模型除外（這些模型會轉發至 ollama.com）。Gemini、OpenAI 與 Anthropic 會將請求傳送至該公司的伺服器。OpenRouter 則會將請求轉發給提供您所選模型的公司。',
 	'settings.providers.defaultMoved': '{count} 個功能已移至新的預設提供者。',
 	'settings.providers.groupOnProvider': '{group} 於 {provider}',
 	'settings.features.modelMissingHelp': '此提供者已不再提供 {model}。請選擇其他模型。',

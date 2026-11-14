@@ -6,6 +6,8 @@ import type { TranslationKey } from './en';
 export const vi: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.title': 'Bắt đầu cuộc trò chuyện',
 	'agent.empty.description': 'Trợ lý AI có thể chủ động làm việc với vault của bạn.',
+	'agent.empty.historyOff': 'Lịch sử phiên đang tắt, vì vậy cuộc trò chuyện này sẽ không được lưu.',
+	'agent.empty.historyOffLink': 'Bật "Lưu lịch sử phiên" trong cài đặt',
 	'agent.empty.capabilitiesTitle': 'Agent có thể làm gì?',
 	'agent.empty.capability.search': 'Tìm kiếm và đọc các tập tin trong vault của bạn',
 	'agent.empty.capability.organize': 'Tạo, sửa đổi và sắp xếp các ghi chú',
@@ -27,6 +29,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.general.providerOptionOllama': 'Ollama',
 	'settings.general.providerOptionOpenai': 'OpenAI (đám mây)',
 	'settings.general.providerOptionAnthropic': 'Anthropic (đám mây)',
+	'settings.general.providerOptionOpenrouter': 'OpenRouter (đám mây)',
 	'settings.general.modelListUpdated': 'Đã cập nhật danh sách mô hình: {count} mô hình.',
 	'settings.general.modelListUpdatedSingular': 'Đã cập nhật danh sách mô hình: {count} mô hình.',
 	'settings.general.refreshSkippedOffline': 'Đã bỏ qua: ngoại tuyến',
@@ -41,7 +44,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 		'Tên của bạn được sử dụng trong chỉ dẫn hệ thống để AI có thể xưng hô với bạn trong cuộc trò chuyện.',
 	'settings.main.keepSessionHistoryName': 'Lưu lịch sử phiên',
 	'settings.main.keepSessionHistoryDesc':
-		'Lưu các phiên trò chuyện agent dưới dạng tệp markdown trong vault của bạn. Các phiên được lưu trong Agent-Sessions/ với tiêu đề được tạo tự động.',
+		'Lưu các phiên trò chuyện của tác tử dưới dạng tệp markdown trong vault của bạn. Các phiên được lưu trong Agent-Sessions/ với tiêu đề được tạo tự động. Mặc định tắt: khi tắt, các phiên sẽ không được lưu ở bất kỳ đâu.',
 	'settings.main.reviewDiffName': 'Xem lại khác biệt trước khi ghi tệp',
 	'settings.main.reviewDiffDesc':
 		'Tự động mở chế độ xem khác biệt khi agent đề xuất thay đổi tệp, thay vì yêu cầu nhấp nút.',
@@ -49,6 +52,8 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.main.pluginFolderName': 'Thư mục plugin',
 	'settings.main.pluginFolderDesc':
 		'Thư mục nơi lưu trữ dữ liệu plugin. Các phiên agent nằm trong Agent-Sessions/, lời nhắc tùy chỉnh trong Prompts/, hook trong Hooks/, trạng thái tác vụ theo lịch trong Scheduled-Tasks/.',
+	'settings.main.pluginFolderHiddenError':
+		'Không hỗ trợ các thư mục bắt đầu bằng dấu chấm. Obsidian không lập chỉ mục các thư mục ẩn, vì vậy plugin không thể tìm thấy tệp của nó ở đó. Hãy dùng tên không có dấu chấm ở đầu.',
 	'settings.main.scheduledTasksName': 'Tác vụ theo lịch',
 	'settings.main.lifecycleHooksName': 'Hook vòng đời',
 	'settings.main.mcpServersName': 'Máy chủ MCP',
@@ -607,6 +612,8 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'agent.projectPicker.vaultRoot': '(gốc vault)',
 	'agent.sessionList.title': 'Các phiên Agent',
 	'agent.sessionList.empty': 'Không tìm thấy phiên Agent nào',
+	'agent.sessionList.historyOff':
+		'Lịch sử phiên đang tắt. Các phiên mới không được lưu và các phiên đã lưu sẽ mở mà không có tin nhắn. Bật "Lưu lịch sử phiên" trong cài đặt để lưu và mở lại chúng.',
 	'agent.sessionList.loadFailed': 'Không thể tải các phiên Agent',
 	'agent.sessionList.filterLabel': 'Dự án:',
 	'agent.sessionList.filterAll': 'Tất cả dự án',
@@ -669,6 +676,8 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 		'Chưa cấu hình API key OpenAI. Mở Cài đặt → Gemini Scribe để thêm. Lấy key tại platform.openai.com/api-keys',
 	'notice.main.noApiKeyAnthropic':
 		'Chưa cấu hình khóa API Anthropic. Mở Cài đặt → Gemini Scribe để thêm. Lấy khóa tại platform.claude.com/settings/keys',
+	'notice.main.noApiKeyOpenrouter':
+		'Chưa cấu hình khóa API OpenRouter. Mở Cài đặt → Gemini Scribe để thêm. Lấy khóa tại openrouter.ai/keys',
 	'notice.main.apiKeyRetrieveFailed':
 		'Không thể lấy khóa API từ bộ lưu trữ an toàn. Hãy thử nhập lại trong Cài đặt → Gemini Scribe → Nhà cung cấp → Google Gemini → Khóa API.',
 	'notice.main.initFailedConsole': 'Gemini Scribe không thể khởi tạo: {error}. Kiểm tra console để biết thêm chi tiết.',
@@ -863,6 +872,8 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'selection.emptyResponse': 'AI đã trả về một phản hồi trống. Vui lòng thử lại.',
 	'provider.openai.noModelSelected': 'Chưa chọn mô hình OpenAI nào. Hãy chọn một mô hình trong phần cài đặt.',
 	'provider.openai.noImageData': 'OpenAI không trả về dữ liệu hình ảnh nào.',
+	'provider.openrouter.noModelSelected': 'Chưa chọn mô hình OpenRouter nào. Hãy chọn một mô hình trong cài đặt.',
+	'provider.openrouter.noImageData': 'OpenRouter không trả về dữ liệu hình ảnh nào.',
 	'provider.unsupportedAttachment':
 		'{provider} chỉ hỗ trợ tệp đính kèm hình ảnh; đã nhận {mimeType}. Chuyển sang nhà cung cấp Gemini để dùng đầu vào là PDF, âm thanh hoặc video.',
 	'provider.anthropic.noModelSelected': 'Chưa chọn mô hình Anthropic nào. Hãy chọn một mô hình trong cài đặt.',
@@ -877,6 +888,8 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'error.openaiInvalidKey': 'API key OpenAI không hợp lệ. Vui lòng kiểm tra API key trong Cài đặt → Gemini Scribe.',
 	'error.anthropicInvalidKey':
 		'Khóa API Anthropic không hợp lệ. Vui lòng kiểm tra khóa API trong Cài đặt → Gemini Scribe.',
+	'error.openrouterInvalidKey':
+		'Khóa API OpenRouter không hợp lệ. Vui lòng kiểm tra khóa API trong Cài đặt → Gemini Scribe.',
 	'error.modelNotOnEndpoint':
 		'Mô hình không khả dụng trên endpoint này. Vui lòng kiểm tra cài đặt mô hình hoặc URL cơ sở đã cấu hình.',
 	'error.serverUnreachable':
@@ -1024,6 +1037,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.shortLabel.ollama': 'Ollama',
 	'settings.providers.shortLabel.openai': 'OpenAI',
 	'settings.providers.shortLabel.anthropic': 'Anthropic',
+	'settings.providers.shortLabel.openrouter': 'OpenRouter',
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'Khóa API',
 	'settings.providers.apiKeyDesc':
@@ -1057,7 +1071,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Được dùng bởi bất kỳ tính năng nào chưa được định tuyến đến nơi khác.',
 	'settings.providers.privacyNoticeName': 'Quyền riêng tư',
 	'settings.providers.privacyNoticeDesc':
-		'Chỉ những nhà cung cấp mà các tính năng của bạn thực sự sử dụng mới nhận được nội dung của bạn. Ollama giữ các yêu cầu trên máy này, ngoại trừ các mô hình được đánh dấu "cloud" sẽ được chuyển tiếp đến ollama.com. Gemini, OpenAI và Anthropic sẽ gửi yêu cầu đến máy chủ của các công ty đó.',
+		'Chỉ các nhà cung cấp mà tính năng của bạn thực sự sử dụng mới nhận được nội dung của bạn. Ollama giữ các yêu cầu trên máy này, ngoại trừ các mô hình được đánh dấu "cloud", vốn sẽ được chuyển tiếp đến ollama.com. Gemini, OpenAI và Anthropic gửi yêu cầu đến máy chủ của công ty đó. OpenRouter chuyển tiếp yêu cầu đến công ty cung cấp mô hình bạn chọn.',
 	'settings.providers.defaultMoved': 'Đã chuyển {count} tính năng sang nhà cung cấp mặc định mới.',
 	'settings.providers.groupOnProvider': '{group} trên {provider}',
 	'settings.features.modelMissingHelp': '{model} không còn khả dụng từ nhà cung cấp này. Hãy chọn mô hình khác.',
