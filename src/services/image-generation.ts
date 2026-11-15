@@ -60,7 +60,7 @@ export class ImageGeneration {
 		taskManager.submit('image-generation', label, async (isCancelled) => {
 			if (isCancelled()) return undefined;
 
-			const base64Data = await this.client.generateImage(prompt, resolveFeatureModel(this.plugin.settings, 'imageGen'));
+			const base64Data = await this.client.generateImage(prompt, this.imageModel());
 			if (isCancelled()) return undefined;
 
 			const imagePath = await this.saveImageToVault(base64Data, prompt);
@@ -84,7 +84,7 @@ export class ImageGeneration {
 	): Promise<void> {
 		try {
 			new Notice(t('notice.image.generating'));
-			const base64Data = await this.client.generateImage(prompt, resolveFeatureModel(this.plugin.settings, 'imageGen'));
+			const base64Data = await this.client.generateImage(prompt, this.imageModel());
 			const imagePath = await this.saveImageToVault(base64Data, prompt);
 			activeView.editor.replaceRange(`![[${imagePath}]]`, cursor);
 			new Notice(t('notice.image.inserted'));
@@ -143,6 +143,19 @@ export class ImageGeneration {
 	}
 
 	/**
+	 * The model for image requests. Throws before any request when none is
+	 * available (a discovered model list with no image model leaves the role
+	 * default empty), rather than sending `model: ''` to the API.
+	 */
+	private imageModel(): string {
+		const model = resolveFeatureModel(this.plugin.settings, 'imageGen');
+		if (!model) {
+			throw new Error('No image generation model is available. Choose one on the Image generation row in settings.');
+		}
+		return model;
+	}
+
+	/**
 	 * Generate an image and return the file path.
 	 * Used by the agent tool.
 	 *
@@ -153,7 +166,7 @@ export class ImageGeneration {
 	async generateImage(prompt: string, outputPath?: string): Promise<string> {
 		try {
 			// Generate the image
-			const base64Data = await this.client.generateImage(prompt, resolveFeatureModel(this.plugin.settings, 'imageGen'));
+			const base64Data = await this.client.generateImage(prompt, this.imageModel());
 
 			// Save the image to vault
 			return await this.saveImageToVault(base64Data, prompt, outputPath);

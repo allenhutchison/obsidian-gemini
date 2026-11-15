@@ -74,6 +74,11 @@ export class GeminiModelsService {
 		return this.catalog.lastProbe;
 	}
 
+	/** Non-secret identity of the configured endpoint (base URL + key hash). */
+	get endpointKey(): string {
+		return this.currentEndpoint().key;
+	}
+
 	async getModels(forceRefresh = false): Promise<GeminiModel[]> {
 		// Nothing to ask without a key. Offline, `requestUrl` can hang rather than
 		// fail fast, so don't start a request that can only time out.

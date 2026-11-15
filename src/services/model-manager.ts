@@ -132,7 +132,15 @@ export class ModelManager {
 	 * `verifiedProviders()` keeps a fallback list from resetting saved choices.
 	 */
 	async updateModels(options: ModelUpdateOptions = {}): Promise<ModelUpdateOutcome> {
-		this.updateGlobalModelsList(await this.collectActiveModels(options.forceRefresh));
+		// A sync whose Gemini key or base URL changed while it was collecting holds
+		// another endpoint's list; installing or reconciling it would judge the
+		// current endpoint's saved models against the wrong catalog.
+		const endpointBefore = this.geminiModelsService.endpointKey;
+		const collected = await this.collectActiveModels(options.forceRefresh);
+		if (this.geminiModelsService.endpointKey !== endpointBefore) {
+			return { updatedSettings: this.plugin.settings, settingsChanged: false, changedSettingsInfo: [] };
+		}
+		this.updateGlobalModelsList(collected);
 		const result = getUpdatedFeatureRoutes(
 			this.plugin.settings.features,
 			this.plugin.settings.providerModelMemory,

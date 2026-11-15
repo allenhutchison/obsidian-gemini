@@ -183,6 +183,35 @@ describe('ModelManager', () => {
 		});
 	});
 
+	describe('updateModels when the Gemini endpoint changes mid-sync', () => {
+		it('skips installing and reconciling the stale list', async () => {
+			const plugin = {
+				...mockPlugin,
+				apiKey: 'key-a',
+				settings: {
+					...mockPlugin.settings,
+					features: { chat: { provider: 'gemini', model: 'gemini-only-on-b' } },
+					providerModelMemory: {},
+				},
+			};
+			mockedRequestUrl.mockReset();
+			mockedRequestUrl.mockImplementation(async () => {
+				plugin.apiKey = 'key-b';
+				return {
+					status: 200,
+					json: { models: [{ name: 'models/gemini-flash-latest', supportedGenerationMethods: ['generateContent'] }] },
+				};
+			});
+			const before = [{ value: 'before', label: 'Before' }];
+			setGeminiModels(before);
+
+			const result = await new ModelManager(plugin).updateModels();
+
+			expect(result.settingsChanged).toBe(false);
+			expect(GEMINI_MODELS).toEqual(before);
+		});
+	});
+
 	describe('initialize', () => {
 		it('should sync global GEMINI_MODELS with provider', async () => {
 			setGeminiModels([]);
