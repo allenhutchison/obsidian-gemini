@@ -144,19 +144,17 @@ export function getDefaultModelForRole(role: ModelRole, provider: ModelProvider 
 		return '';
 	}
 
-	// A discovered Gemini list can legitimately lack an image model (a key or
-	// proxy that serves none). Leave the image role unset rather than failing
-	// the whole reconciliation pass.
-	if (role === 'image') {
+	// A discovered Gemini list can legitimately lack a model for a role (a key
+	// or proxy that serves only image models, or no image model). Leave the
+	// role unset rather than failing the whole reconciliation pass.
+	if (GEMINI_MODELS.some((m) => getModelProvider(m) === provider)) {
 		return '';
 	}
 
-	// Gemini list should never be empty (the built-in fallback is shipped). If it is,
-	// surface the configuration problem rather than falling through to
-	// `GEMINI_MODELS[0]` — when both providers populate that global,
-	// `GEMINI_MODELS[0]` could be an Ollama entry and we'd return a
-	// cross-provider model name as the Gemini default.
-	throw new Error('CRITICAL: GEMINI_MODELS array is empty. Please configure available models.');
+	// The Gemini list should never be empty (the built-in fallback is shipped).
+	// If it is, surface the configuration problem rather than falling through to
+	// `GEMINI_MODELS[0]`, which could be another provider's model.
+	throw new Error('CRITICAL: no Gemini models are loaded. Please configure available models.');
 }
 
 /**

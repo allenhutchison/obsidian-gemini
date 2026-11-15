@@ -83,13 +83,13 @@ describe('getDefaultModelForRole', () => {
 	it('should throw an error if GEMINI_MODELS is empty', () => {
 		setTestModels([]); // Make GEMINI_MODELS empty
 		expect(() => getDefaultModelForRole('chat')).toThrow(
-			'CRITICAL: GEMINI_MODELS array is empty. Please configure available models.'
+			'CRITICAL: no Gemini models are loaded. Please configure available models.'
 		);
 	});
 
 	// Ollama and OpenAI models both load lazily (daemon /api/tags, /v1/models),
 	// so an empty candidate list is a real, non-error state for either — unlike
-	// the bundled Gemini list, which should never be empty.
+	// the built-in Gemini fallback, which should never be empty.
 	it('should return an empty string for ollama/openai when no models are registered yet', () => {
 		setTestModels([]);
 		expect(getDefaultModelForRole('chat', 'ollama')).toBe('');
@@ -174,6 +174,21 @@ describe('getDefaultModelForRole without a Gemini image model', () => {
 		setGeminiModels([{ value: 'gemini-flash-latest', label: 'Flash', defaultForRoles: ['chat'] }]);
 		expect(getDefaultModelForRole('image', 'gemini')).toBe('');
 		expect(getDefaultModelForRole('chat', 'gemini')).toBe('gemini-flash-latest');
+	});
+
+	it('leaves text roles unset instead of throwing for an image-only list', () => {
+		setGeminiModels([
+			{
+				value: 'gemini-2.5-flash-image',
+				label: 'Nano Banana',
+				supportsImageGeneration: true,
+				defaultForRoles: ['image'],
+			},
+		]);
+		for (const role of ['chat', 'summary', 'rewrite', 'completions'] as const) {
+			expect(getDefaultModelForRole(role, 'gemini')).toBe('');
+		}
+		expect(getDefaultModelForRole('image', 'gemini')).toBe('gemini-2.5-flash-image');
 	});
 });
 
