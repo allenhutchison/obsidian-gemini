@@ -124,31 +124,27 @@ export class ModelManager {
 
 	/**
 	 * Update the global GEMINI_MODELS list from every active provider and fix any stale settings.
+	 *
+	 * The collected list is always installed (labels, context windows and other
+	 * metadata can change under the same ids), and reconciliation always runs:
+	 * `initialize()` has usually installed the same list already, so gating it on
+	 * a change would mean a saved model the API no longer lists is never fixed.
+	 * `verifiedProviders()` keeps a fallback list from resetting saved choices.
 	 */
 	async updateModels(options: ModelUpdateOptions = {}): Promise<ModelUpdateOutcome> {
-		const allModels = await this.collectActiveModels(options.forceRefresh);
-		const previousModels = this.getCurrentGeminiModels();
-
-		const hasChanges = this.detectModelChanges(allModels, previousModels);
-
-		if (hasChanges) {
-			this.updateGlobalModelsList(allModels);
-			const result = getUpdatedFeatureRoutes(
-				this.plugin.settings.features,
-				this.plugin.settings.providerModelMemory,
-				this.verifiedProviders()
-			);
-			return {
-				updatedSettings: { ...this.plugin.settings, features: result.features, providerModelMemory: result.memory },
-				settingsChanged: result.changed,
-				changedSettingsInfo: result.info,
-			};
+		this.updateGlobalModelsList(await this.collectActiveModels(options.forceRefresh));
+		const result = getUpdatedFeatureRoutes(
+			this.plugin.settings.features,
+			this.plugin.settings.providerModelMemory,
+			this.verifiedProviders()
+		);
+		if (!result.changed) {
+			return { updatedSettings: this.plugin.settings, settingsChanged: false, changedSettingsInfo: [] };
 		}
-
 		return {
-			updatedSettings: this.plugin.settings,
-			settingsChanged: false,
-			changedSettingsInfo: [],
+			updatedSettings: { ...this.plugin.settings, features: result.features, providerModelMemory: result.memory },
+			settingsChanged: true,
+			changedSettingsInfo: result.info,
 		};
 	}
 
@@ -192,39 +188,11 @@ export class ModelManager {
 	}
 
 	/**
-	 * Get the current GEMINI_MODELS array.
-	 */
-	private getCurrentGeminiModels(): GeminiModel[] {
-		return modelsModule.GEMINI_MODELS || [];
-	}
-
-	/**
 	 * Update the global GEMINI_MODELS array.
 	 */
 	private updateGlobalModelsList(newModels: GeminiModel[]): void {
 		if (modelsModule.setGeminiModels) {
 			modelsModule.setGeminiModels(newModels);
 		}
-	}
-
-	/**
-	 * Detect if there are changes between current and previous models.
-	 */
-	private detectModelChanges(current: GeminiModel[], previous: GeminiModel[]): boolean {
-		if (current.length !== previous.length) {
-			return true;
-		}
-
-		const currentIds = new Set(current.map((m) => m.value));
-		const previousIds = new Set(previous.map((m) => m.value));
-
-		return !this.areSetsEqual(currentIds, previousIds);
-	}
-
-	/**
-	 * Check if two sets are equal.
-	 */
-	private areSetsEqual<T>(set1: Set<T>, set2: Set<T>): boolean {
-		return set1.size === set2.size && [...set1].every((item) => set2.has(item));
 	}
 }

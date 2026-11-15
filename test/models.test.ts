@@ -159,6 +159,24 @@ describe('getDefaultModelForRole', () => {
 	});
 });
 
+describe('getDefaultModelForRole without a Gemini image model', () => {
+	let originalModels: GeminiModel[];
+
+	beforeEach(() => {
+		originalModels = [...GEMINI_MODELS];
+	});
+
+	afterEach(() => {
+		setGeminiModels(originalModels);
+	});
+
+	it('leaves the image role unset instead of throwing', () => {
+		setGeminiModels([{ value: 'gemini-flash-latest', label: 'Flash', defaultForRoles: ['chat'] }]);
+		expect(getDefaultModelForRole('image', 'gemini')).toBe('');
+		expect(getDefaultModelForRole('chat', 'gemini')).toBe('gemini-flash-latest');
+	});
+});
+
 describe('built-in Gemini fallback list', () => {
 	it('never ships a retired model', () => {
 		const builtInIds = new Set(DEFAULT_GEMINI_MODELS.map((m) => m.value));

@@ -81,13 +81,60 @@ describe('GeminiModelsService', () => {
 		expect(svc.lastProbe).toBeNull();
 	});
 
-	it('serves the last persisted list when ListModels fails', async () => {
-		mockedRequestUrl.mockResolvedValue({ status: 500, json: {} });
-		const cached = [{ value: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash' }];
-		const svc = new GeminiModelsService(buildPlugin('k', { remoteModelCache: { models: cached, timestamp: 1 } }));
+	it('serves the last persisted list for the same key when ListModels fails', async () => {
+		const plugin = buildPlugin('k');
+		mockedRequestUrl.mockResolvedValueOnce(listResponse(['gemini-3.8-flash']));
+		await new GeminiModelsService(plugin).getModels();
 
-		expect(await svc.getModels()).toEqual(cached);
+		mockedRequestUrl.mockResolvedValue({ status: 500, json: {} });
+		const svc = new GeminiModelsService(plugin);
+		expect((await svc.getModels()).map((m) => m.value)).toEqual(['gemini-3.8-flash']);
 		expect(svc.lastProbe).toBe('unreachable');
+	});
+
+	it('does not serve a list persisted for another key or base URL', async () => {
+		const plugin = buildPlugin('key-a');
+		mockedRequestUrl.mockResolvedValueOnce(listResponse(['gemini-3.8-flash']));
+		await new GeminiModelsService(plugin).getModels();
+		expect(plugin.settings.remoteModelCache.endpoint).not.toContain('key-a');
+
+		mockedRequestUrl.mockResolvedValue({ status: 500, json: {} });
+		plugin.apiKey = 'key-b';
+		expect(await new GeminiModelsService(plugin).getModels()).toEqual(DEFAULT_GEMINI_MODELS);
+
+		plugin.apiKey = 'key-a';
+		plugin.settings.customBaseUrl = 'https://proxy.example';
+		expect(await new GeminiModelsService(plugin).getModels()).toEqual(DEFAULT_GEMINI_MODELS);
+	});
+
+	it('uses a list persisted without an endpoint only while no key is set', async () => {
+		const cached = [{ value: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash' }];
+		mockedRequestUrl.mockResolvedValue({ status: 500, json: {} });
+
+		const keyless = new GeminiModelsService(buildPlugin('', { remoteModelCache: { models: cached, timestamp: 1 } }));
+		expect(await keyless.getModels()).toEqual(cached);
+
+		const keyed = new GeminiModelsService(buildPlugin('k', { remoteModelCache: { models: cached, timestamp: 1 } }));
+		expect(await keyed.getModels()).toEqual(DEFAULT_GEMINI_MODELS);
+	});
+
+	it('treats a repeated page token as a failure', async () => {
+		mockedRequestUrl.mockResolvedValue(listResponse(['gemini-3.8-flash'], 'same-token'));
+		const svc = new GeminiModelsService(buildPlugin());
+
+		expect(await svc.getModels()).toEqual(DEFAULT_GEMINI_MODELS);
+		expect(svc.lastProbe).toBe('unreachable');
+	});
+
+	it('treats a list that never stops paging as a failure', async () => {
+		let page = 0;
+		mockedRequestUrl.mockImplementation(async () => listResponse(['gemini-3.8-flash'], `token-${page++}`));
+		const plugin = buildPlugin();
+		const svc = new GeminiModelsService(plugin);
+
+		expect(await svc.getModels()).toEqual(DEFAULT_GEMINI_MODELS);
+		expect(svc.lastProbe).toBe('unreachable');
+		expect(plugin.saveData).not.toHaveBeenCalled();
 	});
 
 	it('serves the built-in list when ListModels fails and nothing was persisted', async () => {

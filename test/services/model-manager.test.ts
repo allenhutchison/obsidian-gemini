@@ -158,6 +158,31 @@ describe('ModelManager', () => {
 		});
 	});
 
+	describe('updateModels after initialize', () => {
+		it('still reconciles a stale saved model when the list is unchanged', async () => {
+			mockedRequestUrl.mockReset();
+			mockedRequestUrl.mockResolvedValue({
+				status: 200,
+				json: { models: [{ name: 'models/gemini-flash-latest', supportedGenerationMethods: ['generateContent'] }] },
+			});
+			const plugin = {
+				...mockPlugin,
+				settings: {
+					...mockPlugin.settings,
+					features: { chat: { provider: 'gemini', model: 'gemini-gone' } },
+					providerModelMemory: {},
+				},
+			};
+			const manager = new ModelManager(plugin);
+			await manager.initialize();
+
+			const result = await manager.updateModels();
+
+			expect(result.settingsChanged).toBe(true);
+			expect(result.updatedSettings.features.chat.model).toBe('gemini-flash-latest');
+		});
+	});
+
 	describe('initialize', () => {
 		it('should sync global GEMINI_MODELS with provider', async () => {
 			setGeminiModels([]);

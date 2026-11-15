@@ -79,7 +79,8 @@ export interface ObsidianGeminiSettings {
 	hooksEnabled: boolean;
 	// Last Gemini model list fetched from ListModels (managed by GeminiModelsService);
 	// served as the fallback when the API can't be reached
-	remoteModelCache?: { models: GeminiModel[]; timestamp: number };
+	// (endpoint: non-secret base-URL + key-hash fingerprint the list came from)
+	remoteModelCache?: { models: GeminiModel[]; timestamp: number; endpoint?: string };
 	/**
 	 * Schema version for the settings-field shape, keyed off by
 	 * `migrateToFeatureRouting` (`src/utils/settings-migrations.ts`). `1` is

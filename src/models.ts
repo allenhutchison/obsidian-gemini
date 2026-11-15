@@ -144,6 +144,13 @@ export function getDefaultModelForRole(role: ModelRole, provider: ModelProvider 
 		return '';
 	}
 
+	// A discovered Gemini list can legitimately lack an image model (a key or
+	// proxy that serves none). Leave the image role unset rather than failing
+	// the whole reconciliation pass.
+	if (role === 'image') {
+		return '';
+	}
+
 	// Gemini list should never be empty (the built-in fallback is shipped). If it is,
 	// surface the configuration problem rather than falling through to
 	// `GEMINI_MODELS[0]` — when both providers populate that global,

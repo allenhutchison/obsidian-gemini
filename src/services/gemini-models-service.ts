@@ -8,12 +8,27 @@ import { CachedModelCatalog, joinBaseUrl, type CatalogEndpoint } from './remote-
 const GEMINI_API_BASE_URL = 'https://generativelanguage.googleapis.com';
 /** ListModels caps pages at 1000; pagination still runs in case that changes. */
 const PAGE_SIZE = 1000;
-/** Guards against a proxy that echoes the same page token forever. */
+/** Guards against a proxy that never stops paging; reaching it is an error, not a short list. */
 const MAX_PAGES = 10;
 
 interface GeminiListModelsResponse {
 	models?: GeminiListModelsEntry[];
 	nextPageToken?: string;
+}
+
+/**
+ * A non-secret fingerprint of the endpoint a list came from (base URL plus a
+ * hash of the key), stored with the persisted list so a list fetched for one
+ * key or proxy is never served as the fallback for another.
+ */
+function endpointFingerprint(baseUrl: string, apiKey: string): string {
+	// FNV-1a: not a security boundary, only enough to tell two keys apart.
+	let hash = 0x811c9dc5;
+	for (let i = 0; i < apiKey.length; i++) {
+		hash ^= apiKey.charCodeAt(i);
+		hash = Math.imul(hash, 0x01000193) >>> 0;
+	}
+	return `${baseUrl}#${hash.toString(16)}`;
 }
 
 interface GeminiEndpoint extends CatalogEndpoint {
@@ -45,11 +60,7 @@ export class GeminiModelsService {
 		this.catalog = new CachedModelCatalog({
 			logger: () => this.plugin.logger,
 			logPrefix: '[GeminiModelsService]',
-			endpoint: () => {
-				const apiKey = this.plugin.apiKey;
-				const baseUrl = this.plugin.settings.customBaseUrl?.trim() || GEMINI_API_BASE_URL;
-				return { key: `${baseUrl}|${apiKey}`, label: baseUrl, apiKey, baseUrl };
-			},
+			endpoint: () => this.currentEndpoint(),
 			load: (endpoint) => this.fetchModels(endpoint),
 			fallback: () => this.fallbackModels(),
 		});
@@ -78,18 +89,37 @@ export class GeminiModelsService {
 		this.catalog.reset();
 	}
 
-	/** The last list fetched with a key, else the built-in models. */
+	private currentEndpoint(): GeminiEndpoint {
+		const apiKey = this.plugin.apiKey;
+		const baseUrl = this.plugin.settings.customBaseUrl?.trim() || GEMINI_API_BASE_URL;
+		return { key: endpointFingerprint(baseUrl, apiKey), label: baseUrl, apiKey, baseUrl };
+	}
+
+	/**
+	 * The last list fetched for the current key and base URL, else the built-in
+	 * models. A list persisted before the fingerprint existed (or by the old
+	 * GitHub-hosted catalog) carries none and is only used while no key is set.
+	 */
 	private fallbackModels(): GeminiModel[] {
-		const cached = this.plugin.settings?.remoteModelCache?.models;
-		return Array.isArray(cached) && cached.length > 0 ? cached : [...DEFAULT_GEMINI_MODELS];
+		const cache = this.plugin.settings?.remoteModelCache;
+		const models = cache?.models;
+		if (!Array.isArray(models) || models.length === 0) return [...DEFAULT_GEMINI_MODELS];
+		const matches = cache?.endpoint ? cache.endpoint === this.currentEndpoint().key : !this.plugin.apiKey;
+		return matches ? models : [...DEFAULT_GEMINI_MODELS];
 	}
 
 	/** Performs the ListModels requests and maps the result; throws on any failure. */
-	private async fetchModels({ apiKey, baseUrl }: GeminiEndpoint): Promise<GeminiModel[]> {
+	private async fetchModels({ key, apiKey, baseUrl }: GeminiEndpoint): Promise<GeminiModel[]> {
 		const entries: GeminiListModelsEntry[] = [];
+		const seenTokens = new Set<string>();
 		let pageToken: string | undefined;
 		let pages = 0;
 		do {
+			if (pages >= MAX_PAGES) {
+				// A partial list must not count as complete: reconciliation would
+				// reset saved models that were only on the pages never read.
+				throw new Error(`ListModels did not finish within ${MAX_PAGES} pages`);
+			}
 			const params = new URLSearchParams({ pageSize: String(PAGE_SIZE) });
 			if (pageToken) params.set('pageToken', pageToken);
 			const response = await requestUrl({
@@ -107,8 +137,12 @@ export class GeminiModelsService {
 			}
 			entries.push(...data.models);
 			pageToken = data.nextPageToken || undefined;
+			if (pageToken) {
+				if (seenTokens.has(pageToken)) throw new Error('ListModels repeated a page token');
+				seenTokens.add(pageToken);
+			}
 			pages++;
-		} while (pageToken && pages < MAX_PAGES);
+		} while (pageToken);
 
 		const models = mapGeminiModelList(entries);
 		if (models.length === 0) {
@@ -117,7 +151,10 @@ export class GeminiModelsService {
 			// the fallback is served and saved choices aren't reset against it.
 			throw new Error('ListModels returned no usable Gemini models');
 		}
-		await this.persist(models);
+		// The key or base URL changed while this was in flight: its list belongs
+		// to an endpoint that is no longer configured, so don't make it the
+		// persisted fallback.
+		if (this.currentEndpoint().key === key) await this.persist(models, key);
 		return models;
 	}
 
@@ -126,12 +163,13 @@ export class GeminiModelsService {
 	 * Writing through `plugin.settings` rather than loadData/saveData avoids
 	 * racing `saveSettings()`, which owns the canonical save path.
 	 */
-	private async persist(models: GeminiModel[]): Promise<void> {
+	private async persist(models: GeminiModel[], endpoint: string): Promise<void> {
 		// Skip the write when nothing changed, so a normal start doesn't rewrite
 		// data.json (and churn vault sync) every time.
-		if (JSON.stringify(this.plugin.settings.remoteModelCache?.models) === JSON.stringify(models)) return;
+		const cache = this.plugin.settings.remoteModelCache;
+		if (cache?.endpoint === endpoint && JSON.stringify(cache.models) === JSON.stringify(models)) return;
 		try {
-			this.plugin.settings.remoteModelCache = { models, timestamp: Date.now() };
+			this.plugin.settings.remoteModelCache = { models, timestamp: Date.now(), endpoint };
 			await this.plugin.saveData(this.plugin.settings);
 		} catch (error) {
 			this.plugin.logger.warn('[GeminiModelsService] Failed to persist model list:', error);
