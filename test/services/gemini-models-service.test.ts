@@ -73,6 +73,25 @@ describe('GeminiModelsService', () => {
 		expect(plugin.saveData).toHaveBeenCalledTimes(1);
 	});
 
+	it('does not let a fetch started before invalidate() overwrite a newer persisted list', async () => {
+		let releaseOld!: (value: unknown) => void;
+		mockedRequestUrl
+			.mockImplementationOnce(() => new Promise((resolve) => (releaseOld = resolve)))
+			.mockResolvedValueOnce(listResponse(['gemini-new-flash']));
+		const plugin = buildPlugin();
+		const svc = new GeminiModelsService(plugin);
+
+		const stale = svc.getModels();
+		svc.invalidate();
+		await svc.getModels();
+		releaseOld(listResponse(['gemini-old-flash']));
+		await stale;
+
+		expect(plugin.settings.remoteModelCache.models.map((m: { value: string }) => m.value)).toEqual([
+			'gemini-new-flash',
+		]);
+	});
+
 	it('serves the built-in list without a key, and makes no request', async () => {
 		const svc = new GeminiModelsService(buildPlugin(''));
 

@@ -54,6 +54,12 @@ interface GeminiEndpoint extends CatalogEndpoint {
 export class GeminiModelsService {
 	private plugin: ObsidianGemini;
 	private readonly catalog: CachedModelCatalog<GeminiEndpoint>;
+	/**
+	 * Bumped with every catalog reset, so a fetch that began before one can't
+	 * persist its list over a newer fetch's (mirrors the generation guard
+	 * `CachedModelCatalog` applies to its in-memory cache).
+	 */
+	private generation = 0;
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
@@ -83,7 +89,7 @@ export class GeminiModelsService {
 		// Nothing to ask without a key. Offline, `requestUrl` can hang rather than
 		// fail fast, so don't start a request that can only time out.
 		if (!this.plugin.apiKey || (typeof navigator !== 'undefined' && navigator.onLine === false)) {
-			this.catalog.reset();
+			this.reset();
 			return this.fallbackModels();
 		}
 		return this.catalog.get(forceRefresh);
@@ -91,6 +97,11 @@ export class GeminiModelsService {
 
 	/** Drop the cache (key or base URL changed, or the user clicked "Refresh"). */
 	invalidate(): void {
+		this.reset();
+	}
+
+	private reset(): void {
+		this.generation++;
 		this.catalog.reset();
 	}
 
@@ -115,6 +126,7 @@ export class GeminiModelsService {
 
 	/** Performs the ListModels requests and maps the result; throws on any failure. */
 	private async fetchModels({ key, apiKey, baseUrl }: GeminiEndpoint): Promise<GeminiModel[]> {
+		const generation = this.generation;
 		const entries: GeminiListModelsEntry[] = [];
 		const seenTokens = new Set<string>();
 		let pageToken: string | undefined;
@@ -156,10 +168,10 @@ export class GeminiModelsService {
 			// the fallback is served and saved choices aren't reset against it.
 			throw new Error('ListModels returned no usable Gemini models');
 		}
-		// The key or base URL changed while this was in flight: its list belongs
-		// to an endpoint that is no longer configured, so don't make it the
-		// persisted fallback.
-		if (this.currentEndpoint().key === key) await this.persist(models, key);
+		// The key or base URL changed while this was in flight, or the cache was
+		// reset since it started: either way a newer fetch owns the persisted
+		// fallback, so don't overwrite it.
+		if (generation === this.generation && this.currentEndpoint().key === key) await this.persist(models, key);
 		return models;
 	}
 
