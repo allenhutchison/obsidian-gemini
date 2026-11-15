@@ -77,7 +77,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 		},
 	});
 
-	// Refresh remote Gemini model list (bypass 24h cache)
+	// Re-query Gemini ListModels (bypass the session cache)
 	plugin.addCommand({
 		id: 'refresh-model-list',
 		name: t('command.refreshModelList'),

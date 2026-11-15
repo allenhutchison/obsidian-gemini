@@ -1,15 +1,9 @@
 import type { ObsidianGemini } from '../types/plugin';
 import * as modelsModule from '../models';
-import {
-	GeminiModel,
-	ModelProvider,
-	getUpdatedFeatureRoutes,
-	DEFAULT_GEMINI_MODELS,
-	isModelEligibleForRole,
-} from '../models';
+import { GeminiModel, ModelProvider, getUpdatedFeatureRoutes, isModelEligibleForRole } from '../models';
 import { activeProviders, featureProvider } from '../api/feature-routing';
 import type { ObsidianGeminiSettings } from '../types/settings';
-import { ModelListProvider, RefreshResult } from './model-list-provider';
+import { GeminiModelsService } from './gemini-models-service';
 import { OllamaModelsService } from './ollama-models-service';
 import { OpenAIModelsService } from './openai-models-service';
 import { AnthropicModelsService } from './anthropic-models-service';
@@ -19,6 +13,17 @@ export interface ModelUpdateOptions {
 	forceRefresh?: boolean;
 }
 
+export type RefreshSkippedReason = 'provider' | 'offline' | 'needsKey';
+
+export interface RefreshResult {
+	fetched: boolean;
+	modelCount: number;
+	skippedReason?: RefreshSkippedReason;
+}
+
+type ProviderModelsService =
+	GeminiModelsService | OllamaModelsService | OpenAIModelsService | AnthropicModelsService | OpenRouterModelsService;
+
 export interface ModelUpdateOutcome {
 	updatedSettings: ObsidianGeminiSettings;
 	settingsChanged: boolean;
@@ -27,16 +32,15 @@ export interface ModelUpdateOutcome {
 
 export class ModelManager {
 	private plugin: ObsidianGemini;
-	private listProvider: ModelListProvider;
+	private geminiModelsService: GeminiModelsService;
 	private ollamaModelsService: OllamaModelsService;
 	private openaiModelsService: OpenAIModelsService;
 	private anthropicModelsService: AnthropicModelsService;
 	private openrouterModelsService: OpenRouterModelsService;
-	private static staticModels: GeminiModel[] = [...DEFAULT_GEMINI_MODELS];
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
-		this.listProvider = new ModelListProvider(plugin);
+		this.geminiModelsService = new GeminiModelsService(plugin);
 		this.ollamaModelsService = new OllamaModelsService(plugin);
 		this.openaiModelsService = new OpenAIModelsService(plugin);
 		this.anthropicModelsService = new AnthropicModelsService(plugin);
@@ -54,10 +58,6 @@ export class ModelManager {
 	async getAvailableModels(options: ModelUpdateOptions = {}, provider?: ModelProvider): Promise<GeminiModel[]> {
 		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
 		const target = provider ?? featureProvider(this.plugin.settings, 'chat') ?? 'gemini';
-		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
-		if (target === 'gemini') {
-			return this.listProvider.getTextModels();
-		}
 		return (await this.getProviderModelsService(target).getModels(options.forceRefresh)).filter((m) =>
 			isModelEligibleForRole(m, 'chat')
 		);
@@ -69,8 +69,6 @@ export class ModelManager {
 	async getImageGenerationModels(provider?: ModelProvider): Promise<GeminiModel[]> {
 		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
 		const target = provider ?? featureProvider(this.plugin.settings, 'imageGen') ?? 'gemini';
-		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
-		if (target === 'gemini') return this.listProvider.getImageModels();
 		return (await this.getProviderModelsService(target).getModels()).filter((m) => isModelEligibleForRole(m, 'image'));
 	}
 
@@ -82,16 +80,8 @@ export class ModelManager {
 	 * the whole list.
 	 */
 	private async collectActiveModels(forceRefresh?: boolean): Promise<GeminiModel[]> {
-		const providers = activeProviders(this.plugin.settings);
 		const models: GeminiModel[] = [];
-
-		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
-		if (providers.includes('gemini')) {
-			models.push(...this.listProvider.getModels());
-		}
-		for (const provider of providers) {
-			// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
-			if (provider === 'gemini') continue;
+		for (const provider of activeProviders(this.plugin.settings)) {
 			try {
 				models.push(...(await this.getProviderModelsService(provider).getModels(forceRefresh)));
 			} catch (error) {
@@ -102,20 +92,27 @@ export class ModelManager {
 	}
 
 	/**
+	 * Active providers whose list in hand came from their API. The others are
+	 * serving a fallback (or nothing), so stale-model reconciliation leaves
+	 * their saved choices alone.
+	 */
+	private verifiedProviders(): Set<ModelProvider> {
+		return new Set(
+			activeProviders(this.plugin.settings).filter((p) => this.getProviderModelsService(p).lastProbe === 'reachable')
+		);
+	}
+
+	/**
 	 * Get the Ollama models service for direct interaction (e.g. cache refresh).
 	 */
 	getOllamaModelsService(): OllamaModelsService {
 		return this.ollamaModelsService;
 	}
 
-	/**
-	 * The model-list service for a provider whose list is fetched on demand
-	 * (everything but Gemini, whose list comes from `getListProvider()`).
-	 */
-	getProviderModelsService(
+	/** The model-list service for a provider. */
+	getProviderModelsService(provider: ModelProvider): ProviderModelsService {
 		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
-		provider: Exclude<ModelProvider, 'gemini'>
-	): OllamaModelsService | OpenAIModelsService | AnthropicModelsService | OpenRouterModelsService {
+		if (provider === 'gemini') return this.geminiModelsService;
 		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
 		if (provider === 'ollama') return this.ollamaModelsService;
 		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
@@ -136,7 +133,11 @@ export class ModelManager {
 
 		if (hasChanges) {
 			this.updateGlobalModelsList(allModels);
-			const result = getUpdatedFeatureRoutes(this.plugin.settings.features, this.plugin.settings.providerModelMemory);
+			const result = getUpdatedFeatureRoutes(
+				this.plugin.settings.features,
+				this.plugin.settings.providerModelMemory,
+				this.verifiedProviders()
+			);
 			return {
 				updatedSettings: { ...this.plugin.settings, features: result.features, providerModelMemory: result.memory },
 				settingsChanged: result.changed,
@@ -152,50 +153,42 @@ export class ModelManager {
 	}
 
 	/**
-	 * Initialize the model manager: load cached data and start background fetch.
+	 * Initialize the model manager: seed the global list with every active
+	 * provider's models, so a mixed configuration can resolve models for all of
+	 * them at once.
 	 */
 	async initialize(): Promise<void> {
-		this.listProvider.initialize();
-
-		// Seed the global list with every active provider's models, so a mixed
-		// configuration can resolve models for both at once.
 		this.updateGlobalModelsList(await this.collectActiveModels());
+	}
 
+	/**
+	 * Re-query Gemini's ListModels (bypassing the session cache) and sync the
+	 * global model array so any open dropdowns see the new entries. Skipped when
+	 * no feature uses Gemini, without a key, or offline; on a skip the global
+	 * list is left untouched. Rejects when the API can't be reached, so the
+	 * caller can show why.
+	 */
+	async refreshGeminiModels(): Promise<RefreshResult> {
 		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
-		if (activeProviders(this.plugin.settings).includes('gemini')) {
-			// Start non-blocking remote fetch for updates
-			this.listProvider.startRemoteFetch();
+		const gemini: ModelProvider = 'gemini';
+		const service = this.geminiModelsService;
+		const skipped = (skippedReason: RefreshSkippedReason): RefreshResult => ({
+			fetched: false,
+			modelCount: modelsModule.GEMINI_MODELS.filter((m) => (m.provider ?? gemini) === gemini).length,
+			skippedReason,
+		});
+		if (!activeProviders(this.plugin.settings).includes(gemini)) return skipped('provider');
+		if (!this.plugin.apiKey) return skipped('needsKey');
+		if (typeof navigator !== 'undefined' && navigator.onLine === false) return skipped('offline');
+
+		const models = await service.getModels(true);
+		if (service.lastProbe !== 'reachable') {
+			throw new Error('Could not reach the Gemini API');
 		}
-	}
-
-	/**
-	 * Get the list provider for direct access.
-	 */
-	getListProvider(): ModelListProvider {
-		return this.listProvider;
-	}
-
-	/**
-	 * Force-refresh the remote Gemini model list (bypassing the 24h cache) and
-	 * sync the global model array so any open dropdowns see the new entries.
-	 * Provider/offline gates are enforced by `ModelListProvider.refresh()`; on a
-	 * skip we leave the global list untouched.
-	 */
-	async refreshRemoteModels(): Promise<RefreshResult> {
-		const result = await this.listProvider.refresh();
-		if (result.fetched) {
-			// Rebuild the whole union rather than replacing it with the Gemini
-			// list alone — an Ollama-served use case still needs its models.
-			this.updateGlobalModelsList(await this.collectActiveModels());
-		}
-		return result;
-	}
-
-	/**
-	 * Get static models as fallback.
-	 */
-	static getStaticModels(): GeminiModel[] {
-		return [...ModelManager.staticModels];
+		// Rebuild the whole union rather than replacing it with the Gemini list
+		// alone — a use case on another provider still needs its models.
+		this.updateGlobalModelsList(await this.collectActiveModels());
+		return { fetched: true, modelCount: models.length };
 	}
 
 	/**

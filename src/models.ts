@@ -1,4 +1,3 @@
-import modelData from './data/models.json';
 import { PROVIDER_IDS, type ModelProvider } from './api/providers/registry';
 import { featureModel, featureProvider, featureRoute, type FeatureRoutingSlice } from './api/feature-routing';
 import {
@@ -52,16 +51,45 @@ export interface GeminiModel {
 	interactionsOnly?: boolean;
 }
 
-export const DEFAULT_GEMINI_MODELS: GeminiModel[] = modelData.models as GeminiModel[];
+/**
+ * Built-in Gemini models, served only until `ListModels` has answered with the
+ * user's key (no key yet, or offline on first run). The real list is discovered
+ * at runtime by `GeminiModelsService`, like every other provider's. The
+ * `-latest` aliases track the current generation on Google's side, so this
+ * short list stays usable without code changes; it is deliberately not a
+ * catalog, and new models never need to be added here.
+ */
+export const DEFAULT_GEMINI_MODELS: GeminiModel[] = [
+	{
+		value: 'gemini-flash-latest',
+		label: 'Gemini Flash Latest',
+		defaultForRoles: ['chat', 'summary', 'rewrite'],
+		maxTemperature: 2,
+	},
+	{ value: 'gemini-pro-latest', label: 'Gemini Pro Latest', maxTemperature: 2 },
+	{
+		value: 'gemini-flash-lite-latest',
+		label: 'Gemini Flash Lite Latest',
+		defaultForRoles: ['completions'],
+		maxTemperature: 2,
+	},
+	{
+		value: 'gemini-2.5-flash-image',
+		label: 'Nano Banana',
+		defaultForRoles: ['image'],
+		supportsImageGeneration: true,
+		maxTemperature: 2,
+	},
+];
 
 /**
  * Retired Gemini model IDs mapped to their direct successors. When Google
- * removes a model from the API (404 "no longer available") the entry is
- * dropped from the bundled list; users who still have it configured are
+ * removes a model from the API (404 "no longer available") discovery filters
+ * it out of the list; users who still have it configured are
  * migrated to the successor here instead of falling back to the generic role
  * default, so e.g. a Pro user stays on a Pro-class model. Keep each entry
- * pointing at a model that is still in the bundled list — when a successor is
- * itself retired, re-point the older entries at the newest live model.
+ * pointing at a model `ListModels` still serves — when a successor is itself
+ * retired, re-point the older entries at the newest live model.
  */
 export const RETIRED_MODEL_SUCCESSORS: Record<string, string> = {
 	// Removed by Google 2026-07: both API paths return 404 "no longer available".
@@ -80,7 +108,7 @@ export function setGeminiModels(newModels: GeminiModel[]): void {
 
 /**
  * Resolve the effective provider for a model entry. Entries without an
- * explicit provider are treated as Gemini (legacy bundled list).
+ * explicit provider are treated as Gemini (the built-in list and older cached lists leave it unset).
  */
 function getModelProvider(model: GeminiModel): ModelProvider {
 	return model.provider ?? 'gemini';
@@ -94,7 +122,7 @@ export function isModelEligibleForRole(model: GeminiModel, role: ModelRole): boo
 
 /**
  * Returns the default model value for a given role, scoped to a provider.
- * For Gemini, falls back to the first matching bundled model. For Ollama,
+ * For Gemini, falls back to the first matching discovered (or built-in) model. For Ollama,
  * falls back to the first available model since we don't ship a curated list.
  */
 export function getDefaultModelForRole(role: ModelRole, provider: ModelProvider = 'gemini'): string {
@@ -116,7 +144,7 @@ export function getDefaultModelForRole(role: ModelRole, provider: ModelProvider 
 		return '';
 	}
 
-	// Gemini list should never be empty (the bundled JSON is shipped). If it is,
+	// Gemini list should never be empty (the built-in fallback is shipped). If it is,
 	// surface the configuration problem rather than falling through to
 	// `GEMINI_MODELS[0]` — when both providers populate that global,
 	// `GEMINI_MODELS[0]` could be an Ollama entry and we'd return a
@@ -164,7 +192,7 @@ export function contextWindowForModel(modelValue: string | null | undefined): nu
 /**
  * Whether a model is served exclusively by the Interactions API (see
  * `GeminiModel.interactionsOnly`). Checks the live model list first (which may
- * be a newer remote list), then the bundled defaults — a stale remote cache
+ * be a newer discovered list), then the built-in defaults — a stale cached list
  * fetched before the flag existed would otherwise hide it.
  */
 export function isInteractionsOnlyModel(modelValue: string | null | undefined): boolean {
@@ -177,7 +205,7 @@ export function isInteractionsOnlyModel(modelValue: string | null | undefined): 
  * Resolve a model for callers that can only use `generateContent` (search
  * grounding, web fetch, RAG — features the plugin hasn't migrated to the
  * Interactions API). Returns `preferred` unless it's empty or
- * interactions-only, in which case the bundled Gemini default for the role is
+ * interactions-only, in which case the Gemini default for the role is
  * substituted so the request doesn't hard-fail with a 400.
  */
 export function resolveGenerateContentModel(preferred: string | null | undefined, role: ModelRole = 'chat'): string {
@@ -189,7 +217,7 @@ export function resolveGenerateContentModel(preferred: string | null | undefined
 
 /**
  * Resolve the concrete model for a feature: the stored value, or — when it's
- * `''` (or the feature is routed to `'none'`) — the bundled/discovered default
+ * `''` (or the feature is routed to `'none'`) — the discovered default
  * for the feature's model role. Every call site that needs a model name for a
  * request calls this, not `featureModel` (which returns the stored string
  * verbatim and is for the settings UI / reconciliation only).
@@ -205,7 +233,7 @@ export function resolveFeatureModel(settings: FeatureRoutingSlice, f: FeatureId)
 
 /**
  * Model for provider-bound Gemini grounding calls (maps). Follows the
- * web-search model when web search is on Gemini, else the bundled Gemini chat
+ * web-search model when web search is on Gemini, else the Gemini chat
  * default.
  */
 export function geminiGroundingModel(settings: FeatureRoutingSlice): string {
@@ -233,10 +261,14 @@ export function getActiveChatModel(settings: FeatureRoutingSlice): string {
  * is reconciled the same way, each entry against its own provider's list.
  * Only runs once a provider's model list is known — Ollama/OpenAI models load
  * lazily, and an empty list means "not loaded yet", not "nothing available".
+ * When `verifiedProviders` is given, only those providers are reconciled: the
+ * rest are serving a fallback list (Gemini's built-in or last-cached list when
+ * `ListModels` can't be reached), which is no evidence a model is gone.
  */
 export function getUpdatedFeatureRoutes(
 	features: FeatureRoutes,
-	memory: ProviderModelMemory
+	memory: ProviderModelMemory,
+	verifiedProviders?: ReadonlySet<ModelProvider>
 ): { features: FeatureRoutes; memory: ProviderModelMemory; changed: boolean; info: string[] } {
 	let changed = false;
 	const info: string[] = [];
@@ -266,6 +298,10 @@ export function getUpdatedFeatureRoutes(
 		// The provider's list isn't loaded yet — tolerate the stale value rather
 		// than blanking it (mirrors the pre-redesign Ollama/OpenAI gating).
 		if (providerModels(provider).length === 0) return previous;
+		// The list in hand is a fallback (the provider's API wasn't reached), not
+		// what the provider actually serves — a model missing from it may well
+		// exist, so don't reset the user's pick on its say-so.
+		if (verifiedProviders && !verifiedProviders.has(provider)) return previous;
 		const useSuccessor = successor !== undefined && values.has(successor);
 		const next = useSuccessor ? successor : getDefaultModelForRole(role, provider);
 		if (next === previous) return previous;

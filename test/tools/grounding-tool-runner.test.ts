@@ -1,7 +1,7 @@
 import type { Mock } from 'vitest';
 import { runGroundingTool, GroundingToolRequest } from '../../src/tools/grounding-tool-runner';
 import { createGoogleGenAI } from '../../src/api/providers/gemini/google-genai-factory';
-import { getDefaultModelForRole } from '../../src/models';
+import { getDefaultModelForRole, GEMINI_MODELS, setGeminiModels } from '../../src/models';
 import type { GroundingChunk } from '@google/genai';
 
 // Mock the genAI factory so we control the generateContent implementation.
@@ -116,12 +116,18 @@ describe('runGroundingTool', () => {
 		it('substitutes the default chat model when the chat model is interactions-only', async () => {
 			// Grounding runs on generateContent, which rejects interactions-only
 			// models with a 400 — the runner must not send them.
+			const original = [...GEMINI_MODELS];
+			setGeminiModels([...original, { value: 'gemini-omni-flash-preview', label: 'Omni', interactionsOnly: true }]);
 			mockPlugin.settings.features.webSearch.model = 'gemini-omni-flash-preview';
 			mockGenAI.models.generateContent.mockResolvedValue({
 				candidates: [{ content: { parts: [{ text: 'answer' }] } }],
 			});
 
-			await runGroundingTool(mockPlugin, makeRequest());
+			try {
+				await runGroundingTool(mockPlugin, makeRequest());
+			} finally {
+				setGeminiModels(original);
+			}
 
 			expect(mockGenAI.models.generateContent).toHaveBeenCalledWith(
 				expect.objectContaining({ model: getDefaultModelForRole('chat') })

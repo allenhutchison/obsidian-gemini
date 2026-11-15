@@ -101,18 +101,60 @@ describe('ModelManager', () => {
 		});
 
 		it('should detect changes when model IDs differ but count is the same', async () => {
-			// Set global to have same count as bundled but different IDs
-			const bundledModels = new ModelManager(mockPlugin).getListProvider().getModels();
-			const fakeModels = bundledModels.map((m, i) => ({
+			// Same count as the Gemini fallback list, different IDs
+			const fakeModels = (await modelManager.getProviderModelsService('gemini').getModels()).map((m, i) => ({
 				...m,
 				value: `fake-model-${i}`,
 			}));
 			setGeminiModels(fakeModels);
 
-			const _result = await modelManager.updateModels();
+			await modelManager.updateModels();
 
-			// Should detect the change since model values differ
 			expect(GEMINI_MODELS.some((m) => m.value.startsWith('fake-model-'))).toBe(false);
+		});
+
+		it('does not reset a saved Gemini model while serving the fallback list', async () => {
+			mockedRequestUrl.mockReset();
+			mockedRequestUrl.mockRejectedValue(new Error('ECONNREFUSED'));
+			const plugin = {
+				...mockPlugin,
+				settings: {
+					...mockPlugin.settings,
+					features: { chat: { provider: 'gemini', model: 'gemini-3.8-flash' } },
+					providerModelMemory: {},
+				},
+			};
+			setGeminiModels([{ value: 'only-model', label: 'Only' }]);
+
+			const result = await new ModelManager(plugin).updateModels();
+
+			expect(result.updatedSettings.features.chat.model).toBe('gemini-3.8-flash');
+		});
+
+		it('resets a saved Gemini model that ListModels no longer serves', async () => {
+			mockedRequestUrl.mockReset();
+			mockedRequestUrl.mockResolvedValue({
+				status: 200,
+				json: {
+					models: [
+						{ name: 'models/gemini-flash-latest', supportedGenerationMethods: ['generateContent'] },
+						{ name: 'models/gemini-2.5-flash-image', supportedGenerationMethods: ['generateContent'] },
+					],
+				},
+			});
+			const plugin = {
+				...mockPlugin,
+				settings: {
+					...mockPlugin.settings,
+					features: { chat: { provider: 'gemini', model: 'gemini-gone' } },
+					providerModelMemory: {},
+				},
+			};
+			setGeminiModels([{ value: 'only-model', label: 'Only' }]);
+
+			const result = await new ModelManager(plugin).updateModels();
+
+			expect(result.updatedSettings.features.chat.model).toBe('gemini-flash-latest');
 		});
 	});
 
@@ -126,61 +168,61 @@ describe('ModelManager', () => {
 		});
 	});
 
-	describe('static methods', () => {
-		it('should return static models copy', () => {
-			const staticModels = ModelManager.getStaticModels();
-
-			expect(staticModels).toEqual(expect.arrayContaining([expect.objectContaining({ value: expect.any(String) })]));
-			staticModels.push({ value: 'test', label: 'Test' });
-			expect(ModelManager.getStaticModels()).not.toContainEqual(expect.objectContaining({ value: 'test' }));
+	describe('refreshGeminiModels', () => {
+		const geminiPlugin = (overrides: Record<string, unknown> = {}) => ({
+			...mockPlugin,
+			settings: { ...mockPlugin.settings, features: { chat: { provider: 'gemini', model: '' } } },
+			...overrides,
 		});
-	});
 
-	describe('getListProvider', () => {
-		it('should return the internal ModelListProvider instance', () => {
-			const provider = modelManager.getListProvider();
-
-			expect(provider).toBeDefined();
-			expect(typeof provider.getModels).toBe('function');
-			expect(typeof provider.getTextModels).toBe('function');
-			expect(typeof provider.getImageModels).toBe('function');
-		});
-	});
-
-	describe('refreshRemoteModels', () => {
-		it('delegates to ModelListProvider.refresh and syncs global models on success', async () => {
-			const fetched = [
-				{ value: 'refreshed-1', label: 'Refreshed 1' },
-				{ value: 'refreshed-2', label: 'Refreshed 2' },
-			];
-			const listProvider = modelManager.getListProvider();
-			const refreshSpy = vi
-				.spyOn(listProvider, 'refresh')
-				.mockResolvedValue({ fetched: true, modelCount: fetched.length });
-			vi.spyOn(listProvider, 'getModels').mockReturnValue(fetched);
+		it('re-queries ListModels and syncs the global list on success', async () => {
+			mockedRequestUrl.mockReset();
+			mockedRequestUrl.mockResolvedValue({
+				status: 200,
+				json: {
+					models: [
+						{ name: 'models/gemini-flash-latest', supportedGenerationMethods: ['generateContent'] },
+						{ name: 'models/gemini-9-flash', supportedGenerationMethods: ['generateContent'] },
+					],
+				},
+			});
 			setGeminiModels([]);
 
-			const result = await modelManager.refreshRemoteModels();
+			const result = await new ModelManager(geminiPlugin()).refreshGeminiModels();
 
-			expect(refreshSpy).toHaveBeenCalledTimes(1);
 			expect(result).toEqual({ fetched: true, modelCount: 2 });
-			expect(GEMINI_MODELS.map((m) => m.value)).toEqual(['refreshed-1', 'refreshed-2']);
+			expect(GEMINI_MODELS.map((m) => m.value)).toEqual(['gemini-flash-latest', 'gemini-9-flash']);
 		});
 
-		it('does not update the global list when refresh is skipped', async () => {
+		it('skips without a key and leaves the global list alone', async () => {
 			const before = [{ value: 'before', label: 'Before' }];
 			setGeminiModels(before);
-			vi.spyOn(modelManager.getListProvider(), 'refresh').mockResolvedValue({
-				fetched: false,
-				modelCount: 0,
-				skippedReason: 'offline',
-			});
 
-			const result = await modelManager.refreshRemoteModels();
+			const result = await new ModelManager(geminiPlugin({ apiKey: '' })).refreshGeminiModels();
 
 			expect(result.fetched).toBe(false);
-			expect(result.skippedReason).toBe('offline');
+			expect(result.skippedReason).toBe('needsKey');
 			expect(GEMINI_MODELS).toEqual(before);
+		});
+
+		it('skips when no feature uses Gemini', async () => {
+			const plugin = geminiPlugin();
+			plugin.settings = {
+				...plugin.settings,
+				defaultProvider: 'ollama',
+				features: { chat: { provider: 'ollama', model: '' } },
+			};
+
+			const result = await new ModelManager(plugin).refreshGeminiModels();
+
+			expect(result.skippedReason).toBe('provider');
+		});
+
+		it('rejects when the API cannot be reached', async () => {
+			mockedRequestUrl.mockReset();
+			mockedRequestUrl.mockResolvedValue({ status: 403, json: {} });
+
+			await expect(new ModelManager(geminiPlugin()).refreshGeminiModels()).rejects.toThrow('Could not reach');
 		});
 	});
 

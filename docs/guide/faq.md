@@ -61,7 +61,7 @@ The plugin has built-in retry logic with exponential backoff (3 retries, so up t
 
 ### A model I selected shows "model not found"
 
-Google regularly retires preview model versions. The plugin automatically fetches the latest model list from GitHub on startup (cached 24 hours). Click **Refresh** on the Gemini card in Settings → Gemini Scribe → Providers to pick up the current list immediately, without waiting for the cache to expire. ([#223](https://github.com/allenhutchison/obsidian-gemini/issues/223))
+Google regularly retires preview model versions. The plugin asks Google's API which models your key can use each time Obsidian starts, so retired models drop out and new ones appear without a plugin update. Click **Refresh** on the Gemini card in Settings → Gemini Scribe → Providers to pick up the current list without restarting. ([#223](https://github.com/allenhutchison/obsidian-gemini/issues/223))
 
 ### Where are the Temperature and Top-P settings?
 
