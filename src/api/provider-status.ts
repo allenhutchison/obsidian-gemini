@@ -23,6 +23,12 @@ export type FeatureStatus = 'ok' | 'off' | 'unsupported' | 'unconfigured';
  * Ollama needs no key, so its state is the outcome of the models service's
  * last /api/tags probe: `unknown` until one has run (the settings UI kicks a
  * probe when the card renders), then `connected` or `unreachable`.
+ *
+ * A key-requiring provider is `connected` only when its saved secret name
+ * also resolves to a key on this device. Checking the name alone let a card
+ * say "Connected" while the secret was empty, for example a settings file
+ * synced from a machine whose keychain holds the key, and while the Features
+ * page said the same provider was not connected.
  */
 export function providerConnection(plugin: ObsidianGemini, p: ModelProvider): ProviderConnection {
 	if (p === 'ollama') {
@@ -32,25 +38,21 @@ export function providerConnection(plugin: ObsidianGemini, p: ModelProvider): Pr
 		if (probe === 'unreachable') return 'unreachable';
 		return 'unknown';
 	}
-	if (p === 'openai') {
-		const settings = plugin.settings;
-		if (!isOpenAIHostedEndpoint(settings.openaiBaseUrl || DEFAULT_OPENAI_BASE_URL)) {
-			// A custom (e.g. local) endpoint may not need a key; a missing key
-			// there isn't evidence of a misconfigured provider.
-			return apiKeySecretNameFor(settings, p) ? 'connected' : 'unknown';
-		}
-		return apiKeySecretNameFor(settings, p) ? 'connected' : 'needs-key';
+	const hasSecretName = !!apiKeySecretNameFor(plugin.settings, p);
+	if (p === 'openai' && !isOpenAIHostedEndpoint(plugin.settings.openaiBaseUrl || DEFAULT_OPENAI_BASE_URL)) {
+		// A custom (e.g. local) endpoint may not need a key; a missing key
+		// there isn't evidence of a misconfigured provider.
+		return hasSecretName ? 'connected' : 'unknown';
 	}
-	// gemini, anthropic, openrouter
-	return apiKeySecretNameFor(plugin.settings, p) ? 'connected' : 'needs-key';
+	// gemini, anthropic, openrouter, hosted openai
+	return hasSecretName && !providerMissingKey(plugin, p) ? 'connected' : 'needs-key';
 }
 
 /**
  * Whether a provider's model-list request would go out without the key it
- * requires. Unlike `providerConnection`, which checks only that a secret
- * name is saved, this reads the resolved key — the same value the models
+ * requires. It reads the resolved key — the same value the models
  * services send — so a saved name pointing at a missing or empty secret
- * still counts as missing. Ollama and custom OpenAI-compatible endpoints
+ * still counts as missing. `providerConnection` builds on it. Ollama and custom OpenAI-compatible endpoints
  * need no key, so they never report a missing one.
  */
 export function providerMissingKey(plugin: ObsidianGemini, p: ModelProvider): boolean {
@@ -74,24 +76,17 @@ export function providerMissingKey(plugin: ObsidianGemini, p: ModelProvider): bo
  * connected -> `unconfigured`; otherwise `ok`. Only `unsupported` and
  * `unconfigured` warrant a warning — `off` is a deliberate choice.
  *
- * Both credential checks run, and they are not redundant.
- * `providerConnection` asks whether a secret *name* is saved;
- * `providerMissingKey` asks whether that name resolves to a key on this
- * device. A settings file synced from another machine names a secret that
- * was never stored here, so the first says `connected` while the second
- * says the key is missing — and `ok` would then promise a feature whose
- * very first request cannot authenticate. Callers act on `ok` by building
- * services and registering agent tools (`LifecycleService`,
- * `ToolRegistrar`), so the weaker of the two answers is the wrong one to
- * hand them. This also stops the Features page reporting a feature as fine
- * while the provider's own card reports "needs key" from
- * `providerMissingKey`.
+ * `providerConnection` already requires the saved secret name to resolve to
+ * a key on this device, so a settings file synced from another machine,
+ * which names a secret never stored here, reads as `unconfigured` rather
+ * than promising a feature whose first request cannot authenticate. Callers
+ * act on `ok` by building services and registering agent tools
+ * (`LifecycleService`, `ToolRegistrar`).
  */
 export function featureStatus(plugin: ObsidianGemini, f: FeatureId): FeatureStatus {
 	const route = featureRoute(plugin.settings, f);
 	if (route.provider === 'none') return 'off';
 	if (!providerSupports(route.provider, f)) return 'unsupported';
 	if (providerConnection(plugin, route.provider) !== 'connected') return 'unconfigured';
-	if (providerMissingKey(plugin, route.provider)) return 'unconfigured';
 	return 'ok';
 }
