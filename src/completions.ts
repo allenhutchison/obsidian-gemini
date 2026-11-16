@@ -6,6 +6,38 @@ import { GeminiPrompts } from './prompts';
 import { ModelClientFactory } from './api';
 import { t } from './i18n';
 
+/**
+ * Decide the whitespace between the text before the cursor and the model's
+ * continuation (#1739).
+ *
+ * The prompt asks the model to begin with a single space when it starts a new
+ * word, and with no space when it finishes the word the cursor is in. So when
+ * the prefix ends in a letter and the suggestion starts with one, the model has
+ * told us it is continuing the word, and inserting a space would split it.
+ * A space is still added after punctuation (`end.` + `Next`), where the model
+ * cannot be continuing a word.
+ */
+function joinCompletion(prefix: string, suggestion: string): string {
+	if (prefix.length === 0 || /\s$/.test(prefix)) {
+		// Already at a boundary: never stack a second space.
+		return suggestion.replace(/^[ \t]+/, '');
+	}
+	if (suggestion.length === 0 || /^\s/.test(suggestion)) {
+		// The model supplied its own leading whitespace (a new word), or nothing.
+		return suggestion;
+	}
+	if (/^[\p{P}]/u.test(suggestion)) {
+		// Punctuation attaches to what came before: `word` + `, and` -> `word, and`.
+		return suggestion;
+	}
+	if (/[\p{L}\p{N}_'’-]$/u.test(prefix)) {
+		// Mid-word: the model is finishing the current word (`y` + `ou whisk`).
+		return suggestion;
+	}
+	// After punctuation such as `.` or `,`, the next word needs a space.
+	return ' ' + suggestion;
+}
+
 export class GeminiCompletions {
 	private plugin: ObsidianGemini;
 	private prompts: GeminiPrompts;
@@ -27,9 +59,6 @@ export class GeminiCompletions {
 		const line = editor.getLine(cursor.line);
 		const prefix = line.substring(0, cursor.ch);
 
-		// Check if last character before cursor is a space
-		const needsSpace = prefix.length > 0 && !prefix.endsWith(' ');
-
 		const contentBeforeCursor = editor.getRange({ line: 0, ch: 0 }, cursor);
 		const contentAfterCursor = editor.getRange(cursor, {
 			line: editor.lastLine(),
@@ -37,8 +66,7 @@ export class GeminiCompletions {
 		});
 		const suggestion = await this.generateNextSentence(contentBeforeCursor, contentAfterCursor);
 
-		// Add space to suggestion if needed
-		const finalSuggestion = needsSpace ? ' ' + suggestion : suggestion;
+		const finalSuggestion = joinCompletion(prefix, suggestion);
 
 		yield {
 			display_suggestion: finalSuggestion,

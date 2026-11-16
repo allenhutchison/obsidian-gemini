@@ -97,20 +97,45 @@ describe('GeminiCompletions', () => {
 			expect(result.done).toBe(true);
 		});
 
-		test('yields a suggestion with a prepended space if prefix does not end with space', async () => {
+		/** Run one completion with the given text before the cursor and model output. */
+		async function completeWith(prefix: string, markdown: string) {
 			(completions as any).completionsOn = true;
-			// prefix is 'prefix text' (doesn't end with space)
-			activeView.editor.getLine.mockReturnValue('prefix text');
-			mockCompletionsModel.generateModelResponse.mockResolvedValue({ markdown: 'next sentence' });
-
-			const generator = completions.complete();
-			const result = await generator.next();
-
+			activeView.editor.getLine.mockReturnValue(prefix);
+			activeView.editor.getCursor.mockReturnValue({ line: 0, ch: prefix.length });
+			mockCompletionsModel.generateModelResponse.mockResolvedValue({ markdown });
+			const result = await completions.complete().next();
 			expect(result.done).toBe(false);
-			expect(result.value).toEqual({
-				display_suggestion: ' next sentence',
-				complete_suggestion: ' next sentence',
+			return result.value as { display_suggestion: string; complete_suggestion: string };
+		}
+
+		test('does not split a word when the cursor is mid-word (#1739)', async () => {
+			const value = await completeWith('To make them, y', 'ou whisk the dry ingredients');
+			expect(value).toEqual({
+				display_suggestion: 'ou whisk the dry ingredients',
+				complete_suggestion: 'ou whisk the dry ingredients',
 			});
+		});
+
+		test('keeps the model-supplied leading space after a complete word', async () => {
+			const value = await completeWith('The muffins are', ' quick to bake');
+			expect(value.complete_suggestion).toBe(' quick to bake');
+		});
+
+		test('adds a space after punctuation', async () => {
+			expect((await completeWith('They are done.', 'Let them cool')).complete_suggestion).toBe(' Let them cool');
+			expect((await completeWith('Flour, sugar,', 'and eggs')).complete_suggestion).toBe(' and eggs');
+		});
+
+		test('does not add a space before a suggestion that starts with punctuation', async () => {
+			expect((await completeWith('Mix well', ', then bake')).complete_suggestion).toBe(', then bake');
+		});
+
+		test('does not stack a second space when the prefix already ends with one', async () => {
+			expect((await completeWith('The muffins are ', ' quick')).complete_suggestion).toBe('quick');
+		});
+
+		test('leaves the suggestion alone at the start of a line', async () => {
+			expect((await completeWith('', 'Blueberry muffins')).complete_suggestion).toBe('Blueberry muffins');
 		});
 
 		test('yields suggestion directly if prefix already ends with space', async () => {

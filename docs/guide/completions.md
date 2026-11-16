@@ -73,6 +73,10 @@ Each request sends the **entire current note** — everything before the cursor 
 
 It does not see other notes, your agent sessions, `AGENTS.md`, or custom prompts.
 
+### Spacing at the cursor
+
+If you pause partway through a word, the suggestion finishes that word rather than starting a new one: typing `To make them, y` can suggest `ou whisk the dry ingredients`, with no space inserted. After a complete word the suggestion starts with a space, and after punctuation such as `.` or `,` the plugin adds the space for you.
+
 ### Smart Predictions
 
 Completions understand:
