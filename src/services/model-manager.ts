@@ -111,15 +111,17 @@ export class ModelManager {
 
 	/** The model-list service for a provider. */
 	getProviderModelsService(provider: ModelProvider): ProviderModelsService {
-		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
-		if (provider === 'gemini') return this.geminiModelsService;
-		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
-		if (provider === 'ollama') return this.ollamaModelsService;
-		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
-		if (provider === 'openai') return this.openaiModelsService;
-		// eslint-disable-next-line no-restricted-syntax -- provider-specific service selection inside the model manager; cleared as #703 lands
-		if (provider === 'openrouter') return this.openrouterModelsService;
-		return this.anthropicModelsService;
+		// A Record keyed by every provider id: adding a provider without a
+		// service is a compile error rather than silently handing out
+		// Anthropic's catalog, which the old if-ladder's last arm did (#1757).
+		const services: Record<ModelProvider, ProviderModelsService> = {
+			gemini: this.geminiModelsService,
+			ollama: this.ollamaModelsService,
+			openai: this.openaiModelsService,
+			anthropic: this.anthropicModelsService,
+			openrouter: this.openrouterModelsService,
+		};
+		return services[provider];
 	}
 
 	/**

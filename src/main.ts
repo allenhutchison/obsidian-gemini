@@ -16,7 +16,7 @@ import {
 	sanitizeFeatureRoutes,
 	sanitizeProviderModelMemory,
 } from './api/feature-routing';
-import { getCapabilities } from './api/providers/registry';
+import { getCapabilities, type ModelProvider } from './api/providers/registry';
 import { ModelManager } from './services/model-manager';
 import { PromptManager, GeminiPrompts } from './prompts';
 import { SelectionRewriter } from './rewrite-selection';
@@ -375,17 +375,18 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	 */
 	private chatCredentialState(): { apiKey: string; requiresApiKey: boolean } {
 		const chatProvider = this.settings.features.chat.provider;
-		const apiKey =
-			// eslint-disable-next-line no-restricted-syntax -- credential plumbing predating the registry; cleared as #1308/#703 land
-			chatProvider === 'openai'
-				? this.openaiApiKey
-				: // eslint-disable-next-line no-restricted-syntax -- credential plumbing predating the registry; cleared as #1308/#703 land
-					chatProvider === 'anthropic'
-					? this.anthropicApiKey
-					: // eslint-disable-next-line no-restricted-syntax -- credential plumbing predating the registry; cleared as #1308/#703 land
-						chatProvider === 'openrouter'
-						? this.openrouterApiKey
-						: this.apiKey;
+		// Keyed by every provider id, so a new provider must say which key
+		// serves it instead of inheriting Gemini's (#1757). Ollama takes no
+		// key. A chat route of 'none' keeps Gemini's key, matching
+		// getCapabilities(null), which reports Gemini's capabilities.
+		const keyByProvider: Record<ModelProvider, string> = {
+			gemini: this.apiKey,
+			ollama: '',
+			openai: this.openaiApiKey,
+			anthropic: this.anthropicApiKey,
+			openrouter: this.openrouterApiKey,
+		};
+		const apiKey = chatProvider === 'none' ? this.apiKey : keyByProvider[chatProvider];
 		return {
 			apiKey,
 			requiresApiKey: getCapabilities(chatProvider === 'none' ? null : chatProvider).requiresApiKey,
@@ -407,17 +408,17 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 			: requiresApiKey
 				? 'key-required-missing'
 				: 'none-required';
-		const baseUrl =
-			// eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
-			chatProvider === 'openai'
-				? this.settings.openaiBaseUrl
-				: // eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
-					chatProvider === 'anthropic' || chatProvider === 'openrouter'
-					? undefined
-					: // eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
-						chatProvider === 'ollama'
-						? this.settings.ollamaBaseUrl
-						: this.settings.customBaseUrl;
+		// Keyed by every provider id (#1757). Anthropic and OpenRouter have
+		// fixed endpoints, so no base URL takes part. A chat route of 'none'
+		// keeps Gemini's custom base URL, as it did before.
+		const baseUrlByProvider: Record<ModelProvider, string | undefined> = {
+			gemini: this.settings.customBaseUrl,
+			ollama: this.settings.ollamaBaseUrl,
+			openai: this.settings.openaiBaseUrl,
+			anthropic: undefined,
+			openrouter: undefined,
+		};
+		const baseUrl = chatProvider === 'none' ? this.settings.customBaseUrl : baseUrlByProvider[chatProvider];
 		return `${chatProvider}:${credToken}:${baseUrl ?? ''}`;
 	}
 

@@ -1,6 +1,7 @@
 import { ModelClientFactory, ModelUseCase } from '../../src/api/factory';
 import { FeatureUnavailableError } from '../../src/api/feature-errors';
 import type { FeatureRoutes } from '../../src/types/features';
+import { PROVIDER_IDS, type ModelProvider } from '../../src/api/providers/registry';
 
 // --- Mocks ---
 
@@ -117,6 +118,26 @@ describe('ModelClientFactory', () => {
 	});
 
 	describe('createFromPlugin', () => {
+		// A Record over every provider id: adding a provider without listing its
+		// client here fails typecheck:test, and the loop below fails if the
+		// factory serves it with any other client (#1757).
+		const CLIENT_FOR_PROVIDER: Record<ModelProvider, ReturnType<typeof vi.fn>> = {
+			gemini: MockGeminiClient,
+			ollama: MockOllamaClient,
+			openai: MockOpenAIClient,
+			anthropic: MockAnthropicClient,
+			openrouter: MockOpenRouterClient,
+		};
+
+		it.each(PROVIDER_IDS.map((p) => [p]))("serves chat routed to %s with that provider's own client", (provider) => {
+			const plugin = createMockPlugin({ features: { chat: { provider, model: 'some-model' } } });
+			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
+
+			for (const [id, client] of Object.entries(CLIENT_FOR_PROVIDER)) {
+				expect(client, `${id} client for a ${provider} route`).toHaveBeenCalledTimes(id === provider ? 1 : 0);
+			}
+		});
+
 		it('should create a GeminiClient when chat is routed to gemini', () => {
 			const plugin = createMockPlugin();
 			ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);

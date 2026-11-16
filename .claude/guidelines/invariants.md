@@ -22,7 +22,9 @@ src/main.ts → ModelClientFactory.createFromPlugin() → GeminiClient | OllamaC
   provider ids and unsupported pairings to `'none'`, never to a substitute. An unservable route throws
   `FeatureUnavailableError` from the factory; the caller surfaces it as a Notice instead of re-routing the request.
   Substituting a cloud provider for a capability a local one lacks would send vault data somewhere the user never
-  opted into.
+  opted into. Every dispatch over `ModelProvider` must be total: a `switch` ending in `assertNever`
+  (`src/utils/assert-never.ts`) or a `Record<ModelProvider, …>` lookup, never an `if`-ladder whose last arm quietly
+  serves the remaining providers (#1757).
 - All provider implementations conform to the `ModelApi` interface; provider-specific code stays encapsulated under
   `src/api/providers/{gemini,ollama,openai,anthropic,openrouter}/` — one package per `ModelProvider` id. Two shared
   cross-provider leaves deliberately live at that package root, outside the per-provider packages: `history-walk.ts`
