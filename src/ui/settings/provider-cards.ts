@@ -34,7 +34,7 @@ export interface ProviderCardSpec {
 
 export const PROVIDER_CARDS: ProviderCardSpec[] = [
 	{
-		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini sync-cache special case; card ids are display data keyed by provider
+		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini refresh path; card ids are display data keyed by provider
 		id: 'gemini',
 		labelKey: 'settings.providers.cardNameGemini',
 		auth: [
@@ -43,13 +43,13 @@ export const PROVIDER_CARDS: ProviderCardSpec[] = [
 		],
 	},
 	{
-		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini sync-cache special case; card ids are display data keyed by provider
+		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini refresh path; card ids are display data keyed by provider
 		id: 'ollama',
 		labelKey: 'settings.providers.shortLabel.ollama',
 		auth: [{ kind: 'baseUrl', settingsKey: 'ollamaBaseUrl', optional: false }],
 	},
 	{
-		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini sync-cache special case; card ids are display data keyed by provider
+		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini refresh path; card ids are display data keyed by provider
 		id: 'openai',
 		labelKey: 'settings.providers.shortLabel.openai',
 		auth: [
@@ -58,13 +58,13 @@ export const PROVIDER_CARDS: ProviderCardSpec[] = [
 		],
 	},
 	{
-		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini sync-cache special case; card ids are display data keyed by provider
+		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini refresh path; card ids are display data keyed by provider
 		id: 'anthropic',
 		labelKey: 'settings.providers.shortLabel.anthropic',
 		auth: [{ kind: 'secret', settingsKey: 'anthropicApiKeySecretName' }],
 	},
 	{
-		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini sync-cache special case; card ids are display data keyed by provider
+		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini refresh path; card ids are display data keyed by provider
 		id: 'openrouter',
 		labelKey: 'settings.providers.shortLabel.openrouter',
 		auth: [{ kind: 'secret', settingsKey: 'openrouterApiKeySecretName' }],
@@ -80,7 +80,9 @@ export async function refreshGeminiModelList(
 	onSuccess?: () => void | Promise<void>
 ): Promise<void> {
 	try {
-		const result = await plugin.getModelManager().refreshRemoteModels();
+		const result = await plugin.getModelManager().refreshGeminiModels();
+		// eslint-disable-next-line no-restricted-syntax -- the Gemini refresh command also feeds the global model list; card ids are display data keyed by provider
+		invalidateModelCount('gemini');
 		if (result.fetched) {
 			new Notice(
 				result.modelCount === 1
@@ -93,7 +95,9 @@ export async function refreshGeminiModelList(
 		const reasonMessage =
 			result.skippedReason === 'offline'
 				? t('settings.general.refreshSkippedOffline')
-				: t('settings.general.refreshSkippedNotGemini');
+				: result.skippedReason === 'needsKey'
+					? t('settings.providers.refreshNeedsKey', { provider: t('settings.providers.cardNameGemini') })
+					: t('settings.general.refreshSkippedNotGemini');
 		new Notice(reasonMessage);
 	} catch (error) {
 		plugin.logger.error('Failed to refresh Gemini model list:', error);
@@ -115,8 +119,6 @@ export async function refreshGeminiModelList(
  * did something. Background probes on render stay silent.
  */
 function loadModelCount(ctx: SettingsContext, id: ModelProvider, userInitiated: boolean): void {
-	// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini sync-cache special case; card ids are display data keyed by provider
-	if (id === 'gemini') return; // Gemini's count comes from the sync remote-list cache.
 	const modelManager = ctx.plugin.modelManager as typeof ctx.plugin.modelManager | undefined;
 	if (!modelManager) return; // plugin still loading; the next render retries
 	const spec = PROVIDER_CARDS.find((card) => card.id === id);
@@ -168,11 +170,6 @@ function modelsSummary(ctx: SettingsContext, id: ModelProvider): string {
 	// until it exists rather than crashing plugin load.
 	const modelManager = ctx.plugin.modelManager as typeof ctx.plugin.modelManager | undefined;
 	if (!modelManager) return t('settings.providers.modelsLoading');
-	// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini sync-cache special case; card ids are display data keyed by provider
-	if (id === 'gemini') {
-		const count = modelManager.getListProvider().getModels().length;
-		return t('settings.providers.modelsAvailable', { count });
-	}
 	// Never probe a provider that has no credentials (see `loadModelCount`).
 	if (providerMissingKey(ctx.plugin, id)) return t('settings.providers.statusNeedsKey');
 	const cached = modelCountCache.get(id);
@@ -180,7 +177,7 @@ function modelsSummary(ctx: SettingsContext, id: ModelProvider): string {
 		loadModelCount(ctx, id, false);
 		return t('settings.providers.modelsLoading');
 	}
-	// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini sync-cache special case; card ids are display data keyed by provider
+	// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini refresh path; card ids are display data keyed by provider
 	if (id !== 'ollama') return t('settings.providers.modelsAvailable', { count: cached.total });
 	const pulled = cached.total - cached.cloud;
 	return cached.cloud > 0
@@ -189,7 +186,7 @@ function modelsSummary(ctx: SettingsContext, id: ModelProvider): string {
 }
 
 function refreshModels(ctx: SettingsContext, id: ModelProvider): void {
-	// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini sync-cache special case; card ids are display data keyed by provider
+	// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini refresh path; card ids are display data keyed by provider
 	if (id === 'gemini') {
 		void refreshGeminiModelList(ctx.plugin, () => ctx.tab.update());
 		return;

@@ -89,7 +89,7 @@ The plugin uses a factory pattern (`ModelClientFactory` in `src/api/factory.ts`)
 
 ### Model Configuration
 
-- Models defined in `src/models.ts` with automatic version migration
+- Every provider discovers its models at runtime through a `*ModelsService` in `src/services/` built on the shared `CachedModelCatalog` (`remote-model-catalog.ts`); Gemini's (`gemini-models-service.ts`) queries ListModels with the user's key and filters it via `src/api/providers/gemini/model-catalog.ts`, so new Gemini models need no code change. `src/models.ts` holds the shared model type, the small built-in Gemini fallback (`DEFAULT_GEMINI_MODELS`), and stale-model reconciliation, which only runs against lists that actually came from a provider's API
 - Different models for different tasks (chat, summary, completions, rewrite)
 - Settings changes trigger full plugin reload
 

@@ -399,7 +399,7 @@ describe('ContextManager', () => {
 			const { ctx, getRuntimeContextLength } = buildOllamaContext({ runtime: 4_096 });
 			ctx.updateUsageMetadata({ promptTokenCount: 100_000, totalTokenCount: 120_000 });
 
-			const usage = await ctx.getTokenUsage('gemini-2.5-flash');
+			const usage = await ctx.getTokenUsage('gemini-flash-latest');
 
 			expect(usage.inputTokenLimit).toBe(1_000_000);
 			expect(getRuntimeContextLength).not.toHaveBeenCalled();

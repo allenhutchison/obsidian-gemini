@@ -688,8 +688,8 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		}
 
 		// Note: Stale model reconciliation happens later in LifecycleService.syncModels(),
-		// after ModelListProvider has loaded the cached remote model list. Running it here
-		// against DEFAULT_GEMINI_MODELS would use a stale list.
+		// after ModelManager has discovered each provider's model list. Running it here
+		// against the built-in DEFAULT_GEMINI_MODELS would reset valid choices.
 
 		// Migrate legacy alwaysAllowReadWrite → toolPolicy, then drop the key.
 		// The removal is deliberately outside the `!data.toolPolicy` guard: a

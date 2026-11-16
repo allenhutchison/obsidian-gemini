@@ -6,6 +6,7 @@ import { GeminiPrompts } from '../../../../src/prompts';
 import type { ExtendedModelRequest, ToolCall } from '../../../../src/api/interfaces/model-api';
 import { ModelUseCase } from '../../../../src/api/model-use-case';
 import { buildToolHistoryTurns, type ToolCallResultPair } from '../../../../src/agent/agent-loop-helpers';
+import { DEFAULT_GEMINI_MODELS, GEMINI_MODELS, setGeminiModels, type GeminiModel } from '../../../../src/models';
 
 // Capture every call to `client.models.generateContent` so tests can assert on
 // the params (system instruction, contents, etc.) the SDK sees. vi.hoisted lets
@@ -1049,16 +1050,31 @@ describe('GeminiClient', () => {
 	});
 
 	describe('interactions-only model routing', () => {
-		// gemini-omni-flash-preview is flagged interactionsOnly in the bundled
-		// catalog: generateContent rejects it with a 400 ("This model only
+		// gemini-omni-flash-preview is registered here as interactionsOnly:
+		// generateContent rejects such models with a 400 ("This model only
 		// supports Interactions API"). generateModelResponse/generateStreamingResponse
 		// always route through Interactions now (the transport toggle is gone), so
 		// this exercises resolveModel's per-request override and generateImage's
 		// own (still generateContent-based) routing around the same flag.
 		const makeClient = (model: string) =>
 			new GeminiClient({ apiKey: 'test-api-key', model }, new GeminiPrompts(mockPlugin), mockPlugin);
+		let originalModels: GeminiModel[];
+
+		afterEach(() => {
+			setGeminiModels(originalModels);
+		});
 
 		beforeEach(() => {
+			originalModels = [...GEMINI_MODELS];
+			setGeminiModels([
+				...DEFAULT_GEMINI_MODELS,
+				{
+					value: 'gemini-omni-flash-preview',
+					label: 'Omni',
+					supportsImageGeneration: true,
+					interactionsOnly: true,
+				},
+			]);
 			interactionsCreateMock.mockReset();
 			interactionsCreateMock.mockResolvedValue({
 				id: 'int_2',

@@ -77,8 +77,10 @@ export interface ObsidianGeminiSettings {
 	autoRunCatchUp: boolean;
 	// Lifecycle hooks (opt-in: AI runs triggered by vault events)
 	hooksEnabled: boolean;
-	// Cached remote model list (managed by ModelListProvider)
-	remoteModelCache?: { models: GeminiModel[]; timestamp: number };
+	// Last Gemini model list fetched from ListModels (managed by GeminiModelsService);
+	// served as the fallback when the API can't be reached
+	// (endpoint: non-secret base-URL + key-hash fingerprint the list came from)
+	remoteModelCache?: { models: GeminiModel[]; timestamp: number; endpoint?: string };
 	/**
 	 * Schema version for the settings-field shape, keyed off by
 	 * `migrateToFeatureRouting` (`src/utils/settings-migrations.ts`). `1` is
