@@ -22,6 +22,7 @@
 import type { InlineDataPart } from '../interfaces/model-api';
 import { getLegacyEntryText } from '../../utils/history-normalize';
 import { t } from '../../i18n';
+import { NonRetryableRequestError } from '../../utils/request-errors';
 
 /** A `functionCall` part, decoded but not yet given a provider-specific id. */
 export interface WalkedToolCall {
@@ -127,7 +128,7 @@ export function walkHistoryEntry(
 			} else if (part?.inlineData?.mimeType) {
 				// Mirror buildChatRequest's current-turn handling so resumed sessions
 				// don't silently drop PDF/audio/video context the model never sees.
-				throw new Error(
+				throw new NonRetryableRequestError(
 					t(
 						options.acceptsPdf
 							? 'provider.unsupportedAttachmentInHistoryPdf'

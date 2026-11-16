@@ -1,6 +1,7 @@
 import type { Mock } from 'vitest';
 import { OpenAIClient } from '../../../../src/api/providers/openai/client';
 import type { OpenAIClientConfig } from '../../../../src/api/providers/openai/config';
+import { NonRetryableRequestError } from '../../../../src/utils/request-errors';
 import { ExtendedModelRequest, ToolDefinition } from '../../../../src/api/interfaces/model-api';
 
 // vitest hoists vi.mock to the top of the file; vi.hoisted() lets us share
@@ -290,6 +291,19 @@ describe('OpenAIClient', () => {
 					inlineAttachments: [{ mimeType: 'application/pdf', base64: 'b64data' }],
 				})
 			).rejects.toThrow(/OpenAI only supports image attachments/);
+		});
+
+		it('raises the attachment error as non-retryable so the retry decorator fails fast (#1738)', async () => {
+			await expect(
+				client.generateModelResponse({
+					prompt: '',
+					userMessage: 'read this',
+					kind: 'extended',
+					conversationHistory: [],
+					inlineAttachments: [{ mimeType: 'application/pdf', base64: 'b64data' }],
+				})
+			).rejects.toBeInstanceOf(NonRetryableRequestError);
+			expect(openaiCalls.create).not.toHaveBeenCalled();
 		});
 
 		it('transmits perTurnContext directly inside the user message', async () => {

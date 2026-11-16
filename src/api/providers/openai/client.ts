@@ -60,6 +60,7 @@ import {
 	readReasoningDetails,
 	type ReasoningDetail,
 } from './reasoning-replay';
+import { NonRetryableRequestError } from '../../../utils/request-errors';
 
 type ChatMessage = OpenAI.ChatCompletionMessageParam;
 type ChatTool = OpenAI.ChatCompletionTool;
@@ -135,7 +136,7 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 	async generateImage(prompt: string, model: string): Promise<string> {
 		try {
 			if (!model) {
-				throw new Error(this.noModelSelectedMessage());
+				throw new NonRetryableRequestError(this.noModelSelectedMessage());
 			}
 			const response = await this.client.images.generate({ model, prompt });
 			const image = response.data?.[0]?.b64_json;
@@ -158,7 +159,7 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 		// e.g. a summary request to the chat model when `config.model` is empty.
 		const model = request.model || this.config.model;
 		if (!model) {
-			throw new Error(this.noModelSelectedMessage());
+			throw new NonRetryableRequestError(this.noModelSelectedMessage());
 		}
 
 		try {
@@ -224,7 +225,7 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 		return runCancellableStream<OpenAI.ChatCompletionChunk>({
 			start: async (signal) => {
 				if (!model) {
-					throw new Error(this.noModelSelectedMessage());
+					throw new NonRetryableRequestError(this.noModelSelectedMessage());
 				}
 				if (!isExtended) {
 					return this.client.chat.completions.create(
@@ -340,7 +341,9 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 			if (att.mimeType.startsWith('image/')) {
 				imageParts.push(this.toImageContentPart(att));
 			} else {
-				throw new Error(t('provider.unsupportedAttachment', { provider: this.providerName, mimeType: att.mimeType }));
+				throw new NonRetryableRequestError(
+					t('provider.unsupportedAttachment', { provider: this.providerName, mimeType: att.mimeType })
+				);
 			}
 		}
 

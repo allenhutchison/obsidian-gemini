@@ -21,6 +21,7 @@ import { t } from '../../../i18n';
 import { describeSdkApiError } from '../../../utils/error-utils';
 import { OpenAIClient } from '../openai/client';
 import { OPENROUTER_ATTRIBUTION_HEADERS, OPENROUTER_BASE_URL, type OpenRouterClientConfig } from './config';
+import { NonRetryableRequestError } from '../../../utils/request-errors';
 
 interface OpenRouterImageResponse {
 	data?: { b64_json?: string; media_type?: string }[];
@@ -52,7 +53,7 @@ export class OpenRouterClient extends OpenAIClient {
 	override async generateImage(prompt: string, model: string): Promise<string> {
 		try {
 			if (!model) {
-				throw new Error(this.noModelSelectedMessage());
+				throw new NonRetryableRequestError(this.noModelSelectedMessage());
 			}
 			const response = await this.client.post<OpenRouterImageResponse>('/images', { body: { model, prompt } });
 			const image = response?.data?.[0]?.b64_json;

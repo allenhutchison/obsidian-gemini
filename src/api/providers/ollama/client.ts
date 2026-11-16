@@ -37,6 +37,7 @@ import type { OllamaClientConfig } from './config';
 import { walkHistoryEntry } from '../history-walk';
 import { runCancellableStream } from '../../utils/cancellable-stream';
 import { t } from '../../../i18n';
+import { NonRetryableRequestError } from '../../../utils/request-errors';
 
 export class OllamaClient implements ModelApi {
 	private client: Ollama;
@@ -60,7 +61,9 @@ export class OllamaClient implements ModelApi {
 		// e.g. a summary request to the chat model when `config.model` is empty.
 		const model = request.model || this.config.model;
 		if (!model) {
-			throw new Error('No Ollama model selected. Pull a model with `ollama pull <name>` and choose it in settings.');
+			throw new NonRetryableRequestError(
+				'No Ollama model selected. Pull a model with `ollama pull <name>` and choose it in settings.'
+			);
 		}
 
 		try {
@@ -127,7 +130,7 @@ export class OllamaClient implements ModelApi {
 		return runCancellableStream<ChatResponse & { response?: string }>({
 			start: async (signal) => {
 				if (!model) {
-					throw new Error(
+					throw new NonRetryableRequestError(
 						'No Ollama model selected. Pull a model with `ollama pull <name>` and choose it in settings.'
 					);
 				}
@@ -243,7 +246,9 @@ export class OllamaClient implements ModelApi {
 			if (att.mimeType.startsWith('image/')) {
 				userImages.push(att.base64);
 			} else {
-				throw new Error(t('provider.unsupportedAttachment', { provider: 'Ollama', mimeType: att.mimeType }));
+				throw new NonRetryableRequestError(
+					t('provider.unsupportedAttachment', { provider: 'Ollama', mimeType: att.mimeType })
+				);
 			}
 		}
 		if (userParts.length || userImages.length) {
