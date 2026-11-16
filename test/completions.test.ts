@@ -121,6 +121,10 @@ describe('GeminiCompletions', () => {
 			expect(value.complete_suggestion).toBe(' quick to bake');
 		});
 
+		test('treats a trailing combining mark as mid-word', async () => {
+			expect((await completeWith('किता', 'ब पढ़ना')).complete_suggestion).toBe('ब पढ़ना');
+		});
+
 		test('adds a space after punctuation', async () => {
 			expect((await completeWith('They are done.', 'Let them cool')).complete_suggestion).toBe(' Let them cool');
 			expect((await completeWith('Flour, sugar,', 'and eggs')).complete_suggestion).toBe(' and eggs');

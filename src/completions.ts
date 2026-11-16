@@ -30,7 +30,7 @@ function joinCompletion(prefix: string, suggestion: string): string {
 		// Punctuation attaches to what came before: `word` + `, and` -> `word, and`.
 		return suggestion;
 	}
-	if (/[\p{L}\p{N}_'’-]$/u.test(prefix)) {
+	if (/[\p{L}\p{M}\p{N}_'’-]$/u.test(prefix)) {
 		// Mid-word: the model is finishing the current word (`y` + `ou whisk`).
 		return suggestion;
 	}
