@@ -6,6 +6,7 @@
 
 import type { ObsidianGeminiSettings } from '../types/settings';
 import type { ModelProvider } from './providers/registry';
+import { assertNever } from '../utils/assert-never';
 
 /**
  * Which settings field holds a provider's API key secret name. Every
@@ -16,8 +17,20 @@ import type { ModelProvider } from './providers/registry';
  * truth — the settings UI and the init-error path both resolve through this.
  */
 export function apiKeySecretNameFor(settings: ObsidianGeminiSettings, provider: ModelProvider): string {
-	if (provider === 'openai') return settings.openaiApiKeySecretName;
-	if (provider === 'anthropic') return settings.anthropicApiKeySecretName;
-	if (provider === 'openrouter') return settings.openrouterApiKeySecretName;
-	return settings.apiKeySecretName;
+	switch (provider) {
+		case 'gemini':
+			return settings.apiKeySecretName;
+		case 'openai':
+			return settings.openaiApiKeySecretName;
+		case 'anthropic':
+			return settings.anthropicApiKeySecretName;
+		case 'openrouter':
+			return settings.openrouterApiKeySecretName;
+		case 'ollama':
+			// Ollama takes no API key, so it has no secret field. This used to
+			// fall through to Gemini's secret name (#1757).
+			return '';
+		default:
+			return assertNever(provider, 'apiKeySecretNameFor');
+	}
 }

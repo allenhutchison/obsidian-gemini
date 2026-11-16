@@ -55,7 +55,7 @@ This is usually caused by an invalid/expired API key or an unavailable model.
 
 ### Requests fail after several retry attempts
 
-The plugin has built-in retry logic with exponential backoff (3 retries, so up to 4 attempts total — fixed, not configurable). If requests keep failing, it's usually a rate limit or transient API issue. Check your API key validity and rate limit dashboard. ([#131](https://github.com/allenhutchison/obsidian-gemini/issues/131))
+The plugin has built-in retry logic with exponential backoff (3 retries, so up to 4 attempts total — fixed, not configurable). Errors the plugin can detect before sending anything (no model selected, or an attachment type the provider doesn't accept, such as a PDF sent to an OpenAI-compatible provider) are shown immediately and are not retried. If requests keep failing, it's usually a rate limit or transient API issue. Check your API key validity and rate limit dashboard. ([#131](https://github.com/allenhutchison/obsidian-gemini/issues/131))
 
 ## Models
 

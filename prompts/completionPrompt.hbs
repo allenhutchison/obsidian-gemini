@@ -6,7 +6,12 @@ Keep completions short and predictable — the user will accept via a keyboard s
 
 Use the entire file to understand context, but generate a continuation only at the cursor.
 
-Do not include explanations, punctuation at the start, extra whitespace, or newlines in your output. Just output the completion text.
+Spacing matters, because your output is inserted exactly at the cursor:
+- If the cursor is in the middle of a word, begin your output with the rest of that word and no space (text `To make them, y` -> output `ou whisk the dry ingredients`).
+- If the cursor is right after a complete word, begin your output with a single space (text `The muffins are` -> output ` quick to bake`).
+- If the text before the cursor already ends with a space, do not begin with a space.
+
+Do not include explanations, punctuation at the start, extra whitespace beyond that one leading space, or newlines in your output. Just output the completion text.
 {{> languageInstruction}}
 
 Here is the file content and the location of the cursor:

@@ -49,6 +49,7 @@ import { walkHistoryEntry } from '../history-walk';
 import { SIMPLE_TOOL_ID_PATTERN, ToolIdLedger } from '../tool-id-ledger';
 import { describeSdkApiError } from '../../../utils/error-utils';
 import { t } from '../../../i18n';
+import { NonRetryableRequestError } from '../../../utils/request-errors';
 
 type MessageParam = Anthropic.Beta.BetaMessageParam;
 type ContentBlockParam = Anthropic.Beta.BetaContentBlockParam;
@@ -86,7 +87,7 @@ export class AnthropicClient implements ModelApi {
 		// deliberately no chat-default fallback here (see OpenAIClient).
 		const model = request.model || this.config.model;
 		if (!model) {
-			throw new Error(t('provider.anthropic.noModelSelected'));
+			throw new NonRetryableRequestError(t('provider.anthropic.noModelSelected'));
 		}
 
 		try {
@@ -122,7 +123,7 @@ export class AnthropicClient implements ModelApi {
 			start: async (helperSignal) => {
 				signal = helperSignal;
 				if (!model) {
-					throw new Error(t('provider.anthropic.noModelSelected'));
+					throw new NonRetryableRequestError(t('provider.anthropic.noModelSelected'));
 				}
 				const params = await this.buildParams(model, request, MAX_TOKENS_STREAMING);
 				// Preserve the pre-migration behavior: cancel() landing during
@@ -239,7 +240,9 @@ export class AnthropicClient implements ModelApi {
 		// Final user turn: attachments before text, as the API recommends.
 		const content: ContentBlockParam[] = (request.inlineAttachments ?? []).map((att) => {
 			if (!att.mimeType.startsWith('image/') && att.mimeType !== 'application/pdf') {
-				throw new Error(t('provider.unsupportedAttachmentPdf', { provider: 'Anthropic', mimeType: att.mimeType }));
+				throw new NonRetryableRequestError(
+					t('provider.unsupportedAttachmentPdf', { provider: 'Anthropic', mimeType: att.mimeType })
+				);
 			}
 			return this.toAttachmentBlock(att);
 		});

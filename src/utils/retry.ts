@@ -5,6 +5,7 @@
 
 import { Logger } from './logger';
 import { asRecord, extractErrorDetails, extractStatusCode, isQuotaExhausted } from './error-utils';
+import { NonRetryableRequestError } from './request-errors';
 
 /**
  * Configuration for retry behavior
@@ -252,6 +253,7 @@ export function parseRetryDelay(error: unknown): number | null {
  * Determine if an API error is retryable.
  *
  * Non-retryable errors (immediate failure):
+ *   - NonRetryableRequestError (a client-side pre-flight check failed; no request was sent)
  *   - 400, 401, 403, 404 (client errors that won't resolve with retry)
  *   - 429 with quota exhausted (permanent, no free-tier quota)
  *
@@ -262,6 +264,11 @@ export function parseRetryDelay(error: unknown): number | null {
  *   - Unknown errors (default to retryable for safety)
  */
 export function isRetryableApiError(error: unknown): boolean {
+	// A pre-flight validation failure fails identically on every attempt (#1738).
+	if (error instanceof NonRetryableRequestError) {
+		return false;
+	}
+
 	const statusCode = extractStatusCode(error);
 
 	if (statusCode !== null) {
