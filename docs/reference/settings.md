@@ -574,7 +574,7 @@ or a project's `toolPolicy` ([Projects → Tool Policy](/guide/projects#tool-pol
 ## Performance Considerations
 
 - **Model Selection**: Flash and Flash Lite models are faster and cheaper but less capable than Pro models
-- **Model Discovery**: Minimal performance impact; runs in background
+- **Model Discovery**: At startup the plugin waits for one model-list request per active provider (Gemini's is a ListModels call), then caches the result for the session
 - **Loop Detection**: Negligible overhead; always on
 
 ## Security Best Practices
