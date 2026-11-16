@@ -123,7 +123,7 @@ Completions are routed and modeled like every other feature: open **Settings →
 - Gemini Flash Latest (balanced)
 - Gemini 2.5 Pro (highest quality, slower; requires billing)
 
-The dropdown reflects whatever models the bundled list and Model Discovery have surfaced — the names above are today's defaults, but newer Flash / Pro models will appear automatically as Google ships them. See [Settings Reference → Features](/reference/settings#features) for the full routing model.
+The dropdown reflects whatever models Model Discovery has fetched from Google's ListModels endpoint — the names above are today's defaults, but newer Flash / Pro models will appear automatically as Google ships them. See [Settings Reference → Features](/reference/settings#features) for the full routing model.
 
 ### Model Comparison
 
