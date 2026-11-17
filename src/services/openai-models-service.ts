@@ -36,6 +36,17 @@ const KNOWN_OPENAI_MODELS: Record<string, OpenAIModelMetadata> = {
 	'gpt-5.6-sol': { contextWindow: GPT56_INPUT_TOKEN_LIMIT, supportsVision: true, defaultForRoles: ['chat'] },
 	'gpt-5.6-terra': { contextWindow: GPT56_INPUT_TOKEN_LIMIT, supportsVision: true, defaultForRoles: ['summary'] },
 	'gpt-5.6-luna': { contextWindow: GPT56_INPUT_TOKEN_LIMIT, supportsVision: true, defaultForRoles: ['completions'] },
+	// GPT-6 / GPT-6.1 (#1755). Offered for chat, summary, rewrite and
+	// completions, but not as defaults. Their input limits haven't been
+	// measured yet (see GPT56_INPUT_TOKEN_LIMIT for how), so no contextWindow
+	// is declared and compaction uses its conservative default. On Chat
+	// Completions, gpt-6-sol/luna take tools only with reasoning off, and
+	// gpt-6.1-* and gpt-6-astra take no tools at all; OpenAIClient applies both.
+	'gpt-6-sol': { supportsVision: true },
+	'gpt-6-luna': { supportsVision: true },
+	'gpt-6-astra': { supportsVision: true },
+	'gpt-6.1-sol': { supportsVision: true },
+	'gpt-6.1-terra': { supportsVision: true },
 	// Dedicated Images API models. Flare is the everyday default; Sunburst is
 	// available when editing precision and maximum fidelity matter more.
 	'gpt-image-2.5-flare': {

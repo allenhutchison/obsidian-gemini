@@ -996,6 +996,69 @@ describe('OpenAIClient', () => {
 		});
 	});
 
+	// GPT-6 (#1755): gpt-6-sol/luna behave like GPT-5.6 (tools need reasoning
+	// off); gpt-6.1-* and gpt-6-astra reject tools on Chat Completions outright.
+	describe('GPT-6 parameter handling', () => {
+		const readFileTool: ToolDefinition = {
+			name: 'read_file',
+			description: 'reads a file',
+			parameters: { type: 'object', properties: { path: { type: 'string' } }, required: ['path'] },
+		};
+		const toolRequest = {
+			prompt: '',
+			userMessage: 'read foo',
+			kind: 'extended' as const,
+			conversationHistory: [],
+			availableTools: [readFileTool],
+		};
+
+		beforeEach(() => {
+			openaiCalls.create.mockResolvedValue({ choices: [{ message: { content: 'ok' } }] });
+		});
+
+		function clientFor(model: string, plugin = buildPlugin()) {
+			return new OpenAIClient({ apiKey: 'sk-test', baseUrl: 'https://api.openai.com/v1', model }, undefined, plugin);
+		}
+
+		it.each(['gpt-6-sol', 'gpt-6-luna'])("%s sends tools with reasoning_effort 'none'", async (model) => {
+			await clientFor(model).generateModelResponse(toolRequest);
+			const args = openaiCalls.create.mock.calls[0][0];
+			expect(args.tools).toHaveLength(1);
+			expect(args.reasoning_effort).toBe('none');
+			expect(args).not.toHaveProperty('temperature');
+		});
+
+		it.each(['gpt-6.1-sol', 'gpt-6.1-terra', 'gpt-6-astra'])(
+			'%s sends no tools and no tool_choice, and logs why',
+			async (model) => {
+				const plugin = buildPlugin();
+				await clientFor(model, plugin).generateModelResponse(toolRequest);
+				const args = openaiCalls.create.mock.calls[0][0];
+				expect(args).not.toHaveProperty('tools');
+				expect(args).not.toHaveProperty('tool_choice');
+				expect(args).not.toHaveProperty('reasoning_effort');
+				expect(args).not.toHaveProperty('temperature');
+				expect(plugin.logger.warn).toHaveBeenCalledWith(expect.stringContaining(model));
+			}
+		);
+
+		it('drops tools on the streaming path too', async () => {
+			async function* stream() {
+				yield { choices: [{ index: 0, delta: { content: 'ok' }, finish_reason: 'stop' }] };
+			}
+			openaiCalls.create.mockResolvedValue(stream());
+			await clientFor('gpt-6.1-terra').generateStreamingResponse(toolRequest, () => {}).complete;
+			expect(openaiCalls.create.mock.calls[0][0]).not.toHaveProperty('tools');
+		});
+
+		it('does not match look-alike ids', async () => {
+			await clientFor('gpt-6-solar').generateModelResponse(toolRequest);
+			const args = openaiCalls.create.mock.calls[0][0];
+			expect(args.tools).toHaveLength(1);
+			expect(args).not.toHaveProperty('reasoning_effort');
+		});
+	});
+
 	describe('no model error', () => {
 		it('generateModelResponse throws when no model configured', async () => {
 			const c = new OpenAIClient({ apiKey: 'sk-test', baseUrl: 'https://api.openai.com/v1' }, undefined, buildPlugin());

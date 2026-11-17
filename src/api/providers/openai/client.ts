@@ -98,11 +98,20 @@ interface StreamingToolCallAccumulator {
 
 export class OpenAIClient implements ModelApi, ImageGenerationApi {
 	/**
-	 * GPT-5.6-family reasoning models: `/v1/chat/completions` rejects function
-	 * tools for them unless `reasoning_effort` is 'none'. Matched by id (not
-	 * base URL) so the same handling applies when a proxy serves these models.
+	 * Reasoning models whose `/v1/chat/completions` endpoint rejects function
+	 * tools unless `reasoning_effort` is 'none': GPT-5.6 and gpt-6-sol/luna.
+	 * Matched by id (not base URL) so the same handling applies when a proxy
+	 * serves these models.
 	 */
-	private static readonly GPT56_MODEL_PATTERN = /^gpt-5\.6/;
+	private static readonly TOOLS_NEED_REASONING_OFF_PATTERN = /^gpt-(5\.6|6-sol|6-luna)(-|$)/;
+
+	/**
+	 * Models whose `/v1/chat/completions` endpoint rejects function tools
+	 * outright (400), whatever the reasoning setting: gpt-6.1-* and gpt-6-astra.
+	 * Tool calling for them needs the Responses API, which this client doesn't
+	 * target yet (#1755), so their requests go out without tools.
+	 */
+	private static readonly NO_CHAT_TOOLS_PATTERN = /^gpt-(6\.1|6-astra)(-|$)/;
 
 	protected client: OpenAI;
 	protected config: OpenAIClientConfig;
@@ -276,17 +285,13 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 		});
 	}
 
-	/** Whether `model` is a GPT-5.6-family reasoning model. */
-	private isGpt56Model(model: string): boolean {
-		return OpenAIClient.GPT56_MODEL_PATTERN.test(model);
-	}
-
 	/**
 	 * Tool params for a request. `/v1/chat/completions` rejects function tools
-	 * for GPT-5.6 models unless reasoning is disabled, so those requests pin
-	 * `reasoning_effort: 'none'`. (Tool calling with reasoning would require the
-	 * Responses API, which this client deliberately doesn't target — see the
-	 * module header.)
+	 * for some reasoning models unless reasoning is disabled, so those requests
+	 * pin `reasoning_effort: 'none'`; for others it rejects tools outright, so
+	 * the tools are left off and the turn runs as plain chat. (Tool calling with
+	 * reasoning would require the Responses API, which this client doesn't
+	 * target yet; see the module header.)
 	 */
 	private toolParams(
 		model: string,
@@ -295,9 +300,15 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 		if (!tools || !tools.length) {
 			return {};
 		}
+		if (OpenAIClient.NO_CHAT_TOOLS_PATTERN.test(model)) {
+			this.plugin?.logger.warn(
+				`[OpenAIClient] ${model} does not accept tools on Chat Completions; sending this request without them.`
+			);
+			return {};
+		}
 		return {
 			tools,
-			...(this.isGpt56Model(model) && { reasoning_effort: 'none' as const }),
+			...(OpenAIClient.TOOLS_NEED_REASONING_OFF_PATTERN.test(model) && { reasoning_effort: 'none' as const }),
 		};
 	}
 
