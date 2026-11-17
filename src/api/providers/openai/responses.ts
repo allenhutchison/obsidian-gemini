@@ -212,6 +212,9 @@ function parseArguments(name: string, raw: string, logger: MappingLogger | undef
  * first), reasoning summaries as thoughts, and usage.
  */
 export function responseToModelResponse(response: OpenAI.Responses.Response, logger?: MappingLogger): ModelResponse {
+	if (response.status === 'failed') {
+		throw new Error(response.error?.message || 'OpenAI response failed');
+	}
 	const textParts: string[] = [];
 	const thoughts: string[] = [];
 	const reasoning: ReasoningItem[] = [];
@@ -221,8 +224,17 @@ export function responseToModelResponse(response: OpenAI.Responses.Response, log
 		if (item.type === 'message') {
 			for (const part of item.content) {
 				if (part.type === 'output_text') textParts.push(part.text);
+				// A refusal carries the model's explanation; show it rather than
+				// an empty answer.
+				else if (part.type === 'refusal') textParts.push(part.refusal);
 			}
 		} else if (item.type === 'function_call') {
+			// A call cut off mid-generation (e.g. at the output token limit) has
+			// partial arguments; never hand it to the agent as runnable.
+			if (item.status === 'incomplete') {
+				logger?.warn(`[OpenAIClient] Dropping incomplete tool call ${item.name}`);
+				continue;
+			}
 			toolCalls.push({
 				id: item.call_id,
 				name: item.name,

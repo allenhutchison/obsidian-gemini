@@ -1098,6 +1098,35 @@ describe('OpenAIClient', () => {
 			expect(openaiCalls.responses.mock.calls[0][1]).toHaveProperty('signal');
 		});
 
+		it('rejects a stream that ends without a terminal event', async () => {
+			async function* events() {
+				yield { type: 'response.output_text.delta', delta: 'partial' };
+			}
+			openaiCalls.responses.mockResolvedValue(events());
+			await expect(clientFor('gpt-6.1-sol').generateStreamingResponse(toolRequest, () => {}).complete).rejects.toThrow(
+				'ended before the response completed'
+			);
+		});
+
+		it('keeps the streamed text when the user stops the stream', async () => {
+			let release: () => void = () => {};
+			const gate = new Promise<void>((resolve) => (release = resolve));
+			async function* events() {
+				yield { type: 'response.output_text.delta', delta: 'partial' };
+				await gate;
+				yield { type: 'response.output_text.delta', delta: ' more' };
+			}
+			openaiCalls.responses.mockResolvedValue(events());
+			const chunks: string[] = [];
+			const stream = clientFor('gpt-6.1-sol').generateStreamingResponse(toolRequest, (c) => {
+				if (c.text) chunks.push(c.text);
+			});
+			await vi.waitFor(() => expect(chunks).toEqual(['partial']));
+			stream.cancel();
+			release();
+			await expect(stream.complete).resolves.toMatchObject({ markdown: 'partial' });
+		});
+
 		it('rejects the stream on a response.failed event', async () => {
 			async function* events() {
 				yield { type: 'response.failed', response: { error: { message: 'boom' } } };

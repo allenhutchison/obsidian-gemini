@@ -31,14 +31,7 @@ A compatible server's `/models` catalog is taken at face value — the supported
 
 ## Models
 
-<<<<<<< HEAD
-
 - **`api.openai.com`** — the endpoint advertises around ninety model ids, most of which this integration can't drive usefully (Responses-API-only, audio, embeddings, older families). The text dropdowns are therefore limited to the three GPT-5.6 models that have been validated against the plugin: **`gpt-5.6-sol`** (chat default), **`gpt-5.6-terra`** (summary default), and **`gpt-5.6-luna`** (completions default). All three accept **922,000 input tokens**, which is what the token counter above the message box reflects. The **GPT-6** and **GPT-6.1** models (`gpt-6-sol`, `gpt-6-luna`, `gpt-6-astra`, `gpt-6.1-sol`, `gpt-6.1-terra`) are offered too, but aren't defaults for any feature; see [GPT-6 models](#gpt-6-models). Their input limits haven't been measured yet, so the token counter uses a conservative default for them. The image-generation dropdown offers **`gpt-image-2.5-flare`** (default; fast everyday generation) and **`gpt-image-2.5-sunburst`** (higher-precision editing and fidelity).
-  \=======
-- **`api.openai.com`** — the endpoint advertises around ninety model ids, most of which this integration can't drive usefully (Responses-API-only, audio, embeddings, older families). The text dropdowns are therefore limited to the three GPT-5.6 models that have been validated against the plugin: **`gpt-5.6-sol`** (chat default), **`gpt-5.6-terra`** (summary default), and **`gpt-5.6-luna`** (completions default). All three accept **922,000 input tokens**, which is what the token counter above the message box reflects. The **GPT-6** and **GPT-6.1** models (`gpt-6-sol`, `gpt-6-luna`, `gpt-6-astra`, `gpt-6.1-sol`, `gpt-6.1-terra`) are offered too, but aren't defaults for any feature; see [GPT-6 limitations](#gpt-6-limitations). Their input limits haven't been measured yet, so the token counter uses a conservative default for them. The image-generation dropdown offers **`gpt-image-2.5-flare`** (default; fast everyday generation) and **`gpt-image-2.5-sunburst`** (higher-precision editing and fidelity).
-
-> > > > > > > claude/project-thread-nnqq1a-gpt6
-
 - **Where those numbers come from** — OpenAI's `/v1/models` returns no capability metadata (just an id and a creation date), so context windows are curated in the plugin rather than discovered. The 922,000 figure was measured directly against the live API, not taken from documentation.
 - **Compatible servers** — an unrecognized model id gets a conservative default: 128k context window, no vision, tool calling assumed. Because `/models` does not report whether a model supports image generation, these models appear in both the text and image-generation dropdowns; the image picker marks their capability as unreported. Selecting one for image generation is an explicit opt-in and succeeds only if the server implements `/v1/images/generations` for that model.
 
@@ -52,7 +45,7 @@ The GPT-5.6 models are reasoning models, which constrains what Chat Completions 
 ### GPT-6 models
 
 - **`gpt-6-sol` and `gpt-6-luna`** work like GPT-5.6: agent turns use tools on Chat Completions with reasoning set to `none`.
-- **`gpt-6.1-*` and `gpt-6-astra`** don't accept tools on Chat Completions, so on `api.openai.com` their agent turns go through OpenAI's **Responses API** (`/v1/responses`) instead. The agent gets its full set of vault tools, with reasoning left on. Requests are stateless (`store: false`): the whole conversation is sent each time, as with every other provider, and nothing is kept on OpenAI's side between turns. The model's reasoning is carried across a tool round in encrypted form, and isn't shown in the agent view. Summaries, rewrites and completions still use Chat Completions.
+- **`gpt-6.1-*` and `gpt-6-astra`** don't accept tools on Chat Completions, so on `api.openai.com` their agent turns go through OpenAI's **Responses API** (`/v1/responses`) instead. The agent gets its full set of vault tools, with reasoning left on. Requests are sent with `store: false`, so the plugin doesn't rely on response state stored at OpenAI: the whole conversation is sent each time, as with every other provider. This doesn't change OpenAI's own data-retention policy. The model's reasoning is carried across a tool round in encrypted form, and isn't shown in the agent view. Summaries, rewrites and completions still use Chat Completions.
 - **Behind a custom base URL** (a proxy serving these models), the plugin can't assume the server implements `/v1/responses`, so agent turns for `gpt-6.1-*` and `gpt-6-astra` go to Chat Completions without tools. The agent can still chat, but it can't read, search or edit your vault.
 
 ## What works

@@ -142,6 +142,30 @@ describe('responseToModelResponse', () => {
 		});
 	});
 
+	it('throws on a failed response', () => {
+		expect(() =>
+			responseToModelResponse({ status: 'failed', error: { message: 'quota' }, output: [] } as never)
+		).toThrow('quota');
+	});
+
+	it('shows a refusal as the answer', () => {
+		const result = responseToModelResponse({
+			output: [{ type: 'message', content: [{ type: 'refusal', refusal: 'I cannot help with that.' }] }],
+		} as never);
+		expect(result.markdown).toBe('I cannot help with that.');
+	});
+
+	it('drops tool calls cut off mid-generation', () => {
+		const result = responseToModelResponse({
+			status: 'incomplete',
+			output: [
+				{ type: 'function_call', call_id: 'c1', name: 'a', arguments: '{"x":1}', status: 'completed' },
+				{ type: 'function_call', call_id: 'c2', name: 'b', arguments: '{"path":', status: 'incomplete' },
+			],
+		} as never);
+		expect(result.toolCalls).toEqual([{ id: 'c1', name: 'a', arguments: { x: 1 } }]);
+	});
+
 	it('attaches no signature when the turn has no tool calls', () => {
 		const result = responseToModelResponse({ output: [reasoningItem] } as never);
 		expect(result.toolCalls).toBeUndefined();

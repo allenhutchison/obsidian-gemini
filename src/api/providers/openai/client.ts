@@ -333,7 +333,10 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 		request: ExtendedModelRequest,
 		onChunk: StreamCallback
 	): StreamingModelResponse {
-		const state: { final?: OpenAI.Responses.Response; text: string } = { text: '' };
+		const state: { final?: OpenAI.Responses.Response; text: string; cancelled: boolean } = {
+			text: '',
+			cancelled: false,
+		};
 		return runCancellableStream<OpenAI.Responses.ResponseStreamEvent>({
 			start: async (signal) => {
 				const body = await this.buildResponsesRequest(model, request);
@@ -344,10 +347,17 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 					state.text += text;
 					onChunk({ text });
 				}),
-			finalize: () =>
-				state.final
-					? responseToModelResponse(state.final, this.plugin?.logger)
-					: { markdown: state.text, rendered: '' },
+			finalize: () => {
+				if (state.final) return responseToModelResponse(state.final, this.plugin?.logger);
+				// Stopped by the user: keep what streamed so far.
+				if (state.cancelled) return { markdown: state.text, rendered: '' };
+				// The connection closed without a terminal event: don't pass a
+				// truncated answer off as a finished one.
+				throw new Error('OpenAI response stream ended before the response completed');
+			},
+			onCancel: () => {
+				state.cancelled = true;
+			},
 			onError: (error) =>
 				this.plugin?.logger.error('[OpenAIClient] Responses streaming error:', describeSdkApiError(error), error),
 		});
