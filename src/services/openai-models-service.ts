@@ -46,7 +46,6 @@ const KNOWN_OPENAI_MODELS: Record<string, OpenAIModelMetadata> = {
 	'gpt-6-luna': { supportsVision: true },
 	'gpt-6-astra': { supportsVision: true },
 	'gpt-6.1-sol': { supportsVision: true },
-	'gpt-6.1-sol-ultrafast': { supportsVision: true },
 	'gpt-6.1-terra': { supportsVision: true },
 	// Dedicated Images API models. Flare is the everyday default; Sunburst is
 	// available when editing precision and maximum fidelity matter more.

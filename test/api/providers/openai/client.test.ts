@@ -1028,7 +1028,7 @@ describe('OpenAIClient', () => {
 			expect(args).not.toHaveProperty('temperature');
 		});
 
-		it.each(['gpt-6.1-sol', 'gpt-6.1-sol-ultrafast', 'gpt-6.1-terra', 'gpt-6-astra'])(
+		it.each(['gpt-6.1-sol', 'gpt-6.1-terra', 'gpt-6-astra'])(
 			'%s sends no tools and no tool_choice, and logs why',
 			async (model) => {
 				const plugin = buildPlugin();
