@@ -95,6 +95,12 @@ describe('OpenAIModelsService', () => {
 				'gpt-5.6-luna',
 				'gpt-image-2.5-flare',
 				'gpt-image-2.5-sunburst',
+				'gpt-6-sol',
+				'gpt-6-luna',
+				'gpt-6-astra',
+				'gpt-6.1-sol',
+				'gpt-6.1-sol-ultrafast',
+				'gpt-6.1-terra',
 				'gpt-5.1',
 				'gpt-4o',
 				'text-embedding-3-large',
@@ -111,7 +117,23 @@ describe('OpenAIModelsService', () => {
 				'gpt-5.6-luna',
 				'gpt-image-2.5-flare',
 				'gpt-image-2.5-sunburst',
+				'gpt-6-sol',
+				'gpt-6-luna',
+				'gpt-6-astra',
+				'gpt-6.1-sol',
+				'gpt-6.1-sol-ultrafast',
+				'gpt-6.1-terra',
 			]);
+		});
+
+		it('offers GPT-6 models without making any of them a role default (#1755)', async () => {
+			mockModelList(['gpt-6-sol', 'gpt-6.1-terra']);
+			const models = await new OpenAIModelsService(buildPlugin()).getModels();
+			for (const m of models) {
+				expect(m).toMatchObject({ provider: 'openai', supportsVision: true });
+				expect(m.defaultForRoles).toBeUndefined();
+				expect(m.capabilitiesUnknown).toBeUndefined();
+			}
 		});
 
 		it('does not filter model ids on a custom (non-api.openai.com) base URL', async () => {

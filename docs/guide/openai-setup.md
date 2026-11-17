@@ -31,7 +31,7 @@ A compatible server's `/models` catalog is taken at face value — the supported
 
 ## Models
 
-- **`api.openai.com`** — the endpoint advertises around ninety model ids, most of which this integration can't drive usefully (Responses-API-only, audio, embeddings, older families). The text dropdowns are therefore limited to the three GPT-5.6 models that have been validated against the plugin: **`gpt-5.6-sol`** (chat default), **`gpt-5.6-terra`** (summary default), and **`gpt-5.6-luna`** (completions default). All three accept **922,000 input tokens**, which is what the token counter above the message box reflects. The image-generation dropdown offers **`gpt-image-2.5-flare`** (default; fast everyday generation) and **`gpt-image-2.5-sunburst`** (higher-precision editing and fidelity).
+- **`api.openai.com`** — the endpoint advertises around ninety model ids, most of which this integration can't drive usefully (Responses-API-only, audio, embeddings, older families). The text dropdowns are therefore limited to the three GPT-5.6 models that have been validated against the plugin: **`gpt-5.6-sol`** (chat default), **`gpt-5.6-terra`** (summary default), and **`gpt-5.6-luna`** (completions default). All three accept **922,000 input tokens**, which is what the token counter above the message box reflects. The **GPT-6** and **GPT-6.1** models (`gpt-6-sol`, `gpt-6-luna`, `gpt-6-astra`, `gpt-6.1-sol`, `gpt-6.1-sol-ultrafast`, `gpt-6.1-terra`) are offered too, but aren't defaults for any feature; see [GPT-6 limitations](#gpt-6-limitations). Their input limits haven't been measured yet, so the token counter uses a conservative default for them. The image-generation dropdown offers **`gpt-image-2.5-flare`** (default; fast everyday generation) and **`gpt-image-2.5-sunburst`** (higher-precision editing and fidelity).
 - **Where those numbers come from** — OpenAI's `/v1/models` returns no capability metadata (just an id and a creation date), so context windows are curated in the plugin rather than discovered. The 922,000 figure was measured directly against the live API, not taken from documentation.
 - **Compatible servers** — an unrecognized model id gets a conservative default: 128k context window, no vision, tool calling assumed. Because `/models` does not report whether a model supports image generation, these models appear in both the text and image-generation dropdowns; the image picker marks their capability as unreported. Selecting one for image generation is an explicit opt-in and succeeds only if the server implements `/v1/images/generations` for that model.
 
@@ -41,6 +41,13 @@ The GPT-5.6 models are reasoning models, which constrains what Chat Completions 
 
 - **Sampling settings are ignored.** These models only accept the default temperature and top-p, so the plugin omits both rather than sending a value — moot in practice, since the plugin no longer exposes temperature/top-p settings for any provider.
 - **Tool calling runs with reasoning disabled.** `/v1/chat/completions` rejects function tools for these models unless reasoning effort is set to `none`, so any request carrying tools (all agent-mode turns) pins it there. Agent mode works normally; you just won't get reasoning output alongside tool use.
+
+### GPT-6 limitations
+
+The GPT-6 models have the same Chat Completions constraints as GPT-5.6, and some have one more:
+
+- **`gpt-6-sol` and `gpt-6-luna`** work like GPT-5.6: agent turns use tools with reasoning set to `none`.
+- **`gpt-6.1-*` and `gpt-6-astra` don't accept tools on Chat Completions at all.** On these models, agent turns are sent without tools, so the agent can chat and answer from the context you give it, but it can't read, search or edit your vault. Summaries, rewrites and completions don't use tools and work normally. For agent work, pick `gpt-6-sol` or a GPT-5.6 model. Full tool support for GPT-6.1 needs OpenAI's Responses API, which the plugin doesn't use yet.
 
 ## What works
 
@@ -74,7 +81,7 @@ Nothing moves between providers unless you move it — a feature routed to a pro
 ## Tips
 
 - **Vision model detection** — Known OpenAI model ids report vision support from a curated metadata table; models from a compatible server default to no vision since the plugin has no way to know the server's capabilities. If your server serves a vision-capable model and attachments aren't working, this is why.
-- **Tool calling** — All offered OpenAI chat models support function calling; on GPT-5.6 models it runs with reasoning disabled (see above). Dedicated GPT Image models use the Images API instead. Compatible-server text models default to "tool calling assumed" — if a model genuinely doesn't support it, tool calls will fail rather than being pre-filtered.
-- **A model you want isn't listed** — On `api.openai.com` only the validated GPT-5.6 and GPT Image models above are offered. To use another model, point the base URL at a proxy that serves it; catalogs from non-`api.openai.com` URLs aren't filtered. Unrecognized compatible-server models remain available for text and are also offered as explicit image-generation opt-ins because `/v1/models` does not report image-generation capability.
+- **Tool calling** — Offered OpenAI chat models support function calling, except `gpt-6.1-*` and `gpt-6-astra` (see [GPT-6 limitations](#gpt-6-limitations)); on GPT-5.6, `gpt-6-sol` and `gpt-6-luna` it runs with reasoning disabled (see above). Dedicated GPT Image models use the Images API instead. Compatible-server text models default to "tool calling assumed" — if a model genuinely doesn't support it, tool calls will fail rather than being pre-filtered.
+- **A model you want isn't listed** — On `api.openai.com` only the validated GPT-5.6, GPT-6 and GPT Image models above are offered. To use another model, point the base URL at a proxy that serves it; catalogs from non-`api.openai.com` URLs aren't filtered. Unrecognized compatible-server models remain available for text and are also offered as explicit image-generation opt-ins because `/v1/models` does not report image-generation capability.
 - **Placeholder API keys** — Required even when your server doesn't check them; the provider won't initialize with an empty key field.
 - **Refreshing the model list** — Click **Refresh** on the OpenAI provider card after changing the base URL, loading a different model in a local server, or whenever a dropdown looks stale.
