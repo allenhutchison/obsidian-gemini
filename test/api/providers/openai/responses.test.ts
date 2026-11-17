@@ -189,6 +189,14 @@ describe('applyResponsesStreamEvent', () => {
 		expect(state.final).toEqual({ output: [] });
 	});
 
+	it('forwards refusal deltas as text', () => {
+		const texts: string[] = [];
+		applyResponsesStreamEvent({ type: 'response.refusal.delta', delta: 'I cannot' } as never, {}, (t) => {
+			texts.push(t);
+		});
+		expect(texts).toEqual(['I cannot']);
+	});
+
 	it('throws on error events', () => {
 		expect(() => applyResponsesStreamEvent({ type: 'error', message: 'bad key' } as never, {}, () => {})).toThrow(
 			'bad key'

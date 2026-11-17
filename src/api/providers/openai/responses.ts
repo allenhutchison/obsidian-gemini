@@ -279,7 +279,10 @@ export function applyResponsesStreamEvent(
 	onText: (text: string) => void
 ): void {
 	switch (event.type) {
+		// A refusal streams as its own delta type; forward it like text so the
+		// explanation appears in the agent view as it would on a full answer.
 		case 'response.output_text.delta':
+		case 'response.refusal.delta':
 			if (event.delta) onText(event.delta);
 			return;
 		case 'response.completed':

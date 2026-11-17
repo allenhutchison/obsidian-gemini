@@ -1098,6 +1098,25 @@ describe('OpenAIClient', () => {
 			expect(openaiCalls.responses.mock.calls[0][1]).toHaveProperty('signal');
 		});
 
+		it('streams a refusal to the view as text', async () => {
+			async function* events() {
+				yield { type: 'response.refusal.delta', delta: 'I cannot help with that.' };
+				yield {
+					type: 'response.completed',
+					response: {
+						output: [{ type: 'message', content: [{ type: 'refusal', refusal: 'I cannot help with that.' }] }],
+					},
+				};
+			}
+			openaiCalls.responses.mockResolvedValue(events());
+			const chunks: string[] = [];
+			const result = await clientFor('gpt-6.1-sol').generateStreamingResponse(toolRequest, (c) => {
+				if (c.text) chunks.push(c.text);
+			}).complete;
+			expect(chunks).toEqual(['I cannot help with that.']);
+			expect(result.markdown).toBe('I cannot help with that.');
+		});
+
 		it('rejects a stream that ends without a terminal event', async () => {
 			async function* events() {
 				yield { type: 'response.output_text.delta', delta: 'partial' };
