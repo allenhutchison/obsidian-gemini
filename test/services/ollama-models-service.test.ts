@@ -692,7 +692,7 @@ describe('OllamaModelsService', () => {
 			// B's own probe (post-switch, fresh generation) legitimately caches its
 			// answer — keyed by B's endpoint. A's stale write must not appear under
 			// ANY key: not the bare name, not A's endpoint.
-			expect([...internal.showCache.keys()]).toEqual(['http://10.0.0.1:11434|llama3.2:3b']);
+			expect([...internal.showCache.keys()]).toEqual([JSON.stringify(['http://10.0.0.1:11434|llama3.2:3b', ''])]);
 		});
 
 		it('preserves the /api/ps in-flight result across a forced refresh that clears showCache', async () => {
@@ -791,5 +791,17 @@ describe('OllamaModelsService with an API key (#1764)', () => {
 		await svc.getModels();
 		const tagCalls = mockedRequestUrl.mock.calls.filter(([o]) => o.url.endsWith('/api/tags'));
 		expect(tagCalls.map(([o]) => o.headers.Authorization)).toEqual(['Bearer one', 'Bearer two']);
+	});
+});
+
+describe('ollama auth header safety (#1764)', () => {
+	it('allows the key only over HTTPS or to loopback', async () => {
+		const { canSendOllamaKey } = await import('../../src/api/providers/ollama/config');
+		expect(canSendOllamaKey('https://ollama.com')).toBe(true);
+		expect(canSendOllamaKey('http://localhost:11434')).toBe(true);
+		expect(canSendOllamaKey('http://127.0.0.1:11434')).toBe(true);
+		expect(canSendOllamaKey('http://[::1]:11434')).toBe(true);
+		expect(canSendOllamaKey('http://ollama.lan:11434')).toBe(false);
+		expect(canSendOllamaKey('not a url')).toBe(false);
 	});
 });

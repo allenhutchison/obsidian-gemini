@@ -3953,7 +3953,7 @@ export const en = {
 	},
 	'settings.providers.privacyNoticeDesc': {
 		message:
-			'Only the providers your features actually use ever receive your content. Ollama keeps requests on this machine, except for models marked "cloud", which it forwards to ollama.com. Gemini, OpenAI, and Anthropic send the request to that company\'s servers. OpenRouter forwards it to whichever company serves the model you pick.',
+			'Only the providers your features actually use ever receive your content. Ollama sends requests to the endpoint on its card: a local Ollama keeps them on this machine, except for models marked "cloud", which it forwards to ollama.com, and an https://ollama.com endpoint sends every request to ollama.com. Gemini, OpenAI, and Anthropic send the request to that company\'s servers. OpenRouter forwards it to whichever company serves the model you pick.',
 		context:
 			'The single privacy note on the Providers page, replacing four separate variants from the previous settings layout. "Ollama", "Gemini", "OpenAI", "Anthropic", and "OpenRouter" are product names.',
 	},

@@ -94,7 +94,7 @@ You can also skip the local daemon and point the plugin straight at Ollama's hos
 3. Under **API key**, pick or create a secret holding that key. It is stored in Obsidian's secret storage, not in your vault.
 4. Press **Refresh** on the Models row. The list comes live from `https://ollama.com/api/tags`, so it shows every cloud model your account can use, with no `ollama pull` step.
 
-Every request for an Ollama-routed feature then goes to ollama.com with the key as a bearer token. Without a key, an `https://ollama.com` endpoint shows **Needs key** and the plugin sends it nothing. A local endpoint ignores the key field, so leave it empty for a local daemon. The same key also works with a self-hosted Ollama behind an authenticating proxy.
+Every request for an Ollama-routed feature then goes to ollama.com with the key as a bearer token. Without a key, an `https://ollama.com` endpoint shows **Needs key** and the plugin sends it nothing. The key is sent to whatever endpoint is set, so clear it before switching back to a local daemon that doesn't need it. It is only sent over HTTPS or to `localhost`; a plain `http://` endpoint on another host gets no key. The same key field also works for a self-hosted Ollama behind an authenticating HTTPS proxy.
 
 ## What works
 

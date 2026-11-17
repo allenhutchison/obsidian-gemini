@@ -220,7 +220,7 @@ export class OllamaModelsService {
 		const response = await requestUrl({
 			url: joinBaseUrl(baseUrl, '/api/tags'),
 			method: 'GET',
-			headers: ollamaAuthHeaders(apiKey),
+			headers: ollamaAuthHeaders(apiKey, baseUrl),
 			throw: false,
 		});
 
@@ -257,7 +257,9 @@ export class OllamaModelsService {
 	 * another endpoint's cache entry after the switch (#1545).
 	 */
 	private async probeModel(name: string, baseUrl: string, apiKey: string): Promise<OllamaShowResponse | null> {
-		const cacheKey = probeCacheKey(baseUrl, name);
+		// The credential is part of the identity too: a probe made under one key
+		// must never answer for another account's catalog (#1764).
+		const cacheKey = JSON.stringify([probeCacheKey(baseUrl, name), apiKey || '']);
 		if (this.showCache.has(cacheKey)) {
 			return this.showCache.get(cacheKey)!;
 		}
@@ -267,7 +269,7 @@ export class OllamaModelsService {
 				url: joinBaseUrl(baseUrl, '/api/show'),
 				method: 'POST',
 				contentType: 'application/json',
-				headers: ollamaAuthHeaders(apiKey),
+				headers: ollamaAuthHeaders(apiKey, baseUrl),
 				body: JSON.stringify({ model: name }),
 				throw: false,
 			});
@@ -393,7 +395,7 @@ export class OllamaModelsService {
 			const response = await requestUrl({
 				url: joinBaseUrl(baseUrl, '/api/ps'),
 				method: 'GET',
-				headers: ollamaAuthHeaders(apiKey),
+				headers: ollamaAuthHeaders(apiKey, baseUrl),
 				throw: false,
 			});
 			if (response.status !== 200) return null;
