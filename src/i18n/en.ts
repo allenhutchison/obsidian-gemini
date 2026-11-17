@@ -3827,6 +3827,12 @@ export const en = {
 		message: "Saved in Obsidian's secret storage, not in this vault's data.",
 		context: "Row description for a provider card's API key field, reassuring the user how the key is stored.",
 	},
+	'settings.providers.ollamaApiKeyDesc': {
+		message:
+			"Optional. Only needed for Ollama Cloud: set the endpoint to https://ollama.com and pick a key from ollama.com/settings/keys. A local Ollama doesn't need one. Saved in Obsidian's secret storage, not in this vault's data.",
+		context:
+			"Row description for the Ollama provider card's API key field. The key is optional; it is only required when the endpoint is Ollama's hosted service. URLs must stay verbatim.",
+	},
 	'settings.providers.baseUrlName': {
 		message: 'Base URL',
 		context: "Row name for a provider card's endpoint/base-URL field.",

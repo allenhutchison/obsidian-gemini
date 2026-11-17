@@ -3,6 +3,7 @@ import type { ObsidianGemini } from '../types/plugin';
 import { GeminiModel } from '../models';
 import { t } from '../i18n';
 import { CachedModelCatalog, joinBaseUrl, type CatalogEndpoint } from './remote-model-catalog';
+import { DEFAULT_OLLAMA_BASE_URL, isOllamaCloudEndpoint, ollamaAuthHeaders } from '../api/providers/ollama/config';
 
 /**
  * Models that Ollama exposes for completions are tiny by convention. We pre-bias
@@ -33,8 +34,6 @@ const COMPLETION_NAME_HINT_PATTERNS = [
  * template-regex fallback for Ollama versions that predate the capabilities field.
  */
 const VISION_NAME_HINTS = ['llava', 'bakllava', 'vision', 'moondream', 'qwen2-vl', 'qwen2.5-vl', 'minicpm-v'];
-
-const OLLAMA_DEFAULT_BASE_URL = 'http://localhost:11434';
 
 /**
  * Cache identity shared by the two probe caches: endpoint plus model name. The
@@ -100,6 +99,7 @@ interface OllamaPsResponse {
 
 interface OllamaEndpoint extends CatalogEndpoint {
 	baseUrl: string;
+	apiKey: string;
 }
 
 /**
@@ -172,9 +172,12 @@ export class OllamaModelsService {
 			endpoint: () => {
 				// Mirror the runtime client's fallback so model refresh and generation
 				// target the same daemon when the user has cleared the field.
-				const baseUrl = this.plugin.settings.ollamaBaseUrl || OLLAMA_DEFAULT_BASE_URL;
-				// The daemon is unauthenticated, so the base URL alone identifies a catalog.
-				return { key: baseUrl, label: baseUrl, baseUrl };
+				const baseUrl = this.plugin.settings.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL;
+				const apiKey = this.plugin.ollamaApiKey;
+				// Identity spans the optional key as well as the base URL: on Ollama
+				// Cloud a changed key must not keep serving the previous key's
+				// catalog (#1764). JSON-encoded so no base URL can forge the boundary.
+				return { key: JSON.stringify([baseUrl, apiKey]), label: baseUrl, baseUrl, apiKey };
 			},
 			// Clear capability probes so they run against the current daemon state.
 			// Bumping the show generation too: a probe already in flight against the
@@ -185,7 +188,7 @@ export class OllamaModelsService {
 					this.showGeneration++;
 				}
 			},
-			load: ({ baseUrl }) => this.fetchModels(baseUrl),
+			load: ({ baseUrl, apiKey }) => this.fetchModels(baseUrl, apiKey),
 		});
 	}
 
@@ -194,6 +197,10 @@ export class OllamaModelsService {
 	 * Cache is invalidated when the base URL changes.
 	 */
 	async getModels(forceRefresh = false): Promise<GeminiModel[]> {
+		if (!this.plugin.ollamaApiKey && isOllamaCloudEndpoint(this.endpointBaseUrl())) {
+			// ollama.com rejects every keyless request, so there is nothing to learn.
+			return [];
+		}
 		return this.catalog.get(forceRefresh);
 	}
 
@@ -202,11 +209,20 @@ export class OllamaModelsService {
 	 * daemon, a non-200 status, or an unexpected response shape; the shared
 	 * catalog turns any of those into the identity-aware cache fallback.
 	 */
-	private async fetchModels(baseUrl: string): Promise<GeminiModel[]> {
+	private endpointBaseUrl(): string {
+		return this.plugin.settings.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL;
+	}
+
+	private async fetchModels(baseUrl: string, apiKey: string): Promise<GeminiModel[]> {
 		// Deliberately no retry/backoff: ECONNREFUSED against the local daemon is
 		// permanent until `ollama serve` runs, so retrying only delays the
 		// actionable error — see #709 for the full rationale.
-		const response = await requestUrl({ url: joinBaseUrl(baseUrl, '/api/tags'), method: 'GET', throw: false });
+		const response = await requestUrl({
+			url: joinBaseUrl(baseUrl, '/api/tags'),
+			method: 'GET',
+			headers: ollamaAuthHeaders(apiKey),
+			throw: false,
+		});
 
 		if (response.status !== 200) {
 			throw new Error(`Ollama /api/tags returned HTTP ${response.status}`);
@@ -217,7 +233,7 @@ export class OllamaModelsService {
 			throw new Error('Invalid /api/tags response shape');
 		}
 
-		return Promise.all(data.models.map((m) => this.toGeminiModel(m, baseUrl)));
+		return Promise.all(data.models.map((m) => this.toGeminiModel(m, baseUrl, apiKey)));
 	}
 
 	/**
@@ -240,7 +256,7 @@ export class OllamaModelsService {
 	 * against one endpoint (or before an invalidate) can neither serve nor re-seed
 	 * another endpoint's cache entry after the switch (#1545).
 	 */
-	private async probeModel(name: string, baseUrl: string): Promise<OllamaShowResponse | null> {
+	private async probeModel(name: string, baseUrl: string, apiKey: string): Promise<OllamaShowResponse | null> {
 		const cacheKey = probeCacheKey(baseUrl, name);
 		if (this.showCache.has(cacheKey)) {
 			return this.showCache.get(cacheKey)!;
@@ -251,6 +267,7 @@ export class OllamaModelsService {
 				url: joinBaseUrl(baseUrl, '/api/show'),
 				method: 'POST',
 				contentType: 'application/json',
+				headers: ollamaAuthHeaders(apiKey),
 				body: JSON.stringify({ model: name }),
 				throw: false,
 			});
@@ -323,7 +340,7 @@ export class OllamaModelsService {
 	 * or the daemon is unreachable, so callers fall back to a bound.
 	 */
 	async getRuntimeContextLength(modelName: string): Promise<number | null> {
-		const baseUrl = this.plugin.settings.ollamaBaseUrl || OLLAMA_DEFAULT_BASE_URL;
+		const baseUrl = this.endpointBaseUrl();
 		// Keyed by probeCacheKey too: pointing at a different daemon must not serve
 		// the previous one's allocation, and this probe can run without getModels()
 		// having noticed the switch.
@@ -347,7 +364,7 @@ export class OllamaModelsService {
 		// invalidate() mid-probe must not be undone by the older result landing
 		// afterwards and re-seeding the cache it just cleared.
 		const generation = this.psGeneration;
-		const probe = this.fetchRuntimeContextLength(modelName, baseUrl)
+		const probe = this.fetchRuntimeContextLength(modelName, baseUrl, this.plugin.ollamaApiKey)
 			.then((contextLength) => {
 				// Every outcome is cached, including "not loaded" and probe failure. A
 				// failing daemon is the case that most needs it — otherwise each turn
@@ -371,9 +388,14 @@ export class OllamaModelsService {
 		return probe;
 	}
 
-	private async fetchRuntimeContextLength(modelName: string, baseUrl: string): Promise<number | null> {
+	private async fetchRuntimeContextLength(modelName: string, baseUrl: string, apiKey: string): Promise<number | null> {
 		try {
-			const response = await requestUrl({ url: joinBaseUrl(baseUrl, '/api/ps'), method: 'GET', throw: false });
+			const response = await requestUrl({
+				url: joinBaseUrl(baseUrl, '/api/ps'),
+				method: 'GET',
+				headers: ollamaAuthHeaders(apiKey),
+				throw: false,
+			});
 			if (response.status !== 200) return null;
 
 			const data = response.json as OllamaPsResponse;
@@ -385,11 +407,11 @@ export class OllamaModelsService {
 		}
 	}
 
-	private async toGeminiModel(m: OllamaTagsModel, baseUrl: string): Promise<GeminiModel> {
+	private async toGeminiModel(m: OllamaTagsModel, baseUrl: string, apiKey: string): Promise<GeminiModel> {
 		const name = m.name;
 		const lower = name.toLowerCase();
 		const isCompletion = COMPLETION_NAME_HINT_PATTERNS.some((re) => re.test(lower));
-		const show = await this.probeModel(name, baseUrl);
+		const show = await this.probeModel(name, baseUrl, apiKey);
 		const isVision = this.detectVision(name, show);
 		const contextWindow = this.extractContextWindow(show);
 

@@ -800,3 +800,19 @@ describe('OllamaClient', () => {
 		});
 	});
 });
+
+describe('OllamaClient auth headers (#1764)', () => {
+	it('passes a bearer token to ollama-js when an API key is configured', async () => {
+		const { Ollama } = await import('ollama/browser');
+		(Ollama as unknown as Mock).mockClear();
+		new OllamaClient({ baseUrl: 'https://ollama.com', apiKey: 'secret', model: 'gpt-oss:120b' });
+		expect(Ollama).toHaveBeenCalledWith({ host: 'https://ollama.com', headers: { Authorization: 'Bearer secret' } });
+	});
+
+	it('sends no auth header for a keyless local daemon', async () => {
+		const { Ollama } = await import('ollama/browser');
+		(Ollama as unknown as Mock).mockClear();
+		new OllamaClient({ baseUrl: 'http://localhost:11434', model: 'llama3.2' });
+		expect(Ollama).toHaveBeenCalledWith({ host: 'http://localhost:11434', headers: {} });
+	});
+});

@@ -231,3 +231,28 @@ describe('providerConnection hosted-endpoint check', () => {
 		expect(providerConnection(plugin, 'openai')).toBe('needs-key');
 	});
 });
+
+describe('Ollama Cloud (#1764)', () => {
+	function ollamaPlugin(baseUrl: string, apiKey: string, probe: 'reachable' | 'unreachable' | null = null) {
+		const plugin = makePlugin({ features: routes({ chat: { provider: 'ollama', model: '' } }) });
+		Object.assign(plugin.settings, { ollamaBaseUrl: baseUrl });
+		return Object.assign(plugin, {
+			ollamaApiKey: apiKey,
+			modelManager: { getOllamaModelsService: () => ({ lastProbe: probe }) },
+		});
+	}
+
+	it('reports a missing key only for an ollama.com endpoint', () => {
+		expect(providerMissingKey(ollamaPlugin('https://ollama.com', ''), 'ollama')).toBe(true);
+		expect(providerMissingKey(ollamaPlugin('https://ollama.com', 'k'), 'ollama')).toBe(false);
+		expect(providerMissingKey(ollamaPlugin('http://localhost:11434', ''), 'ollama')).toBe(false);
+		// Substring lookalikes are not the hosted API.
+		expect(providerMissingKey(ollamaPlugin('https://ollama.com.evil.example', ''), 'ollama')).toBe(false);
+	});
+
+	it('is needs-key on ollama.com without a key, probe-driven otherwise', () => {
+		expect(providerConnection(ollamaPlugin('https://ollama.com', '', 'reachable'), 'ollama')).toBe('needs-key');
+		expect(providerConnection(ollamaPlugin('https://ollama.com', 'k', 'reachable'), 'ollama')).toBe('connected');
+		expect(providerConnection(ollamaPlugin('http://localhost:11434', '', 'reachable'), 'ollama')).toBe('connected');
+	});
+});

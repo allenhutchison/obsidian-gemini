@@ -28,6 +28,8 @@ export interface ObsidianGemini extends Plugin {
 	readonly anthropicApiKey: string;
 	/** Resolved OpenRouter API key ('' when not configured), mirroring `apiKey`. */
 	readonly openrouterApiKey: string;
+	/** Resolved Ollama API key ('' when not configured; a local daemon needs none). */
+	readonly ollamaApiKey: string;
 
 	isGeminiInitialized: boolean;
 

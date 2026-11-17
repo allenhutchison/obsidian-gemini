@@ -13,6 +13,7 @@ import { apiKeySecretNameFor } from './provider-credentials';
 import { featureRoute } from './feature-routing';
 import type { FeatureId } from '../types/features';
 import { DEFAULT_OPENAI_BASE_URL, isOpenAIHostedEndpoint } from './providers/openai/config';
+import { DEFAULT_OLLAMA_BASE_URL, isOllamaCloudEndpoint } from './providers/ollama/config';
 
 export type ProviderConnection = 'connected' | 'needs-key' | 'unreachable' | 'unknown';
 export type FeatureStatus = 'ok' | 'off' | 'unsupported' | 'unconfigured';
@@ -20,9 +21,11 @@ export type FeatureStatus = 'ok' | 'off' | 'unsupported' | 'unconfigured';
 /**
  * Whether a provider is set up enough to serve a request right now.
  *
- * Ollama needs no key, so its state is the outcome of the models service's
- * last /api/tags probe: `unknown` until one has run (the settings UI kicks a
- * probe when the card renders), then `connected` or `unreachable`.
+ * Ollama's state is the outcome of the models service's last /api/tags probe:
+ * `unknown` until one has run (the settings UI kicks a probe when the card
+ * renders), then `connected` or `unreachable`. A local daemon needs no key;
+ * Ollama Cloud (ollama.com) does, so that endpoint without one is `needs-key`
+ * and is never probed (#1764).
  *
  * A key-requiring provider is `connected` only when its saved secret name
  * also resolves to a key on this device. Checking the name alone let a card
@@ -32,6 +35,7 @@ export type FeatureStatus = 'ok' | 'off' | 'unsupported' | 'unconfigured';
  */
 export function providerConnection(plugin: ObsidianGemini, p: ModelProvider): ProviderConnection {
 	if (p === 'ollama') {
+		if (providerMissingKey(plugin, p)) return 'needs-key';
 		const modelManager = plugin.modelManager as typeof plugin.modelManager | undefined;
 		const probe = modelManager?.getOllamaModelsService().lastProbe ?? null;
 		if (probe === 'reachable') return 'connected';
@@ -52,8 +56,9 @@ export function providerConnection(plugin: ObsidianGemini, p: ModelProvider): Pr
  * Whether a provider's model-list request would go out without the key it
  * requires. It reads the resolved key — the same value the models
  * services send — so a saved name pointing at a missing or empty secret
- * still counts as missing. `providerConnection` builds on it. Ollama and custom OpenAI-compatible endpoints
- * need no key, so they never report a missing one.
+ * still counts as missing. `providerConnection` builds on it. A local Ollama
+ * daemon and custom OpenAI-compatible endpoints need no key, so they never
+ * report a missing one; Ollama Cloud (ollama.com) does.
  */
 export function providerMissingKey(plugin: ObsidianGemini, p: ModelProvider): boolean {
 	switch (p) {
@@ -66,7 +71,7 @@ export function providerMissingKey(plugin: ObsidianGemini, p: ModelProvider): bo
 		case 'openrouter':
 			return !plugin.openrouterApiKey;
 		case 'ollama':
-			return false;
+			return !plugin.ollamaApiKey && isOllamaCloudEndpoint(plugin.settings.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL);
 	}
 }
 

@@ -3,7 +3,9 @@
  *
  * Uses ollama-js (via the browser entry point) so it works inside Obsidian's
  * Electron renderer without Node-specific imports. The Ollama daemon runs
- * locally with no auth, so configuration is just the base URL plus model.
+ * locally with no auth, so configuration is just the base URL plus model. An
+ * optional API key is sent as a bearer token, which is how Ollama Cloud
+ * (`https://ollama.com`) is reached directly (#1764).
  *
  * Phase 1 scope:
  *  - chat + tool calling for ExtendedModelRequest
@@ -33,7 +35,7 @@ import {
 } from '../../interfaces/model-api';
 import { GeminiPrompts } from '../../../prompts';
 import type { ObsidianGemini } from '../../../types/plugin';
-import type { OllamaClientConfig } from './config';
+import { ollamaAuthHeaders, type OllamaClientConfig } from './config';
 import { walkHistoryEntry } from '../history-walk';
 import { runCancellableStream } from '../../utils/cancellable-stream';
 import { t } from '../../../i18n';
@@ -49,7 +51,7 @@ export class OllamaClient implements ModelApi {
 		this.config = config;
 		this.plugin = plugin;
 		this.prompts = prompts || new GeminiPrompts(plugin);
-		this.client = new Ollama({ host: this.config.baseUrl });
+		this.client = new Ollama({ host: this.config.baseUrl, headers: ollamaAuthHeaders(this.config.apiKey) });
 	}
 
 	async generateModelResponse(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {

@@ -36,6 +36,11 @@ export interface ObsidianGeminiSettings {
 	providerModelMemory: ProviderModelMemory;
 	/** Base URL for the Ollama HTTP API. Only used when Ollama serves some feature. */
 	ollamaBaseUrl: string;
+	/**
+	 * SecretStorage key holding an optional Ollama API key. Required by Ollama
+	 * Cloud (`https://ollama.com`); a local daemon needs none (#1764).
+	 */
+	ollamaApiKeySecretName: string;
 	/** Optional custom base URL to override the default Google Gemini API endpoint. */
 	customBaseUrl: string;
 	apiKeySecretName: string;

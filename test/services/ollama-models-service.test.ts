@@ -741,3 +741,55 @@ describe('OllamaModelsService', () => {
 		expect(svc.lastProbe).toBe('unreachable');
 	});
 });
+
+describe('OllamaModelsService with an API key (#1764)', () => {
+	beforeEach(() => {
+		mockedRequestUrl.mockReset();
+	});
+
+	const cloudPlugin = (apiKey: string) =>
+		({
+			logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
+			settings: { ollamaBaseUrl: 'https://ollama.com' },
+			ollamaApiKey: apiKey,
+		}) as any;
+
+	it('sends the key as a bearer token on /api/tags and /api/show', async () => {
+		mockEndpoints([{ name: 'gpt-oss:120b' }], () => ({ capabilities: ['completion', 'tools'] }));
+		const svc = new OllamaModelsService(cloudPlugin('secret'));
+		const models = await svc.getModels();
+
+		expect(models.map((m) => m.value)).toEqual(['gpt-oss:120b']);
+		expect(mockedRequestUrl).toHaveBeenCalledTimes(2);
+		for (const [opts] of mockedRequestUrl.mock.calls) {
+			expect(opts.url.startsWith('https://ollama.com/api/')).toBe(true);
+			expect(opts.headers).toEqual({ Authorization: 'Bearer secret' });
+		}
+	});
+
+	it('sends no auth header for a keyless local daemon', async () => {
+		mockEndpoints([{ name: 'llama3.2' }], () => ({ capabilities: ['completion'] }));
+		const svc = new OllamaModelsService(buildPlugin());
+		await svc.getModels();
+		for (const [opts] of mockedRequestUrl.mock.calls) {
+			expect(opts.headers).toEqual({});
+		}
+	});
+
+	it('does not contact ollama.com without a key', async () => {
+		const svc = new OllamaModelsService(cloudPlugin(''));
+		expect(await svc.getModels()).toEqual([]);
+		expect(mockedRequestUrl).not.toHaveBeenCalled();
+	});
+
+	it('re-fetches the catalog when the key changes', async () => {
+		mockEndpoints([{ name: 'gpt-oss:120b' }], () => ({ capabilities: ['completion'] }));
+		const plugin = cloudPlugin('one');
+		const svc = new OllamaModelsService(plugin);
+		await svc.getModels();
+		plugin.ollamaApiKey = 'two';
+		await svc.getModels();
+		const tagCalls = mockedRequestUrl.mock.calls.filter(([o]) => o.url.endsWith('/api/tags'));
+		expect(tagCalls.map(([o]) => o.headers.Authorization)).toEqual(['Bearer one', 'Bearer two']);
+	});
+});

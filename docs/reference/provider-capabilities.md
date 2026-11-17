@@ -100,6 +100,9 @@ Consequences worth knowing:
   provider is "Ollama" — provider alone no longer implies on-device execution. Detection uses the
   `remote_host` field Ollama reports for these entries, not the model name. See
   [Cloud models](/guide/ollama-setup#cloud-models).
+- With the Ollama endpoint set to `https://ollama.com` and an Ollama API key (Ollama Cloud with
+  no local daemon), **every** Ollama-served request goes to ollama.com. See
+  [Ollama Cloud without a local install](/guide/ollama-setup#ollama-cloud-without-a-local-install).
 
 ### Models
 

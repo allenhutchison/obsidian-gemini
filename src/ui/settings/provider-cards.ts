@@ -12,6 +12,7 @@ import { t, type TranslationKey } from '../../i18n';
 import { getErrorMessage } from '../../utils/error-utils';
 import { getCapabilities, type ModelProvider } from '../../api/providers/registry';
 import { providerConnection, providerMissingKey } from '../../api/provider-status';
+import { DEFAULT_OLLAMA_BASE_URL, isOllamaCloudEndpoint } from '../../api/providers/ollama/config';
 import { featuresUsing } from '../../api/feature-routing';
 import type { SettingsContext } from './context';
 import { readSettingPath } from './paths';
@@ -22,7 +23,13 @@ export type AuthRow =
 	| {
 			kind: 'secret';
 			settingsKey:
-				'apiKeySecretName' | 'openaiApiKeySecretName' | 'anthropicApiKeySecretName' | 'openrouterApiKeySecretName';
+				| 'apiKeySecretName'
+				| 'openaiApiKeySecretName'
+				| 'anthropicApiKeySecretName'
+				| 'openrouterApiKeySecretName'
+				| 'ollamaApiKeySecretName';
+			/** Row description override; defaults to the generic "saved in secret storage" line. */
+			descKey?: TranslationKey;
 	  }
 	| { kind: 'baseUrl'; settingsKey: 'customBaseUrl' | 'ollamaBaseUrl' | 'openaiBaseUrl'; optional: boolean };
 
@@ -46,7 +53,11 @@ export const PROVIDER_CARDS: ProviderCardSpec[] = [
 		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini refresh path; card ids are display data keyed by provider
 		id: 'ollama',
 		labelKey: 'settings.providers.shortLabel.ollama',
-		auth: [{ kind: 'baseUrl', settingsKey: 'ollamaBaseUrl', optional: false }],
+		auth: [
+			{ kind: 'baseUrl', settingsKey: 'ollamaBaseUrl', optional: false },
+			// Optional: only Ollama Cloud (https://ollama.com) needs a key (#1764).
+			{ kind: 'secret', settingsKey: 'ollamaApiKeySecretName', descKey: 'settings.providers.ollamaApiKeyDesc' },
+		],
 	},
 	{
 		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini refresh path; card ids are display data keyed by provider
@@ -178,7 +189,10 @@ function modelsSummary(ctx: SettingsContext, id: ModelProvider): string {
 		return t('settings.providers.modelsLoading');
 	}
 	// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini refresh path; card ids are display data keyed by provider
-	if (id !== 'ollama') return t('settings.providers.modelsAvailable', { count: cached.total });
+	if (id !== 'ollama' || isOllamaCloudEndpoint(ctx.plugin.settings.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL)) {
+		// Ollama Cloud's catalog is hosted models, not local pulls.
+		return t('settings.providers.modelsAvailable', { count: cached.total });
+	}
 	const pulled = cached.total - cached.cloud;
 	return cached.cloud > 0
 		? t('settings.providers.modelsPulledAndCloud', { count: pulled, cloud: cached.cloud })
@@ -200,7 +214,7 @@ function authRows(ctx: SettingsContext, spec: ProviderCardSpec): SettingDefiniti
 		if (row.kind === 'secret') {
 			return {
 				name: t('settings.providers.apiKeyName'),
-				desc: t('settings.providers.apiKeyDesc'),
+				desc: t(row.descKey ?? 'settings.providers.apiKeyDesc'),
 				render: (setting) => {
 					setting.components.push(
 						new SecretComponent(app, setting.controlEl)

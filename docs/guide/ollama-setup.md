@@ -85,6 +85,17 @@ Two caveats:
 - **A cloud model sends your notes to ollama.com.** Selecting one means requests for that feature leave your machine even though the provider is "Ollama" — the Ollama card's "Connected" status doesn't distinguish local from cloud-hosted models, so check what you pulled. If you switched to Ollama for privacy, stay on locally pulled models.
 - **Pulling doesn't guarantee access.** Some models are excluded from included plan usage. A pull always succeeds, but the first request fails with `this model uses extra usage only ... your extra usage balance is empty`. Check your plan at [ollama.com/settings](https://ollama.com/settings), or `ollama rm` the model so it stops appearing in the picker.
 
+### Ollama Cloud without a local install
+
+You can also skip the local daemon and point the plugin straight at Ollama's hosted API. This works on machines with no Ollama installed, including mobile.
+
+1. Create an API key at [ollama.com/settings/keys](https://ollama.com/settings/keys).
+2. In **Settings → Providers → Ollama**, set **Endpoint** to `https://ollama.com`.
+3. Under **API key**, pick or create a secret holding that key. It is stored in Obsidian's secret storage, not in your vault.
+4. Press **Refresh** on the Models row. The list comes live from `https://ollama.com/api/tags`, so it shows every cloud model your account can use, with no `ollama pull` step.
+
+Every request for an Ollama-routed feature then goes to ollama.com with the key as a bearer token. Without a key, an `https://ollama.com` endpoint shows **Needs key** and the plugin sends it nothing. A local endpoint ignores the key field, so leave it empty for a local daemon. The same key also works with a self-hosted Ollama behind an authenticating proxy.
+
 ## What works
 
 - Agent chat with streaming, tool calling, and conversation memory

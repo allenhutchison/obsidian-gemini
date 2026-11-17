@@ -30,6 +30,7 @@ function buildSettings(overrides: Partial<ObsidianGeminiSettings> = {}): Obsidia
 		openaiApiKeySecretName: '',
 		anthropicApiKeySecretName: '',
 		openrouterApiKeySecretName: '',
+		ollamaApiKeySecretName: '',
 		summaryFrontmatterKey: 'summary',
 		userName: 'User',
 		chatHistory: false,
