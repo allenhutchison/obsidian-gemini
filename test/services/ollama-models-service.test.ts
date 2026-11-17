@@ -505,7 +505,7 @@ describe('OllamaModelsService', () => {
 					psInFlight: Map<string, { promise: Promise<number | null>; generation: number }>;
 					psCache: Map<string, { contextLength: number | null; at: number }>;
 				};
-				const cacheKey = 'http://localhost:11434|gemma4:12b-mlx';
+				const cacheKey = JSON.stringify(['http://localhost:11434|gemma4:12b-mlx', '']);
 
 				const stale = svc.getRuntimeContextLength('gemma4:12b-mlx'); // gen 0, parks on gateA
 				await vi.waitFor(() => expect(mockedRequestUrl.mock.calls.length).toBeGreaterThan(0));

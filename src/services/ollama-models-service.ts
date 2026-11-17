@@ -350,7 +350,10 @@ export class OllamaModelsService {
 		// Keyed by probeCacheKey too: pointing at a different daemon must not serve
 		// the previous one's allocation, and this probe can run without getModels()
 		// having noticed the switch.
-		const cacheKey = probeCacheKey(baseUrl, modelName);
+		// …and by credential, matching probeModel, so a key change never reuses
+		// the previous key's allocation (#1764).
+		const apiKey = this.plugin.ollamaApiKey;
+		const cacheKey = JSON.stringify([probeCacheKey(baseUrl, modelName), apiKey || '']);
 		const cached = this.psCache.get(cacheKey);
 		if (cached && Date.now() - cached.at < PS_CACHE_TTL_MS) {
 			return cached.contextLength;
@@ -370,7 +373,7 @@ export class OllamaModelsService {
 		// invalidate() mid-probe must not be undone by the older result landing
 		// afterwards and re-seeding the cache it just cleared.
 		const generation = this.psGeneration;
-		const probe = this.fetchRuntimeContextLength(modelName, baseUrl, this.plugin.ollamaApiKey)
+		const probe = this.fetchRuntimeContextLength(modelName, baseUrl, apiKey)
 			.then((contextLength) => {
 				// Every outcome is cached, including "not loaded" and probe failure. A
 				// failing daemon is the case that most needs it — otherwise each turn
