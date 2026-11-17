@@ -45,7 +45,9 @@ Top-level rows, in order:
 The Providers page holds one **connection card** per account/endpoint: Gemini, Ollama, OpenAI,
 Anthropic, and OpenRouter. **A card never assigns a provider to a feature** — that only
 happens on the [Features](#features) page. Each card's `displayValue` on the Providers list
-summarizes its connection state (Connected / Not set up / Unreachable).
+summarizes its connection state (Connected / Not set up / Unreachable). A key-requiring provider
+shows Connected only when its linked secret actually holds a key on this device; a linked name
+whose secret is empty (for example, settings synced from another machine) shows Not set up.
 
 ### Gemini card
 
