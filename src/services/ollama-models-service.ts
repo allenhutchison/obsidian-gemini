@@ -343,6 +343,10 @@ export class OllamaModelsService {
 	 */
 	async getRuntimeContextLength(modelName: string): Promise<number | null> {
 		const baseUrl = this.endpointBaseUrl();
+		if (!this.plugin.ollamaApiKey && isOllamaCloudEndpoint(baseUrl)) {
+			// ollama.com rejects keyless requests, so skip the probe entirely (#1764).
+			return null;
+		}
 		// Keyed by probeCacheKey too: pointing at a different daemon must not serve
 		// the previous one's allocation, and this probe can run without getModels()
 		// having noticed the switch.

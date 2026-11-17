@@ -805,3 +805,16 @@ describe('ollama auth header safety (#1764)', () => {
 		expect(canSendOllamaKey('not a url')).toBe(false);
 	});
 });
+
+describe('getRuntimeContextLength on keyless Ollama Cloud (#1764)', () => {
+	it('does not probe /api/ps without a key', async () => {
+		mockedRequestUrl.mockReset();
+		const svc = new OllamaModelsService({
+			logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
+			settings: { ollamaBaseUrl: 'https://ollama.com' },
+			ollamaApiKey: '',
+		} as any);
+		expect(await svc.getRuntimeContextLength('gpt-oss:120b')).toBeNull();
+		expect(mockedRequestUrl).not.toHaveBeenCalled();
+	});
+});
