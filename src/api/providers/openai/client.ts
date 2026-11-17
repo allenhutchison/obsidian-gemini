@@ -21,6 +21,13 @@
  *  - `reasoning_details` replayed on tool-calling turns, for gateways
  *    (OpenRouter) that require it — see `reasoning-replay.ts`
  *
+ * Responses API (#1755): models that reject function tools on Chat
+ * Completions (gpt-6.1-*, gpt-6-astra) send agent turns to `/v1/responses`
+ * instead when the base URL is api.openai.com; the mapping lives in
+ * `responses.ts`. Every other model and every compatible server stays on
+ * Chat Completions. Behind a custom base URL those models still use Chat
+ * Completions without tools, since a proxy may not implement `/responses`.
+ *
  * Out of scope (no Chat Completions equivalent, or deferred to a later phase):
  *  - cachedContentTokenCount (not exposed on CompletionUsage)
  *  - search grounding / rendered HTML (Gemini-only)
@@ -61,6 +68,8 @@ import {
 	type ReasoningDetail,
 } from './reasoning-replay';
 import { NonRetryableRequestError } from '../../../utils/request-errors';
+import { isOpenAIHostedEndpoint } from './config';
+import { applyResponsesStreamEvent, buildResponsesBody, responseToModelResponse } from './responses';
 
 type ChatMessage = OpenAI.ChatCompletionMessageParam;
 type ChatTool = OpenAI.ChatCompletionTool;
@@ -108,10 +117,20 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 	/**
 	 * Models whose `/v1/chat/completions` endpoint rejects function tools
 	 * outright (400), whatever the reasoning setting: gpt-6.1-* and gpt-6-astra.
-	 * Tool calling for them needs the Responses API, which this client doesn't
-	 * target yet (#1755), so their requests go out without tools.
+	 * On api.openai.com their agent turns go through the Responses API instead
+	 * (see `usesResponsesApi`); elsewhere their requests go out without tools.
 	 */
 	private static readonly NO_CHAT_TOOLS_PATTERN = /^gpt-(6\.1|6-astra)(-|$)/;
+
+	/**
+	 * Whether an extended (agent) request for `model` goes to the Responses
+	 * API. Only for models that need it, and only on api.openai.com, which is
+	 * known to implement `/v1/responses`; OpenRouter and compatible servers
+	 * keep Chat Completions.
+	 */
+	private usesResponsesApi(model: string): boolean {
+		return OpenAIClient.NO_CHAT_TOOLS_PATTERN.test(model) && isOpenAIHostedEndpoint(this.config.baseUrl);
+	}
 
 	protected client: OpenAI;
 	protected config: OpenAIClientConfig;
@@ -181,6 +200,11 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 				return this.toModelResponse(completion);
 			}
 
+			if (this.usesResponsesApi(model)) {
+				const body = await this.buildResponsesRequest(model, request);
+				return responseToModelResponse(await this.client.responses.create(body), this.plugin?.logger);
+			}
+
 			const { messages, tools } = await this.buildChatRequest(request);
 			const completion = await this.client.chat.completions.create({
 				model,
@@ -203,6 +227,10 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 		// See note in generateModelResponse — the factory provides the
 		// role-correct model; no chat-default fallback here.
 		const model = request.model || this.config.model;
+
+		if (isExtended && model && this.usesResponsesApi(model)) {
+			return this.streamResponses(model, request, onChunk);
+		}
 
 		const state = {
 			accumulatedText: '',
@@ -282,6 +310,46 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 			finalize: () => finalize(),
 			onError: (error) =>
 				this.plugin?.logger.error('[OpenAIClient] Streaming error:', describeSdkApiError(error), error),
+		});
+	}
+
+	/** The Responses request body for an extended turn (see `responses.ts`). */
+	private async buildResponsesRequest(
+		model: string,
+		request: ExtendedModelRequest
+	): Promise<OpenAI.Responses.ResponseCreateParamsNonStreaming> {
+		const systemInstruction = await this.prompts.buildExtendedSystemInstruction(request);
+		return buildResponsesBody(model, request, systemInstruction || undefined, this.providerName, this.plugin?.logger);
+	}
+
+	/**
+	 * Stream an extended turn through the Responses API. Text deltas go to
+	 * `onChunk` as they arrive; tool calls, reasoning and usage come from the
+	 * final `response.completed` event. Cancellation is the same signal-first
+	 * shape as the Chat Completions path.
+	 */
+	private streamResponses(
+		model: string,
+		request: ExtendedModelRequest,
+		onChunk: StreamCallback
+	): StreamingModelResponse {
+		const state: { final?: OpenAI.Responses.Response; text: string } = { text: '' };
+		return runCancellableStream<OpenAI.Responses.ResponseStreamEvent>({
+			start: async (signal) => {
+				const body = await this.buildResponsesRequest(model, request);
+				return this.client.responses.create({ ...body, stream: true }, { signal });
+			},
+			onChunk: (event) =>
+				applyResponsesStreamEvent(event, state, (text) => {
+					state.text += text;
+					onChunk({ text });
+				}),
+			finalize: () =>
+				state.final
+					? responseToModelResponse(state.final, this.plugin?.logger)
+					: { markdown: state.text, rendered: '' },
+			onError: (error) =>
+				this.plugin?.logger.error('[OpenAIClient] Responses streaming error:', describeSdkApiError(error), error),
 		});
 	}
 
