@@ -1067,6 +1067,8 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.apiKeyName': 'Clé API',
 	'settings.providers.apiKeyDesc':
 		"Enregistrée dans le stockage des secrets d'Obsidian, et non dans les données de ce coffre.",
+	'settings.providers.ollamaApiKeyDesc':
+		"Facultatif. Requis uniquement pour Ollama Cloud : définissez le point de terminaison sur https://ollama.com et récupérez une clé sur ollama.com/settings/keys. Une instance locale d'Ollama n'en a pas besoin. Enregistré dans le stockage des secrets d'Obsidian, pas dans les données de ce coffre.",
 	'settings.providers.baseUrlName': 'URL de base',
 	'settings.providers.baseUrlOptionalDesc': 'Laisser vide pour utiliser le point de terminaison par défaut.',
 	'settings.providers.baseUrlRequiredDesc': 'Adresse du serveur local avec lequel ce fournisseur communique.',
@@ -1097,7 +1099,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': "Utilisé par toute fonctionnalité qui n'est pas redirigée ailleurs.",
 	'settings.providers.privacyNoticeName': 'Confidentialité',
 	'settings.providers.privacyNoticeDesc':
-		"Seuls les fournisseurs que vos fonctionnalités utilisent réellement reçoivent votre contenu. Ollama conserve les requêtes sur cette machine, à l'exception des modèles marqués « cloud », qu'il transfère à ollama.com. Gemini, OpenAI et Anthropic envoient la requête aux serveurs de l'entreprise correspondante. OpenRouter la transfère à l'entreprise qui héberge le modèle choisi.",
+		"Seuls les fournisseurs que vos fonctionnalités utilisent réellement reçoivent votre contenu. Ollama envoie les requêtes au point de terminaison indiqué sur sa carte : une instance locale d'Ollama les conserve sur cette machine, sauf pour les modèles marqués « cloud », qu'elle transmet à ollama.com, et un point de terminaison https://ollama.com envoie chaque requête à ollama.com. Gemini, OpenAI et Anthropic envoient la requête aux serveurs de leur entreprise. OpenRouter la transmet à l'entreprise qui héberge le modèle choisi.",
 	'settings.providers.defaultMoved': '{count} fonctionnalités déplacées vers le nouveau fournisseur par défaut.',
 	'settings.providers.groupOnProvider': '{group} sur {provider}',
 	'settings.features.modelMissingHelp':

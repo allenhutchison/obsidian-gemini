@@ -987,6 +987,8 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'API 金鑰',
 	'settings.providers.apiKeyDesc': '儲存於 Obsidian 的機密儲存庫中，而非儲存在此 vault 的資料中。',
+	'settings.providers.ollamaApiKeyDesc':
+		'可選填。僅在搭配 Ollama Cloud 時需要：請將端點設定為 https://ollama.com 並從 ollama.com/settings/keys 取得金鑰。本機 Ollama 不需要金鑰。將儲存於 Obsidian 的機密儲存空間中，而非此 vault 的資料中。',
 	'settings.providers.baseUrlName': '基本 URL',
 	'settings.providers.baseUrlOptionalDesc': '留空以使用預設端點。',
 	'settings.providers.baseUrlRequiredDesc': '此提供者連線的本地伺服器位址。',
@@ -1016,7 +1018,7 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': '供任何未明確路由至其他提供者的功能使用。',
 	'settings.providers.privacyNoticeName': '隱私權',
 	'settings.providers.privacyNoticeDesc':
-		'只有您的功能實際使用的提供者才會接收您的內容。Ollama 會將請求保留在此裝置上，但標記為「cloud」的模型除外（這些模型會轉發至 ollama.com）。Gemini、OpenAI 與 Anthropic 會將請求傳送至該公司的伺服器。OpenRouter 則會將請求轉發給提供您所選模型的公司。',
+		'只有您使用的功能實際涉及的提供者才會接收您的內容。Ollama 會將請求傳送至其卡片上設定的端點：本機 Ollama 會將請求保留在此電腦上，但標記為「cloud」的模型除外（會轉發至 ollama.com）；而 https://ollama.com 端點則會將所有請求傳送至 ollama.com。Gemini、OpenAI 與 Anthropic 會將請求傳送至各該公司的伺服器。OpenRouter 則會將請求轉發給提供您所選模型的公司。',
 	'settings.providers.defaultMoved': '{count} 個功能已移至新的預設提供者。',
 	'settings.providers.groupOnProvider': '{group} 於 {provider}',
 	'settings.features.modelMissingHelp': '此提供者已不再提供 {model}。請選擇其他模型。',

@@ -1044,6 +1044,8 @@ export const ptBR: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'Chave de API',
 	'settings.providers.apiKeyDesc': 'Salvo no armazenamento de segredos do Obsidian, não nos dados deste cofre.',
+	'settings.providers.ollamaApiKeyDesc':
+		'Opcional. Necessário apenas para o Ollama Cloud: defina o endpoint como https://ollama.com e escolha uma chave em ollama.com/settings/keys. Um Ollama local não precisa de uma. Salvo no armazenamento de segredos do Obsidian, não nos dados deste vault.',
 	'settings.providers.baseUrlName': 'URL base',
 	'settings.providers.baseUrlOptionalDesc': 'Deixe em branco para usar o endpoint padrão.',
 	'settings.providers.baseUrlRequiredDesc': 'Endereço do servidor local com o qual este provedor se comunica.',
@@ -1075,7 +1077,7 @@ export const ptBR: Partial<Record<TranslationKey, string>> = {
 		'Usado por qualquer recurso que você não tenha direcionado para outro lugar.',
 	'settings.providers.privacyNoticeName': 'Privacidade',
 	'settings.providers.privacyNoticeDesc':
-		'Apenas os provedores que seus recursos realmente utilizam recebem seu conteúdo. O Ollama mantém as requisições nesta máquina, exceto para modelos marcados como "cloud", que são encaminhados para ollama.com. Gemini, OpenAI e Anthropic enviam a requisição para os servidores de cada empresa. O OpenRouter a encaminha para a empresa que fornece o modelo selecionado.',
+		'Apenas os provedores que seus recursos realmente utilizam recebem seu conteúdo. O Ollama envia requisições para o endpoint em seu card: um Ollama local as mantém nesta máquina, exceto para modelos marcados como "cloud", que ele encaminha para ollama.com, e um endpoint https://ollama.com envia todas as requisições para ollama.com. Gemini, OpenAI e Anthropic enviam a requisição para os servidores da respectiva empresa. O OpenRouter a encaminha para a empresa que fornece o modelo que você escolher.',
 	'settings.providers.defaultMoved': '{count} recursos movidos para o novo provedor padrão.',
 	'settings.providers.groupOnProvider': '{group} em {provider}',
 	'settings.features.modelMissingHelp': '{model} não está mais disponível neste provedor. Escolha outro.',

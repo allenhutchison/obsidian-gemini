@@ -1041,6 +1041,8 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'API-nøkkel',
 	'settings.providers.apiKeyDesc': 'Lagret i Obsidians hemmelige lagring, ikke i dette hvelvets data.',
+	'settings.providers.ollamaApiKeyDesc':
+		'Valgfritt. Kun nødvendig for Ollama Cloud: sett endepunktet til https://ollama.com og hent en nøkkel fra ollama.com/settings/keys. En lokal Ollama trenger ingen. Lagres i Obsidians hemmelige lagring, ikke i dette hvelvets data.',
 	'settings.providers.baseUrlName': 'Base-URL',
 	'settings.providers.baseUrlOptionalDesc': 'La stå tomt for å bruke standard endepunkt.',
 	'settings.providers.baseUrlRequiredDesc': 'Adressen til den lokale serveren denne leverandøren snakker med.',
@@ -1070,7 +1072,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Brukes av funksjoner du ikke har rutet andre steder.',
 	'settings.providers.privacyNoticeName': 'Personvern',
 	'settings.providers.privacyNoticeDesc':
-		'Bare leverandørene som funksjonene dine faktisk bruker, vil noensinne motta innholdet ditt. Ollama beholder forespørsler på denne maskinen, bortsett fra modeller merket "cloud", som videresendes til ollama.com. Gemini, OpenAI og Anthropic sender forespørselen til det respektive selskapets servere. OpenRouter videresender den til selskapet som leverer modellen du velger.',
+		'Bare leverandørene funksjonene dine faktisk bruker, mottar innholdet ditt. Ollama sender forespørsler til endepunktet på kortet sitt: en lokal Ollama beholder dem på denne maskinen, bortsett fra modeller merket "cloud", som den videresender til ollama.com, og et https://ollama.com-endepunkt sender alle forespørsler til ollama.com. Gemini, OpenAI og Anthropic sender forespørselen til det aktuelle selskapets servere. OpenRouter videresender den til selskapet som leverer modellen du velger.',
 	'settings.providers.defaultMoved': '{count} funksjoner ble flyttet til den nye standardleverandøren.',
 	'settings.providers.groupOnProvider': '{group} på {provider}',
 	'settings.features.modelMissingHelp': '{model} er ikke lenger tilgjengelig fra denne leverandøren. Velg en annen.',

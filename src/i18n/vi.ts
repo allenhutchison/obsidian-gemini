@@ -1042,6 +1042,8 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.apiKeyName': 'Khóa API',
 	'settings.providers.apiKeyDesc':
 		'Được lưu trong kho lưu trữ bí mật của Obsidian, không nằm trong dữ liệu của vault này.',
+	'settings.providers.ollamaApiKeyDesc':
+		'Tùy chọn. Chỉ cần thiết cho Ollama Cloud: đặt endpoint thành https://ollama.com và lấy khóa từ ollama.com/settings/keys. Ollama cục bộ không cần khóa. Được lưu trong bộ lưu trữ bí mật của Obsidian, không lưu trong dữ liệu của vault này.',
 	'settings.providers.baseUrlName': 'URL cơ sở',
 	'settings.providers.baseUrlOptionalDesc': 'Để trống để sử dụng điểm cuối mặc định.',
 	'settings.providers.baseUrlRequiredDesc': 'Địa chỉ máy chủ cục bộ mà nhà cung cấp này kết nối tới.',
@@ -1071,7 +1073,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Được dùng bởi bất kỳ tính năng nào chưa được định tuyến đến nơi khác.',
 	'settings.providers.privacyNoticeName': 'Quyền riêng tư',
 	'settings.providers.privacyNoticeDesc':
-		'Chỉ các nhà cung cấp mà tính năng của bạn thực sự sử dụng mới nhận được nội dung của bạn. Ollama giữ các yêu cầu trên máy này, ngoại trừ các mô hình được đánh dấu "cloud", vốn sẽ được chuyển tiếp đến ollama.com. Gemini, OpenAI và Anthropic gửi yêu cầu đến máy chủ của công ty đó. OpenRouter chuyển tiếp yêu cầu đến công ty cung cấp mô hình bạn chọn.',
+		'Chỉ những nhà cung cấp mà các tính năng của bạn thực sự sử dụng mới nhận được nội dung của bạn. Ollama gửi yêu cầu đến endpoint trên thẻ của nó: Ollama cục bộ giữ chúng trên máy này, ngoại trừ các mô hình được đánh dấu "cloud" sẽ được chuyển tiếp đến ollama.com, và endpoint https://ollama.com sẽ gửi mọi yêu cầu đến ollama.com. Gemini, OpenAI và Anthropic gửi yêu cầu đến máy chủ của các công ty đó. OpenRouter chuyển tiếp yêu cầu đến công ty cung cấp mô hình mà bạn chọn.',
 	'settings.providers.defaultMoved': 'Đã chuyển {count} tính năng sang nhà cung cấp mặc định mới.',
 	'settings.providers.groupOnProvider': '{group} trên {provider}',
 	'settings.features.modelMissingHelp': '{model} không còn khả dụng từ nhà cung cấp này. Hãy chọn mô hình khác.',

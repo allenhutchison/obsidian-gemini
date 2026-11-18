@@ -1055,6 +1055,8 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'Chave de API',
 	'settings.providers.apiKeyDesc': 'Guardada no armazenamento secreto do Obsidian, não nos dados deste vault.',
+	'settings.providers.ollamaApiKeyDesc':
+		'Opcional. Apenas necessário para o Ollama Cloud: defina o endpoint para https://ollama.com e obtenha uma chave em ollama.com/settings/keys. Um Ollama local não necessita de nenhuma. Guardada no armazenamento seguro do Obsidian, não nos dados deste cofre.',
 	'settings.providers.baseUrlName': 'URL base',
 	'settings.providers.baseUrlOptionalDesc': 'Deixe em branco para utilizar o endpoint predefinido.',
 	'settings.providers.baseUrlRequiredDesc': 'Endereço do servidor local com o qual este fornecedor comunica.',
@@ -1086,7 +1088,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 		'Utilizado por qualquer funcionalidade que não tenha sido encaminhada para outro local.',
 	'settings.providers.privacyNoticeName': 'Privacidade',
 	'settings.providers.privacyNoticeDesc':
-		'Apenas os fornecedores que as suas funcionalidades utilizam efetivamente recebem o seu conteúdo. O Ollama mantém os pedidos nesta máquina, exceto no caso de modelos marcados como "nuvem", que reencaminha para ollama.com. O Gemini, a OpenAI e a Anthropic enviam o pedido para os servidores dessa empresa. O OpenRouter reencaminha-o para a empresa que disponibiliza o modelo que escolher.',
+		'Apenas os fornecedores efetivamente utilizados pelas suas funcionalidades chegam a receber o seu conteúdo. O Ollama envia pedidos para o endpoint no seu cartão: um Ollama local mantém-nos nesta máquina, exceto no caso de modelos assinalados como "cloud", que reencaminha para ollama.com; já um endpoint https://ollama.com envia todos os pedidos para ollama.com. O Gemini, a OpenAI e a Anthropic enviam o pedido para os servidores da respetiva empresa. O OpenRouter reencaminha-o para a empresa que disponibilizar o modelo que escolher.',
 	'settings.providers.defaultMoved': '{count} funcionalidades movidas para o novo fornecedor predefinido.',
 	'settings.providers.groupOnProvider': '{group} em {provider}',
 	'settings.features.modelMissingHelp': '{model} já não se encontra disponível neste fornecedor. Escolha outro.',

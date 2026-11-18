@@ -1066,6 +1066,8 @@ export const es: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.apiKeyName': 'Clave API',
 	'settings.providers.apiKeyDesc':
 		'Se guarda en el almacenamiento de secretos de Obsidian, no en los datos de esta bóveda.',
+	'settings.providers.ollamaApiKeyDesc':
+		'Opcional. Solo se necesita para Ollama Cloud: establece el endpoint en https://ollama.com y obtén una clave en ollama.com/settings/keys. Un Ollama local no la necesita. Se guarda en el almacenamiento de secretos de Obsidian, no en los datos de esta bóveda.',
 	'settings.providers.baseUrlName': 'URL base',
 	'settings.providers.baseUrlOptionalDesc': 'Dejar en blanco para usar el endpoint predeterminado.',
 	'settings.providers.baseUrlRequiredDesc': 'Dirección del servidor local con el que se comunica este proveedor.',
@@ -1096,7 +1098,7 @@ export const es: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Usado por cualquier función que no hayas enrutado a otra parte.',
 	'settings.providers.privacyNoticeName': 'Privacidad',
 	'settings.providers.privacyNoticeDesc':
-		'Solo los proveedores que tus funciones realmente utilicen recibirán tu contenido. Ollama mantiene las solicitudes en esta máquina, excepto para los modelos marcados como "cloud", que reenvía a ollama.com. Gemini, OpenAI y Anthropic envían la solicitud a los servidores de esa empresa. OpenRouter la reenvía a la empresa que proporcione el modelo que elijas.',
+		'Solo los proveedores que tus funciones realmente utilicen recibirán tu contenido. Ollama envía solicitudes al endpoint indicado en su tarjeta: un Ollama local las mantiene en este equipo, excepto en los modelos marcados como "cloud", que reenvía a ollama.com, y un endpoint https://ollama.com envía cada solicitud a ollama.com. Gemini, OpenAI y Anthropic envían la solicitud a los servidores de dicha empresa. OpenRouter la reenvía a la empresa que proporcione el modelo que elijas.',
 	'settings.providers.defaultMoved': '{count} funciones se han movido al nuevo proveedor predeterminado.',
 	'settings.providers.groupOnProvider': '{group} en {provider}',
 	'settings.features.modelMissingHelp': '{model} ya no está disponible en este proveedor. Elige otro.',

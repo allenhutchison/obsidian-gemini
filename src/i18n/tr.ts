@@ -1048,6 +1048,8 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'API anahtarı',
 	'settings.providers.apiKeyDesc': "Obsidian'ın gizli depolama alanına kaydedilir, bu kasanın verilerine değil.",
+	'settings.providers.ollamaApiKeyDesc':
+		"İsteğe bağlı. Yalnızca Ollama Cloud için gereklidir: uç noktayı https://ollama.com olarak ayarlayın ve ollama.com/settings/keys adresinden bir anahtar alın. Yerel bir Ollama için gerekmez. Bu kasanın verilerinde değil, Obsidian'ın gizli depolama alanında saklanır.",
 	'settings.providers.baseUrlName': 'Temel URL',
 	'settings.providers.baseUrlOptionalDesc': 'Varsayılan uç noktayı kullanmak için boş bırakın.',
 	'settings.providers.baseUrlRequiredDesc': 'Bu sağlayıcının iletişim kurduğu yerel sunucunun adresi.',
@@ -1078,7 +1080,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Başka bir yere yönlendirmediğiniz tüm özellikler tarafından kullanılır.',
 	'settings.providers.privacyNoticeName': 'Gizlilik',
 	'settings.providers.privacyNoticeDesc':
-		'İçeriğinizi yalnızca özelliklerinizin fiilen kullandığı sağlayıcılar alır. Ollama, "cloud" olarak işaretlenen modeller haricinde istekleri bu makinede tutar; bunları ise ollama.com adresine iletir. Gemini, OpenAI ve Anthropic istekleri ilgili şirketin sunucularına gönderir. OpenRouter ise seçtiğiniz modeli hangi şirket sunuyorsa oraya yönlendirir.',
+		'İçeriğinizi yalnızca özelliklerinizin gerçekten kullandığı sağlayıcılar alır. Ollama, istekleri kartındaki uç noktaya gönderir: yerel bir Ollama, ollama.com adresine ilettiği "cloud" olarak işaretlenmiş modeller hariç, istekleri bu makinede tutar; https://ollama.com uç noktası ise tüm istekleri ollama.com adresine gönderir. Gemini, OpenAI ve Anthropic isteği ilgili şirketin sunucularına gönderir. OpenRouter ise isteği seçtiğiniz modeli sunan şirkete iletir.',
 	'settings.providers.defaultMoved': '{count} özellik yeni varsayılan sağlayıcıya taşındı.',
 	'settings.providers.groupOnProvider': '{provider} üzerinde {group}',
 	'settings.features.modelMissingHelp': '{model} artık bu sağlayıcıda mevcut değil. Başka birini seçin.',

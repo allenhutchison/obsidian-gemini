@@ -1044,6 +1044,8 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'Klíč API',
 	'settings.providers.apiKeyDesc': 'Uloženo v zabezpečeném úložišti Obsidianu, nikoli v datech tohoto trezoru.',
+	'settings.providers.ollamaApiKeyDesc':
+		'Volitelné. Potřebné pouze pro Ollama Cloud: nastavte koncový bod na https://ollama.com a získejte klíč z ollama.com/settings/keys. Místní Ollama klíč nepotřebuje. Ukládá se do zabezpečeného úložiště Obsidianu, nikoli do dat tohoto trezoru.',
 	'settings.providers.baseUrlName': 'Základní URL',
 	'settings.providers.baseUrlOptionalDesc': 'Ponechte prázdné pro použití výchozího koncového bodu.',
 	'settings.providers.baseUrlRequiredDesc': 'Adresa lokálního serveru, se kterým tento poskytovatel komunikuje.',
@@ -1074,7 +1076,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Použije se pro všechny funkce, které nejsou výslovně směrovány jinam.',
 	'settings.providers.privacyNoticeName': 'Soukromí',
 	'settings.providers.privacyNoticeDesc':
-		'Váš obsah přijímají pouze ti poskytovatelé, které vaše funkce skutečně využívají. Ollama uchovává požadavky na tomto počítači, s výjimkou modelů označených jako „cloud“, které přeposílá na ollama.com. Gemini, OpenAI a Anthropic odesílají požadavky na servery dané společnosti. OpenRouter je přeposílá společnosti, která provozuje vámi vybraný model.',
+		'Váš obsah obdrží pouze ti poskytovatelé, které vaše funkce skutečně používají. Ollama odesílá požadavky na koncový bod uvedený na své kartě: místní Ollama je uchovává na tomto zařízení s výjimkou modelů označených jako „cloud“, které přeposílá na ollama.com, a koncový bod https://ollama.com odesílá každý požadavek na ollama.com. Gemini, OpenAI a Anthropic odesílají požadavky na servery dané společnosti. OpenRouter je přeposílá té společnosti, která provozuje vámi vybraný model.',
 	'settings.providers.defaultMoved': '{count} funkcí bylo přesunuto k novému výchozímu poskytovateli.',
 	'settings.providers.groupOnProvider': '{group} na {provider}',
 	'settings.features.modelMissingHelp': 'Model {model} již není u tohoto poskytovatele k dispozici. Zvolte jiný.',
