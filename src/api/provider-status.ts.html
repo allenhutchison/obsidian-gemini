@@ -36,14 +36,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>26/26</span>
+                <span class='fraction'>28/28</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>35/35</span>
+                <span class='fraction'>41/41</span>
             </div>
         
             
@@ -57,7 +57,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>21/21</span>
+                <span class='fraction'>22/22</span>
             </div>
         
             
@@ -166,7 +166,12 @@
 <a name='L90'></a><a href='#L90'>90</a>
 <a name='L91'></a><a href='#L91'>91</a>
 <a name='L92'></a><a href='#L92'>92</a>
-<a name='L93'></a><a href='#L93'>93</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -199,10 +204,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">152x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">155x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -224,7 +233,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">193x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">205x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">120x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -234,7 +244,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">14x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">24x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -273,6 +283,7 @@ import { apiKeySecretNameFor } from './provider-credentials';
 import { featureRoute } from './feature-routing';
 import type { FeatureId } from '../types/features';
 import { DEFAULT_OPENAI_BASE_URL, isOpenAIHostedEndpoint } from './providers/openai/config';
+import { DEFAULT_OLLAMA_BASE_URL, isOllamaCloudEndpoint } from './providers/ollama/config';
 &nbsp;
 export type ProviderConnection = 'connected' | 'needs-key' | 'unreachable' | 'unknown';
 export type FeatureStatus = 'ok' | 'off' | 'unsupported' | 'unconfigured';
@@ -280,9 +291,11 @@ export type FeatureStatus = 'ok' | 'off' | 'unsupported' | 'unconfigured';
 /**
  * Whether a provider is set up enough to serve a request right now.
  *
- * Ollama needs no key, so its state is the outcome of the models service's
- * last /api/tags probe: `unknown` until one has run (the settings UI kicks a
- * probe when the card renders), then `connected` or `unreachable`.
+ * Ollama's state is the outcome of the models service's last /api/tags probe:
+ * `unknown` until one has run (the settings UI kicks a probe when the card
+ * renders), then `connected` or `unreachable`. A local daemon needs no key;
+ * Ollama Cloud (ollama.com) does, so that endpoint without one is `needs-key`
+ * and is never probed (#1764).
  *
  * A key-requiring provider is `connected` only when its saved secret name
  * also resolves to a key on this device. Checking the name alone let a card
@@ -292,6 +305,7 @@ export type FeatureStatus = 'ok' | 'off' | 'unsupported' | 'unconfigured';
  */
 export function providerConnection(plugin: ObsidianGemini, p: ModelProvider): ProviderConnection {
 	if (p === 'ollama') {
+		if (providerMissingKey(plugin, p)) return 'needs-key';
 		const modelManager = plugin.modelManager as typeof plugin.modelManager | undefined;
 		const probe = modelManager?.getOllamaModelsService().lastProbe ?? null;
 		if (probe === 'reachable') return 'connected';
@@ -312,8 +326,9 @@ export function providerConnection(plugin: ObsidianGemini, p: ModelProvider): Pr
  * Whether a provider's model-list request would go out without the key it
  * requires. It reads the resolved key — the same value the models
  * services send — so a saved name pointing at a missing or empty secret
- * still counts as missing. `providerConnection` builds on it. Ollama and custom OpenAI-compatible endpoints
- * need no key, so they never report a missing one.
+ * still counts as missing. `providerConnection` builds on it. A local Ollama
+ * daemon and custom OpenAI-compatible endpoints need no key, so they never
+ * report a missing one; Ollama Cloud (ollama.com) does.
  */
 export function providerMissingKey(plugin: ObsidianGemini, p: ModelProvider): boolean {
 	switch (p) {
@@ -326,7 +341,7 @@ export function providerMissingKey(plugin: ObsidianGemini, p: ModelProvider): bo
 		case 'openrouter':
 			return !plugin.openrouterApiKey;
 		case 'ollama':
-			return false;
+			return !plugin.ollamaApiKey &amp;&amp; isOllamaCloudEndpoint(plugin.settings.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL);
 	}
 }
 &nbsp;
@@ -357,7 +372,7 @@ export function featureStatus(plugin: ObsidianGemini, f: FeatureId): FeatureStat
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-17T00:40:33.049Z
+                at 2026-11-18T01:40:51.752Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
