@@ -410,7 +410,7 @@ describe('AgentViewTools.handleToolCalls — thinking label budget counter', () 
 	async function labelFor(remaining: number | undefined, harness = makeHarness()) {
 		scriptLoop(async (hooks) => {
 			if (remaining !== undefined) {
-				await hooks.onBudgetUpdate?.({ remaining, limit: undefined, extended: false });
+				await hooks.onBudgetUpdate?.({ remaining });
 			}
 			await hooks.onFollowUpRequestStart?.();
 		});

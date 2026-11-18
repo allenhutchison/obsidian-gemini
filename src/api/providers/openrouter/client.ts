@@ -24,7 +24,7 @@ import { OPENROUTER_ATTRIBUTION_HEADERS, OPENROUTER_BASE_URL, type OpenRouterCli
 import { NonRetryableRequestError } from '../../../utils/request-errors';
 
 interface OpenRouterImageResponse {
-	data?: { b64_json?: string; media_type?: string }[];
+	data?: { b64_json?: string }[];
 }
 
 export class OpenRouterClient extends OpenAIClient {

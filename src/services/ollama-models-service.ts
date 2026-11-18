@@ -69,7 +69,9 @@ interface OllamaTagsModel {
 	/** The upstream model name the cloud entry proxies to. */
 	details?: {
 		parameter_size?: string;
+		// wiring:keep — Ollama /api/tags wire shape, kept for reference
 		family?: string;
+		// wiring:keep — Ollama /api/tags wire shape, kept for reference
 		families?: string[];
 	};
 }

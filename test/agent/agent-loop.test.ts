@@ -598,7 +598,7 @@ describe('AgentLoop', () => {
 			const session = buildSession();
 			const api = makeScriptedModelApi([toolResponse([tc('read_file')]), textResponse('done')]);
 
-			const updates: Array<{ remaining: number; limit: number | undefined; extended: boolean }> = [];
+			const updates: Array<{ remaining: number }> = [];
 			const loop = new AgentLoop();
 			await loop.run({
 				initialResponse: toolResponse([tc('read_file')]),
@@ -619,10 +619,7 @@ describe('AgentLoop', () => {
 				},
 			});
 
-			expect(updates).toEqual([
-				{ remaining: 4, limit: 5, extended: false },
-				{ remaining: 3, limit: 5, extended: false },
-			]);
+			expect(updates).toEqual([{ remaining: 4 }, { remaining: 3 }]);
 		});
 
 		test('an unlimited budget (no maxIterations) never reminds or extends', async () => {
