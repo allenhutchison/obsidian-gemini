@@ -692,7 +692,7 @@ describe('OllamaModelsService', () => {
 			// B's own probe (post-switch, fresh generation) legitimately caches its
 			// answer — keyed by B's endpoint. A's stale write must not appear under
 			// ANY key: not the bare name, not A's endpoint.
-			expect([...internal.showCache.keys()]).toEqual(['http://10.0.0.1:11434|llama3.2:3b']);
+			expect([...internal.showCache.keys()]).toEqual([JSON.stringify(['http://10.0.0.1:11434|llama3.2:3b', ''])]);
 		});
 
 		it('preserves the /api/ps in-flight result across a forced refresh that clears showCache', async () => {
@@ -739,5 +739,82 @@ describe('OllamaModelsService', () => {
 
 		expect(await svc.getModels()).toEqual([]);
 		expect(svc.lastProbe).toBe('unreachable');
+	});
+});
+
+describe('OllamaModelsService with an API key (#1764)', () => {
+	beforeEach(() => {
+		mockedRequestUrl.mockReset();
+	});
+
+	const cloudPlugin = (apiKey: string) =>
+		({
+			logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
+			settings: { ollamaBaseUrl: 'https://ollama.com' },
+			ollamaApiKey: apiKey,
+		}) as any;
+
+	it('sends the key as a bearer token on /api/tags and /api/show', async () => {
+		mockEndpoints([{ name: 'gpt-oss:120b' }], () => ({ capabilities: ['completion', 'tools'] }));
+		const svc = new OllamaModelsService(cloudPlugin('secret'));
+		const models = await svc.getModels();
+
+		expect(models.map((m) => m.value)).toEqual(['gpt-oss:120b']);
+		expect(mockedRequestUrl).toHaveBeenCalledTimes(2);
+		for (const [opts] of mockedRequestUrl.mock.calls) {
+			expect(opts.url.startsWith('https://ollama.com/api/')).toBe(true);
+			expect(opts.headers).toEqual({ Authorization: 'Bearer secret' });
+		}
+	});
+
+	it('sends no auth header for a keyless local daemon', async () => {
+		mockEndpoints([{ name: 'llama3.2' }], () => ({ capabilities: ['completion'] }));
+		const svc = new OllamaModelsService(buildPlugin());
+		await svc.getModels();
+		for (const [opts] of mockedRequestUrl.mock.calls) {
+			expect(opts.headers).toEqual({});
+		}
+	});
+
+	it('does not contact ollama.com without a key', async () => {
+		const svc = new OllamaModelsService(cloudPlugin(''));
+		expect(await svc.getModels()).toEqual([]);
+		expect(mockedRequestUrl).not.toHaveBeenCalled();
+	});
+
+	it('re-fetches the catalog when the key changes', async () => {
+		mockEndpoints([{ name: 'gpt-oss:120b' }], () => ({ capabilities: ['completion'] }));
+		const plugin = cloudPlugin('one');
+		const svc = new OllamaModelsService(plugin);
+		await svc.getModels();
+		plugin.ollamaApiKey = 'two';
+		await svc.getModels();
+		const tagCalls = mockedRequestUrl.mock.calls.filter(([o]) => o.url.endsWith('/api/tags'));
+		expect(tagCalls.map(([o]) => o.headers.Authorization)).toEqual(['Bearer one', 'Bearer two']);
+	});
+});
+
+describe('ollama auth header safety (#1764)', () => {
+	it('allows the key only over HTTPS or to loopback', async () => {
+		const { canSendOllamaKey } = await import('../../src/api/providers/ollama/config');
+		expect(canSendOllamaKey('https://ollama.com')).toBe(true);
+		expect(canSendOllamaKey('http://localhost:11434')).toBe(true);
+		expect(canSendOllamaKey('http://127.0.0.1:11434')).toBe(true);
+		expect(canSendOllamaKey('http://[::1]:11434')).toBe(true);
+		expect(canSendOllamaKey('http://ollama.lan:11434')).toBe(false);
+		expect(canSendOllamaKey('not a url')).toBe(false);
+	});
+});
+
+describe('getRuntimeContextLength on keyless Ollama Cloud (#1764)', () => {
+	it('does not probe /api/ps without a key', async () => {
+		mockedRequestUrl.mockReset();
+		const svc = new OllamaModelsService({
+			logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
+			settings: { ollamaBaseUrl: 'https://ollama.com' },
+			ollamaApiKey: '',
+		} as any);
+		expect(await svc.getRuntimeContextLength('gpt-oss:120b')).toBeNull();
+		expect(mockedRequestUrl).not.toHaveBeenCalled();
 	});
 });

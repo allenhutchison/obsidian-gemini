@@ -89,6 +89,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	},
 	providerModelMemory: {},
 	ollamaBaseUrl: 'http://localhost:11434',
+	ollamaApiKeySecretName: '',
 	customBaseUrl: '',
 	apiKeySecretName: '',
 	openaiBaseUrl: DEFAULT_OPENAI_BASE_URL,
@@ -170,6 +171,13 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		return this.app.secretStorage.getSecret(secretName) ?? '';
 	}
 
+	/** The optional Ollama API key (Ollama Cloud), mirroring `apiKey` above. */
+	get ollamaApiKey(): string {
+		const secretName = this.settings?.ollamaApiKeySecretName;
+		if (!secretName) return '';
+		return this.app.secretStorage.getSecret(secretName) ?? '';
+	}
+
 	/**
 	 * The open agent view, looked up from the workspace on each read rather than
 	 * held on the plugin (Obsidian's guidance: plugins must not keep references to
@@ -231,6 +239,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	private previousOpenaiApiKey: string = '';
 	private previousAnthropicApiKey: string = '';
 	private previousOpenrouterApiKey: string = '';
+	private previousOllamaApiKey: string = '';
 	private previousRagEnabled: boolean = false;
 	/**
 	 * Serialized provider routing (default provider + every feature's resolved
@@ -376,12 +385,12 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	private chatCredentialState(): { apiKey: string; requiresApiKey: boolean } {
 		const chatProvider = this.settings.features.chat.provider;
 		// Keyed by every provider id, so a new provider must say which key
-		// serves it instead of inheriting Gemini's (#1757). Ollama takes no
-		// key. A chat route of 'none' keeps Gemini's key, matching
+		// serves it instead of inheriting Gemini's (#1757). Ollama's key is
+		// optional (only Ollama Cloud needs one). A chat route of 'none' keeps Gemini's key, matching
 		// getCapabilities(null), which reports Gemini's capabilities.
 		const keyByProvider: Record<ModelProvider, string> = {
 			gemini: this.apiKey,
-			ollama: '',
+			ollama: this.ollamaApiKey,
 			openai: this.openaiApiKey,
 			anthropic: this.anthropicApiKey,
 			openrouter: this.openrouterApiKey,
@@ -440,6 +449,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		this.previousOpenaiApiKey = this.openaiApiKey;
 		this.previousAnthropicApiKey = this.anthropicApiKey;
 		this.previousOpenrouterApiKey = this.openrouterApiKey;
+		this.previousOllamaApiKey = this.ollamaApiKey;
 		this.previousRagEnabled = this.settings.ragIndexing.enabled;
 		this.previousRoutingKey = routingKey(this.settings);
 		this.previousOllamaBaseUrl = this.settings.ollamaBaseUrl;
@@ -731,7 +741,8 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 			(this.previousApiKey !== this.apiKey ||
 				this.previousOpenaiApiKey !== this.openaiApiKey ||
 				this.previousAnthropicApiKey !== this.anthropicApiKey ||
-				this.previousOpenrouterApiKey !== this.openrouterApiKey);
+				this.previousOpenrouterApiKey !== this.openrouterApiKey ||
+				this.previousOllamaApiKey !== this.ollamaApiKey);
 		// Any change to *which provider serves which use case* re-inits: tool
 		// registration, RAG, and image generation are all keyed off the resolved
 		// providers, not just the primary.

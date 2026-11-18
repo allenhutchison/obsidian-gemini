@@ -11,7 +11,7 @@
 import { GeminiClient } from './providers/gemini/client';
 import type { GeminiClientConfig } from './providers/gemini/config';
 import { OllamaClient } from './providers/ollama/client';
-import type { OllamaClientConfig } from './providers/ollama/config';
+import { DEFAULT_OLLAMA_BASE_URL, type OllamaClientConfig } from './providers/ollama/config';
 import { OpenAIClient } from './providers/openai/client';
 import { DEFAULT_OPENAI_BASE_URL, type OpenAIClientConfig } from './providers/openai/config';
 import { AnthropicClient } from './providers/anthropic/client';
@@ -162,7 +162,8 @@ export class ModelClientFactory {
 			}
 			case 'ollama': {
 				const config: OllamaClientConfig = {
-					baseUrl: settings.ollamaBaseUrl || 'http://localhost:11434',
+					baseUrl: settings.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL,
+					apiKey: plugin.ollamaApiKey,
 					model: modelName,
 					...overrides,
 				};
