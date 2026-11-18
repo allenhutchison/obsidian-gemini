@@ -70,7 +70,6 @@ describe('AccessedFilesSubscriber', () => {
 		await bus.emit('toolChainComplete', {
 			session,
 			toolResults: [],
-			toolCount: 0,
 		});
 
 		expect(session.accessedFiles).toBeInstanceOf(Set);
@@ -87,7 +86,6 @@ describe('AccessedFilesSubscriber', () => {
 		await bus.emit('toolChainComplete', {
 			session,
 			toolResults: [],
-			toolCount: 0,
 		});
 
 		expect(plugin.sessionHistory.updateSessionMetadata).not.toHaveBeenCalled();
@@ -98,7 +96,6 @@ describe('AccessedFilesSubscriber', () => {
 		await bus.emit('toolChainComplete', {
 			session,
 			toolResults: [],
-			toolCount: 0,
 		});
 
 		expect(plugin.sessionHistory.updateSessionMetadata).toHaveBeenCalledTimes(1);
@@ -112,7 +109,6 @@ describe('AccessedFilesSubscriber', () => {
 		await bus.emit('toolChainComplete', {
 			session,
 			toolResults: [],
-			toolCount: 0,
 		});
 
 		expect(session.accessedFiles).toBeUndefined();
@@ -128,7 +124,6 @@ describe('AccessedFilesSubscriber', () => {
 		await bus.emit('toolChainComplete', {
 			session,
 			toolResults: [],
-			toolCount: 0,
 		});
 
 		expect(plugin.logger.error).toHaveBeenCalledWith('Failed to persist accessed_files:', expect.any(Error));
@@ -143,7 +138,6 @@ describe('AccessedFilesSubscriber', () => {
 		await bus.emit('toolChainComplete', {
 			session,
 			toolResults: [],
-			toolCount: 0,
 		});
 
 		// Session should not be modified after unsubscribe

@@ -10,7 +10,7 @@ interface OpenRouterModelEntry {
 	name?: string;
 	created?: number;
 	context_length?: number | null;
-	architecture?: { input_modalities?: string[]; output_modalities?: string[] };
+	architecture?: { input_modalities?: string[] };
 	supported_parameters?: string[];
 }
 

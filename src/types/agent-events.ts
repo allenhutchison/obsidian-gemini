@@ -50,7 +50,6 @@ export interface AgentEventMap {
 			toolArguments: Record<string, unknown>;
 			result: ToolResult;
 		}>;
-		toolCount: number;
 	}>;
 
 	/**

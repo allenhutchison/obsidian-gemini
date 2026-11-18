@@ -11,7 +11,8 @@
  * instances landed before the check existed (#1436, #1457, #1458, #1467).
  *
  * For every property declared on an interface or type-alias object type in
- * `src/`, this scan searches `src/` + `test/` for a **read**:
+ * `src/` (including object types nested inside one, reported as
+ * `Owner.path.field`), this scan searches `src/` + `test/` for a **read**:
  *   - `.name` member access
  *   - `['name']` element access with a string-literal argument
  *   - a destructuring bind of `name` (`{ name }` or `{ name: alias }`)
@@ -88,38 +89,67 @@ function isSuppressed(member) {
 	return leading.includes(KEEP_MARKER);
 }
 
+/** A member's plain name (identifier or string literal), else undefined. */
+function memberName(member) {
+	if (!member.name) return undefined;
+	if (ts.isIdentifier(member.name) || ts.isStringLiteral(member.name)) return member.name.text;
+	return undefined; // computed / union names: not a plain field
+}
+
 /**
  * Collect every plain field declared on an interface or type-alias object
- * type in src/. Returns [{ rel, line, name, typeName, source, member }].
+ * type in src/, including fields of object types nested anywhere inside the
+ * declaration (#1758): a member's type (`details?: { family?: string }`),
+ * an array element (`data?: { media_type?: string }[]`), a hook's parameter
+ * (`onUpdate?(state: { limit: number }): void`), or a union/intersection
+ * alias. A nested field is reported as `Owner.path.field`, where the path
+ * names the members and parameters that lead to it.
+ * Returns [{ rel, line, name, typeName, source, member }].
  */
 function collectFields() {
 	const fields = [];
 	for (const [file, source] of srcSources) {
+		const rel = relative(ROOT, file);
+		const addMembers = (members, path) => {
+			for (const member of members) {
+				const name = memberName(member);
+				if (ts.isPropertySignature(member) && name !== undefined && !isSuppressed(member)) {
+					const { line } = source.getLineAndCharacterOfPosition(member.getStart());
+					fields.push({ rel, line: line + 1, name, typeName: path.join('.'), source, member });
+				}
+				// Descend into the member's own type and, for a method, its
+				// parameters — a suppressed member still has nested fields of its
+				// own to check.
+				walkType(member, name !== undefined ? [...path, name] : path);
+			}
+		};
+		// Walk a node's children for nested object types. A TypeLiteral
+		// contributes its members (addMembers extends the path with each member
+		// name); a parameter extends the path with its own name. Other type
+		// syntax (unions, arrays, generics, function types) passes through.
+		const walkType = (node, path) => {
+			ts.forEachChild(node, (child) => {
+				if (ts.isTypeLiteralNode(child)) {
+					addMembers(child.members, path);
+				} else if (ts.isParameter(child) && ts.isIdentifier(child.name)) {
+					walkType(child, [...path, child.name.text]);
+				} else {
+					walkType(child, path);
+				}
+			});
+		};
 		const visit = (node) => {
 			// TS 6 shapes: an InterfaceDeclaration carries `members` directly
 			// (the old TypeLiteralNode wrapper is gone); a TypeAliasDeclaration
-			// still wraps them in a TypeLiteral under `type`.
-			let typeName;
-			let members;
+			// wraps them in a TypeLiteral under `type`, or nests object types
+			// inside a union/intersection/array/generic type.
 			if (ts.isInterfaceDeclaration(node)) {
-				typeName = node.name.text;
-				members = node.members;
-			} else if (ts.isTypeAliasDeclaration(node) && node.type && ts.isTypeLiteralNode(node.type)) {
-				typeName = node.name.text;
-				members = node.type.members;
-			}
-			if (members) {
-				for (const member of members) {
-					if (!ts.isPropertySignature(member) || !member.name) continue;
-					let name;
-					if (ts.isIdentifier(member.name) || ts.isStringLiteral(member.name)) {
-						name = member.name.text;
-					} else {
-						continue; // computed / union names: not a plain field
-					}
-					if (isSuppressed(member)) continue;
-					const { line } = source.getLineAndCharacterOfPosition(member.getStart());
-					fields.push({ rel: relative(ROOT, file), line: line + 1, name, typeName, source, member });
+				addMembers(node.members, [node.name.text]);
+			} else if (ts.isTypeAliasDeclaration(node) && node.type) {
+				if (ts.isTypeLiteralNode(node.type)) {
+					addMembers(node.type.members, [node.name.text]);
+				} else {
+					walkType(node, [node.name.text]);
 				}
 			}
 			ts.forEachChild(node, visit);
