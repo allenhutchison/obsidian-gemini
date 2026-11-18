@@ -34,30 +34,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">41.5% </span>
+                <span class="strong">42.43% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>110/265</span>
+                <span class='fraction'>115/271</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">44.91% </span>
+                <span class="strong">44.76% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>75/167</span>
+                <span class='fraction'>77/172</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">36.84% </span>
+                <span class="strong">38.46% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>14/38</span>
+                <span class='fraction'>15/39</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">41.6% </span>
+                <span class="strong">42.35% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>104/250</span>
+                <span class='fraction'>108/255</span>
             </div>
         
             
@@ -961,7 +961,18 @@
 <a name='L885'></a><a href='#L885'>885</a>
 <a name='L886'></a><a href='#L886'>886</a>
 <a name='L887'></a><a href='#L887'>887</a>
-<a name='L888'></a><a href='#L888'>888</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L888'></a><a href='#L888'>888</a>
+<a name='L889'></a><a href='#L889'>889</a>
+<a name='L890'></a><a href='#L890'>890</a>
+<a name='L891'></a><a href='#L891'>891</a>
+<a name='L892'></a><a href='#L892'>892</a>
+<a name='L893'></a><a href='#L893'>893</a>
+<a name='L894'></a><a href='#L894'>894</a>
+<a name='L895'></a><a href='#L895'>895</a>
+<a name='L896'></a><a href='#L896'>896</a>
+<a name='L897'></a><a href='#L897'>897</a>
+<a name='L898'></a><a href='#L898'>898</a>
+<a name='L899'></a><a href='#L899'>899</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1027,6 +1038,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1135,6 +1147,13 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">58x</span>
+<span class="cline-any cline-yes">58x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1189,6 +1208,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-yes">18x</span>
@@ -1410,6 +1430,7 @@
 <span class="cline-any cline-yes">11x</span>
 <span class="cline-any cline-yes">11x</span>
 <span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1691,6 +1712,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1939,6 +1961,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	},
 	providerModelMemory: {},
 	ollamaBaseUrl: 'http://localhost:11434',
+	ollamaApiKeySecretName: '',
 	customBaseUrl: '',
 	apiKeySecretName: '',
 	openaiBaseUrl: DEFAULT_OPENAI_BASE_URL,
@@ -2020,6 +2043,13 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 <span class="cstat-no" title="statement not covered" >		return this.app.secretStorage.getSecret(secretName) ?? '';</span>
 	}
 &nbsp;
+	/** The optional Ollama API key (Ollama Cloud), mirroring `apiKey` above. */
+	get ollamaApiKey(): string {
+		const secretName = this.settings?.ollamaApiKeySecretName;
+		<span class="missing-if-branch" title="else path not taken" >E</span>if (!secretName) return '';
+<span class="cstat-no" title="statement not covered" >		return this.app.secretStorage.getSecret(secretName) ?? '';</span>
+	}
+&nbsp;
 	/**
 	 * The open agent view, looked up from the workspace on each read rather than
 	 * held on the plugin (Obsidian's guidance: plugins must not keep references to
@@ -2081,6 +2111,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	private previousOpenaiApiKey: string = '';
 	private previousAnthropicApiKey: string = '';
 	private previousOpenrouterApiKey: string = '';
+	private previousOllamaApiKey: string = '';
 	private previousRagEnabled: boolean = false;
 	/**
 	 * Serialized provider routing (default provider + every feature's resolved
@@ -2226,12 +2257,12 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	private chatCredentialState(): { apiKey: string; requiresApiKey: boolean } {
 		const chatProvider = this.settings.features.chat.provider;
 		// Keyed by every provider id, so a new provider must say which key
-		// serves it instead of inheriting Gemini's (#1757). Ollama takes no
-		// key. A chat route of 'none' keeps Gemini's key, matching
+		// serves it instead of inheriting Gemini's (#1757). Ollama's key is
+		// optional (only Ollama Cloud needs one). A chat route of 'none' keeps Gemini's key, matching
 		// getCapabilities(null), which reports Gemini's capabilities.
 		const keyByProvider: Record&lt;ModelProvider, string&gt; = {
 			gemini: this.apiKey,
-			ollama: '',
+			ollama: this.ollamaApiKey,
 			openai: this.openaiApiKey,
 			anthropic: this.anthropicApiKey,
 			openrouter: this.openrouterApiKey,
@@ -2290,6 +2321,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		this.previousOpenaiApiKey = this.openaiApiKey;
 		this.previousAnthropicApiKey = this.anthropicApiKey;
 		this.previousOpenrouterApiKey = this.openrouterApiKey;
+		this.previousOllamaApiKey = this.ollamaApiKey;
 		this.previousRagEnabled = this.settings.ragIndexing.enabled;
 		this.previousRoutingKey = routingKey(this.settings);
 		this.previousOllamaBaseUrl = this.settings.ollamaBaseUrl;
@@ -2581,7 +2613,8 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 			(this.previousApiKey !== this.apiKey ||
 				this.previousOpenaiApiKey !== this.openaiApiKey ||
 				this.previousAnthropicApiKey !== this.anthropicApiKey ||
-				this.previousOpenrouterApiKey !== this.openrouterApiKey);
+				this.previousOpenrouterApiKey !== this.openrouterApiKey ||
+				this.previousOllamaApiKey !== this.ollamaApiKey);
 		// Any change to *which provider serves which use case* re-inits: tool
 		// registration, RAG, and image generation are all keyed off the resolved
 		// providers, not just the primary.
@@ -2742,7 +2775,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-18T01:41:21.779Z
+                at 2026-11-18T14:40:44.579Z
             </div>
         <script src="../prettify.js"></script>
         <script>

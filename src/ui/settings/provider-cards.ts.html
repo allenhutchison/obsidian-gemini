@@ -41,9 +41,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">43.33% </span>
+                <span class="strong">46.96% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>26/60</span>
+                <span class='fraction'>31/66</span>
             </div>
         
             
@@ -55,9 +55,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">66.19% </span>
+                <span class="strong">65.27% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>47/71</span>
+                <span class='fraction'>47/72</span>
             </div>
         
             
@@ -360,7 +360,28 @@
 <a name='L284'></a><a href='#L284'>284</a>
 <a name='L285'></a><a href='#L285'>285</a>
 <a name='L286'></a><a href='#L286'>286</a>
-<a name='L287'></a><a href='#L287'>287</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L287'></a><a href='#L287'>287</a>
+<a name='L288'></a><a href='#L288'>288</a>
+<a name='L289'></a><a href='#L289'>289</a>
+<a name='L290'></a><a href='#L290'>290</a>
+<a name='L291'></a><a href='#L291'>291</a>
+<a name='L292'></a><a href='#L292'>292</a>
+<a name='L293'></a><a href='#L293'>293</a>
+<a name='L294'></a><a href='#L294'>294</a>
+<a name='L295'></a><a href='#L295'>295</a>
+<a name='L296'></a><a href='#L296'>296</a>
+<a name='L297'></a><a href='#L297'>297</a>
+<a name='L298'></a><a href='#L298'>298</a>
+<a name='L299'></a><a href='#L299'>299</a>
+<a name='L300'></a><a href='#L300'>300</a>
+<a name='L301'></a><a href='#L301'>301</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -395,6 +416,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -541,6 +566,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -559,8 +587,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">49x</span>
 <span class="cline-any cline-yes">49x</span>
-<span class="cline-any cline-yes">69x</span>
-<span class="cline-any cline-yes">40x</span>
+<span class="cline-any cline-yes">78x</span>
+<span class="cline-any cline-yes">49x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -660,6 +688,7 @@ import { t, type TranslationKey } from '../../i18n';
 import { getErrorMessage } from '../../utils/error-utils';
 import { getCapabilities, type ModelProvider } from '../../api/providers/registry';
 import { providerConnection, providerMissingKey } from '../../api/provider-status';
+import { DEFAULT_OLLAMA_BASE_URL, isOllamaCloudEndpoint } from '../../api/providers/ollama/config';
 import { featuresUsing } from '../../api/feature-routing';
 import type { SettingsContext } from './context';
 import { readSettingPath } from './paths';
@@ -670,7 +699,13 @@ export type AuthRow =
 	| {
 			kind: 'secret';
 			settingsKey:
-				'apiKeySecretName' | 'openaiApiKeySecretName' | 'anthropicApiKeySecretName' | 'openrouterApiKeySecretName';
+				| 'apiKeySecretName'
+				| 'openaiApiKeySecretName'
+				| 'anthropicApiKeySecretName'
+				| 'openrouterApiKeySecretName'
+				| 'ollamaApiKeySecretName';
+			/** Row description override; defaults to the generic "saved in secret storage" line. */
+			descKey?: TranslationKey;
 	  }
 	| { kind: 'baseUrl'; settingsKey: 'customBaseUrl' | 'ollamaBaseUrl' | 'openaiBaseUrl'; optional: boolean };
 &nbsp;
@@ -694,7 +729,11 @@ export const PROVIDER_CARDS: ProviderCardSpec[] = [
 		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini refresh path; card ids are display data keyed by provider
 		id: 'ollama',
 		labelKey: 'settings.providers.shortLabel.ollama',
-		auth: [{ kind: 'baseUrl', settingsKey: 'ollamaBaseUrl', optional: false }],
+		auth: [
+			{ kind: 'baseUrl', settingsKey: 'ollamaBaseUrl', optional: false },
+			// Optional: only Ollama Cloud (https://ollama.com) needs a key (#1764).
+			{ kind: 'secret', settingsKey: 'ollamaApiKeySecretName', descKey: 'settings.providers.ollamaApiKeyDesc' },
+		],
 	},
 	{
 		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini refresh path; card ids are display data keyed by provider
@@ -826,7 +865,10 @@ function modelsSummary(ctx: SettingsContext, id: ModelProvider): string {
 		return t('settings.providers.modelsLoading');
 	}
 	// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini refresh path; card ids are display data keyed by provider
-	<span class="missing-if-branch" title="if path not taken" >I</span>if (id !== 'ollama') <span class="cstat-no" title="statement not covered" >return t('settings.providers.modelsAvailable', { count: cached.total });</span>
+	<span class="missing-if-branch" title="if path not taken" >I</span>if (id !== 'ollama' || isOllamaCloudEndpoint(ctx.plugin.settings.ollamaBaseUrl || <span class="branch-1 cbranch-no" title="branch not covered" >DEFAULT_OLLAMA_BASE_URL)</span>) {
+		// Ollama Cloud's catalog is hosted models, not local pulls.
+<span class="cstat-no" title="statement not covered" >		return t('settings.providers.modelsAvailable', { count: cached.total });</span>
+	}
 	const pulled = cached.total - cached.cloud;
 	return cached.cloud &gt; 0
 		? <span class="branch-0 cbranch-no" title="branch not covered" >t('settings.providers.modelsPulledAndCloud', { count: pulled, cloud: cached.cloud })</span>
@@ -848,7 +890,7 @@ function authRows(ctx: SettingsContext, spec: ProviderCardSpec): SettingDefiniti
 		if (row.kind === 'secret') {
 			return {
 				name: t('settings.providers.apiKeyName'),
-				desc: t('settings.providers.apiKeyDesc'),
+				desc: t(row.descKey ?? 'settings.providers.apiKeyDesc'),
 				render: (setting) =&gt; {
 					setting.components.push(
 						new SecretComponent(app, setting.controlEl)
@@ -939,7 +981,7 @@ export function providerCardPage(ctx: SettingsContext, spec: ProviderCardSpec): 
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-18T01:41:21.779Z
+                at 2026-11-18T14:40:44.579Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
