@@ -143,11 +143,21 @@ function collectFields() {
 			// (the old TypeLiteralNode wrapper is gone); a TypeAliasDeclaration
 			// wraps them in a TypeLiteral under `type`, or nests object types
 			// inside a union/intersection/array/generic type.
+			// Object types can also sit outside the members, in type-parameter
+			// defaults/constraints and `extends` clauses
+			// (`interface Box extends Wrapper<{ auditOnly: string }> {}`); walk
+			// those too so the interface form matches the equivalent alias.
+			const walkOutsideMembers = (decl, path) => {
+				for (const param of decl.typeParameters ?? []) walkType(param, path);
+				for (const clause of decl.heritageClauses ?? []) walkType(clause, path);
+			};
 			if (ts.isInterfaceDeclaration(node)) {
 				addMembers(node.members, [node.name.text]);
+				walkOutsideMembers(node, [node.name.text]);
 			} else if (ts.isTypeAliasDeclaration(node) && node.type) {
 				if (ts.isTypeLiteralNode(node.type)) {
 					addMembers(node.type.members, [node.name.text]);
+					walkOutsideMembers(node, [node.name.text]);
 				} else {
 					walkType(node, [node.name.text]);
 				}
