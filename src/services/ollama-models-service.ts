@@ -181,6 +181,8 @@ export class OllamaModelsService {
 	 * {@link PARTIAL_CATALOG_RETRY_MS}.
 	 */
 	private partialSince: number | null = null;
+	/** Bumped by `invalidate()` so a load started before it can't rewrite `partialSince`. */
+	private partialGeneration = 0;
 
 	/**
 	 * Outcome of the most recent /api/tags fetch: whether the daemon answered.
@@ -253,6 +255,7 @@ export class OllamaModelsService {
 			this.partialSince = null;
 			return this.fetchSource(baseUrl, apiKey, isOllamaCloudEndpoint(baseUrl) ? 'cloud' : 'local', false);
 		}
+		const partialGeneration = this.partialGeneration;
 		const [local, cloud] = await Promise.allSettled([
 			this.fetchSource(baseUrl, apiKey, 'local', true),
 			this.fetchSource(OLLAMA_CLOUD_BASE_URL, apiKey, 'cloud', true),
@@ -265,7 +268,9 @@ export class OllamaModelsService {
 				this.plugin.logger.warn('[OllamaModelsService] One model source failed; serving the other:', result.reason);
 			}
 		}
-		this.partialSince = local.status === 'rejected' || cloud.status === 'rejected' ? Date.now() : null;
+		if (partialGeneration === this.partialGeneration) {
+			this.partialSince = local.status === 'rejected' || cloud.status === 'rejected' ? Date.now() : null;
+		}
 		return [...(local.status === 'fulfilled' ? local.value : []), ...(cloud.status === 'fulfilled' ? cloud.value : [])];
 	}
 
@@ -308,6 +313,7 @@ export class OllamaModelsService {
 	invalidate(): void {
 		this.catalog.reset();
 		this.partialSince = null;
+		this.partialGeneration++;
 		this.showCache.clear();
 		this.psCache.clear();
 		this.showGeneration++;
@@ -510,6 +516,8 @@ export class OllamaModelsService {
 			supportsVision: isVision,
 			...(contextWindow && { contextWindow }),
 			...(remoteHost && { remoteHost }),
+			// A merged-in cloud entry needs an explicit pick (see `explicitOnly`).
+			...(merged && source === 'cloud' && { explicitOnly: true }),
 			...(defaultForRoles && { defaultForRoles: [...defaultForRoles] }),
 		};
 	}

@@ -42,6 +42,13 @@ export interface GeminiModel {
 	 */
 	remoteHost?: string;
 	/**
+	 * Never picked as an implicit role default, only by explicit selection. Set
+	 * on Ollama Cloud entries merged into a local endpoint's list, so a feature
+	 * left on "default" never starts sending notes to ollama.com just because
+	 * the local daemon was down when the list loaded.
+	 */
+	explicitOnly?: boolean;
+	/**
 	 * The model is only served by the Interactions API — `generateContent`
 	 * rejects it with a 400 ("This model only supports Interactions API").
 	 * The Gemini client always routes these through the Interactions path, and
@@ -126,7 +133,9 @@ export function isModelEligibleForRole(model: GeminiModel, role: ModelRole): boo
  * falls back to the first available model since we don't ship a curated list.
  */
 export function getDefaultModelForRole(role: ModelRole, provider: ModelProvider = 'gemini'): string {
-	const candidates = GEMINI_MODELS.filter((m) => getModelProvider(m) === provider && isModelEligibleForRole(m, role));
+	const candidates = GEMINI_MODELS.filter(
+		(m) => getModelProvider(m) === provider && !m.explicitOnly && isModelEligibleForRole(m, role)
+	);
 
 	const modelForRole = candidates.find((m) => m.defaultForRoles?.includes(role));
 	if (modelForRole) {

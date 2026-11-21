@@ -862,6 +862,30 @@ describe('OllamaModelsService merging local and Ollama Cloud catalogs', () => {
 		]);
 	});
 
+	it('never offers a merged-in cloud model as an implicit default', async () => {
+		const { setGeminiModels, getDefaultModelForRole, DEFAULT_GEMINI_MODELS } = await import('../../src/models');
+		// The local daemon is down, so only cloud entries are listed.
+		mockHosts(null, [{ name: 'kimi-k2:1t' }]);
+		const models = await new OllamaModelsService(mergedPlugin()).getModels();
+		expect(models[0].explicitOnly).toBe(true);
+		try {
+			setGeminiModels([...DEFAULT_GEMINI_MODELS, ...models]);
+			expect(getDefaultModelForRole('chat', 'ollama')).toBe('');
+		} finally {
+			setGeminiModels([...DEFAULT_GEMINI_MODELS]);
+		}
+	});
+
+	it('keeps cloud models as defaults when the endpoint itself is ollama.com', async () => {
+		mockEndpoints([{ name: 'kimi-k2:1t' }], () => ({ capabilities: ['completion'] }));
+		const models = await new OllamaModelsService({
+			logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
+			settings: { ollamaBaseUrl: 'https://ollama.com' },
+			ollamaApiKey: 'secret',
+		} as any).getModels();
+		expect(models[0].explicitOnly).toBeUndefined();
+	});
+
 	it('does not merge the cloud catalog without a key', async () => {
 		mockHosts([{ name: 'llama3.2' }], [{ name: 'kimi-k2:1t' }]);
 		const models = await new OllamaModelsService(mergedPlugin('')).getModels();

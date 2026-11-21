@@ -102,7 +102,8 @@ If you keep the endpoint pointed at your own Ollama (the default `http://localho
 
 - **A name in both places is two entries.** If `gpt-oss:120b` is pulled locally and also offered by Ollama Cloud, you see `gpt-oss:120b (local)` and `gpt-oss:120b (cloud)`, and pick whichever you want. The cloud entry is saved as `cloud::gpt-oss:120b`, which is how the plugin knows to send it to ollama.com.
 - **One side being down doesn't hide the other.** If the local daemon isn't running, the cloud models still load (and the local ones reappear within about 30 seconds of it starting, or when you press **Refresh**); if ollama.com is unreachable, your local models still load.
-- **The key is also sent to your own endpoint**, as long as it is HTTPS or `localhost`, so an authenticating proxy keeps working. Remove the key to go back to local models only.
+- **The key is also sent to your own endpoint**, as long as it is HTTPS or `localhost`, so an authenticating proxy keeps working. Remove the key to list only your endpoint's models again. Cloud models you pulled into the daemon (see [Cloud models](#cloud-models)) stay listed as `(cloud)` either way, and still send your notes to ollama.com.
+- **Cloud entries are never picked for you.** A feature whose model is left on the default only ever gets a `(local)` model; you have to choose a `(cloud)` entry yourself.
 - **A `(cloud)` model sends your notes to ollama.com**, the same as a pulled cloud model. Stick to `(local)` entries if you want nothing to leave your machine.
 
 ## What works
