@@ -1,6 +1,52 @@
 /** Default endpoint for a local Ollama daemon. */
 export const DEFAULT_OLLAMA_BASE_URL = 'http://localhost:11434';
 
+/** Ollama's hosted API, reached directly with an API key. */
+export const OLLAMA_CLOUD_BASE_URL = 'https://ollama.com';
+
+/**
+ * Prefix on the stored model id of a model served directly by Ollama Cloud, as
+ * opposed to one served by the user's own base URL. `::` never appears in a
+ * valid Ollama model name (a name has at most one tag colon and no empty
+ * parts), so the prefix cannot collide with a real local model.
+ *
+ * The prefix is what lets a model with the same name exist both locally and on
+ * Ollama Cloud as two separate picker entries, and it makes request routing a
+ * pure function of the stored id: no catalog lookup is needed to know which
+ * endpoint serves a model.
+ */
+const OLLAMA_CLOUD_MODEL_PREFIX = 'cloud::';
+
+/** The stored model id for a model served directly by Ollama Cloud. */
+export function toOllamaCloudModelId(name: string): string {
+	return `${OLLAMA_CLOUD_MODEL_PREFIX}${name}`;
+}
+
+/**
+ * Where a stored Ollama model id is served, and the name to send there. Ids
+ * carrying the cloud prefix go to Ollama Cloud — the configured base URL when
+ * it already is ollama.com, otherwise {@link OLLAMA_CLOUD_BASE_URL}. Every
+ * other id goes to the configured base URL unchanged.
+ */
+export function resolveOllamaModel(modelId: string, configuredBaseUrl: string): { baseUrl: string; model: string } {
+	if (modelId.startsWith(OLLAMA_CLOUD_MODEL_PREFIX)) {
+		return {
+			baseUrl: isOllamaCloudEndpoint(configuredBaseUrl) ? configuredBaseUrl : OLLAMA_CLOUD_BASE_URL,
+			model: modelId.slice(OLLAMA_CLOUD_MODEL_PREFIX.length),
+		};
+	}
+	return { baseUrl: configuredBaseUrl, model: modelId };
+}
+
+/**
+ * Whether the model list merges Ollama Cloud's catalog in alongside the
+ * configured base URL's: an API key is set and the base URL is a daemon or
+ * server of the user's own rather than ollama.com itself.
+ */
+export function mergesOllamaCloud(baseUrl: string, apiKey: string | undefined): boolean {
+	return !!apiKey && !isOllamaCloudEndpoint(baseUrl);
+}
+
 /**
  * Whether `baseUrl` points at Ollama's hosted API (ollama.com) rather than a
  * daemon the user runs. The hosted API rejects keyless requests, so callers use

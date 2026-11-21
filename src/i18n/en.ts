@@ -3829,9 +3829,9 @@ export const en = {
 	},
 	'settings.providers.ollamaApiKeyDesc': {
 		message:
-			"Optional. Only needed for Ollama Cloud: set the endpoint to https://ollama.com and pick a key from ollama.com/settings/keys. A local Ollama doesn't need one. Saved in Obsidian's secret storage, not in this vault's data.",
+			"Optional. Adds Ollama Cloud models (get a key at ollama.com/settings/keys). With a local or custom endpoint, the model list shows both your own models and Ollama Cloud's; set the endpoint to https://ollama.com for cloud only. A local Ollama doesn't need a key. Saved in Obsidian's secret storage, not in this vault's data.",
 		context:
-			"Row description for the Ollama provider card's API key field. The key is optional; it is only required when the endpoint is Ollama's hosted service. URLs must stay verbatim.",
+			"Row description for the Ollama provider card's API key field. The key is optional; with it, Ollama Cloud models are listed alongside the user's own server's models. URLs must stay verbatim.",
 	},
 	'settings.providers.baseUrlName': {
 		message: 'Base URL',
@@ -3888,6 +3888,11 @@ export const en = {
 		message: '{model} (cloud)',
 		context:
 			'Model dropdown label for an Ollama cloud model, which Ollama forwards to ollama.com instead of running locally. {model} is the model name.',
+	},
+	'settings.providers.ollamaLocalModelLabel': {
+		message: '{model} (local)',
+		context:
+			"Model dropdown label for an Ollama model served by the user's own Ollama server, shown when the list also includes Ollama Cloud models. {model} is the model name.",
 	},
 	'settings.providers.modelsPulled': {
 		message: '{count} pulled',

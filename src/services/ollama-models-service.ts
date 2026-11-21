@@ -3,7 +3,15 @@ import type { ObsidianGemini } from '../types/plugin';
 import { GeminiModel } from '../models';
 import { t } from '../i18n';
 import { CachedModelCatalog, joinBaseUrl, type CatalogEndpoint } from './remote-model-catalog';
-import { DEFAULT_OLLAMA_BASE_URL, isOllamaCloudEndpoint, ollamaAuthHeaders } from '../api/providers/ollama/config';
+import {
+	DEFAULT_OLLAMA_BASE_URL,
+	OLLAMA_CLOUD_BASE_URL,
+	isOllamaCloudEndpoint,
+	mergesOllamaCloud,
+	ollamaAuthHeaders,
+	resolveOllamaModel,
+	toOllamaCloudModelId,
+} from '../api/providers/ollama/config';
 
 /**
  * Models that Ollama exposes for completions are tiny by convention. We pre-bias
@@ -50,6 +58,17 @@ function probeCacheKey(baseUrl: string, name: string): string {
  * next turn rather than persisting.
  */
 const PS_CACHE_TTL_MS = 5_000;
+
+/**
+ * How long a merged catalog that is missing one of its two sources (the local
+ * daemon was down, or ollama.com failed) is served before the next read
+ * re-fetches it. Without this a partial list would stick until a manual
+ * Refresh, even after `ollama serve` comes back.
+ */
+const PARTIAL_CATALOG_RETRY_MS = 30_000;
+
+/** Which endpoint a catalog entry came from, for labelling and stored ids. */
+type CatalogSource = 'local' | 'cloud';
 
 interface OllamaTagsModel {
 	name: string;
@@ -156,6 +175,12 @@ export class OllamaModelsService {
 	 */
 	private showGeneration = 0;
 	private psGeneration = 0;
+	/**
+	 * When the cached merged catalog was loaded with one source missing, the
+	 * time of that load; `null` when the cache is complete. See
+	 * {@link PARTIAL_CATALOG_RETRY_MS}.
+	 */
+	private partialSince: number | null = null;
 
 	/**
 	 * Outcome of the most recent /api/tags fetch: whether the daemon answered.
@@ -203,19 +228,58 @@ export class OllamaModelsService {
 			// ollama.com rejects every keyless request, so there is nothing to learn.
 			return [];
 		}
-		return this.catalog.get(forceRefresh);
+		const stalePartial = this.partialSince !== null && Date.now() - this.partialSince >= PARTIAL_CATALOG_RETRY_MS;
+		return this.catalog.get(forceRefresh || stalePartial);
 	}
 
-	/**
-	 * Fetches and maps the daemon's `/api/tags` catalog. Throws on an unreachable
-	 * daemon, a non-200 status, or an unexpected response shape; the shared
-	 * catalog turns any of those into the identity-aware cache fallback.
-	 */
+	/** The configured base URL, with the same fallback the runtime client uses. */
 	private endpointBaseUrl(): string {
 		return this.plugin.settings.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL;
 	}
 
+	/**
+	 * Loads the catalog for the configured endpoint. With an API key and a base
+	 * URL of the user's own, that is the union of the base URL's models and
+	 * Ollama Cloud's, each labelled with where it runs (cloud entries get a
+	 * distinct stored id, so a name present in both places is two entries).
+	 * One source failing still serves the other; only both failing throws.
+	 *
+	 * Throws on an unreachable daemon, a non-200 status, or an unexpected
+	 * response shape; the shared catalog turns any of those into the
+	 * identity-aware cache fallback.
+	 */
 	private async fetchModels(baseUrl: string, apiKey: string): Promise<GeminiModel[]> {
+		if (!mergesOllamaCloud(baseUrl, apiKey)) {
+			this.partialSince = null;
+			return this.fetchSource(baseUrl, apiKey, isOllamaCloudEndpoint(baseUrl) ? 'cloud' : 'local', false);
+		}
+		const [local, cloud] = await Promise.allSettled([
+			this.fetchSource(baseUrl, apiKey, 'local', true),
+			this.fetchSource(OLLAMA_CLOUD_BASE_URL, apiKey, 'cloud', true),
+		]);
+		if (local.status === 'rejected' && cloud.status === 'rejected') {
+			throw local.reason;
+		}
+		for (const result of [local, cloud]) {
+			if (result.status === 'rejected') {
+				this.plugin.logger.warn('[OllamaModelsService] One model source failed; serving the other:', result.reason);
+			}
+		}
+		this.partialSince = local.status === 'rejected' || cloud.status === 'rejected' ? Date.now() : null;
+		return [...(local.status === 'fulfilled' ? local.value : []), ...(cloud.status === 'fulfilled' ? cloud.value : [])];
+	}
+
+	/**
+	 * Fetches and maps one endpoint's `/api/tags` catalog. `merged` says whether
+	 * the result is half of a local + cloud union, which is when local entries
+	 * need a "local" label to tell them apart from the cloud ones.
+	 */
+	private async fetchSource(
+		baseUrl: string,
+		apiKey: string,
+		source: CatalogSource,
+		merged: boolean
+	): Promise<GeminiModel[]> {
 		// Deliberately no retry/backoff: ECONNREFUSED against the local daemon is
 		// permanent until `ollama serve` runs, so retrying only delays the
 		// actionable error — see #709 for the full rationale.
@@ -235,7 +299,7 @@ export class OllamaModelsService {
 			throw new Error('Invalid /api/tags response shape');
 		}
 
-		return Promise.all(data.models.map((m) => this.toGeminiModel(m, baseUrl, apiKey)));
+		return Promise.all(data.models.map((m) => this.toGeminiModel(m, baseUrl, apiKey, source, merged)));
 	}
 
 	/**
@@ -243,6 +307,7 @@ export class OllamaModelsService {
 	 */
 	invalidate(): void {
 		this.catalog.reset();
+		this.partialSince = null;
 		this.showCache.clear();
 		this.psCache.clear();
 		this.showGeneration++;
@@ -343,8 +408,9 @@ export class OllamaModelsService {
 	 * Returns null when the model isn't loaded (nothing has been sent to it yet)
 	 * or the daemon is unreachable, so callers fall back to a bound.
 	 */
-	async getRuntimeContextLength(modelName: string): Promise<number | null> {
-		const baseUrl = this.endpointBaseUrl();
+	async getRuntimeContextLength(modelId: string): Promise<number | null> {
+		// A cloud-prefixed id is probed on Ollama Cloud under its bare name.
+		const { baseUrl, model: modelName } = resolveOllamaModel(modelId, this.endpointBaseUrl());
 		if (!this.plugin.ollamaApiKey && isOllamaCloudEndpoint(baseUrl)) {
 			// ollama.com rejects keyless requests, so skip the probe entirely (#1764).
 			return null;
@@ -418,8 +484,16 @@ export class OllamaModelsService {
 		}
 	}
 
-	private async toGeminiModel(m: OllamaTagsModel, baseUrl: string, apiKey: string): Promise<GeminiModel> {
+	private async toGeminiModel(
+		m: OllamaTagsModel,
+		baseUrl: string,
+		apiKey: string,
+		source: CatalogSource,
+		merged: boolean
+	): Promise<GeminiModel> {
 		const name = m.name;
+		// Served by ollama.com directly: remote even without a `remote_host`.
+		const remoteHost = m.remote_host || (source === 'cloud' ? baseUrl : undefined);
 		const lower = name.toLowerCase();
 		const isCompletion = COMPLETION_NAME_HINT_PATTERNS.some((re) => re.test(lower));
 		const show = await this.probeModel(name, baseUrl, apiKey);
@@ -429,22 +503,25 @@ export class OllamaModelsService {
 		const defaultForRoles = isCompletion ? (['completions'] as const) : undefined;
 
 		return {
-			value: name,
-			label: this.formatLabel(m),
+			value: source === 'cloud' ? toOllamaCloudModelId(name) : name,
+			label: this.formatLabel(m, !!remoteHost, merged),
 			// eslint-disable-next-line no-restricted-syntax -- data tag stamping the provider onto models this service discovered
 			provider: 'ollama',
 			supportsVision: isVision,
 			...(contextWindow && { contextWindow }),
-			...(m.remote_host && { remoteHost: m.remote_host }),
+			...(remoteHost && { remoteHost }),
 			...(defaultForRoles && { defaultForRoles: [...defaultForRoles] }),
 		};
 	}
 
-	private formatLabel(m: OllamaTagsModel): string {
+	private formatLabel(m: OllamaTagsModel, remote: boolean, merged: boolean): string {
 		const param = m.details?.parameter_size;
 		const base = param ? `${m.name} (${param})` : m.name;
-		// Cloud entries are local manifests that proxy to ollama.com; say so in
-		// the picker, since the provider itself is otherwise "on this machine".
-		return m.remote_host ? t('settings.providers.ollamaCloudModelLabel', { model: base }) : base;
+		// Cloud entries (served by ollama.com directly, or local manifests that
+		// proxy to it) say so in the picker, since the provider is otherwise "on
+		// this machine". When the list merges local and cloud catalogs, local
+		// entries say so too, so every entry shows where it runs.
+		if (remote) return t('settings.providers.ollamaCloudModelLabel', { model: base });
+		return merged ? t('settings.providers.ollamaLocalModelLabel', { model: base }) : base;
 	}
 }
