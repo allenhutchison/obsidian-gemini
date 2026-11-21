@@ -178,6 +178,9 @@ export class DeepResearchService {
 				researchManager.startResearch({
 					input: params.topic,
 					fileSearchStoreNames,
+					// gemini-utils only adds google_search when asked, and once any tool is set the
+					// agent's defaults no longer apply, so a vault store alone would make "both" vault-only.
+					googleSearch: params.scope !== 'vault_only',
 				}),
 			this.retryConfig,
 			{ operationName: 'DeepResearch.startResearch', logger: this.plugin.logger }
@@ -213,8 +216,15 @@ export class DeepResearchService {
 			throw new Error('Research was cancelled');
 		}
 
-		// Research completed successfully - clear the interaction ID
+		// Research reached a terminal state - clear the interaction ID
 		this.currentInteractionId = null;
+
+		// A completed interaction can still carry no report text. Saving that would write an
+		// empty note and report success, so treat it as a failure instead.
+		if (!this.hasReportText(completed)) {
+			this.plugin.logger.error(`DeepResearch: Interaction ${interactionId} completed without any report text`);
+			throw new Error('Research failed: the research agent finished without producing a report');
+		}
 
 		this.plugin.logger.log('DeepResearch: Research completed, generating report');
 
@@ -282,6 +292,15 @@ export class DeepResearchService {
 			}
 		}
 		return outputs;
+	}
+
+	/**
+	 * Whether the interaction's model output contains any non-blank text
+	 */
+	private hasReportText(interaction: Interaction): boolean {
+		return this.extractOutputs(interaction).some(
+			(output) => output.type === 'text' && typeof output.text === 'string' && output.text.trim().length > 0
+		);
 	}
 
 	/**
