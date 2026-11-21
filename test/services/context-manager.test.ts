@@ -399,7 +399,7 @@ describe('ContextManager', () => {
 			const { ctx, getRuntimeContextLength } = buildOllamaContext({ runtime: 4_096 });
 			ctx.updateUsageMetadata({ promptTokenCount: 100_000, totalTokenCount: 120_000 });
 
-			const usage = await ctx.getTokenUsage('gemini-2.5-flash');
+			const usage = await ctx.getTokenUsage('gemini-flash-latest');
 
 			expect(usage.inputTokenLimit).toBe(1_000_000);
 			expect(getRuntimeContextLength).not.toHaveBeenCalled();
@@ -442,9 +442,51 @@ describe('ContextManager', () => {
 							role: 'model',
 							parts: [{ text: expect.stringContaining('[Tool call: search') }],
 						},
+						{ role: 'user', parts: [{ text: '.' }] },
 					],
 				})
 			);
+		});
+
+		test('appends a closing user turn when the history ends on a model turn (#1708)', async () => {
+			mockCountTokens.mockResolvedValue({ totalTokens: 42 });
+
+			await contextManager.countTokens('gemini-2.5-flash', [
+				{ role: 'user', parts: [{ text: 'Hi' }] },
+				{ role: 'model', parts: [{ text: 'Hello!' }] },
+			]);
+
+			expect(mockCountTokens).toHaveBeenCalledWith(
+				expect.objectContaining({
+					contents: [
+						{ role: 'user', parts: [{ text: 'Hi' }] },
+						{ role: 'model', parts: [{ text: 'Hello!' }] },
+						{ role: 'user', parts: [{ text: '.' }] },
+					],
+				})
+			);
+		});
+
+		test('sends no synthetic turn for empty contents', async () => {
+			mockCountTokens.mockResolvedValue({ totalTokens: 0 });
+
+			await contextManager.countTokens('gemini-2.5-flash', []);
+
+			expect(mockCountTokens).toHaveBeenCalledWith(expect.objectContaining({ contents: [] }));
+		});
+
+		test('falls back to a character estimate, not 0, when the count fails on a fresh session (#1708)', async () => {
+			mockCountTokens.mockRejectedValue(Object.assign(new Error('Requests ending with a model turn'), { status: 400 }));
+
+			const contents = [
+				{ role: 'user', parts: [{ text: 'a'.repeat(400) }] },
+				{ role: 'model', parts: [{ text: 'b'.repeat(400) }] },
+			];
+			const result = await contextManager.countTokens('gemini-2.5-flash', contents);
+
+			expect(result).toBe(Math.ceil(JSON.stringify(contents).length / 4));
+			expect(result).toBeGreaterThan(200);
+			expect(mockLogger.error).toHaveBeenCalledWith('[ContextManager] countTokens failed:', expect.any(Error));
 		});
 
 		test('should fall back to cached estimate on API error', async () => {

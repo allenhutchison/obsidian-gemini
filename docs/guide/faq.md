@@ -55,13 +55,13 @@ This is usually caused by an invalid/expired API key or an unavailable model.
 
 ### Requests fail after several retry attempts
 
-The plugin has built-in retry logic with exponential backoff (3 retries, so up to 4 attempts total — fixed, not configurable). If requests keep failing, it's usually a rate limit or transient API issue. Check your API key validity and rate limit dashboard. ([#131](https://github.com/allenhutchison/obsidian-gemini/issues/131))
+The plugin has built-in retry logic with exponential backoff (3 retries, so up to 4 attempts total — fixed, not configurable). Errors the plugin can detect before sending anything (no model selected, or an attachment type the provider doesn't accept, such as a PDF sent to an OpenAI-compatible provider) are shown immediately and are not retried. If requests keep failing, it's usually a rate limit or transient API issue. Check your API key validity and rate limit dashboard. ([#131](https://github.com/allenhutchison/obsidian-gemini/issues/131))
 
 ## Models
 
 ### A model I selected shows "model not found"
 
-Google regularly retires preview model versions. The plugin automatically fetches the latest model list from GitHub on startup (cached 24 hours). Click **Refresh** on the Gemini card in Settings → Gemini Scribe → Providers to pick up the current list immediately, without waiting for the cache to expire. ([#223](https://github.com/allenhutchison/obsidian-gemini/issues/223))
+Google regularly retires preview model versions. The plugin asks Google's API which models your key can use each time Obsidian starts, so retired models drop out and new ones appear without a plugin update. Click **Refresh** on the Gemini card in Settings → Gemini Scribe → Providers to pick up the current list without restarting. ([#223](https://github.com/allenhutchison/obsidian-gemini/issues/223))
 
 ### Where are the Temperature and Top-P settings?
 
@@ -71,7 +71,7 @@ They were removed. Every request now uses the provider SDK's own defaults; there
 
 ### Will you add support for Gemma models?
 
-Yes — the Gemma 4 models served through the Gemini API (ai.google.dev), currently `gemma-4-31b-it` and `gemma-4-26b-a4b-it`, are in the bundled model list, so you can pick them in the Gemini text-model dropdowns (chat, summary, completions, rewrite, web search). They are text models, so they don't appear in the image-generation model dropdown. New Gemma 4 (`gemma-4-*`) variants the Gemini API starts serving are picked up by the regular model-list update, as long as they support `generateContent`. If you're asking about Gemma running locally via Ollama or similar, see the local LLM question below. ([#587](https://github.com/allenhutchison/obsidian-gemini/issues/587), [#1484](https://github.com/allenhutchison/obsidian-gemini/issues/1484))
+Yes — the Gemma 4 models served through the Gemini API (ai.google.dev), currently `gemma-4-31b-it` and `gemma-4-26b-a4b-it`, are included in the model list fetched from the Gemini API, so you can pick them in the Gemini text-model dropdowns (chat, summary, completions, rewrite, web search). They are text models, so they don't appear in the image-generation model dropdown. New Gemma 4 (`gemma-4-*`) variants the Gemini API starts serving appear automatically the next time the model list is fetched (at startup, or when you click **Refresh** on the Gemini card), as long as they support `generateContent`. If you're asking about Gemma running locally via Ollama or similar, see the local LLM question below. ([#587](https://github.com/allenhutchison/obsidian-gemini/issues/587), [#1484](https://github.com/allenhutchison/obsidian-gemini/issues/1484))
 
 ### Can I use non-Gemini providers like OpenAI, Anthropic, or Mistral?
 

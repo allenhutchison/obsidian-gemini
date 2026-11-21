@@ -1,6 +1,7 @@
 import { RetryDecorator } from '../../src/api/retry-decorator';
 import { ModelApi, BaseModelRequest, ModelResponse } from '../../src/api/interfaces/model-api';
 import { Logger } from '../../src/utils/logger';
+import { NonRetryableRequestError } from '../../src/utils/request-errors';
 
 // Minimal mock for ModelApi
 function createMockApi(responses: Array<ModelResponse | Error>): ModelApi {
@@ -69,6 +70,15 @@ describe('RetryDecorator', () => {
 			const decorator = new RetryDecorator(api);
 
 			await expect(decorator.generateModelResponse(dummyRequest)).rejects.toThrow('Bad request');
+			expect(api.generateModelResponse).toHaveBeenCalledTimes(1);
+		});
+
+		test('pre-flight validation errors are not retried (#1738)', async () => {
+			const error = new NonRetryableRequestError('No model selected');
+			const api = createMockApi([error, successResponse]);
+			const decorator = new RetryDecorator(api);
+
+			await expect(decorator.generateModelResponse(dummyRequest)).rejects.toThrow('No model selected');
 			expect(api.generateModelResponse).toHaveBeenCalledTimes(1);
 		});
 
@@ -187,6 +197,16 @@ describe('RetryDecorator', () => {
 
 			const stream = decorator.generateStreamingResponse(dummyRequest, vi.fn());
 			await expect(stream.complete).rejects.toThrow('Forbidden');
+		});
+
+		test('a pre-flight validation error is attempted once in streaming (#1738)', async () => {
+			const error = new NonRetryableRequestError('OpenRouter only supports image attachments');
+			const api = createMockApi([error, successResponse]);
+			const decorator = new RetryDecorator(api);
+
+			const stream = decorator.generateStreamingResponse(dummyRequest, vi.fn());
+			await expect(stream.complete).rejects.toThrow('only supports image attachments');
+			expect(api.generateStreamingResponse).toHaveBeenCalledTimes(1);
 		});
 
 		test('streaming retry succeeds after failure', async () => {

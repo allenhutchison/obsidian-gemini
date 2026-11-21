@@ -73,6 +73,10 @@ Each request sends the **entire current note** — everything before the cursor 
 
 It does not see other notes, your agent sessions, `AGENTS.md`, or custom prompts.
 
+### Spacing at the cursor
+
+If you pause partway through a word, the suggestion finishes that word rather than starting a new one: typing `To make them, y` can suggest `ou whisk the dry ingredients`, with no space inserted. After a complete word the suggestion starts with a space, and after punctuation such as `.` or `,` the plugin adds the space for you.
+
 ### Smart Predictions
 
 Completions understand:
@@ -123,7 +127,7 @@ Completions are routed and modeled like every other feature: open **Settings →
 - Gemini Flash Latest (balanced)
 - Gemini 2.5 Pro (highest quality, slower; requires billing)
 
-The dropdown reflects whatever models the bundled list and Model Discovery have surfaced — the names above are today's defaults, but newer Flash / Pro models will appear automatically as Google ships them. See [Settings Reference → Features](/reference/settings#features) for the full routing model.
+The dropdown reflects whatever models Model Discovery has fetched from Google's ListModels endpoint — the names above are today's defaults, but newer Flash / Pro models will appear automatically as Google ships them. See [Settings Reference → Features](/reference/settings#features) for the full routing model.
 
 ### Model Comparison
 

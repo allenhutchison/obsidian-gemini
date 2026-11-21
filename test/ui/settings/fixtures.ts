@@ -30,6 +30,7 @@ function buildSettings(overrides: Partial<ObsidianGeminiSettings> = {}): Obsidia
 		openaiApiKeySecretName: '',
 		anthropicApiKeySecretName: '',
 		openrouterApiKeySecretName: '',
+		ollamaApiKeySecretName: '',
 		summaryFrontmatterKey: 'summary',
 		userName: 'User',
 		chatHistory: false,
@@ -63,17 +64,22 @@ export function buildPlugin(settingsOverrides: Partial<ObsidianGeminiSettings> =
 	const settings = buildSettings(settingsOverrides);
 	const geminiModels = [{ value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', provider: 'gemini' as const }];
 
-	const listProvider = { getModels: vi.fn(() => geminiModels), getTextModels: vi.fn(() => geminiModels) };
+	const geminiModelsService = { getModels: vi.fn(async () => geminiModels), invalidate: vi.fn() };
 	const ollamaModelsService = { getModels: vi.fn(async () => []), invalidate: vi.fn() };
 	const openaiModelsService = { getModels: vi.fn(async () => []), invalidate: vi.fn() };
 	const anthropicModelsService = { getModels: vi.fn(async () => []), invalidate: vi.fn() };
 	const modelManager = {
-		getListProvider: vi.fn(() => listProvider),
 		getOllamaModelsService: vi.fn(() => ollamaModelsService),
 		getProviderModelsService: vi.fn((provider: string) =>
-			provider === 'ollama' ? ollamaModelsService : provider === 'openai' ? openaiModelsService : anthropicModelsService
+			provider === 'gemini'
+				? geminiModelsService
+				: provider === 'ollama'
+					? ollamaModelsService
+					: provider === 'openai'
+						? openaiModelsService
+						: anthropicModelsService
 		),
-		refreshRemoteModels: vi.fn(async () => ({ fetched: true, modelCount: geminiModels.length })),
+		refreshGeminiModels: vi.fn(async () => ({ fetched: true, modelCount: geminiModels.length })),
 	};
 	const toolRegistry = {
 		getEffectivePermission: vi.fn(() => ToolPermission.ASK_USER),

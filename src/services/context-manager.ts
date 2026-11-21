@@ -90,6 +90,23 @@ import type { UsageMetadata } from '../api/interfaces/usage-metadata';
  * ContextManager monitors token usage and compacts conversation history
  * when it approaches configurable thresholds.
  */
+/**
+ * Synthetic closing turn for countTokens requests. Newer Gemini models (seen
+ * with gemini-4-argon) reject a countTokens request whose `contents` end on a
+ * `model` turn with a 400, and right after a response is saved the session
+ * history always ends that way (#1708). Appending a minimal user turn keeps
+ * every real turn counted, at the cost of a handful of extra tokens, which is
+ * the safe direction for compaction thresholds.
+ */
+const TOKEN_COUNT_CLOSING_TURN: Content = { role: 'user', parts: [{ text: '.' }] };
+
+/** Return `contents` ending on a user turn, appending a minimal one if needed. */
+function endOnUserTurn(contents: Content[]): Content[] {
+	const last = contents[contents.length - 1];
+	if (!last || last.role === 'user') return contents;
+	return [...contents, TOKEN_COUNT_CLOSING_TURN];
+}
+
 export class ContextManager {
 	private lastUsageMetadata: UsageMetadata | null = null;
 	private acceptNextLowerUpdate = false;
@@ -403,7 +420,7 @@ export class ContextManager {
 						// instead — tokenization is close enough for compaction
 						// thresholds, and the real call would 400.
 						model: resolveGenerateContentModel(modelName),
-						contents: sanitizedContents,
+						contents: endOnUserTurn(sanitizedContents),
 					}),
 				undefined,
 				{ operationName: 'ContextManager.countTokens', logger: this.logger }
@@ -414,8 +431,16 @@ export class ContextManager {
 			return totalTokens;
 		} catch (error) {
 			this.logger.error('[ContextManager] countTokens failed:', error);
-			// Fall back to estimate from last usage metadata
-			return this.lastUsageMetadata?.promptTokenCount ?? 0;
+			// Prefer the real count from the last response. On a fresh session there
+			// is none, and 0 would leave the token display and the compaction math
+			// with nothing to work with (#1708), so fall back to a character
+			// estimate. This deliberately does not go through
+			// estimateTokensFromContents, which seeds the estimate-calibration
+			// state that only estimate-based providers use.
+			const cached = this.lastUsageMetadata?.promptTokenCount;
+			if (cached) return cached;
+			const charsPerToken = this.estimatedCharsPerToken.get(modelName) ?? DEFAULT_CHARS_PER_TOKEN;
+			return Math.ceil(JSON.stringify(sanitizedContents).length / charsPerToken);
 		}
 	}
 

@@ -11,7 +11,7 @@
 import { GeminiClient } from './providers/gemini/client';
 import type { GeminiClientConfig } from './providers/gemini/config';
 import { OllamaClient } from './providers/ollama/client';
-import type { OllamaClientConfig } from './providers/ollama/config';
+import { DEFAULT_OLLAMA_BASE_URL, type OllamaClientConfig } from './providers/ollama/config';
 import { OpenAIClient } from './providers/openai/client';
 import { DEFAULT_OPENAI_BASE_URL, type OpenAIClientConfig } from './providers/openai/config';
 import { AnthropicClient } from './providers/anthropic/client';
@@ -27,6 +27,14 @@ import { ModelUseCase } from './model-use-case';
 import { featureProvider, featureRoute } from './feature-routing';
 import { FeatureUnavailableError } from './feature-errors';
 import type { FeatureId } from '../types/features';
+import type { ModelProvider } from './providers/registry';
+import { assertNever } from '../utils/assert-never';
+
+/** Per-session config overrides accepted by `createFromPlugin`. */
+type ClientConfigOverrides = Partial<GeminiClientConfig> &
+	Partial<OllamaClientConfig> &
+	Partial<OpenAIClientConfig> &
+	Partial<AnthropicClientConfig>;
 
 /**
  * Which routable feature each model-client use case is billed to.
@@ -108,14 +116,7 @@ export class ModelClientFactory {
 	 *   silent fallback to another provider — the caller surfaces this as a
 	 *   Notice.
 	 */
-	static createFromPlugin(
-		plugin: ObsidianGemini,
-		useCase: ModelUseCase,
-		overrides?: Partial<GeminiClientConfig> &
-			Partial<OllamaClientConfig> &
-			Partial<OpenAIClientConfig> &
-			Partial<AnthropicClientConfig>
-	): ModelApi {
+	static createFromPlugin(plugin: ObsidianGemini, useCase: ModelUseCase, overrides?: ClientConfigOverrides): ModelApi {
 		const settings = plugin.settings;
 		const feature = FEATURE_FOR_USE_CASE[useCase];
 		const provider = featureProvider(settings, feature);
@@ -127,56 +128,73 @@ export class ModelClientFactory {
 
 		const modelName = resolveFeatureModel(settings, feature);
 
+		return new RetryDecorator(
+			this.createProviderClient(plugin, provider, useCase, modelName, overrides),
+			plugin.logger
+		);
+	}
+
+	/**
+	 * One arm per provider, checked for exhaustiveness at compile time (#1757).
+	 * There is deliberately no fall-through: a provider id with no arm must fail
+	 * to compile rather than be served by Gemini with the Gemini key, which
+	 * would send vault data to a provider the user never chose.
+	 */
+	private static createProviderClient(
+		plugin: ObsidianGemini,
+		provider: ModelProvider,
+		useCase: ModelUseCase,
+		modelName: string,
+		overrides: ClientConfigOverrides | undefined
+	): ModelApi {
+		const settings = plugin.settings;
 		const prompts = new GeminiPrompts(plugin);
 
-		if (provider === 'ollama') {
-			const config: OllamaClientConfig = {
-				baseUrl: settings.ollamaBaseUrl || 'http://localhost:11434',
-				model: modelName,
-				...overrides,
-			};
-			const client = new OllamaClient(config, prompts, plugin);
-			return new RetryDecorator(client, plugin.logger);
+		switch (provider) {
+			case 'gemini': {
+				const config: GeminiClientConfig = {
+					apiKey: plugin.apiKey,
+					model: modelName,
+					useCase,
+					...overrides,
+				};
+				return new GeminiClient(config, prompts, plugin);
+			}
+			case 'ollama': {
+				const config: OllamaClientConfig = {
+					baseUrl: settings.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL,
+					apiKey: plugin.ollamaApiKey,
+					model: modelName,
+					...overrides,
+				};
+				return new OllamaClient(config, prompts, plugin);
+			}
+			case 'openai': {
+				const config: OpenAIClientConfig = {
+					apiKey: plugin.openaiApiKey,
+					baseUrl: settings.openaiBaseUrl || DEFAULT_OPENAI_BASE_URL,
+					model: modelName,
+					...overrides,
+				};
+				return new OpenAIClient(config, prompts, plugin);
+			}
+			case 'anthropic': {
+				const config: AnthropicClientConfig = {
+					apiKey: plugin.anthropicApiKey,
+					model: modelName,
+					...overrides,
+				};
+				return new AnthropicClient(config, prompts, plugin);
+			}
+			case 'openrouter':
+				return new OpenRouterClient(
+					{ apiKey: plugin.openrouterApiKey, model: overrides?.model ?? modelName },
+					prompts,
+					plugin
+				);
+			default:
+				return assertNever(provider, 'ModelClientFactory.createFromPlugin');
 		}
-
-		if (provider === 'openai') {
-			const config: OpenAIClientConfig = {
-				apiKey: plugin.openaiApiKey,
-				baseUrl: settings.openaiBaseUrl || DEFAULT_OPENAI_BASE_URL,
-				model: modelName,
-				...overrides,
-			};
-			const client = new OpenAIClient(config, prompts, plugin);
-			return new RetryDecorator(client, plugin.logger);
-		}
-
-		if (provider === 'anthropic') {
-			const config: AnthropicClientConfig = {
-				apiKey: plugin.anthropicApiKey,
-				model: modelName,
-				...overrides,
-			};
-			const client = new AnthropicClient(config, prompts, plugin);
-			return new RetryDecorator(client, plugin.logger);
-		}
-
-		if (provider === 'openrouter') {
-			const client = new OpenRouterClient(
-				{ apiKey: plugin.openrouterApiKey, model: overrides?.model ?? modelName },
-				prompts,
-				plugin
-			);
-			return new RetryDecorator(client, plugin.logger);
-		}
-
-		const config: GeminiClientConfig = {
-			apiKey: plugin.apiKey,
-			model: modelName,
-			useCase,
-			...overrides,
-		};
-		const client = new GeminiClient(config, prompts, plugin);
-		return new RetryDecorator(client, plugin.logger);
 	}
 
 	/**

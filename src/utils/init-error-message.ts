@@ -38,6 +38,8 @@ export function getApiKeyErrorMessage(params: ApiKeyErrorMessageParams): string 
 		if (params.provider === 'anthropic') return t('notice.main.noApiKeyAnthropic');
 		// eslint-disable-next-line no-restricted-syntax -- init error copy is per-provider by design (user-facing setup instructions)
 		if (params.provider === 'openrouter') return t('notice.main.noApiKeyOpenrouter');
+		// Deliberate default, not a missing arm: generic setup copy is right for
+		// any key-requiring provider without bespoke wording (#1757).
 		return t('notice.main.noApiKey');
 	}
 	return t('notice.main.apiKeyRetrieveFailed');

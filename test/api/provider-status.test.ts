@@ -124,11 +124,10 @@ describe('featureStatus', () => {
 		expect(featureStatus(plugin, 'chat')).toBe('ok');
 	});
 
-	// The two credential checks answer different questions: a settings file
-	// synced from another machine names a secret that was never stored here, so
-	// `providerConnection` says 'connected' while the key resolves to ''.
-	// Callers act on 'ok' by building services and registering agent tools, so
-	// this state must not read as 'ok'.
+	// A settings file synced from another machine names a secret that was never
+	// stored here, so the key resolves to ''. Callers act on 'ok' by building
+	// services and registering agent tools, so this state must not read as
+	// 'ok', and the provider card must not say "Connected".
 	it('is "unconfigured" when the secret name is saved but resolves to no key', () => {
 		const plugin = makePlugin({
 			apiKeySecretName: 'k',
@@ -136,7 +135,7 @@ describe('featureStatus', () => {
 		});
 		(plugin as { apiKey: string }).apiKey = '';
 
-		expect(providerConnection(plugin, 'gemini')).toBe('connected');
+		expect(providerConnection(plugin, 'gemini')).toBe('needs-key');
 		expect(providerMissingKey(plugin, 'gemini')).toBe(true);
 		expect(featureStatus(plugin, 'chat')).toBe('unconfigured');
 	});
@@ -166,6 +165,30 @@ describe('featureStatus', () => {
 			modelManager: { getOllamaModelsService: () => ({ lastProbe: 'reachable' }) },
 		});
 		expect(featureStatus(plugin, 'chat')).toBe('ok');
+	});
+});
+
+describe('providerConnection with a saved name but no resolved key', () => {
+	it.each([
+		['gemini', 'apiKeySecretName', 'apiKey'],
+		['openai', 'openaiApiKeySecretName', 'openaiApiKey'],
+		['anthropic', 'anthropicApiKeySecretName', 'anthropicApiKey'],
+		['openrouter', 'openrouterApiKeySecretName', 'openrouterApiKey'],
+	] as const)('reports %s as needs-key, not connected', (provider, nameField, keyField) => {
+		const plugin = makePlugin({ [nameField]: 'k', features: routes({}) });
+		expect(providerConnection(plugin, provider)).toBe('connected');
+		(plugin as unknown as Record<string, string>)[keyField] = '';
+		expect(providerConnection(plugin, provider)).toBe('needs-key');
+	});
+
+	it('keeps a custom OpenAI-compatible endpoint connected without a resolved key', () => {
+		const plugin = makePlugin({
+			openaiApiKeySecretName: 'k',
+			openaiBaseUrl: 'http://localhost:1234/v1',
+			features: routes({}),
+		});
+		(plugin as { openaiApiKey: string }).openaiApiKey = '';
+		expect(providerConnection(plugin, 'openai')).toBe('connected');
 	});
 });
 
@@ -206,5 +229,30 @@ describe('providerConnection hosted-endpoint check', () => {
 	it('treats the OpenAI host with a trailing slash as hosted (needs a key)', () => {
 		const plugin = makePlugin({ openaiBaseUrl: 'https://api.openai.com/v1/', features: routes({}) });
 		expect(providerConnection(plugin, 'openai')).toBe('needs-key');
+	});
+});
+
+describe('Ollama Cloud (#1764)', () => {
+	function ollamaPlugin(baseUrl: string, apiKey: string, probe: 'reachable' | 'unreachable' | null = null) {
+		const plugin = makePlugin({ features: routes({ chat: { provider: 'ollama', model: '' } }) });
+		Object.assign(plugin.settings, { ollamaBaseUrl: baseUrl });
+		return Object.assign(plugin, {
+			ollamaApiKey: apiKey,
+			modelManager: { getOllamaModelsService: () => ({ lastProbe: probe }) },
+		});
+	}
+
+	it('reports a missing key only for an ollama.com endpoint', () => {
+		expect(providerMissingKey(ollamaPlugin('https://ollama.com', ''), 'ollama')).toBe(true);
+		expect(providerMissingKey(ollamaPlugin('https://ollama.com', 'k'), 'ollama')).toBe(false);
+		expect(providerMissingKey(ollamaPlugin('http://localhost:11434', ''), 'ollama')).toBe(false);
+		// Substring lookalikes are not the hosted API.
+		expect(providerMissingKey(ollamaPlugin('https://ollama.com.evil.example', ''), 'ollama')).toBe(false);
+	});
+
+	it('is needs-key on ollama.com without a key, probe-driven otherwise', () => {
+		expect(providerConnection(ollamaPlugin('https://ollama.com', '', 'reachable'), 'ollama')).toBe('needs-key');
+		expect(providerConnection(ollamaPlugin('https://ollama.com', 'k', 'reachable'), 'ollama')).toBe('connected');
+		expect(providerConnection(ollamaPlugin('http://localhost:11434', '', 'reachable'), 'ollama')).toBe('connected');
 	});
 });

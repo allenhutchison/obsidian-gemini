@@ -1,3 +1,5 @@
+import type { Mock } from 'vitest';
+import { requestUrl } from 'obsidian';
 import { ModelManager } from '../../src/services/model-manager';
 import { GeminiModel, setGeminiModels, GEMINI_MODELS, DEFAULT_GEMINI_MODELS } from '../../src/models';
 
@@ -8,6 +10,22 @@ import { GeminiModel, setGeminiModels, GEMINI_MODELS, DEFAULT_GEMINI_MODELS } fr
  * fields) when the model list changes, preventing any feature's model from
  * being silently replaced.
  */
+/** ListModels answers, so the Gemini list counts as verified and reconciliation runs. */
+function mockListModels(): void {
+	const mocked = requestUrl as unknown as Mock;
+	mocked.mockReset();
+	mocked.mockResolvedValue({
+		status: 200,
+		json: {
+			models: DEFAULT_GEMINI_MODELS.map((m) => ({
+				name: `models/${m.value}`,
+				displayName: m.label,
+				supportedGenerationMethods: ['generateContent'],
+			})),
+		},
+	});
+}
+
 describe('ModelManager.updateModels — model role preservation', () => {
 	let modelManager: ModelManager;
 	let mockPlugin: any;
@@ -102,6 +120,7 @@ describe('ModelManager.updateModels — model role preservation', () => {
 	});
 
 	it('should correctly update image model if it is genuinely unavailable', async () => {
+		mockListModels();
 		mockPlugin.settings.features.imageGen.model = 'gemini-nonexistent-image-model';
 
 		setGeminiModels([{ value: 'old-model', label: 'Old' }]);
@@ -118,6 +137,7 @@ describe('ModelManager.updateModels — model role preservation', () => {
 	});
 
 	it('should correctly update chat model if it is genuinely unavailable', async () => {
+		mockListModels();
 		mockPlugin.settings.features.chat.model = 'gemini-nonexistent-chat-model';
 
 		setGeminiModels([{ value: 'old-model', label: 'Old' }]);

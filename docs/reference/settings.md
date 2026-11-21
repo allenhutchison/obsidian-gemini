@@ -45,7 +45,9 @@ Top-level rows, in order:
 The Providers page holds one **connection card** per account/endpoint: Gemini, Ollama, OpenAI,
 Anthropic, and OpenRouter. **A card never assigns a provider to a feature** — that only
 happens on the [Features](#features) page. Each card's `displayValue` on the Providers list
-summarizes its connection state (Connected / Not set up / Unreachable).
+summarizes its connection state (Connected / Not set up / Unreachable). A key-requiring provider
+shows Connected only when its linked secret actually holds a key on this device; a linked name
+whose secret is empty (for example, settings synced from another machine) shows Not set up.
 
 ### Gemini card
 
@@ -58,10 +60,10 @@ summarizes its connection state (Connected / Not set up / Unreachable).
   is not saved. Use this to route requests through a corporate proxy, local gateway, or regional
   mirror. **Security note**: requests routed through a custom endpoint still include your Google
   API key in the `x-goog-api-key` header.
-- **Available models** — read-only count + last-refresh time, with a **Refresh** button.
-  Gemini's model list is loaded from the bundled catalog and auto-refreshed from GitHub on
-  startup (cached 24h); click Refresh (or run **Gemini Scribe: Refresh model list**) to bypass
-  the cache immediately. See [Model Discovery](#model-discovery) below.
+- **Available models** — read-only count, with a **Refresh** button. Gemini's model list comes
+  from Google's `ListModels` endpoint, queried with your API key; click Refresh (or run
+  **Gemini Scribe: Refresh model list**) to query it again. See [Model Discovery](#model-discovery)
+  below.
 - **Includes** — capability-driven, read-only: Google Maps grounding, Page fetch by URL. These
   are provider-bound extras that ride on the Gemini connection rather than being routed features
   in their own right — see [Provider-bound grounding](#provider-bound-grounding).
@@ -70,7 +72,12 @@ summarizes its connection state (Connected / Not set up / Unreachable).
 ### Ollama card
 
 - **Endpoint** (`ollamaBaseUrl`) — String, default `http://localhost:11434`. HTTP address of
-  your Ollama daemon. Validated as a URL.
+  your Ollama daemon. Validated as a URL. Set it to `https://ollama.com` to use Ollama Cloud
+  directly (needs an API key).
+- **API key** (`ollamaApiKeySecretName`) — Optional secret name, default `''`. Sent as
+  `Authorization: Bearer <key>` on every Ollama request. Required for `https://ollama.com`;
+  without it that endpoint shows **Needs key** and is never contacted. A local daemon needs none.
+  The key goes to whatever endpoint is set, but only over HTTPS or to `localhost`.
 - **Available models** — count + **Refresh** button, re-querying `GET <ollamaBaseUrl>/api/tags`
   for models pulled since the plugin loaded.
 - **Used by** — read-only list of the features currently routed to Ollama.
@@ -207,9 +214,17 @@ inline error, so you can pick a replacement without losing sight of what was con
 
 Model discovery is automatic — no user-configurable settings are required.
 
-- **Gemini** — models are loaded from the bundled list and auto-refreshed from GitHub on startup
-  (cached for 24h). Click **Refresh** on the Gemini provider card, or run the **Gemini Scribe:
-  Refresh model list** command, to fetch the latest list immediately.
+- **Gemini** — the model list is populated from `GET <customBaseUrl or
+https://generativelanguage.googleapis.com>/v1beta/models` (ListModels) with your API key, so
+  new Gemini models appear as soon as Google serves them to your key. Embedding, speech, video
+  (Veo, Omni), robotics, and other non-chat models are filtered out, and a preview model is
+  hidden once its GA version is listed. Image models (ids containing `image` or `nano-banana`)
+  appear only on the Image generation row. Until a key is set, or when the API can't be
+  reached, the last list fetched is shown, or on first run a short built-in list of the
+  `gemini-*-latest` aliases plus Nano Banana. Saved model choices are only checked against a
+  list that actually came from the API, so being offline never resets them. Click **Refresh**
+  on the Gemini provider card, or run the **Gemini Scribe: Refresh model list** command, to
+  query again.
 - **Ollama** — the model list is populated from `GET <ollamaBaseUrl>/api/tags`, listing whatever
   you have pulled. Click **Refresh** on the Ollama card if a freshly pulled model doesn't appear.
 - **OpenAI** — the model list is populated from `GET <openaiBaseUrl>/models`, enriched with
@@ -566,7 +581,7 @@ or a project's `toolPolicy` ([Projects → Tool Policy](/guide/projects#tool-pol
 ## Performance Considerations
 
 - **Model Selection**: Flash and Flash Lite models are faster and cheaper but less capable than Pro models
-- **Model Discovery**: Minimal performance impact; runs in background
+- **Model Discovery**: At startup the plugin waits for one model-list request per active provider (Gemini's is a ListModels call), then caches the result for the session
 - **Loop Detection**: Negligible overhead; always on
 
 ## Security Best Practices
@@ -582,8 +597,9 @@ or a project's `toolPolicy` ([Projects → Tool Policy](/guide/projects#tool-pol
 
 1. Check the provider's card on the Providers page shows "Connected."
 2. For Gemini: click **Refresh** on the Gemini card, or run the **Gemini Scribe: Refresh model
-   list** command. The auto-fetch runs at most once every 24 hours, so a freshly published model
-   won't appear until the cache expires unless you force a refresh.
+   list** command. The list is fetched from Google once per session, so a model published since
+   Obsidian started appears after a refresh. If only a handful of `-latest` models show, the
+   plugin couldn't reach ListModels: check your API key, network, and custom base URL.
 3. For Ollama: click **Refresh** on the Ollama card after pulling new models.
 4. For OpenAI: click **Refresh** on the OpenAI card — useful after changing the base URL or
    loading a different model in a compatible server.

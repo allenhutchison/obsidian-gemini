@@ -79,7 +79,6 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 		await bus.emit('toolChainComplete', {
 			session,
 			toolResults: [],
-			toolCount: 0,
 		});
 
 		// vault.process should have been called, meaning there was a pending log
@@ -102,7 +101,6 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 		await bus.emit('toolChainComplete', {
 			session,
 			toolResults: [],
-			toolCount: 0,
 		});
 
 		// No pending logs → no vault.process call
@@ -130,7 +128,6 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 		await bus.emit('toolChainComplete', {
 			session,
 			toolResults: [],
-			toolCount: 0,
 		});
 
 		expect(plugin.app.vault.process).toHaveBeenCalledTimes(1);
@@ -157,7 +154,6 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 		await bus.emit('toolChainComplete', {
 			session,
 			toolResults: [],
-			toolCount: 0,
 		});
 
 		// chatHistory disabled → appendToHistory returns true without vault.process
@@ -167,7 +163,6 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 		await bus.emit('toolChainComplete', {
 			session,
 			toolResults: [],
-			toolCount: 0,
 		});
 		expect(plugin.app.vault.process).not.toHaveBeenCalled();
 	});
@@ -187,7 +182,6 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 		await bus.emit('toolChainComplete', {
 			session,
 			toolResults: [],
-			toolCount: 0,
 		});
 
 		expect(plugin.app.vault.process).not.toHaveBeenCalled();
@@ -208,13 +202,13 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 			durationMs: 10,
 		});
 
-		await bus.emit('toolChainComplete', { session: headless, toolResults: [], toolCount: 0 });
+		await bus.emit('toolChainComplete', { session: headless, toolResults: [] });
 
 		expect(plugin.logger.warn).not.toHaveBeenCalled();
 		expect(plugin.app.vault.getAbstractFileByPath).not.toHaveBeenCalled();
 
 		// The dropped entries must not leak into the next (persisted) session's history.
-		await bus.emit('toolChainComplete', { session: createMockSession(), toolResults: [], toolCount: 0 });
+		await bus.emit('toolChainComplete', { session: createMockSession(), toolResults: [] });
 		expect(plugin.app.vault.process).not.toHaveBeenCalled();
 	});
 
@@ -234,14 +228,14 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 		await emitTool(headless, 'headless.md');
 
 		// The headless batch finishes first; it must drop only its own entry.
-		await bus.emit('toolChainComplete', { session: headless, toolResults: [], toolCount: 0 });
+		await bus.emit('toolChainComplete', { session: headless, toolResults: [] });
 		expect(plugin.app.vault.process).not.toHaveBeenCalled();
 
 		let written = '';
 		plugin.app.vault.process.mockImplementation(async (_file: any, fn: (content: string) => string) => {
 			written = fn('# Session\n');
 		});
-		await bus.emit('toolChainComplete', { session: interactive, toolResults: [], toolCount: 0 });
+		await bus.emit('toolChainComplete', { session: interactive, toolResults: [] });
 
 		expect(plugin.app.vault.process).toHaveBeenCalledTimes(1);
 		expect(written).toContain('path="interactive.md"');
@@ -261,7 +255,6 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 		await bus.emit('toolChainComplete', {
 			session,
 			toolResults: [],
-			toolCount: 0,
 		});
 
 		// First chain should write
@@ -271,7 +264,6 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 		await bus.emit('toolChainComplete', {
 			session,
 			toolResults: [],
-			toolCount: 0,
 		});
 		expect(plugin.app.vault.process).toHaveBeenCalledTimes(1); // Still 1
 	});
@@ -291,7 +283,6 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 		await bus.emit('toolChainComplete', {
 			session,
 			toolResults: [],
-			toolCount: 0,
 		});
 
 		expect(plugin.logger.error).toHaveBeenCalledWith(
@@ -308,7 +299,6 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 		await bus.emit('toolChainComplete', {
 			session,
 			toolResults: [],
-			toolCount: 0,
 		});
 
 		// Should attempt to write again since the previous entries weren't drained
@@ -330,7 +320,6 @@ describe('ToolExecutionLogger (class event wiring)', () => {
 		await bus.emit('toolChainComplete', {
 			session,
 			toolResults: [],
-			toolCount: 0,
 		});
 
 		expect(plugin.app.vault.process).not.toHaveBeenCalled();

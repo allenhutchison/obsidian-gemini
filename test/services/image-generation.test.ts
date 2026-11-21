@@ -170,6 +170,21 @@ describe('ImageGeneration.generateAndInsertImage (palette flow)', () => {
 		expect(Notice).toHaveBeenCalledWith('Image generation submitted — you can keep working.', 3000);
 	});
 
+	it('fails without a request when no image model is available', async () => {
+		const { setGeminiModels, GEMINI_MODELS } = await import('../../src/models');
+		const original = [...GEMINI_MODELS];
+		setGeminiModels([{ value: 'gemini-flash-latest', label: 'Flash', defaultForRoles: ['chat'] }]);
+		mockPlugin.settings.features.imageGen.model = '';
+		try {
+			await service.generateAndInsertImage('a sunset');
+			const work = mockSubmit.mock.calls[0][2];
+			await expect(work(() => false)).rejects.toThrow('No image generation model is available');
+			expect(mockGenerateImageBytes).not.toHaveBeenCalled();
+		} finally {
+			setGeminiModels(original);
+		}
+	});
+
 	it('truncates long prompts in the BackgroundTaskManager label', async () => {
 		const longPrompt = 'P'.repeat(60);
 		await service.generateAndInsertImage(longPrompt);

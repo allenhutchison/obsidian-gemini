@@ -83,13 +83,13 @@ describe('getDefaultModelForRole', () => {
 	it('should throw an error if GEMINI_MODELS is empty', () => {
 		setTestModels([]); // Make GEMINI_MODELS empty
 		expect(() => getDefaultModelForRole('chat')).toThrow(
-			'CRITICAL: GEMINI_MODELS array is empty. Please configure available models.'
+			'CRITICAL: no Gemini models are loaded. Please configure available models.'
 		);
 	});
 
 	// Ollama and OpenAI models both load lazily (daemon /api/tags, /v1/models),
 	// so an empty candidate list is a real, non-error state for either — unlike
-	// the bundled Gemini list, which should never be empty.
+	// the built-in Gemini fallback, which should never be empty.
 	it('should return an empty string for ollama/openai when no models are registered yet', () => {
 		setTestModels([]);
 		expect(getDefaultModelForRole('chat', 'ollama')).toBe('');
@@ -159,14 +159,50 @@ describe('getDefaultModelForRole', () => {
 	});
 });
 
-describe('bundled model catalog', () => {
-	it('no longer ships retired models, and every retired model’s successor is bundled', () => {
-		const bundledIds = new Set(DEFAULT_GEMINI_MODELS.map((m) => m.value));
-		for (const [retired, successor] of Object.entries(RETIRED_MODEL_SUCCESSORS)) {
-			// Retired models must be out of the catalog (the API 404s on them)...
-			expect(bundledIds.has(retired)).toBe(false);
-			// ...and their successor must still be live, or the migration is a no-op.
-			expect(bundledIds.has(successor)).toBe(true);
+describe('getDefaultModelForRole without a Gemini image model', () => {
+	let originalModels: GeminiModel[];
+
+	beforeEach(() => {
+		originalModels = [...GEMINI_MODELS];
+	});
+
+	afterEach(() => {
+		setGeminiModels(originalModels);
+	});
+
+	it('leaves the image role unset instead of throwing', () => {
+		setGeminiModels([{ value: 'gemini-flash-latest', label: 'Flash', defaultForRoles: ['chat'] }]);
+		expect(getDefaultModelForRole('image', 'gemini')).toBe('');
+		expect(getDefaultModelForRole('chat', 'gemini')).toBe('gemini-flash-latest');
+	});
+
+	it('leaves text roles unset instead of throwing for an image-only list', () => {
+		setGeminiModels([
+			{
+				value: 'gemini-2.5-flash-image',
+				label: 'Nano Banana',
+				supportsImageGeneration: true,
+				defaultForRoles: ['image'],
+			},
+		]);
+		for (const role of ['chat', 'summary', 'rewrite', 'completions'] as const) {
+			expect(getDefaultModelForRole(role, 'gemini')).toBe('');
+		}
+		expect(getDefaultModelForRole('image', 'gemini')).toBe('gemini-2.5-flash-image');
+	});
+});
+
+describe('built-in Gemini fallback list', () => {
+	it('never ships a retired model', () => {
+		const builtInIds = new Set(DEFAULT_GEMINI_MODELS.map((m) => m.value));
+		for (const retired of Object.keys(RETIRED_MODEL_SUCCESSORS)) {
+			expect(builtInIds.has(retired)).toBe(false);
+		}
+	});
+
+	it('has a default for every model role', () => {
+		for (const role of ['chat', 'summary', 'rewrite', 'completions', 'image'] as const) {
+			expect(DEFAULT_GEMINI_MODELS.some((m) => m.defaultForRoles?.includes(role))).toBe(true);
 		}
 	});
 });
@@ -390,10 +426,6 @@ describe('isInteractionsOnlyModel', () => {
 		setGeminiModels(originalModels);
 	});
 
-	it('flags the bundled gemini-omni-flash-preview as interactions-only', () => {
-		expect(isInteractionsOnlyModel('gemini-omni-flash-preview')).toBe(true);
-	});
-
 	it('returns false for regular bundled models', () => {
 		expect(isInteractionsOnlyModel('gemini-flash-latest')).toBe(false);
 		expect(isInteractionsOnlyModel('gemini-2.5-flash')).toBe(false);
@@ -411,14 +443,7 @@ describe('isInteractionsOnlyModel', () => {
 		expect(isInteractionsOnlyModel('future-interactions-model')).toBe(true);
 	});
 
-	it('falls back to the bundled defaults when the live list lacks the entry (stale remote cache)', () => {
-		// Simulate a remote cache fetched before the flag existed: the live list
-		// carries the model without the flag... actually without the entry at all.
-		setGeminiModels([{ value: 'gemini-flash-latest', label: 'Gemini Flash Latest' }]);
-		expect(isInteractionsOnlyModel('gemini-omni-flash-preview')).toBe(true);
-	});
-
-	it('honors an explicit false in the live list over the bundled flag', () => {
+	it('honors an explicit false in the live list', () => {
 		setGeminiModels([{ value: 'gemini-omni-flash-preview', label: 'Omni', interactionsOnly: false }]);
 		expect(isInteractionsOnlyModel('gemini-omni-flash-preview')).toBe(false);
 	});
@@ -453,6 +478,12 @@ describe('contextWindowForModel', () => {
 	});
 });
 
+const INTERACTIONS_ONLY_MODEL: GeminiModel = {
+	value: 'test-interactions-only-model',
+	label: 'Interactions Only',
+	interactionsOnly: true,
+};
+
 describe('resolveGenerateContentModel', () => {
 	let originalModels: GeminiModel[];
 
@@ -468,8 +499,9 @@ describe('resolveGenerateContentModel', () => {
 		expect(resolveGenerateContentModel('gemini-2.5-flash')).toBe('gemini-2.5-flash');
 	});
 
-	it('substitutes the bundled chat default for an interactions-only model', () => {
-		expect(resolveGenerateContentModel('gemini-omni-flash-preview')).toBe('gemini-flash-latest');
+	it('substitutes the chat default for an interactions-only model', () => {
+		setGeminiModels([...DEFAULT_GEMINI_MODELS, INTERACTIONS_ONLY_MODEL]);
+		expect(resolveGenerateContentModel(INTERACTIONS_ONLY_MODEL.value)).toBe('gemini-flash-latest');
 	});
 
 	it('substitutes the bundled default for empty values', () => {
@@ -478,7 +510,8 @@ describe('resolveGenerateContentModel', () => {
 	});
 
 	it('resolves against the requested role', () => {
-		expect(resolveGenerateContentModel('gemini-omni-flash-preview', 'completions')).toBe('gemini-flash-lite-latest');
+		setGeminiModels([...DEFAULT_GEMINI_MODELS, INTERACTIONS_ONLY_MODEL]);
+		expect(resolveGenerateContentModel(INTERACTIONS_ONLY_MODEL.value, 'completions')).toBe('gemini-flash-lite-latest');
 	});
 });
 

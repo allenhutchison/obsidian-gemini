@@ -16,7 +16,7 @@ import {
 	sanitizeFeatureRoutes,
 	sanitizeProviderModelMemory,
 } from './api/feature-routing';
-import { getCapabilities } from './api/providers/registry';
+import { getCapabilities, type ModelProvider } from './api/providers/registry';
 import { ModelManager } from './services/model-manager';
 import { PromptManager, GeminiPrompts } from './prompts';
 import { SelectionRewriter } from './rewrite-selection';
@@ -89,6 +89,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	},
 	providerModelMemory: {},
 	ollamaBaseUrl: 'http://localhost:11434',
+	ollamaApiKeySecretName: '',
 	customBaseUrl: '',
 	apiKeySecretName: '',
 	openaiBaseUrl: DEFAULT_OPENAI_BASE_URL,
@@ -170,6 +171,13 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		return this.app.secretStorage.getSecret(secretName) ?? '';
 	}
 
+	/** The optional Ollama API key (Ollama Cloud), mirroring `apiKey` above. */
+	get ollamaApiKey(): string {
+		const secretName = this.settings?.ollamaApiKeySecretName;
+		if (!secretName) return '';
+		return this.app.secretStorage.getSecret(secretName) ?? '';
+	}
+
 	/**
 	 * The open agent view, looked up from the workspace on each read rather than
 	 * held on the plugin (Obsidian's guidance: plugins must not keep references to
@@ -231,6 +239,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	private previousOpenaiApiKey: string = '';
 	private previousAnthropicApiKey: string = '';
 	private previousOpenrouterApiKey: string = '';
+	private previousOllamaApiKey: string = '';
 	private previousRagEnabled: boolean = false;
 	/**
 	 * Serialized provider routing (default provider + every feature's resolved
@@ -375,17 +384,18 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	 */
 	private chatCredentialState(): { apiKey: string; requiresApiKey: boolean } {
 		const chatProvider = this.settings.features.chat.provider;
-		const apiKey =
-			// eslint-disable-next-line no-restricted-syntax -- credential plumbing predating the registry; cleared as #1308/#703 land
-			chatProvider === 'openai'
-				? this.openaiApiKey
-				: // eslint-disable-next-line no-restricted-syntax -- credential plumbing predating the registry; cleared as #1308/#703 land
-					chatProvider === 'anthropic'
-					? this.anthropicApiKey
-					: // eslint-disable-next-line no-restricted-syntax -- credential plumbing predating the registry; cleared as #1308/#703 land
-						chatProvider === 'openrouter'
-						? this.openrouterApiKey
-						: this.apiKey;
+		// Keyed by every provider id, so a new provider must say which key
+		// serves it instead of inheriting Gemini's (#1757). Ollama's key is
+		// optional (only Ollama Cloud needs one). A chat route of 'none' keeps Gemini's key, matching
+		// getCapabilities(null), which reports Gemini's capabilities.
+		const keyByProvider: Record<ModelProvider, string> = {
+			gemini: this.apiKey,
+			ollama: this.ollamaApiKey,
+			openai: this.openaiApiKey,
+			anthropic: this.anthropicApiKey,
+			openrouter: this.openrouterApiKey,
+		};
+		const apiKey = chatProvider === 'none' ? this.apiKey : keyByProvider[chatProvider];
 		return {
 			apiKey,
 			requiresApiKey: getCapabilities(chatProvider === 'none' ? null : chatProvider).requiresApiKey,
@@ -407,17 +417,17 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 			: requiresApiKey
 				? 'key-required-missing'
 				: 'none-required';
-		const baseUrl =
-			// eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
-			chatProvider === 'openai'
-				? this.settings.openaiBaseUrl
-				: // eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
-					chatProvider === 'anthropic' || chatProvider === 'openrouter'
-					? undefined
-					: // eslint-disable-next-line no-restricted-syntax -- default-settings seed / credential plumbing predating the registry; cleared as #1308/#703 land
-						chatProvider === 'ollama'
-						? this.settings.ollamaBaseUrl
-						: this.settings.customBaseUrl;
+		// Keyed by every provider id (#1757). Anthropic and OpenRouter have
+		// fixed endpoints, so no base URL takes part. A chat route of 'none'
+		// keeps Gemini's custom base URL, as it did before.
+		const baseUrlByProvider: Record<ModelProvider, string | undefined> = {
+			gemini: this.settings.customBaseUrl,
+			ollama: this.settings.ollamaBaseUrl,
+			openai: this.settings.openaiBaseUrl,
+			anthropic: undefined,
+			openrouter: undefined,
+		};
+		const baseUrl = chatProvider === 'none' ? this.settings.customBaseUrl : baseUrlByProvider[chatProvider];
 		return `${chatProvider}:${credToken}:${baseUrl ?? ''}`;
 	}
 
@@ -439,6 +449,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		this.previousOpenaiApiKey = this.openaiApiKey;
 		this.previousAnthropicApiKey = this.anthropicApiKey;
 		this.previousOpenrouterApiKey = this.openrouterApiKey;
+		this.previousOllamaApiKey = this.ollamaApiKey;
 		this.previousRagEnabled = this.settings.ragIndexing.enabled;
 		this.previousRoutingKey = routingKey(this.settings);
 		this.previousOllamaBaseUrl = this.settings.ollamaBaseUrl;
@@ -688,8 +699,8 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		}
 
 		// Note: Stale model reconciliation happens later in LifecycleService.syncModels(),
-		// after ModelListProvider has loaded the cached remote model list. Running it here
-		// against DEFAULT_GEMINI_MODELS would use a stale list.
+		// after ModelManager has discovered each provider's model list. Running it here
+		// against the built-in DEFAULT_GEMINI_MODELS would reset valid choices.
 
 		// Migrate legacy alwaysAllowReadWrite → toolPolicy, then drop the key.
 		// The removal is deliberately outside the `!data.toolPolicy` guard: a
@@ -730,7 +741,8 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 			(this.previousApiKey !== this.apiKey ||
 				this.previousOpenaiApiKey !== this.openaiApiKey ||
 				this.previousAnthropicApiKey !== this.anthropicApiKey ||
-				this.previousOpenrouterApiKey !== this.openrouterApiKey);
+				this.previousOpenrouterApiKey !== this.openrouterApiKey ||
+				this.previousOllamaApiKey !== this.ollamaApiKey);
 		// Any change to *which provider serves which use case* re-inits: tool
 		// registration, RAG, and image generation are all keyed off the resolved
 		// providers, not just the primary.

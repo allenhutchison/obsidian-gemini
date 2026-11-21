@@ -5,6 +5,7 @@ import {
 	isTransientNetworkError,
 	executeWithRetry,
 } from '../../src/utils/retry';
+import { NonRetryableRequestError } from '../../src/utils/request-errors';
 
 describe('retry utilities', () => {
 	describe('parseRetryDelay', () => {
@@ -170,6 +171,14 @@ describe('retry utilities', () => {
 		test('connection refused error is retryable', () => {
 			const error = new Error('ECONNREFUSED');
 			expect(isRetryableApiError(error)).toBe(true);
+		});
+
+		test('pre-flight NonRetryableRequestError is not retryable (#1738)', () => {
+			expect(isRetryableApiError(new NonRetryableRequestError('only supports image attachments'))).toBe(false);
+		});
+
+		test('NonRetryableRequestError wins even when its message looks transient', () => {
+			expect(isRetryableApiError(new NonRetryableRequestError('network timeout'))).toBe(false);
 		});
 
 		test('unknown error defaults to retryable', () => {

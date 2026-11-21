@@ -36,6 +36,11 @@ export interface ObsidianGeminiSettings {
 	providerModelMemory: ProviderModelMemory;
 	/** Base URL for the Ollama HTTP API. Only used when Ollama serves some feature. */
 	ollamaBaseUrl: string;
+	/**
+	 * SecretStorage key holding an optional Ollama API key. Required by Ollama
+	 * Cloud (`https://ollama.com`); a local daemon needs none (#1764).
+	 */
+	ollamaApiKeySecretName: string;
 	/** Optional custom base URL to override the default Google Gemini API endpoint. */
 	customBaseUrl: string;
 	apiKeySecretName: string;
@@ -77,8 +82,10 @@ export interface ObsidianGeminiSettings {
 	autoRunCatchUp: boolean;
 	// Lifecycle hooks (opt-in: AI runs triggered by vault events)
 	hooksEnabled: boolean;
-	// Cached remote model list (managed by ModelListProvider)
-	remoteModelCache?: { models: GeminiModel[]; timestamp: number };
+	// Last Gemini model list fetched from ListModels (managed by GeminiModelsService);
+	// served as the fallback when the API can't be reached
+	// (endpoint: non-secret base-URL + key-hash fingerprint the list came from)
+	remoteModelCache?: { models: GeminiModel[]; timestamp: number; endpoint?: string };
 	/**
 	 * Schema version for the settings-field shape, keyed off by
 	 * `migrateToFeatureRouting` (`src/utils/settings-migrations.ts`). `1` is

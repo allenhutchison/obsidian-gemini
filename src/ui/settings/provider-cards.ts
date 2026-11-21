@@ -12,6 +12,7 @@ import { t, type TranslationKey } from '../../i18n';
 import { getErrorMessage } from '../../utils/error-utils';
 import { getCapabilities, type ModelProvider } from '../../api/providers/registry';
 import { providerConnection, providerMissingKey } from '../../api/provider-status';
+import { DEFAULT_OLLAMA_BASE_URL, isOllamaCloudEndpoint } from '../../api/providers/ollama/config';
 import { featuresUsing } from '../../api/feature-routing';
 import type { SettingsContext } from './context';
 import { readSettingPath } from './paths';
@@ -22,7 +23,13 @@ export type AuthRow =
 	| {
 			kind: 'secret';
 			settingsKey:
-				'apiKeySecretName' | 'openaiApiKeySecretName' | 'anthropicApiKeySecretName' | 'openrouterApiKeySecretName';
+				| 'apiKeySecretName'
+				| 'openaiApiKeySecretName'
+				| 'anthropicApiKeySecretName'
+				| 'openrouterApiKeySecretName'
+				| 'ollamaApiKeySecretName';
+			/** Row description override; defaults to the generic "saved in secret storage" line. */
+			descKey?: TranslationKey;
 	  }
 	| { kind: 'baseUrl'; settingsKey: 'customBaseUrl' | 'ollamaBaseUrl' | 'openaiBaseUrl'; optional: boolean };
 
@@ -34,7 +41,7 @@ export interface ProviderCardSpec {
 
 export const PROVIDER_CARDS: ProviderCardSpec[] = [
 	{
-		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini sync-cache special case; card ids are display data keyed by provider
+		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini refresh path; card ids are display data keyed by provider
 		id: 'gemini',
 		labelKey: 'settings.providers.cardNameGemini',
 		auth: [
@@ -43,13 +50,17 @@ export const PROVIDER_CARDS: ProviderCardSpec[] = [
 		],
 	},
 	{
-		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini sync-cache special case; card ids are display data keyed by provider
+		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini refresh path; card ids are display data keyed by provider
 		id: 'ollama',
 		labelKey: 'settings.providers.shortLabel.ollama',
-		auth: [{ kind: 'baseUrl', settingsKey: 'ollamaBaseUrl', optional: false }],
+		auth: [
+			{ kind: 'baseUrl', settingsKey: 'ollamaBaseUrl', optional: false },
+			// Optional: only Ollama Cloud (https://ollama.com) needs a key (#1764).
+			{ kind: 'secret', settingsKey: 'ollamaApiKeySecretName', descKey: 'settings.providers.ollamaApiKeyDesc' },
+		],
 	},
 	{
-		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini sync-cache special case; card ids are display data keyed by provider
+		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini refresh path; card ids are display data keyed by provider
 		id: 'openai',
 		labelKey: 'settings.providers.shortLabel.openai',
 		auth: [
@@ -58,13 +69,13 @@ export const PROVIDER_CARDS: ProviderCardSpec[] = [
 		],
 	},
 	{
-		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini sync-cache special case; card ids are display data keyed by provider
+		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini refresh path; card ids are display data keyed by provider
 		id: 'anthropic',
 		labelKey: 'settings.providers.shortLabel.anthropic',
 		auth: [{ kind: 'secret', settingsKey: 'anthropicApiKeySecretName' }],
 	},
 	{
-		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini sync-cache special case; card ids are display data keyed by provider
+		// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini refresh path; card ids are display data keyed by provider
 		id: 'openrouter',
 		labelKey: 'settings.providers.shortLabel.openrouter',
 		auth: [{ kind: 'secret', settingsKey: 'openrouterApiKeySecretName' }],
@@ -80,7 +91,9 @@ export async function refreshGeminiModelList(
 	onSuccess?: () => void | Promise<void>
 ): Promise<void> {
 	try {
-		const result = await plugin.getModelManager().refreshRemoteModels();
+		const result = await plugin.getModelManager().refreshGeminiModels();
+		// eslint-disable-next-line no-restricted-syntax -- the Gemini refresh command also feeds the global model list; card ids are display data keyed by provider
+		invalidateModelCount('gemini');
 		if (result.fetched) {
 			new Notice(
 				result.modelCount === 1
@@ -93,7 +106,9 @@ export async function refreshGeminiModelList(
 		const reasonMessage =
 			result.skippedReason === 'offline'
 				? t('settings.general.refreshSkippedOffline')
-				: t('settings.general.refreshSkippedNotGemini');
+				: result.skippedReason === 'needsKey'
+					? t('settings.providers.refreshNeedsKey', { provider: t('settings.providers.cardNameGemini') })
+					: t('settings.general.refreshSkippedNotGemini');
 		new Notice(reasonMessage);
 	} catch (error) {
 		plugin.logger.error('Failed to refresh Gemini model list:', error);
@@ -115,8 +130,6 @@ export async function refreshGeminiModelList(
  * did something. Background probes on render stay silent.
  */
 function loadModelCount(ctx: SettingsContext, id: ModelProvider, userInitiated: boolean): void {
-	// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini sync-cache special case; card ids are display data keyed by provider
-	if (id === 'gemini') return; // Gemini's count comes from the sync remote-list cache.
 	const modelManager = ctx.plugin.modelManager as typeof ctx.plugin.modelManager | undefined;
 	if (!modelManager) return; // plugin still loading; the next render retries
 	const spec = PROVIDER_CARDS.find((card) => card.id === id);
@@ -168,11 +181,6 @@ function modelsSummary(ctx: SettingsContext, id: ModelProvider): string {
 	// until it exists rather than crashing plugin load.
 	const modelManager = ctx.plugin.modelManager as typeof ctx.plugin.modelManager | undefined;
 	if (!modelManager) return t('settings.providers.modelsLoading');
-	// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini sync-cache special case; card ids are display data keyed by provider
-	if (id === 'gemini') {
-		const count = modelManager.getListProvider().getModels().length;
-		return t('settings.providers.modelsAvailable', { count });
-	}
 	// Never probe a provider that has no credentials (see `loadModelCount`).
 	if (providerMissingKey(ctx.plugin, id)) return t('settings.providers.statusNeedsKey');
 	const cached = modelCountCache.get(id);
@@ -180,8 +188,11 @@ function modelsSummary(ctx: SettingsContext, id: ModelProvider): string {
 		loadModelCount(ctx, id, false);
 		return t('settings.providers.modelsLoading');
 	}
-	// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini sync-cache special case; card ids are display data keyed by provider
-	if (id !== 'ollama') return t('settings.providers.modelsAvailable', { count: cached.total });
+	// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini refresh path; card ids are display data keyed by provider
+	if (id !== 'ollama' || isOllamaCloudEndpoint(ctx.plugin.settings.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL)) {
+		// Ollama Cloud's catalog is hosted models, not local pulls.
+		return t('settings.providers.modelsAvailable', { count: cached.total });
+	}
 	const pulled = cached.total - cached.cloud;
 	return cached.cloud > 0
 		? t('settings.providers.modelsPulledAndCloud', { count: pulled, cloud: cached.cloud })
@@ -189,7 +200,7 @@ function modelsSummary(ctx: SettingsContext, id: ModelProvider): string {
 }
 
 function refreshModels(ctx: SettingsContext, id: ModelProvider): void {
-	// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini sync-cache special case; card ids are display data keyed by provider
+	// eslint-disable-next-line no-restricted-syntax -- provider card data and the Gemini refresh path; card ids are display data keyed by provider
 	if (id === 'gemini') {
 		void refreshGeminiModelList(ctx.plugin, () => ctx.tab.update());
 		return;
@@ -203,7 +214,7 @@ function authRows(ctx: SettingsContext, spec: ProviderCardSpec): SettingDefiniti
 		if (row.kind === 'secret') {
 			return {
 				name: t('settings.providers.apiKeyName'),
-				desc: t('settings.providers.apiKeyDesc'),
+				desc: t(row.descKey ?? 'settings.providers.apiKeyDesc'),
 				render: (setting) => {
 					setting.components.push(
 						new SecretComponent(app, setting.controlEl)
