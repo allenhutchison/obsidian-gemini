@@ -29,6 +29,12 @@ describe('createGoogleGenAI', () => {
 		expect(MockedGoogleGenAI).toHaveBeenCalledWith(expect.objectContaining({ apiKey: 'test-api-key' }));
 	});
 
+	test('pins apiVersion to v1beta (the bundled -latest aliases are not served on v1)', () => {
+		createGoogleGenAI(mockPlugin);
+
+		expect(MockedGoogleGenAI).toHaveBeenCalledWith(expect.objectContaining({ apiVersion: 'v1beta' }));
+	});
+
 	test('does not pass httpOptions when customBaseUrl is empty', () => {
 		mockPlugin.settings.customBaseUrl = '';
 
