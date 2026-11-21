@@ -1037,6 +1037,8 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'Kunci API',
 	'settings.providers.apiKeyDesc': 'Disimpan di penyimpanan rahasia Obsidian, bukan di data vault ini.',
+	'settings.providers.ollamaApiKeyDesc':
+		'Opsional. Hanya diperlukan untuk Ollama Cloud: atur endpoint ke https://ollama.com dan ambil kunci dari ollama.com/settings/keys. Ollama lokal tidak memerlukannya. Disimpan di penyimpanan rahasia Obsidian, bukan di data vault ini.',
 	'settings.providers.baseUrlName': 'URL dasar',
 	'settings.providers.baseUrlOptionalDesc': 'Biarkan kosong untuk menggunakan endpoint default.',
 	'settings.providers.baseUrlRequiredDesc': 'Alamat server lokal yang dihubungi oleh penyedia ini.',
@@ -1066,7 +1068,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Digunakan oleh fitur apa pun yang belum Anda arahkan ke tempat lain.',
 	'settings.providers.privacyNoticeName': 'Privasi',
 	'settings.providers.privacyNoticeDesc':
-		'Hanya penyedia yang benar-benar digunakan oleh fitur Anda yang akan menerima konten Anda. Ollama menyimpan permintaan di perangkat ini, kecuali untuk model bertanda "cloud", yang diteruskannya ke ollama.com. Gemini, OpenAI, dan Anthropic mengirim permintaan ke server masing-masing perusahaan tersebut. OpenRouter meneruskannya ke perusahaan mana pun yang menyediakan model yang Anda pilih.',
+		'Hanya penyedia yang benar-benar digunakan oleh fitur Anda yang akan menerima konten Anda. Ollama mengirimkan permintaan ke endpoint pada kartunya: Ollama lokal menyimpannya di perangkat ini, kecuali untuk model yang ditandai "cloud", yang akan diteruskan ke ollama.com, dan endpoint https://ollama.com mengirimkan setiap permintaan ke ollama.com. Gemini, OpenAI, dan Anthropic mengirimkan permintaan ke server masing-masing perusahaan tersebut. OpenRouter meneruskannya ke perusahaan mana pun yang melayani model yang Anda pilih.',
 	'settings.providers.defaultMoved': '{count} fitur dipindahkan ke penyedia default yang baru.',
 	'settings.providers.groupOnProvider': '{group} di {provider}',
 	'settings.features.modelMissingHelp': '{model} tidak lagi tersedia dari penyedia ini. Pilih yang lain.',

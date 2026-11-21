@@ -1062,6 +1062,8 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'API-Schlüssel',
 	'settings.providers.apiKeyDesc': 'Im Secret-Speicher von Obsidian gespeichert, nicht in den Daten dieses Vaults.',
+	'settings.providers.ollamaApiKeyDesc':
+		'Optional. Nur für Ollama Cloud erforderlich: Setze den Endpunkt auf https://ollama.com und wähle einen Schlüssel unter ollama.com/settings/keys. Ein lokales Ollama benötigt keinen. Wird im geheimen Speicher von Obsidian gespeichert, nicht in den Daten dieses Vaults.',
 	'settings.providers.baseUrlName': 'Basis-URL',
 	'settings.providers.baseUrlOptionalDesc': 'Leer lassen, um den Standard-Endpunkt zu verwenden.',
 	'settings.providers.baseUrlRequiredDesc': 'Adresse des lokalen Servers, mit dem dieser Anbieter kommuniziert.',
@@ -1093,7 +1095,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 		'Wird für alle Funktionen verwendet, die nicht anderweitig zugewiesen wurden.',
 	'settings.providers.privacyNoticeName': 'Datenschutz',
 	'settings.providers.privacyNoticeDesc':
-		'Nur die Anbieter, die deine Funktionen tatsächlich nutzen, erhalten deine Inhalte. Ollama behält Anfragen auf diesem Gerät, mit Ausnahme von Modellen, die als "Cloud" gekennzeichnet sind und an ollama.com weitergeleitet werden. Gemini, OpenAI und Anthropic senden die Anfrage an die Server des jeweiligen Unternehmens. OpenRouter leitet sie an das Unternehmen weiter, das das von dir ausgewählte Modell bereitstellt.',
+		'Nur die Anbieter, die von deinen Funktionen tatsächlich verwendet werden, erhalten deine Inhalte. Ollama sendet Anfragen an den auf seiner Karte angegebenen Endpunkt: Ein lokales Ollama behält sie auf diesem Gerät, außer bei Modellen, die als "cloud" markiert sind und an ollama.com weitergeleitet werden, und ein https://ollama.com-Endpunkt sendet jede Anfrage an ollama.com. Gemini, OpenAI und Anthropic senden die Anfrage an die Server des jeweiligen Unternehmens. OpenRouter leitet sie an das Unternehmen weiter, das das ausgewählte Modell bereitstellt.',
 	'settings.providers.defaultMoved': '{count} Funktionen zum neuen Standardanbieter verschoben.',
 	'settings.providers.groupOnProvider': '{group} über {provider}',
 	'settings.features.modelMissingHelp': '{model} ist bei diesem Anbieter nicht mehr verfügbar. Wähle ein anderes aus.',

@@ -1052,6 +1052,8 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'API-ключ',
 	'settings.providers.apiKeyDesc': 'Сохраняется в хранилище секретов Obsidian, а не в данных этого хранилища.',
+	'settings.providers.ollamaApiKeyDesc':
+		'Необязательно. Требуется только для Ollama Cloud: укажите эндпоинт https://ollama.com и получите ключ на ollama.com/settings/keys. Локальной Ollama ключ не требуется. Сохраняется в защищённом хранилище Obsidian, а не в данных этого хранилища.',
 	'settings.providers.baseUrlName': 'Базовый URL',
 	'settings.providers.baseUrlOptionalDesc': 'Оставьте пустым, чтобы использовать эндпоинт по умолчанию.',
 	'settings.providers.baseUrlRequiredDesc': 'Адрес локального сервера, к которому обращается этот провайдер.',
@@ -1082,7 +1084,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Используется для всех функций, которым явно не назначен другой провайдер.',
 	'settings.providers.privacyNoticeName': 'Конфиденциальность',
 	'settings.providers.privacyNoticeDesc':
-		'Ваш контент передаётся только тем поставщикам, функции которых вы фактически используете. Ollama обрабатывает запросы локально на этом устройстве, за исключением моделей с пометкой «cloud», которые отправляются на ollama.com. Gemini, OpenAI и Anthropic отправляют запросы на серверы соответствующих компаний. OpenRouter перенаправляет запрос той компании, которая обслуживает выбранную вами модель.',
+		'Ваш контент получают только те провайдеры, которые фактически используются вашими функциями. Ollama отправляет запросы на эндпоинт, указанный в её карточке: локальная Ollama обрабатывает их на этом устройстве, за исключением моделей с пометкой «cloud», которые пересылаются на ollama.com, а эндпоинт https://ollama.com отправляет каждый запрос на ollama.com. Gemini, OpenAI и Anthropic отправляют запросы на серверы соответствующей компании. OpenRouter перенаправляет их компании, предоставляющей выбранную модель.',
 	'settings.providers.defaultMoved': 'Функций перенесено на нового провайдера по умолчанию: {count}.',
 	'settings.providers.groupOnProvider': '{group} на {provider}',
 	'settings.features.modelMissingHelp': '{model} больше недоступна у этого провайдера. Выберите другую.',
