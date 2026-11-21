@@ -869,6 +869,84 @@ describe('OllamaClient routing local and cloud models', () => {
 		await expect(client.generateModelResponse({ prompt: 'hi' } as any)).rejects.toThrow(/API key/);
 		expect(ollamaCalls.generate).not.toHaveBeenCalled();
 	});
+
+	it('routes the same model name to separate SDK clients across chat and streaming requests', async () => {
+		const { Ollama } = await import('ollama/browser');
+		const local = {
+			chat: vi.fn().mockResolvedValue({ message: { content: 'local chat' } }),
+			generate: vi.fn(),
+		};
+		const cloud = {
+			chat: vi.fn(),
+			generate: vi.fn().mockResolvedValue({ response: 'cloud generate' }),
+		};
+		async function* cloudChat() {
+			yield { message: { content: 'cloud stream' }, done: true };
+		}
+		async function* localGenerate() {
+			yield { response: 'local stream', done: true };
+		}
+		cloud.chat.mockResolvedValue(Object.assign(cloudChat(), { abort: vi.fn() }));
+		local.generate.mockResolvedValue(Object.assign(localGenerate(), { abort: vi.fn() }));
+		const constructor = (Ollama as unknown as Mock).mockClear();
+		constructor.mockImplementationOnce(function () {
+			return local;
+		});
+		constructor.mockImplementationOnce(function () {
+			return cloud;
+		});
+
+		const client = new OllamaClient({ ...baseConfig, apiKey: 'secret' }, undefined, buildPlugin());
+		const chatRequest: ExtendedModelRequest = {
+			kind: 'extended',
+			prompt: '',
+			userMessage: 'hi',
+			conversationHistory: [],
+			model: 'llama3.2',
+		};
+		const localChat = await client.generateModelResponse(chatRequest);
+		const cloudStream = client.generateStreamingResponse({ ...chatRequest, model: 'cloud::llama3.2' }, vi.fn());
+		const localStream = client.generateStreamingResponse({ kind: 'base', prompt: 'hi' }, vi.fn());
+		const cloudGenerate = await client.generateModelResponse({
+			kind: 'base',
+			prompt: 'hi',
+			model: 'cloud::llama3.2',
+		});
+
+		expect(localChat.markdown).toBe('local chat');
+		expect(cloudGenerate.markdown).toBe('cloud generate');
+		await expect(cloudStream.complete).resolves.toMatchObject({ markdown: 'cloud stream' });
+		await expect(localStream.complete).resolves.toMatchObject({ markdown: 'local stream' });
+		expect(constructor.mock.calls.map(([options]) => options.host)).toEqual([
+			'http://localhost:11434',
+			'https://ollama.com',
+		]);
+		expect(local.chat).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ model: 'llama3.2', stream: false }));
+		expect(cloud.chat).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ model: 'llama3.2', stream: true }));
+		expect(local.generate).toHaveBeenCalledExactlyOnceWith(
+			expect.objectContaining({ model: 'llama3.2', stream: true })
+		);
+		expect(cloud.generate).toHaveBeenCalledExactlyOnceWith(
+			expect.objectContaining({ model: 'llama3.2', stream: false })
+		);
+	});
+
+	it('rejects a keyless cloud stream before sending the request without blocking local streaming', async () => {
+		ollamaCalls.generate.mockReset();
+		const client = new OllamaClient(baseConfig);
+		const request = { kind: 'base', prompt: 'hi' } as const;
+		const cloud = client.generateStreamingResponse({ ...request, model: 'cloud::llama3.2' }, vi.fn());
+		await expect(cloud.complete).rejects.toThrow(/API key/);
+		expect(ollamaCalls.generate).not.toHaveBeenCalled();
+
+		async function* localGenerate() {
+			yield { response: 'local stream', done: true };
+		}
+		ollamaCalls.generate.mockResolvedValue(Object.assign(localGenerate(), { abort: vi.fn() }));
+		await expect(client.generateStreamingResponse(request, vi.fn()).complete).resolves.toMatchObject({
+			markdown: 'local stream',
+		});
+	});
 });
 
 describe('OllamaClient Ollama Cloud guards (#1764)', () => {

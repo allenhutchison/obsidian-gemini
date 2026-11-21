@@ -862,6 +862,33 @@ describe('OllamaModelsService merging local and Ollama Cloud catalogs', () => {
 		]);
 	});
 
+	it('probes same-named catalog entries on their own hosts and keeps proxied models on the daemon', async () => {
+		const name = 'qwen3:8b';
+		const remoteHost = 'https://ollama.com';
+		mockedRequestUrl.mockImplementation((opts: { url: string }) => {
+			const direct = opts.url.startsWith(remoteHost);
+			if (opts.url.endsWith('/api/show')) {
+				return Promise.resolve({ status: 200, json: { capabilities: direct ? ['vision'] : ['completion'] } });
+			}
+			const models = direct ? [{ name }] : [{ name, remote_host: remoteHost }];
+			return Promise.resolve({ status: 200, json: { models } });
+		});
+		const svc = new OllamaModelsService(mergedPlugin());
+		expect(await svc.getModels()).toMatchObject([
+			{ value: name, label: 'qwen3:8b (cloud)', supportsVision: false, remoteHost },
+			{ value: 'cloud::qwen3:8b', label: 'qwen3:8b (cloud)', supportsVision: true, remoteHost, explicitOnly: true },
+		]);
+		expect(svc.catalogComplete).toBe(true);
+		const probes = mockedRequestUrl.mock.calls
+			.map(([options]) => options)
+			.filter((options) => options.url.endsWith('/api/show'));
+		expect(probes).toHaveLength(2);
+		expect(Object.fromEntries(probes.map((options) => [options.url, JSON.parse(options.body).model]))).toEqual({
+			'http://localhost:11434/api/show': name,
+			'https://ollama.com/api/show': name,
+		});
+	});
+
 	it('never offers a merged-in cloud model as an implicit default', async () => {
 		const { setGeminiModels, getDefaultModelForRole, DEFAULT_GEMINI_MODELS } = await import('../../src/models');
 		// The local daemon is down, so only cloud entries are listed.
@@ -883,7 +910,14 @@ describe('OllamaModelsService merging local and Ollama Cloud catalogs', () => {
 			settings: { ollamaBaseUrl: 'https://ollama.com' },
 			ollamaApiKey: 'secret',
 		} as any).getModels();
+		expect(models).toMatchObject([
+			{ value: 'cloud::kimi-k2:1t', label: 'kimi-k2:1t (cloud)', remoteHost: 'https://ollama.com' },
+		]);
 		expect(models[0].explicitOnly).toBeUndefined();
+		expect(mockedRequestUrl.mock.calls.map(([options]) => options.url)).toEqual([
+			'https://ollama.com/api/tags',
+			'https://ollama.com/api/show',
+		]);
 	});
 
 	it('does not merge the cloud catalog without a key', async () => {
@@ -901,10 +935,13 @@ describe('OllamaModelsService merging local and Ollama Cloud catalogs', () => {
 			expect((await svc.getModels()).map((m) => m.value)).toEqual(['cloud::kimi-k2:1t']);
 
 			mockHosts([{ name: 'llama3.2' }], [{ name: 'kimi-k2:1t' }]);
+			expect(svc.catalogComplete).toBe(false);
 			// Still within the retry window: the partial cache is served.
+			vi.advanceTimersByTime(29_999);
 			expect((await svc.getModels()).map((m) => m.value)).toEqual(['cloud::kimi-k2:1t']);
-			vi.advanceTimersByTime(30_000);
+			vi.advanceTimersByTime(1);
 			expect((await svc.getModels()).map((m) => m.value)).toEqual(['llama3.2', 'cloud::kimi-k2:1t']);
+			expect(svc.catalogComplete).toBe(true);
 		} finally {
 			vi.useRealTimers();
 		}
@@ -924,6 +961,27 @@ describe('OllamaModelsService merging local and Ollama Cloud catalogs', () => {
 		expect(svc.lastProbe).toBe('unreachable');
 	});
 
+	it('does not let an invalidated partial load mark a newer complete catalog as incomplete', async () => {
+		type TagsResponse = { status: number; json: { models: { name: string }[] } };
+		let releaseCloudTags!: (response: TagsResponse) => void;
+		const cloudTags = new Promise<TagsResponse>((resolve) => {
+			releaseCloudTags = resolve;
+		});
+		mockedRequestUrl.mockResolvedValueOnce({ status: 503 }).mockReturnValueOnce(cloudTags);
+		const svc = new OllamaModelsService(mergedPlugin());
+		const outdated = svc.getModels();
+
+		svc.invalidate();
+		mockHosts([], []);
+		expect(await svc.getModels()).toEqual([]);
+		expect(svc.catalogComplete).toBe(true);
+
+		releaseCloudTags({ status: 200, json: { models: [{ name: 'old:latest' }] } });
+		expect((await outdated).map((m) => m.value)).toEqual(['cloud::old:latest']);
+		expect(svc.catalogComplete).toBe(true);
+		expect(await svc.getModels()).toEqual([]);
+	});
+
 	it('probes /api/ps on ollama.com under the bare name for a cloud model', async () => {
 		mockedRequestUrl.mockResolvedValue({
 			status: 200,
@@ -932,6 +990,18 @@ describe('OllamaModelsService merging local and Ollama Cloud catalogs', () => {
 		const svc = new OllamaModelsService(mergedPlugin());
 		expect(await svc.getRuntimeContextLength('cloud::kimi-k2:1t')).toBe(131072);
 		expect(mockedRequestUrl.mock.calls[0][0].url).toBe('https://ollama.com/api/ps');
+	});
+
+	it('skips a keyless cloud runtime probe while still probing the same name locally', async () => {
+		mockedRequestUrl.mockResolvedValue({
+			status: 200,
+			json: { models: [{ name: 'qwen3:8b', context_length: 8192 }] },
+		});
+		const svc = new OllamaModelsService(mergedPlugin(''));
+
+		expect(await svc.getRuntimeContextLength('cloud::qwen3:8b')).toBeNull();
+		expect(await svc.getRuntimeContextLength('qwen3:8b')).toBe(8192);
+		expect(mockedRequestUrl.mock.calls.map(([options]) => options.url)).toEqual(['http://localhost:11434/api/ps']);
 	});
 });
 

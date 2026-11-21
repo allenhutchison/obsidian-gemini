@@ -220,4 +220,21 @@ describe('ModelManager.updateModels — merged Ollama local + cloud catalog', ()
 		// llama3.2 is gone from a complete list, so it is replaced by the local default.
 		expect(result.updatedSettings.features.chat.model).toBe('qwen3:8b');
 	});
+
+	it('keeps a saved cloud model during a cloud outage and reconciles after recovery', async () => {
+		const plugin = buildPlugin();
+		plugin.settings.features.chat.model = 'cloud::qwen3:8b';
+		const manager = new ModelManager(plugin);
+		mockHosts(['qwen3:8b'], null);
+
+		const partial = await manager.updateModels();
+		expect(partial.settingsChanged).toBe(false);
+		expect(partial.updatedSettings.features.chat.model).toBe('cloud::qwen3:8b');
+
+		// A successful but empty cloud response is authoritative.
+		mockHosts(['qwen3:8b'], []);
+		const complete = await manager.updateModels({ forceRefresh: true });
+		expect(complete.settingsChanged).toBe(true);
+		expect(complete.updatedSettings.features.chat.model).toBe('qwen3:8b');
+	});
 });
