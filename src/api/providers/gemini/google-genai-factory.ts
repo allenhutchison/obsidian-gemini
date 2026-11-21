@@ -2,6 +2,17 @@ import { GoogleGenAI, HttpOptions } from '@google/genai';
 import type { ObsidianGemini } from '../../../types/plugin';
 
 /**
+ * Gemini Developer API version every GoogleGenAI instance targets.
+ *
+ * `@google/genai` 3.x changed its default from `v1beta` to `v1`, but the
+ * `-latest` aliases this plugin bundles as role defaults (`gemini-flash-latest`,
+ * `gemini-flash-lite-latest`, `gemini-pro-latest`) are served only on `v1beta`,
+ * as are features we rely on (Google Search grounding, URL context, thinking
+ * config). Pin it so an SDK upgrade cannot silently move requests to `v1`.
+ */
+export const GEMINI_API_VERSION = 'v1beta';
+
+/**
  * Creates a GoogleGenAI instance using plugin settings.
  * Always use this helper instead of calling `new GoogleGenAI(...)` directly,
  * so that customBaseUrl is applied consistently across all call sites.
@@ -18,6 +29,7 @@ export function createGoogleGenAI(plugin: ObsidianGemini, apiKeyOverride?: strin
 
 	return new GoogleGenAI({
 		apiKey,
+		apiVersion: GEMINI_API_VERSION,
 		...(httpOptions && { httpOptions }),
 	});
 }

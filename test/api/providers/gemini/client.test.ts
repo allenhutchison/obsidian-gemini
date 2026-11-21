@@ -507,7 +507,7 @@ describe('GeminiClient', () => {
 			expect(callArg.httpOptions).toBeUndefined();
 		});
 
-		test('no-plugin fallback constructs GoogleGenAI with config.apiKey only', () => {
+		test('no-plugin fallback constructs GoogleGenAI with config.apiKey and the pinned API version', () => {
 			// When GeminiClient is constructed without a plugin (direct
 			// construction in code paths that don't have one handy, e.g.
 			// ImageGeneration), the helper isn't invoked — the constructor falls
@@ -516,7 +516,7 @@ describe('GeminiClient', () => {
 			const promptsPlugin: any = { logger: mockLogger, settings: {} };
 			new GeminiClient({ apiKey: 'config-only-key', model: 'gemini-pro' }, new GeminiPrompts(promptsPlugin), undefined);
 
-			expect(MockedGoogleGenAI).toHaveBeenCalledWith({ apiKey: 'config-only-key' });
+			expect(MockedGoogleGenAI).toHaveBeenCalledWith({ apiKey: 'config-only-key', apiVersion: 'v1beta' });
 		});
 	});
 
