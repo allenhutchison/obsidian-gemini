@@ -866,7 +866,7 @@ describe('OllamaModelsService merging local and Ollama Cloud catalogs', () => {
 		const name = 'qwen3:8b';
 		const remoteHost = 'https://ollama.com';
 		mockedRequestUrl.mockImplementation((opts: { url: string }) => {
-			const direct = opts.url.startsWith(remoteHost);
+			const direct = new URL(opts.url).host === new URL(remoteHost).host;
 			if (opts.url.endsWith('/api/show')) {
 				return Promise.resolve({ status: 200, json: { capabilities: direct ? ['vision'] : ['completion'] } });
 			}
