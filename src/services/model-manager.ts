@@ -80,15 +80,35 @@ export class ModelManager {
 	 * the whole list.
 	 */
 	private async collectActiveModels(forceRefresh?: boolean): Promise<GeminiModel[]> {
+		return (await this.collectActiveModelsWithCompleteness(forceRefresh)).models;
+	}
+
+	/**
+	 * {@link collectActiveModels}, plus the providers whose list was incomplete
+	 * when it was collected. Completeness is read right after each provider's
+	 * own fetch, so a later refresh landing while other providers are still
+	 * loading can't vouch for the older, partial list in hand.
+	 */
+	private async collectActiveModelsWithCompleteness(
+		forceRefresh?: boolean
+	): Promise<{ models: GeminiModel[]; incomplete: Set<ModelProvider> }> {
 		const models: GeminiModel[] = [];
+		const incomplete = new Set<ModelProvider>();
 		for (const provider of activeProviders(this.plugin.settings)) {
+			const service = this.getProviderModelsService(provider);
 			try {
-				models.push(...(await this.getProviderModelsService(provider).getModels(forceRefresh)));
+				models.push(...(await service.getModels(forceRefresh)));
 			} catch (error) {
 				this.plugin.logger.warn(`[ModelManager] Could not load ${provider} models:`, error);
 			}
+			// A catalog merged from several sources (Ollama local + cloud) with one
+			// source missing is reachable but not authoritative: judging saved
+			// models against it would clear selections from the missing source.
+			if ('catalogComplete' in service && !service.catalogComplete) {
+				incomplete.add(provider);
+			}
 		}
-		return models;
+		return { models, incomplete };
 	}
 
 	/**
@@ -96,9 +116,11 @@ export class ModelManager {
 	 * serving a fallback (or nothing), so stale-model reconciliation leaves
 	 * their saved choices alone.
 	 */
-	private verifiedProviders(): Set<ModelProvider> {
+	private verifiedProviders(incomplete: Set<ModelProvider>): Set<ModelProvider> {
 		return new Set(
-			activeProviders(this.plugin.settings).filter((p) => this.getProviderModelsService(p).lastProbe === 'reachable')
+			activeProviders(this.plugin.settings).filter(
+				(p) => this.getProviderModelsService(p).lastProbe === 'reachable' && !incomplete.has(p)
+			)
 		);
 	}
 
@@ -138,7 +160,7 @@ export class ModelManager {
 		// another endpoint's list; installing or reconciling it would judge the
 		// current endpoint's saved models against the wrong catalog.
 		const endpointBefore = this.geminiModelsService.endpointKey;
-		const collected = await this.collectActiveModels(options.forceRefresh);
+		const { models: collected, incomplete } = await this.collectActiveModelsWithCompleteness(options.forceRefresh);
 		if (this.geminiModelsService.endpointKey !== endpointBefore) {
 			return { updatedSettings: this.plugin.settings, settingsChanged: false, changedSettingsInfo: [] };
 		}
@@ -146,7 +168,7 @@ export class ModelManager {
 		const result = getUpdatedFeatureRoutes(
 			this.plugin.settings.features,
 			this.plugin.settings.providerModelMemory,
-			this.verifiedProviders()
+			this.verifiedProviders(incomplete)
 		);
 		if (!result.changed) {
 			return { updatedSettings: this.plugin.settings, settingsChanged: false, changedSettingsInfo: [] };
