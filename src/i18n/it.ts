@@ -1057,6 +1057,8 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'Chiave API',
 	'settings.providers.apiKeyDesc': "Salvata nell'archiviazione sicura di Obsidian, non nei dati di questo vault.",
+	'settings.providers.ollamaApiKeyDesc':
+		"Opzionale. Necessaria solo per Ollama Cloud: imposta l'endpoint su https://ollama.com e ottieni una chiave da ollama.com/settings/keys. Un'istanza locale di Ollama non ne richiede una. Viene salvata nello spazio di archiviazione sicuro di Obsidian, non nei dati di questo vault.",
 	'settings.providers.baseUrlName': 'URL di base',
 	'settings.providers.baseUrlOptionalDesc': "Lascia vuoto per utilizzare l'endpoint predefinito.",
 	'settings.providers.baseUrlRequiredDesc': 'Indirizzo del server locale con cui comunica questo provider.',
@@ -1086,7 +1088,7 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Utilizzato da qualsiasi funzionalità non indirizzata altrove.',
 	'settings.providers.privacyNoticeName': 'Privacy',
 	'settings.providers.privacyNoticeDesc':
-		'Solo i provider effettivamente utilizzati dalle tue funzionalità ricevono i tuoi contenuti. Ollama mantiene le richieste su questo computer, ad eccezione dei modelli contrassegnati come "cloud", che vengono inoltrati a ollama.com. Gemini, OpenAI e Anthropic inviano la richiesta ai server delle rispettive aziende. OpenRouter la inoltra all\'azienda che gestisce il modello scelto.',
+		'Solo i provider effettivamente utilizzati dalle tue funzionalità riceveranno i tuoi contenuti. Ollama invia le richieste all\'endpoint configurato nella sua scheda: una versione locale di Ollama le mantiene su questo computer, ad eccezione dei modelli contrassegnati come "cloud", che vengono inoltrati a ollama.com, mentre un endpoint https://ollama.com invia ogni richiesta a ollama.com. Gemini, OpenAI e Anthropic inviano le richieste ai server delle rispettive aziende. OpenRouter le inoltra all\'azienda che ospita il modello selezionato.',
 	'settings.providers.defaultMoved': '{count} funzionalità spostate sul nuovo provider predefinito.',
 	'settings.providers.groupOnProvider': '{group} su {provider}',
 	'settings.features.modelMissingHelp': '{model} non è più disponibile da questo provider. Scegline un altro.',

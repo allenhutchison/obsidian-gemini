@@ -987,6 +987,8 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'API 密钥',
 	'settings.providers.apiKeyDesc': '保存在 Obsidian 的机密存储中，而非此 vault 的数据中。',
+	'settings.providers.ollamaApiKeyDesc':
+		'可选。仅在配合 Ollama Cloud 使用时需要：将端点设置为 https://ollama.com 并从 ollama.com/settings/keys 获取密钥。本地运行的 Ollama 无需填写。密钥保存在 Obsidian 的机密存储中，不会存入本仓库的数据。',
 	'settings.providers.baseUrlName': '基础 URL',
 	'settings.providers.baseUrlOptionalDesc': '留空以使用默认端点。',
 	'settings.providers.baseUrlRequiredDesc': '此服务商连接的本地服务器地址。',
@@ -1016,7 +1018,7 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': '供未明确路由至其他服务商的任何功能使用。',
 	'settings.providers.privacyNoticeName': '隐私',
 	'settings.providers.privacyNoticeDesc':
-		'只有你所使用功能对应的服务商才会接收你的内容。Ollama 会将请求保留在本机，但标记为“cloud”的模型除外（此类请求将转发至 ollama.com）。Gemini、OpenAI 和 Anthropic 会将请求发送至各自公司的服务器。OpenRouter 则会将请求转发至提供你所选模型的对应公司。',
+		'只有你启用的功能所实际使用的提供商才会接收你的内容。Ollama 会将请求发送到其卡片上配置的端点：本地 Ollama 会将请求保留在当前设备上，但标有“cloud”的模型除外（此类模型会转发至 ollama.com）；设置为 https://ollama.com 端点则会将所有请求发送到 ollama.com。Gemini、OpenAI 和 Anthropic 会将请求发送到各自公司的服务器。OpenRouter 则会将请求转发到托管你所选模型的服务商。',
 	'settings.providers.defaultMoved': '{count} 项功能已迁移至新的默认服务商。',
 	'settings.providers.groupOnProvider': '{group}（{provider}）',
 	'settings.features.modelMissingHelp': '此服务商已不再提供 {model}。请选择其他模型。',

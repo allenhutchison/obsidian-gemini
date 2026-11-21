@@ -1045,6 +1045,8 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'Klucz API',
 	'settings.providers.apiKeyDesc': 'Zapisano w bezpiecznym magazynie Obsidian, a nie w danych tego skarbca.',
+	'settings.providers.ollamaApiKeyDesc':
+		'Opcjonalne. Wymagane tylko dla Ollama Cloud: ustaw punkt końcowy na https://ollama.com i wybierz klucz z ollama.com/settings/keys. Lokalny Ollama go nie potrzebuje. Zapisywane w magazynie sekretów Obsidian, a nie w danych tego skarbca.',
 	'settings.providers.baseUrlName': 'Bazowy adres URL',
 	'settings.providers.baseUrlOptionalDesc': 'Pozostaw puste, aby użyć domyślnego punktu końcowego.',
 	'settings.providers.baseUrlRequiredDesc': 'Adres lokalnego serwera, z którym łączy się ten dostawca.',
@@ -1075,7 +1077,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Używany przez każdą funkcję, która nie została przypisana gdzie indziej.',
 	'settings.providers.privacyNoticeName': 'Prywatność',
 	'settings.providers.privacyNoticeDesc':
-		'Twoje treści trafiają wyłącznie do dostawców, z których funkcji faktycznie korzystasz. Ollama przetwarza żądania lokalnie na tym urządzeniu, z wyjątkiem modeli oznaczonych jako „cloud”, które są przekazywane do ollama.com. Gemini, OpenAI i Anthropic przesyłają żądania na serwery danej firmy. OpenRouter przekazuje je do firmy obsługującej wybrany przez Ciebie model.',
+		'Tylko dostawcy, z których rzeczywiście korzystają Twoje funkcje, otrzymują Twoje treści. Ollama wysyła żądania do punktu końcowego na swojej karcie: lokalny Ollama zachowuje je na tym komputerze, z wyjątkiem modeli oznaczonych jako „cloud”, które przekazuje do ollama.com, natomiast punkt końcowy https://ollama.com wysyła każde żądanie do ollama.com. Gemini, OpenAI i Anthropic wysyłają żądania na serwery danej firmy. OpenRouter przekazuje je do firmy, która obsługuje wybrany model.',
 	'settings.providers.defaultMoved': '{count} funkcji przeniesiono do nowego domyślnego dostawcy.',
 	'settings.providers.groupOnProvider': '{group} w {provider}',
 	'settings.features.modelMissingHelp': '{model} nie jest już dostępny u tego dostawcy. Wybierz inny.',

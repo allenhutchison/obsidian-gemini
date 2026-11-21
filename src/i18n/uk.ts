@@ -1046,6 +1046,8 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'Ключ API',
 	'settings.providers.apiKeyDesc': 'Зберігається в сховищі секретів Obsidian, а не в даних цього сховища.',
+	'settings.providers.ollamaApiKeyDesc':
+		"Необов'язково. Потрібно лише для Ollama Cloud: встановіть кінцеву точку на https://ollama.com і візьміть ключ на ollama.com/settings/keys. Локальному Ollama ключ не потрібен. Зберігається у сховищі секретів Obsidian, а не в даних цього сховища.",
 	'settings.providers.baseUrlName': 'Базовий URL',
 	'settings.providers.baseUrlOptionalDesc': 'Залиште порожнім, щоб використовувати кінцеву точку за замовчуванням.',
 	'settings.providers.baseUrlRequiredDesc': 'Адреса локального сервера, з яким взаємодіє цей провайдер.',
@@ -1076,7 +1078,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Використовується для будь-якої функції, не призначеної іншому провайдеру.',
 	'settings.providers.privacyNoticeName': 'Конфіденційність',
 	'settings.providers.privacyNoticeDesc':
-		'Лише ті постачальники, чиї функції ви фактично використовуєте, отримують ваш вміст. Ollama залишає запити на цьому пристрої, за винятком моделей із позначкою «cloud», які надсилаються на ollama.com. Gemini, OpenAI та Anthropic надсилають запит на сервери відповідних компаній. OpenRouter пересилає його тій компанії, яка обслуговує вибрану вами модель.',
+		"Лише провайдери, які фактично використовуються функціями, отримують ваш вміст. Ollama надсилає запити до кінцевої точки зі своєї картки: локальний Ollama залишає їх на цьому комп'ютері, за винятком моделей із позначкою «cloud», які він пересилає на ollama.com, а кінцева точка https://ollama.com надсилає кожен запит на ollama.com. Gemini, OpenAI та Anthropic надсилають запити на сервери відповідних компаній. OpenRouter пересилає їх компанії, яка обслуговує обрану вами модель.",
 	'settings.providers.defaultMoved': '{count} функцій перенесено до нового провайдера за замовчуванням.',
 	'settings.providers.groupOnProvider': '{group} на {provider}',
 	'settings.features.modelMissingHelp': '{model} більше недоступна у цього провайдера. Виберіть іншу.',

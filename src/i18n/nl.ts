@@ -1048,6 +1048,8 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'API-sleutel',
 	'settings.providers.apiKeyDesc': 'Opgeslagen in de geheime opslag van Obsidian, niet in de gegevens van deze vault.',
+	'settings.providers.ollamaApiKeyDesc':
+		'Optioneel. Alleen nodig voor Ollama Cloud: stel het eindpunt in op https://ollama.com en kies een sleutel via ollama.com/settings/keys. Een lokale Ollama heeft er geen nodig. Opgeslagen in de geheime opslag van Obsidian, niet in de gegevens van deze vault.',
 	'settings.providers.baseUrlName': 'Basis-URL',
 	'settings.providers.baseUrlOptionalDesc': 'Laat leeg om het standaardeindpunt te gebruiken.',
 	'settings.providers.baseUrlRequiredDesc': 'Adres van de lokale server waarmee deze provider communiceert.',
@@ -1078,7 +1080,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': 'Wordt gebruikt door elke functie die je niet elders hebt toegewezen.',
 	'settings.providers.privacyNoticeName': 'Privacy',
 	'settings.providers.privacyNoticeDesc':
-		'Alleen de providers die je functies daadwerkelijk gebruiken, ontvangen je inhoud. Ollama houdt verzoeken op dit apparaat, behalve voor modellen gemarkeerd als "cloud", die worden doorgestuurd naar ollama.com. Gemini, OpenAI en Anthropic sturen het verzoek naar de servers van dat bedrijf. OpenRouter stuurt het door naar het bedrijf dat het door jou gekozen model aanbiedt.',
+		'Alleen de providers die je functies daadwerkelijk gebruiken, ontvangen je inhoud. Ollama stuurt verzoeken naar het eindpunt op zijn kaart: een lokale Ollama bewaart ze op dit apparaat, behalve modellen die als "cloud" zijn gemarkeerd, die worden doorgestuurd naar ollama.com, en een https://ollama.com-eindpunt stuurt elk verzoek naar ollama.com. Gemini, OpenAI en Anthropic sturen het verzoek naar de servers van het betreffende bedrijf. OpenRouter stuurt het door naar het bedrijf dat het door jou gekozen model aanbiedt.',
 	'settings.providers.defaultMoved': '{count} functies verplaatst naar de nieuwe standaardprovider.',
 	'settings.providers.groupOnProvider': '{group} op {provider}',
 	'settings.features.modelMissingHelp': '{model} is niet langer beschikbaar bij deze provider. Kies een andere.',

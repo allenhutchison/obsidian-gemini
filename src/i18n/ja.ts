@@ -1037,6 +1037,8 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.cardNameGemini': 'Google Gemini',
 	'settings.providers.apiKeyName': 'APIキー',
 	'settings.providers.apiKeyDesc': 'Obsidianのシークレットストレージに保存され、この保管庫のデータには保存されません。',
+	'settings.providers.ollamaApiKeyDesc':
+		'任意。Ollama Cloudでのみ必要です。エンドポイントを https://ollama.com に設定し、ollama.com/settings/keys からキーを取得して設定してください。ローカルのOllamaでは不要です。この保管庫のデータ内ではなく、Obsidianのシークレットストレージに保存されます。',
 	'settings.providers.baseUrlName': 'ベースURL',
 	'settings.providers.baseUrlOptionalDesc': 'デフォルトのエンドポイントを使用する場合は空欄にしてください。',
 	'settings.providers.baseUrlRequiredDesc': 'このプロバイダーが通信するローカルサーバーのアドレス。',
@@ -1067,7 +1069,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.providers.defaultProviderDesc': '個別に割り当てられていないすべての機能で使用されます。',
 	'settings.providers.privacyNoticeName': 'プライバシー',
 	'settings.providers.privacyNoticeDesc':
-		'コンテンツを受信するのは、機能で実際に使用しているプロバイダーのみです。Ollamaは「cloud」と表記されたモデル（ollama.comへ転送）を除き、リクエストをこのマシン内に留めます。Gemini、OpenAI、Anthropicは各社のサーバーにリクエストを送信します。OpenRouterは選択したモデルを提供する各社へリクエストを転送します。',
+		'実際に機能で使用されているプロバイダーのみにコンテンツが送信されます。Ollamaは設定カードのエンドポイントにリクエストを送信します。ローカルのOllamaはリクエストをこのマシン内に保持しますが、「cloud」と表記されたモデルはollama.comに転送され、https://ollama.com エンドポイントはすべてのリクエストをollama.comに送信します。Gemini、OpenAI、Anthropicは各社のサーバーにリクエストを送信します。OpenRouterは選択したモデルを提供する会社にリクエストを転送します。',
 	'settings.providers.defaultMoved': '{count}件の機能が新しいデフォルトのプロバイダーに移行しました。',
 	'settings.providers.groupOnProvider': '{group} ({provider})',
 	'settings.features.modelMissingHelp':
