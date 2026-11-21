@@ -7,9 +7,10 @@ import { ExtendedModelRequest, ToolDefinition } from '../../../../src/api/interf
 // vitest hoists vi.mock to the top of the file; vi.hoisted() lets us share
 // fixtures with the factory while keeping initialization order safe.
 const { openaiCalls } = vi.hoisted(() => {
-	const openaiCalls: { create: Mock; generateImage: Mock } = {
+	const openaiCalls: { create: Mock; generateImage: Mock; responses: Mock } = {
 		create: vi.fn(),
 		generateImage: vi.fn(),
+		responses: vi.fn(),
 	};
 	return { openaiCalls };
 });
@@ -26,6 +27,9 @@ vi.mock('openai', () => ({
 		};
 		this.images = {
 			generate: (...args: any[]) => openaiCalls.generateImage(...args),
+		};
+		this.responses = {
+			create: (...args: any[]) => openaiCalls.responses(...args),
 		};
 	}),
 }));
@@ -62,6 +66,7 @@ describe('OpenAIClient', () => {
 	beforeEach(() => {
 		openaiCalls.create.mockReset();
 		openaiCalls.generateImage.mockReset();
+		openaiCalls.responses.mockReset();
 		mockLogger.error.mockReset();
 		mockLogger.warn.mockReset();
 		client = new OpenAIClient(baseConfig, undefined, buildPlugin());
@@ -1028,27 +1033,140 @@ describe('OpenAIClient', () => {
 			expect(args).not.toHaveProperty('temperature');
 		});
 
+		const completedResponse = {
+			output: [
+				{ type: 'reasoning', id: 'rs_1', summary: [], encrypted_content: 'enc-1' },
+				{ type: 'function_call', call_id: 'call_abc', name: 'read_file', arguments: '{"path":"a.md"}' },
+			],
+			usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15, input_tokens_details: { cached_tokens: 0 } },
+		};
+
 		it.each(['gpt-6.1-sol', 'gpt-6.1-terra', 'gpt-6-astra'])(
-			'%s sends no tools and no tool_choice, and logs why',
+			'%s sends agent turns to the Responses API with tools on api.openai.com',
 			async (model) => {
-				const plugin = buildPlugin();
-				await clientFor(model, plugin).generateModelResponse(toolRequest);
-				const args = openaiCalls.create.mock.calls[0][0];
-				expect(args).not.toHaveProperty('tools');
-				expect(args).not.toHaveProperty('tool_choice');
-				expect(args).not.toHaveProperty('reasoning_effort');
-				expect(args).not.toHaveProperty('temperature');
-				expect(plugin.logger.warn).toHaveBeenCalledWith(expect.stringContaining(model));
+				openaiCalls.responses.mockResolvedValue(completedResponse);
+				const result = await clientFor(model).generateModelResponse(toolRequest);
+
+				expect(openaiCalls.create).not.toHaveBeenCalled();
+				const body = openaiCalls.responses.mock.calls[0][0];
+				expect(body).toMatchObject({
+					model,
+					store: false,
+					include: ['reasoning.encrypted_content'],
+					tools: [expect.objectContaining({ type: 'function', name: 'read_file', strict: false })],
+				});
+				expect(body).not.toHaveProperty('temperature');
+				expect(result.toolCalls).toEqual([
+					expect.objectContaining({ id: 'call_abc', name: 'read_file', arguments: { path: 'a.md' } }),
+				]);
+				expect(result.toolCalls?.[0].thoughtSignature).toMatch(/^oai-responses-reasoning:/);
 			}
 		);
 
-		it('drops tools on the streaming path too', async () => {
-			async function* stream() {
-				yield { choices: [{ index: 0, delta: { content: 'ok' }, finish_reason: 'stop' }] };
+		it('keeps one-shot (non-agent) requests for those models on Chat Completions', async () => {
+			await clientFor('gpt-6.1-terra').generateModelResponse({ kind: 'base', prompt: 'summarize' });
+			expect(openaiCalls.create).toHaveBeenCalledTimes(1);
+			expect(openaiCalls.responses).not.toHaveBeenCalled();
+		});
+
+		it('streams Responses text deltas and takes tool calls from the completed event', async () => {
+			async function* events() {
+				yield { type: 'response.output_text.delta', delta: 'Hel' };
+				yield { type: 'response.output_text.delta', delta: 'lo' };
+				yield {
+					type: 'response.completed',
+					response: {
+						...completedResponse,
+						output: [
+							{ type: 'message', content: [{ type: 'output_text', text: 'Hello' }] },
+							...completedResponse.output,
+						],
+					},
+				};
 			}
-			openaiCalls.create.mockResolvedValue(stream());
-			await clientFor('gpt-6.1-terra').generateStreamingResponse(toolRequest, () => {}).complete;
+			openaiCalls.responses.mockResolvedValue(events());
+			const chunks: string[] = [];
+			const result = await clientFor('gpt-6.1-sol').generateStreamingResponse(toolRequest, (c) => {
+				if (c.text) chunks.push(c.text);
+			}).complete;
+
+			expect(chunks).toEqual(['Hel', 'lo']);
+			expect(result.markdown).toBe('Hello');
+			expect(result.toolCalls?.[0].name).toBe('read_file');
+			expect(result.usageMetadata).toMatchObject({ promptTokenCount: 10, candidatesTokenCount: 5 });
+			expect(openaiCalls.responses.mock.calls[0][0]).toMatchObject({ stream: true });
+			expect(openaiCalls.responses.mock.calls[0][1]).toHaveProperty('signal');
+		});
+
+		it('streams a refusal to the view as text', async () => {
+			async function* events() {
+				yield { type: 'response.refusal.delta', delta: 'I cannot help with that.' };
+				yield {
+					type: 'response.completed',
+					response: {
+						output: [{ type: 'message', content: [{ type: 'refusal', refusal: 'I cannot help with that.' }] }],
+					},
+				};
+			}
+			openaiCalls.responses.mockResolvedValue(events());
+			const chunks: string[] = [];
+			const result = await clientFor('gpt-6.1-sol').generateStreamingResponse(toolRequest, (c) => {
+				if (c.text) chunks.push(c.text);
+			}).complete;
+			expect(chunks).toEqual(['I cannot help with that.']);
+			expect(result.markdown).toBe('I cannot help with that.');
+		});
+
+		it('rejects a stream that ends without a terminal event', async () => {
+			async function* events() {
+				yield { type: 'response.output_text.delta', delta: 'partial' };
+			}
+			openaiCalls.responses.mockResolvedValue(events());
+			await expect(clientFor('gpt-6.1-sol').generateStreamingResponse(toolRequest, () => {}).complete).rejects.toThrow(
+				'ended before the response completed'
+			);
+		});
+
+		it('keeps the streamed text when the user stops the stream', async () => {
+			let release: () => void = () => {};
+			const gate = new Promise<void>((resolve) => (release = resolve));
+			async function* events() {
+				yield { type: 'response.output_text.delta', delta: 'partial' };
+				await gate;
+				yield { type: 'response.output_text.delta', delta: ' more' };
+			}
+			openaiCalls.responses.mockResolvedValue(events());
+			const chunks: string[] = [];
+			const stream = clientFor('gpt-6.1-sol').generateStreamingResponse(toolRequest, (c) => {
+				if (c.text) chunks.push(c.text);
+			});
+			await vi.waitFor(() => expect(chunks).toEqual(['partial']));
+			stream.cancel();
+			release();
+			await expect(stream.complete).resolves.toMatchObject({ markdown: 'partial' });
+		});
+
+		it('rejects the stream on a response.failed event', async () => {
+			async function* events() {
+				yield { type: 'response.failed', response: { error: { message: 'boom' } } };
+			}
+			openaiCalls.responses.mockResolvedValue(events());
+			await expect(clientFor('gpt-6.1-sol').generateStreamingResponse(toolRequest, () => {}).complete).rejects.toThrow(
+				'boom'
+			);
+		});
+
+		it('behind a custom base URL, sends those models to Chat Completions without tools', async () => {
+			const plugin = buildPlugin();
+			const proxied = new OpenAIClient(
+				{ apiKey: 'sk-test', baseUrl: 'https://proxy.example/v1', model: 'gpt-6.1-terra' },
+				undefined,
+				plugin
+			);
+			await proxied.generateModelResponse(toolRequest);
+			expect(openaiCalls.responses).not.toHaveBeenCalled();
 			expect(openaiCalls.create.mock.calls[0][0]).not.toHaveProperty('tools');
+			expect(plugin.logger.warn).toHaveBeenCalledWith(expect.stringContaining('gpt-6.1-terra'));
 		});
 
 		it('does not match look-alike ids', async () => {

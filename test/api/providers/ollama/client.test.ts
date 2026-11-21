@@ -800,3 +800,41 @@ describe('OllamaClient', () => {
 		});
 	});
 });
+
+describe('OllamaClient auth headers (#1764)', () => {
+	it('passes a bearer token to ollama-js when an API key is configured', async () => {
+		const { Ollama } = await import('ollama/browser');
+		(Ollama as unknown as Mock).mockClear();
+		new OllamaClient({ baseUrl: 'https://ollama.com', apiKey: 'secret', model: 'gpt-oss:120b' });
+		expect(Ollama).toHaveBeenCalledWith({ host: 'https://ollama.com', headers: { Authorization: 'Bearer secret' } });
+	});
+
+	it('sends no auth header for a keyless local daemon', async () => {
+		const { Ollama } = await import('ollama/browser');
+		(Ollama as unknown as Mock).mockClear();
+		new OllamaClient({ baseUrl: 'http://localhost:11434', model: 'llama3.2' });
+		expect(Ollama).toHaveBeenCalledWith({ host: 'http://localhost:11434', headers: {} });
+	});
+});
+
+describe('OllamaClient Ollama Cloud guards (#1764)', () => {
+	it('withholds the key over plain HTTP to a non-loopback host', async () => {
+		const { Ollama } = await import('ollama/browser');
+		(Ollama as unknown as Mock).mockClear();
+		new OllamaClient({ baseUrl: 'http://192.168.1.20:11434', apiKey: 'secret', model: 'llama3.2' });
+		expect(Ollama).toHaveBeenCalledWith({ host: 'http://192.168.1.20:11434', headers: {} });
+		(Ollama as unknown as Mock).mockClear();
+		new OllamaClient({ baseUrl: 'http://localhost:11434', apiKey: 'secret', model: 'llama3.2' });
+		expect(Ollama).toHaveBeenCalledWith({
+			host: 'http://localhost:11434',
+			headers: { Authorization: 'Bearer secret' },
+		});
+	});
+
+	it('refuses to send a keyless request to ollama.com', async () => {
+		ollamaCalls.generate.mockReset();
+		const client = new OllamaClient({ baseUrl: 'https://ollama.com', model: 'gpt-oss:120b' });
+		await expect(client.generateModelResponse({ prompt: 'hi' } as any)).rejects.toThrow(/API key/);
+		expect(ollamaCalls.generate).not.toHaveBeenCalled();
+	});
+});

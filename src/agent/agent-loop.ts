@@ -70,11 +70,10 @@ export interface AgentLoopHooks {
 	/**
 	 * Fired once per iteration after a tool batch runs, with the soft turn
 	 * budget's state. `remaining` is `Infinity` for an unlimited (no-cap)
-	 * budget; `limit` is `undefined` in that case. `extended` is true once the
-	 * one-shot extension has been granted. UI uses this to render a small
-	 * remaining-turns counter as the budget runs low.
+	 * budget. UI uses it to show a remaining-turns count in the "Thinking…"
+	 * label as the budget runs low.
 	 */
-	onBudgetUpdate?(state: { remaining: number; limit: number | undefined; extended: boolean }): void | Promise<void>;
+	onBudgetUpdate?(state: { remaining: number }): void | Promise<void>;
 	/**
 	 * Fired per text chunk when the follow-up model call uses the streaming API.
 	 * Only present on the UI path — headless callers leave it unset and follow-ups
@@ -383,7 +382,6 @@ export class AgentLoop {
 					toolArguments: tr.toolArguments,
 					result: tr.result,
 				})),
-				toolCount: toolResults.length,
 			});
 
 			plugin.logger.debug(
@@ -403,8 +401,6 @@ export class AgentLoop {
 			await this.safeHook('onBudgetUpdate', plugin, () =>
 				hooks?.onBudgetUpdate?.({
 					remaining: budget.remaining(iterations),
-					limit: budget.limit,
-					extended: budget.wasExtended,
 				})
 			);
 

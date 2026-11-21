@@ -12,7 +12,8 @@ import { assertNever } from '../utils/assert-never';
  * Which settings field holds a provider's API key secret name. Every
  * key-requiring provider has its own field (`apiKeySecretName` for Gemini,
  * `openaiApiKeySecretName` for OpenAI, `anthropicApiKeySecretName` for
- * Anthropic, `openrouterApiKeySecretName` for OpenRouter) rather than sharing one, so a mixed
+ * Anthropic, `openrouterApiKeySecretName` for OpenRouter, the optional
+ * `ollamaApiKeySecretName` for Ollama) rather than sharing one, so a mixed
  * configuration with both active needs its own key each. Single source of
  * truth — the settings UI and the init-error path both resolve through this.
  */
@@ -27,9 +28,9 @@ export function apiKeySecretNameFor(settings: ObsidianGeminiSettings, provider: 
 		case 'openrouter':
 			return settings.openrouterApiKeySecretName;
 		case 'ollama':
-			// Ollama takes no API key, so it has no secret field. This used to
-			// fall through to Gemini's secret name (#1757).
-			return '';
+			// Optional: only Ollama Cloud (ollama.com) needs a key (#1764). This
+			// used to fall through to Gemini's secret name (#1757).
+			return settings.ollamaApiKeySecretName;
 		default:
 			return assertNever(provider, 'apiKeySecretNameFor');
 	}

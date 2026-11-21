@@ -3,7 +3,9 @@
  *
  * Uses ollama-js (via the browser entry point) so it works inside Obsidian's
  * Electron renderer without Node-specific imports. The Ollama daemon runs
- * locally with no auth, so configuration is just the base URL plus model.
+ * locally with no auth, so configuration is just the base URL plus model. An
+ * optional API key is sent as a bearer token, which is how Ollama Cloud
+ * (`https://ollama.com`) is reached directly (#1764).
  *
  * Phase 1 scope:
  *  - chat + tool calling for ExtendedModelRequest
@@ -33,7 +35,7 @@ import {
 } from '../../interfaces/model-api';
 import { GeminiPrompts } from '../../../prompts';
 import type { ObsidianGemini } from '../../../types/plugin';
-import type { OllamaClientConfig } from './config';
+import { isOllamaCloudEndpoint, ollamaAuthHeaders, type OllamaClientConfig } from './config';
 import { walkHistoryEntry } from '../history-walk';
 import { runCancellableStream } from '../../utils/cancellable-stream';
 import { t } from '../../../i18n';
@@ -49,7 +51,10 @@ export class OllamaClient implements ModelApi {
 		this.config = config;
 		this.plugin = plugin;
 		this.prompts = prompts || new GeminiPrompts(plugin);
-		this.client = new Ollama({ host: this.config.baseUrl });
+		this.client = new Ollama({
+			host: this.config.baseUrl,
+			headers: ollamaAuthHeaders(this.config.apiKey, this.config.baseUrl),
+		});
 	}
 
 	async generateModelResponse(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
@@ -60,6 +65,7 @@ export class OllamaClient implements ModelApi {
 		// We don't fall back to a chat default here — that would silently route
 		// e.g. a summary request to the chat model when `config.model` is empty.
 		const model = request.model || this.config.model;
+		this.assertCloudKey();
 		if (!model) {
 			throw new NonRetryableRequestError(
 				'No Ollama model selected. Pull a model with `ollama pull <name>` and choose it in settings.'
@@ -129,6 +135,7 @@ export class OllamaClient implements ModelApi {
 
 		return runCancellableStream<ChatResponse & { response?: string }>({
 			start: async (signal) => {
+				this.assertCloudKey();
 				if (!model) {
 					throw new NonRetryableRequestError(
 						'No Ollama model selected. Pull a model with `ollama pull <name>` and choose it in settings.'
@@ -209,6 +216,18 @@ export class OllamaClient implements ModelApi {
 		const options: Record<string, unknown> = {};
 		if (typeof this.config.maxOutputTokens === 'number') options.num_predict = this.config.maxOutputTokens;
 		return options;
+	}
+
+	/**
+	 * Ollama Cloud rejects every keyless request, so fail before sending one
+	 * rather than contacting ollama.com unauthenticated (#1764).
+	 */
+	private assertCloudKey(): void {
+		if (!this.config.apiKey && isOllamaCloudEndpoint(this.config.baseUrl)) {
+			throw new NonRetryableRequestError(
+				'Ollama Cloud needs an API key. Add one on the Ollama card in Settings → Providers.'
+			);
+		}
 	}
 
 	private async buildChatRequest(

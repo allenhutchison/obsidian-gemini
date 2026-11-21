@@ -3827,6 +3827,12 @@ export const en = {
 		message: "Saved in Obsidian's secret storage, not in this vault's data.",
 		context: "Row description for a provider card's API key field, reassuring the user how the key is stored.",
 	},
+	'settings.providers.ollamaApiKeyDesc': {
+		message:
+			"Optional. Only needed for Ollama Cloud: set the endpoint to https://ollama.com and pick a key from ollama.com/settings/keys. A local Ollama doesn't need one. Saved in Obsidian's secret storage, not in this vault's data.",
+		context:
+			"Row description for the Ollama provider card's API key field. The key is optional; it is only required when the endpoint is Ollama's hosted service. URLs must stay verbatim.",
+	},
 	'settings.providers.baseUrlName': {
 		message: 'Base URL',
 		context: "Row name for a provider card's endpoint/base-URL field.",
@@ -3947,7 +3953,7 @@ export const en = {
 	},
 	'settings.providers.privacyNoticeDesc': {
 		message:
-			'Only the providers your features actually use ever receive your content. Ollama keeps requests on this machine, except for models marked "cloud", which it forwards to ollama.com. Gemini, OpenAI, and Anthropic send the request to that company\'s servers. OpenRouter forwards it to whichever company serves the model you pick.',
+			'Only the providers your features actually use ever receive your content. Ollama sends requests to the endpoint on its card: a local Ollama keeps them on this machine, except for models marked "cloud", which it forwards to ollama.com, and an https://ollama.com endpoint sends every request to ollama.com. Gemini, OpenAI, and Anthropic send the request to that company\'s servers. OpenRouter forwards it to whichever company serves the model you pick.',
 		context:
 			'The single privacy note on the Providers page, replacing four separate variants from the previous settings layout. "Ollama", "Gemini", "OpenAI", "Anthropic", and "OpenRouter" are product names.',
 	},

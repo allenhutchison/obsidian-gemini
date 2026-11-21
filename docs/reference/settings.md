@@ -72,7 +72,12 @@ whose secret is empty (for example, settings synced from another machine) shows 
 ### Ollama card
 
 - **Endpoint** (`ollamaBaseUrl`) — String, default `http://localhost:11434`. HTTP address of
-  your Ollama daemon. Validated as a URL.
+  your Ollama daemon. Validated as a URL. Set it to `https://ollama.com` to use Ollama Cloud
+  directly (needs an API key).
+- **API key** (`ollamaApiKeySecretName`) — Optional secret name, default `''`. Sent as
+  `Authorization: Bearer <key>` on every Ollama request. Required for `https://ollama.com`;
+  without it that endpoint shows **Needs key** and is never contacted. A local daemon needs none.
+  The key goes to whatever endpoint is set, but only over HTTPS or to `localhost`.
 - **Available models** — count + **Refresh** button, re-querying `GET <ollamaBaseUrl>/api/tags`
   for models pulled since the plugin loaded.
 - **Used by** — read-only list of the features currently routed to Ollama.
