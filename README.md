@@ -12,9 +12,21 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 >
 > Then route each feature to a provider on the **Features** page. See the [provider capability matrix](docs/reference/provider-capabilities.md) for what's supported on each.
 
-## What's New in v4.13.0
+## What's New in v4.14.0
 
-**🔎 Gemini Scribe 4.13.0 - Searchable model picker, skill button & fixes**
+**🌐 Gemini Scribe 4.14.0 - OpenRouter, Ollama Cloud, GPT-6 & live Gemini models**
+
+- **🌐 OpenRouter provider** - OpenRouter now has its own card and API key. One key reaches hundreds of models from many companies, with tool calling, reasoning that carries across tool rounds, image input, image generation, and real model metadata in the picker. (#1736)
+- **☁️ Ollama Cloud** - Add an optional API key on the Ollama card and point the endpoint at https://ollama.com to use Ollama's hosted models with no local install. With a key and a local endpoint, the picker lists local and cloud models together, labelled (local) and (cloud), and each request goes to the right place. (#1765, #1767, #1777)
+- **🤖 GPT-6 and GPT-6.1** - The GPT-6 family is offered on api.openai.com, and GPT-6.1 and gpt-6-astra agent turns go through the Responses API so they can call tools. (#1762, #1763)
+- **🔄 Live Gemini model list** - Gemini models now come from Google's model list for your key, like every other provider, so new Gemini models appear without a plugin update. This also fixes the 404 that 4.13.0 shows when refreshing the Gemini model list. (#1754, #1772)
+- **🔌 Honest provider status** - The Gemini, Anthropic, OpenRouter and OpenAI (api.openai.com) cards show Connected only when the saved API key actually resolves. (#1761)
+- **🩹 Fixes** - Requests that can't be sent (no model, unsupported attachment) fail at once instead of retrying, completions no longer add a stray space mid-word, the countTokens 400 is gone, a feature with no usable provider stays off instead of falling through to another one (#1760), and deep research with Semantic Search on searches the web again and reports a failure instead of saving an empty note.
+- **🗂️ Session history warnings** - The plugin now warns when session history can't be saved, including a plugin folder whose name starts with a dot. (#1737)
+- **📱 Tablets and images** - The agent input stays above the on-screen keyboard on tablets (#1710), and generated images are named after their real format, such as .jpg (#1731).
+- **🧰 Maintenance** - The Gemini SDK is updated to 3.x (pinned to the v1beta API, #1776), dependencies and translations are refreshed, and internal cleanups land (#1711, #1720, #1722, #1742).
+
+**Previous Updates (v4.13.0):**
 
 - **🔎 Searchable model picker** - The model dropdowns are now a fuzzy-search picker, so you can find a model by typing part of its name or id. This helps with long lists like OpenRouter's 458 models. (#1653)
 - **🪄 Skill button and reliable pickers on Android** - Typing `@` and `/` in the agent input now opens the file and skill pickers on Android keyboards, and a new wand button in the send bar opens the skill picker with one tap on any platform. (#1671, #1661)
