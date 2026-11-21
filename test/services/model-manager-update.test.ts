@@ -154,3 +154,70 @@ describe('ModelManager.updateModels — model role preservation', () => {
 		expect(newChatModel?.value.includes('image')).toBe(false);
 	});
 });
+
+describe('ModelManager.updateModels — merged Ollama local + cloud catalog', () => {
+	let originalModels: GeminiModel[];
+
+	beforeEach(() => {
+		originalModels = [...GEMINI_MODELS];
+		setGeminiModels([...DEFAULT_GEMINI_MODELS]);
+	});
+
+	afterEach(() => {
+		setGeminiModels(originalModels);
+	});
+
+	const buildPlugin = () =>
+		({
+			settings: {
+				defaultProvider: 'ollama',
+				ollamaBaseUrl: 'http://localhost:11434',
+				features: {
+					chat: { provider: 'ollama', model: 'llama3.2' },
+					summary: { provider: 'none', model: '' },
+					completions: { provider: 'none', model: '' },
+					rewrite: { provider: 'none', model: '' },
+					webSearch: { provider: 'none', model: '' },
+					deepResearch: { provider: 'none', model: '' },
+					rag: { provider: 'none', model: '' },
+					imageGen: { provider: 'none', model: '' },
+				},
+				providerModelMemory: {},
+			},
+			apiKey: '',
+			ollamaApiKey: 'secret',
+			loadData: vi.fn().mockResolvedValue({}),
+			saveData: vi.fn(),
+			logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
+		}) as any;
+
+	/** `null` makes that host's /api/tags fail. */
+	function mockHosts(local: string[] | null, cloud: string[] | null): void {
+		const mocked = requestUrl as unknown as Mock;
+		mocked.mockReset();
+		mocked.mockImplementation((opts: { url: string }) => {
+			if (opts.url.endsWith('/api/show')) {
+				return Promise.resolve({ status: 200, json: { capabilities: ['completion'] } });
+			}
+			const names = opts.url.startsWith('https://ollama.com/') ? cloud : local;
+			if (names === null) return Promise.reject(new Error('ECONNREFUSED'));
+			return Promise.resolve({ status: 200, json: { models: names.map((name) => ({ name })) } });
+		});
+	}
+
+	it('keeps a saved local model while only the cloud half of the list loaded', async () => {
+		mockHosts(null, ['kimi-k2:1t']);
+		const manager = new ModelManager(buildPlugin());
+		const result = await manager.updateModels();
+		expect(result.settingsChanged).toBe(false);
+		expect(result.updatedSettings.features.chat.model).toBe('llama3.2');
+	});
+
+	it('still reconciles once both halves loaded', async () => {
+		mockHosts(['qwen3:8b'], ['kimi-k2:1t']);
+		const manager = new ModelManager(buildPlugin());
+		const result = await manager.updateModels();
+		// llama3.2 is gone from a complete list, so it is replaced by the local default.
+		expect(result.updatedSettings.features.chat.model).toBe('qwen3:8b');
+	});
+});

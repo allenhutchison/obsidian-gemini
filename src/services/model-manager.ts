@@ -98,7 +98,14 @@ export class ModelManager {
 	 */
 	private verifiedProviders(): Set<ModelProvider> {
 		return new Set(
-			activeProviders(this.plugin.settings).filter((p) => this.getProviderModelsService(p).lastProbe === 'reachable')
+			activeProviders(this.plugin.settings).filter((p) => {
+				const service = this.getProviderModelsService(p);
+				// A catalog merged from several sources (Ollama local + cloud) with one
+				// source missing is reachable but not authoritative: judging saved
+				// models against it would clear selections from the missing source.
+				const complete = !('catalogComplete' in service) || service.catalogComplete;
+				return service.lastProbe === 'reachable' && complete;
+			})
 		);
 	}
 

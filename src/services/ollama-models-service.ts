@@ -193,6 +193,15 @@ export class OllamaModelsService {
 		return this.catalog.lastProbe;
 	}
 
+	/**
+	 * Whether the cached catalog has every source it should: false while a merged
+	 * local + cloud list is missing one of them. Saved model selections must not
+	 * be reconciled against an incomplete list.
+	 */
+	get catalogComplete(): boolean {
+		return this.partialSince === null;
+	}
+
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 		this.catalog = new CachedModelCatalog({
