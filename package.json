@@ -36,8 +36,6 @@
 	"author": "",
 	"license": "MIT",
 	"devDependencies": {
-		"@eslint/js": "^10.0.1",
-		"@eslint/json": "^2.1.1",
 		"@google/genai": "^3.2.0",
 		"@modelcontextprotocol/sdk": "^1.32.2",
 		"@types/node": "^26.6.6",

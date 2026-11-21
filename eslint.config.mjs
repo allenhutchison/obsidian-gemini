@@ -267,7 +267,7 @@ export default defineConfig([
 	},
 	...obsidianmd.configs.recommended,
 	{
-		// The 0.4.x preset's `eslint-comments/no-restricted-disable` forbids inline
+		// The 0.5.x preset's `eslint-comments/no-restricted-disable` forbids inline
 		// `eslint-disable` comments for a list of rules outright. The Obsidian
 		// community-plugin audit enforces the same list and fails a release that
 		// carries such a disable, so it is kept verbatim here (a trimmed copy once let
@@ -275,11 +275,16 @@ export default defineConfig([
 		// line-scoped inline disable with a `-- reason` description
 		// (`eslint-comments/require-description` stays enforced). Re-list the preset's
 		// entries when bumping eslint-plugin-obsidianmd: a flat-config override
-		// replaces the options array rather than merging it.
+		// replaces the options array rather than merging it. Since 0.5.x the preset
+		// registers the `eslint-comments` plugin only for JS/TS files, so this block
+		// carries the same `files` glob or ESLint fails to find the plugin.
+		files: ['**/*.{ts,cts,mts,tsx,js,cjs,mjs,jsx}'],
 		rules: {
 			'eslint-comments/no-restricted-disable': [
 				'error',
 				'obsidianmd/*',
+				// Disableable like the typescript-eslint rule it replaces (preset 0.5.x).
+				'!obsidianmd/no-misused-promises',
 				'no-console',
 				'no-restricted-globals',
 				'@typescript-eslint/no-restricted-imports',
