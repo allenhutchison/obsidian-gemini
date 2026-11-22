@@ -113,11 +113,13 @@ Recommendation: **fix before release** if possible. Deep research with RAG enabl
 
 - **#1681 (thinking on every Gemini model):** chat is routed to OpenAI in this vault, so no Gemini chat turn ran. Unit tests cover it.
 - **#1710 (tablet keyboard):** desktop mobile emulation can't produce a virtual keyboard; this needs a real iPad.
-- **Ollama:** excluded here; covered in [`SMOKE-4.14.0.md`](SMOKE-4.14.0.md). Direct Ollama Cloud chat fails there (#1785).
+- **Ollama:** excluded here; covered in [`SMOKE-4.14.0.md`](SMOKE-4.14.0.md). Direct Ollama Cloud chat failed there (#1785), fixed by #1786; see [`RETEST-1786.md`](RETEST-1786.md).
 
 ## Verdict
 
 > **Update (4.14.0 smoke test):** the deep research ❌ is fixed (#1778). One new ❌: direct Ollama Cloud chat is blocked by CORS (#1785). See [`SMOKE-4.14.0.md`](SMOKE-4.14.0.md).
+>
+> **Update (2026-11-22):** #1785 is fixed by #1786; the re-test passes (two pre-existing caveats filed as #1790 and #1791). See [`RETEST-1786.md`](RETEST-1786.md).
 
 **Ready to release with one caveat.** Pass 1 is clean, Pass 2 has 18 ✅ / 1 ⚠️ (doc gap), and Pass 3 has 10 ✅ / 1 ❌ plus 1 ⚠️ observation.
 

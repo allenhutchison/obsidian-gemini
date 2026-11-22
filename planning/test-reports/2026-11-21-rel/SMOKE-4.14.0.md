@@ -4,7 +4,7 @@
 - **Vault:** Test Vault. Settings, scheduled-task state, and test notes/sessions restored or trashed afterwards.
 - **Logging:** a `window.fetch` wrapper logged each request to `generativelanguage.googleapis.com`, `ollama.com` and `:11434` as `[smoke] <status> <content-type> <url>`. ListModels goes through `requestUrl`, so the logger doesn't see it.
 
-**Result:** the Part 1 release gate (Gemini on the new SDK) passes. Deep research is fixed. One ❌: chat with a direct Ollama Cloud model fails (#1785).
+**Result:** the Part 1 release gate (Gemini on the new SDK) passes. Deep research is fixed. One ❌: chat with a direct Ollama Cloud model fails (#1785). **Update 2026-11-22:** fixed by #1786; see [`RETEST-1786.md`](RETEST-1786.md).
 
 ## Part 1 — Gemini on `@google/genai` 3.x (release gate) ✅
 
@@ -75,4 +75,4 @@ Only the Ollama Cloud ones (`[OllamaClient] Streaming error: Failed to fetch` ×
 ## Verdict
 
 - **The release gate passes.** Gemini on the new SDK is clean.
-- **#1785 decides what ships.** Direct Ollama Cloud chat (new in #1765/#1777) doesn't work. Either fix it before tagging, or ship and note in the release notes that direct cloud models list but can't chat yet. Daemon-pulled cloud models are unaffected.
+- ~~**#1785 decides what ships.**~~ Resolved: #1786 fixed it and the re-test passes. Direct Ollama Cloud chat (new in #1765/#1777) doesn't work. Either fix it before tagging, or ship and note in the release notes that direct cloud models list but can't chat yet. Daemon-pulled cloud models are unaffected.
