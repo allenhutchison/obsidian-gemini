@@ -857,6 +857,31 @@ describe('OllamaClient transport (#1785)', () => {
 	});
 });
 
+describe('OllamaClient cancel while the request is outstanding (#1785)', () => {
+	it('settles complete on cancel and aborts the stream once it arrives late', async () => {
+		let resolveChat!: (value: unknown) => void;
+		ollamaCalls.chat.mockReset();
+		ollamaCalls.chat.mockReturnValue(new Promise((resolve) => (resolveChat = resolve)));
+		const client = new OllamaClient(
+			{ baseUrl: 'http://localhost:11434', apiKey: 'secret', model: 'cloud::gpt-oss:120b' },
+			undefined,
+			buildPlugin()
+		);
+		const stream = client.generateStreamingResponse(
+			{ kind: 'extended', userMessage: 'hi', conversationHistory: [] } as any,
+			() => {}
+		);
+		await vi.waitFor(() => expect(ollamaCalls.chat).toHaveBeenCalled());
+
+		stream.cancel();
+		await expect(stream.complete).resolves.toMatchObject({ markdown: '' });
+
+		const lateAbort = vi.fn();
+		resolveChat({ abort: lateAbort, async *[Symbol.asyncIterator]() {} });
+		await vi.waitFor(() => expect(lateAbort).toHaveBeenCalled());
+	});
+});
+
 describe('OllamaClient routing local and cloud models', () => {
 	it('sends a cloud-prefixed model to ollama.com under its bare name', async () => {
 		const { Ollama } = await import('ollama/browser');

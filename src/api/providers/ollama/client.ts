@@ -42,6 +42,53 @@ import { t } from '../../../i18n';
 import { NonRetryableRequestError } from '../../../utils/request-errors';
 import { proxyFetch } from '../../../utils/proxy-fetch';
 
+function abortError(): Error {
+	const error = new Error('Aborted');
+	error.name = 'AbortError';
+	return error;
+}
+
+/**
+ * Resolve `promise`, or reject as soon as `signal` aborts, whichever comes
+ * first.
+ *
+ * The ollama.com route goes through `requestUrl`, which can't be aborted, so
+ * its request promise only settles once the whole reply is back (#1785).
+ * Without this, a cancelled cloud turn's `complete` would stay pending until
+ * then, and its late cleanup could clobber the next turn's Stop state. On
+ * abort the late stream is aborted as soon as it arrives (for a local daemon
+ * that stops generation; for a buffered cloud reply it just drops the body).
+ */
+function settleOnAbort<T extends { abort: () => void }>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
+	const discardLate = () => {
+		promise.then(
+			(late) => {
+				try {
+					late.abort();
+				} catch {
+					// Best-effort: the turn has already ended.
+				}
+			},
+			() => {}
+		);
+	};
+	if (signal.aborted) {
+		discardLate();
+		return Promise.reject(abortError());
+	}
+	let onAbort: (() => void) | undefined;
+	const aborted = new Promise<never>((_, reject) => {
+		onAbort = () => {
+			discardLate();
+			reject(abortError());
+		};
+		signal.addEventListener('abort', onAbort, { once: true });
+	});
+	return Promise.race([promise, aborted]).finally(() => {
+		if (onAbort) signal.removeEventListener('abort', onAbort);
+	});
+}
+
 export class OllamaClient implements ModelApi {
 	/**
 	 * One SDK client per endpoint, created on first use. A single client can
@@ -175,15 +222,21 @@ export class OllamaClient implements ModelApi {
 				let stream: AsyncIterable<ChatResponse> & { abort: () => void };
 				if (!isExtended) {
 					// generate() supports streaming too; route the same way for consistency
-					stream = (await client.generate({
-						model,
-						prompt: request.prompt,
-						stream: true,
-						options: this.buildOptions(),
-					})) as AsyncIterable<ChatResponse> & { abort: () => void };
+					stream = (await settleOnAbort(
+						client.generate({
+							model,
+							prompt: request.prompt,
+							stream: true,
+							options: this.buildOptions(),
+						}),
+						signal
+					)) as AsyncIterable<ChatResponse> & { abort: () => void };
 				} else {
 					const chatRequest = await this.buildChatRequest(request, model, true);
-					stream = (await client.chat(chatRequest as ChatRequest & { stream: true })) as AsyncIterable<ChatResponse> & {
+					stream = (await settleOnAbort(
+						client.chat(chatRequest as ChatRequest & { stream: true }),
+						signal
+					)) as AsyncIterable<ChatResponse> & {
 						abort: () => void;
 					};
 				}

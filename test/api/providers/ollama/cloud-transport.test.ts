@@ -86,6 +86,34 @@ describe('Ollama Cloud over requestUrl (#1785)', () => {
 		expect(JSON.parse(param.body).model).toBe('gpt-oss:20b');
 	});
 
+	it('settles a cancelled cloud turn at once instead of waiting for the buffered reply', async () => {
+		let release!: (value: unknown) => void;
+		(requestUrl as unknown as Mock).mockReturnValue(new Promise((resolve) => (release = resolve)));
+		const client = new OllamaClient(
+			{ baseUrl: 'http://localhost:11434', apiKey: 'secret', model: 'cloud::gpt-oss:20b' },
+			undefined,
+			plugin
+		);
+		const onChunk = vi.fn();
+		const stream = client.generateStreamingResponse(
+			{ kind: 'extended', userMessage: 'hi', conversationHistory: [], model: 'cloud::gpt-oss:20b' } as any,
+			onChunk
+		);
+		await vi.waitFor(() => expect(requestUrl).toHaveBeenCalled());
+
+		stream.cancel();
+		// `complete` settles while requestUrl is still outstanding, so the UI's
+		// cleanup for this turn runs now, not after a newer turn has started.
+		const result = await stream.complete;
+		expect(result.markdown).toBe('');
+
+		// The late reply is dropped: no chunks reach the cancelled turn.
+		const text = ndjson([{ model: 'gpt-oss:20b', message: { role: 'assistant', content: 'late' }, done: true }]);
+		release({ status: 200, headers: {}, arrayBuffer: new TextEncoder().encode(text).buffer, text });
+		await new Promise((r) => window.setTimeout(r, 0));
+		expect(onChunk).not.toHaveBeenCalled();
+	});
+
 	it('returns tool calls from a buffered cloud reply', async () => {
 		respond(
 			ndjson([
