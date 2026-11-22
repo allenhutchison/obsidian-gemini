@@ -40,6 +40,69 @@ import { walkHistoryEntry } from '../history-walk';
 import { runCancellableStream } from '../../utils/cancellable-stream';
 import { t } from '../../../i18n';
 import { NonRetryableRequestError } from '../../../utils/request-errors';
+import { proxyFetch } from '../../../utils/proxy-fetch';
+
+function abortError(): Error {
+	const error = new Error('Aborted');
+	error.name = 'AbortError';
+	return error;
+}
+
+/**
+ * Resolve `promise`, or reject as soon as `signal` aborts, whichever comes
+ * first.
+ *
+ * The ollama.com route goes through `requestUrl`, which can't be aborted, so
+ * its request promise only settles once the whole reply is back (#1785).
+ * Without this, a cancelled cloud turn's `complete` would stay pending until
+ * then, and its late cleanup could clobber the next turn's Stop state. On
+ * abort the late stream is aborted as soon as it arrives (for a local daemon
+ * that stops generation) and then drained without delivering anything. The
+ * SDK only drops its reference to a stream once iteration reaches `done`; a
+ * buffered cloud reply isn't tied to the abort signal, so draining it releases
+ * the body instead of leaving it on the cached client.
+ */
+async function drain(stream: unknown): Promise<void> {
+	if (!stream || typeof (stream as AsyncIterable<unknown>)[Symbol.asyncIterator] !== 'function') return;
+	try {
+		for await (const _ of stream as AsyncIterable<unknown>) {
+			// Discard: the turn that wanted this reply was cancelled.
+		}
+	} catch {
+		// An aborted fetch stream rejects here; nothing more to release.
+	}
+}
+
+function settleOnAbort<T extends { abort: () => void }>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
+	const discardLate = () => {
+		promise.then(
+			(late) => {
+				try {
+					late.abort();
+				} catch {
+					// Best-effort: the turn has already ended.
+				}
+				void drain(late);
+			},
+			() => {}
+		);
+	};
+	if (signal.aborted) {
+		discardLate();
+		return Promise.reject(abortError());
+	}
+	let onAbort: (() => void) | undefined;
+	const aborted = new Promise<never>((_, reject) => {
+		onAbort = () => {
+			discardLate();
+			reject(abortError());
+		};
+		signal.addEventListener('abort', onAbort, { once: true });
+	});
+	return Promise.race([promise, aborted]).finally(() => {
+		if (onAbort) signal.removeEventListener('abort', onAbort);
+	});
+}
 
 export class OllamaClient implements ModelApi {
 	/**
@@ -61,12 +124,23 @@ export class OllamaClient implements ModelApi {
 	/**
 	 * The endpoint, bare model name, and SDK client for a stored model id. A
 	 * cloud-prefixed id goes to Ollama Cloud; anything else to the base URL.
+	 *
+	 * ollama.com sends no CORS headers, so the renderer's `fetch` can never
+	 * reach it (#1785). Its client therefore uses {@link proxyFetch}, which goes
+	 * through Obsidian's `requestUrl`. `requestUrl` buffers the whole response,
+	 * so a cloud reply's NDJSON chunks arrive together once generation ends
+	 * rather than token by token. Local and custom endpoints keep `fetch`,
+	 * where the daemon allows the origin and replies stream.
 	 */
 	private route(modelId: string): { baseUrl: string; model: string; client: Ollama } {
 		const { baseUrl, model } = resolveOllamaModel(modelId, this.config.baseUrl);
 		let client = this.clients.get(baseUrl);
 		if (!client) {
-			client = new Ollama({ host: baseUrl, headers: ollamaAuthHeaders(this.config.apiKey, baseUrl) });
+			client = new Ollama({
+				host: baseUrl,
+				headers: ollamaAuthHeaders(this.config.apiKey, baseUrl),
+				...(isOllamaCloudEndpoint(baseUrl) && { fetch: proxyFetch }),
+			});
 			this.clients.set(baseUrl, client);
 		}
 		return { baseUrl, model, client };
@@ -163,15 +237,24 @@ export class OllamaClient implements ModelApi {
 				let stream: AsyncIterable<ChatResponse> & { abort: () => void };
 				if (!isExtended) {
 					// generate() supports streaming too; route the same way for consistency
-					stream = (await client.generate({
-						model,
-						prompt: request.prompt,
-						stream: true,
-						options: this.buildOptions(),
-					})) as AsyncIterable<ChatResponse> & { abort: () => void };
+					stream = (await settleOnAbort(
+						client.generate({
+							model,
+							prompt: request.prompt,
+							stream: true,
+							options: this.buildOptions(),
+						}),
+						signal
+					)) as AsyncIterable<ChatResponse> & { abort: () => void };
 				} else {
 					const chatRequest = await this.buildChatRequest(request, model, true);
-					stream = (await client.chat(chatRequest as ChatRequest & { stream: true })) as AsyncIterable<ChatResponse> & {
+					// Stop may have landed while the prompt was being built. Don't
+					// send a request nobody will read: a cloud one can't be called back.
+					if (signal.aborted) throw abortError();
+					stream = (await settleOnAbort(
+						client.chat(chatRequest as ChatRequest & { stream: true }),
+						signal
+					)) as AsyncIterable<ChatResponse> & {
 						abort: () => void;
 					};
 				}
