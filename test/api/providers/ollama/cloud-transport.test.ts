@@ -114,6 +114,33 @@ describe('Ollama Cloud over requestUrl (#1785)', () => {
 		expect(onChunk).not.toHaveBeenCalled();
 	});
 
+	it('releases each late cloud reply after repeated cancels, so the SDK client keeps none', async () => {
+		const releases: Array<(value: unknown) => void> = [];
+		(requestUrl as unknown as Mock).mockImplementation(() => new Promise((resolve) => releases.push(resolve)));
+		const client = new OllamaClient(
+			{ baseUrl: 'http://localhost:11434', apiKey: 'secret', model: 'cloud::gpt-oss:20b' },
+			undefined,
+			plugin
+		);
+		for (let i = 0; i < 3; i++) {
+			const stream = client.generateStreamingResponse(
+				{ kind: 'extended', userMessage: `hi ${i}`, conversationHistory: [] } as any,
+				() => {}
+			);
+			await vi.waitFor(() => expect(releases).toHaveLength(i + 1));
+			stream.cancel();
+			await stream.complete;
+		}
+		const text = ndjson([{ model: 'gpt-oss:20b', message: { role: 'assistant', content: 'late' }, done: true }]);
+		for (const release of releases) {
+			release({ status: 200, headers: {}, arrayBuffer: new TextEncoder().encode(text).buffer, text });
+		}
+		// Let every late reply reach the SDK (it registers each stream) and be drained.
+		await new Promise((r) => window.setTimeout(r, 20));
+		const sdk = (client as any).clients.get('https://ollama.com');
+		expect(sdk.ongoingStreamedRequests).toHaveLength(0);
+	});
+
 	it('returns tool calls from a buffered cloud reply', async () => {
 		respond(
 			ndjson([

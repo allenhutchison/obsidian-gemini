@@ -57,8 +57,22 @@ function abortError(): Error {
  * Without this, a cancelled cloud turn's `complete` would stay pending until
  * then, and its late cleanup could clobber the next turn's Stop state. On
  * abort the late stream is aborted as soon as it arrives (for a local daemon
- * that stops generation; for a buffered cloud reply it just drops the body).
+ * that stops generation) and then drained without delivering anything. The
+ * SDK only drops its reference to a stream once iteration reaches `done`; a
+ * buffered cloud reply isn't tied to the abort signal, so draining it releases
+ * the body instead of leaving it on the cached client.
  */
+async function drain(stream: unknown): Promise<void> {
+	if (!stream || typeof (stream as AsyncIterable<unknown>)[Symbol.asyncIterator] !== 'function') return;
+	try {
+		for await (const _ of stream as AsyncIterable<unknown>) {
+			// Discard: the turn that wanted this reply was cancelled.
+		}
+	} catch {
+		// An aborted fetch stream rejects here; nothing more to release.
+	}
+}
+
 function settleOnAbort<T extends { abort: () => void }>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
 	const discardLate = () => {
 		promise.then(
@@ -68,6 +82,7 @@ function settleOnAbort<T extends { abort: () => void }>(promise: Promise<T>, sig
 				} catch {
 					// Best-effort: the turn has already ended.
 				}
+				void drain(late);
 			},
 			() => {}
 		);
