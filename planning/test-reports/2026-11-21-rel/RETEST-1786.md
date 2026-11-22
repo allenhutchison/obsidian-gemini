@@ -6,16 +6,16 @@
 
 **Result: #1785 is fixed.** Cloud chat, cloud tool calls and the cloud-only endpoint all work. No `Failed to fetch` and no `Streaming failed after 4 attempts` appeared. The two caveats below are pre-existing and don't block 4.14.0.
 
-| Step | Result | Evidence |
-|---|---|---|
-| 1. Combined model list (local endpoint plus key) | ✅ | 2 `(local)` + 25 `(cloud)`; card "2 pulled · 25 cloud" |
-| 2. Local model streams | ✅ | `qwen3.6:27b`, `application/x-ndjson`, reply grew as it streamed |
-| 3. Cloud chat (`gpt-oss:20b`) | ✅ | Replied in one piece after about 3s; console clean |
-| 4. Cloud tool call | ✅ | `read_file` ran twice, then a one-line summary of "Pizza in San Jose" |
-| 5. Stop on cloud | ⚠️ | Stop took 2 ms and the aborted reply never appeared later. A new message sent within milliseconds of Stop can't be stopped, on local models too (#1790) |
-| 6. Cloud-only `https://ollama.com` | ✅ | 25 models listed, chat replied |
-| 7. No key on `https://ollama.com` | ⚠️ | Card shows "Not set up" and the request is never sent, but the notice shows the generic "Invalid API key…" text (#1791) |
-| 8. Local daemon down, key set | ✅ | "0 pulled · 25 cloud", cloud chat works; only the expected "one model source failed" warning |
+| Step                                             | Result | Evidence                                                                                                                                                |
+| ------------------------------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Combined model list (local endpoint plus key) | ✅     | 2 `(local)` + 25 `(cloud)`; card "2 pulled · 25 cloud"                                                                                                  |
+| 2. Local model streams                           | ✅     | `qwen3.6:27b`, `application/x-ndjson`, reply grew as it streamed                                                                                        |
+| 3. Cloud chat (`gpt-oss:20b`)                    | ✅     | Replied in one piece after about 3s; console clean                                                                                                      |
+| 4. Cloud tool call                               | ✅     | `read_file` ran twice, then a one-line summary of "Pizza in San Jose"                                                                                   |
+| 5. Stop on cloud                                 | ⚠️     | Stop took 2 ms and the aborted reply never appeared later. A new message sent within milliseconds of Stop can't be stopped, on local models too (#1790) |
+| 6. Cloud-only `https://ollama.com`               | ✅     | 25 models listed, chat replied                                                                                                                          |
+| 7. No key on `https://ollama.com`                | ⚠️     | Card shows "Not set up" and the request is never sent, but the notice shows the generic "Invalid API key…" text (#1791)                                 |
+| 8. Local daemon down, key set                    | ✅     | "0 pulled · 25 cloud", cloud chat works; only the expected "one model source failed" warning                                                            |
 
 ## Follow-ups filed
 
