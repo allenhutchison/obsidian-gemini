@@ -46,6 +46,8 @@ vi.mock('@google/genai', () => ({
 	}),
 }));
 
+const REPORT_STEPS = [{ type: 'model_output', content: [{ type: 'text', text: 'Findings' }] }];
+
 describe('DeepResearchService', () => {
 	let service: DeepResearchService;
 	let mockPlugin: any;
@@ -143,6 +145,7 @@ describe('DeepResearchService', () => {
 			expect(mockStartResearch).toHaveBeenCalledWith({
 				input: 'AI Research',
 				fileSearchStoreNames: ['stores/test-store'],
+				googleSearch: true,
 			});
 			expect(mockLogger.log).toHaveBeenCalled();
 		});
@@ -152,7 +155,7 @@ describe('DeepResearchService', () => {
 			mockPoll.mockResolvedValue({
 				id: 'interaction-123',
 				status: 'completed',
-				steps: [],
+				steps: REPORT_STEPS,
 			});
 			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
 
@@ -166,6 +169,7 @@ describe('DeepResearchService', () => {
 			expect(mockStartResearch).toHaveBeenCalledWith({
 				input: 'Test',
 				fileSearchStoreNames: undefined,
+				googleSearch: true,
 			});
 		});
 
@@ -174,7 +178,7 @@ describe('DeepResearchService', () => {
 			mockPoll.mockResolvedValue({
 				id: 'interaction-123',
 				status: 'completed',
-				steps: [],
+				steps: REPORT_STEPS,
 			});
 			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
 
@@ -188,6 +192,7 @@ describe('DeepResearchService', () => {
 			expect(mockStartResearch).toHaveBeenCalledWith({
 				input: 'Test',
 				fileSearchStoreNames: ['stores/test-store'],
+				googleSearch: false,
 			});
 		});
 
@@ -210,7 +215,7 @@ describe('DeepResearchService', () => {
 			mockPoll.mockResolvedValue({
 				id: 'interaction-123',
 				status: 'completed',
-				steps: [],
+				steps: REPORT_STEPS,
 			});
 			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
 
@@ -223,6 +228,7 @@ describe('DeepResearchService', () => {
 			expect(mockStartResearch).toHaveBeenCalledWith({
 				input: 'Test',
 				fileSearchStoreNames: undefined,
+				googleSearch: true,
 			});
 		});
 
@@ -231,7 +237,7 @@ describe('DeepResearchService', () => {
 			mockPoll.mockResolvedValue({
 				id: 'interaction-123',
 				status: 'completed',
-				steps: [],
+				steps: REPORT_STEPS,
 			});
 			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
 
@@ -255,7 +261,7 @@ describe('DeepResearchService', () => {
 			mockPoll.mockResolvedValue({
 				id: 'interaction-123',
 				status: 'completed',
-				steps: [],
+				steps: REPORT_STEPS,
 			});
 			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
 
@@ -273,6 +279,33 @@ describe('DeepResearchService', () => {
 
 			expect(mockVault.modify).toHaveBeenCalledWith(mockFile, expect.any(String));
 			expect(mockVault.create).not.toHaveBeenCalled();
+		});
+
+		it('should fail instead of saving an empty report when the interaction has no model output', async () => {
+			mockStartResearch.mockResolvedValue({ id: 'interaction-123' });
+			mockPoll.mockResolvedValue({
+				id: 'interaction-123',
+				status: 'completed',
+				steps: [{ type: 'user_input', content: [{ type: 'text', text: 'Test' }] }],
+			});
+
+			await expect(service.conductResearch({ topic: 'Test', outputFile: 'empty.md' })).rejects.toThrow(
+				'finished without producing a report'
+			);
+			expect(mockVault.create).not.toHaveBeenCalled();
+			expect(mockVault.modify).not.toHaveBeenCalled();
+			expect(service.isResearching()).toBe(false);
+		});
+
+		it('should fail when model output holds only blank text', async () => {
+			mockStartResearch.mockResolvedValue({ id: 'interaction-123' });
+			mockPoll.mockResolvedValue({
+				id: 'interaction-123',
+				status: 'completed',
+				steps: [{ type: 'model_output', content: [{ type: 'text', text: '  \n' }] }],
+			});
+
+			await expect(service.conductResearch({ topic: 'Test' })).rejects.toThrow('finished without producing a report');
 		});
 
 		it('should handle failed research status', async () => {
@@ -309,7 +342,7 @@ describe('DeepResearchService', () => {
 			mockPoll.mockResolvedValue({
 				id: 'interaction-123',
 				status: 'completed',
-				steps: [],
+				steps: REPORT_STEPS,
 			});
 			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
 			mockVault.create.mockRejectedValue(new Error('Save failed'));

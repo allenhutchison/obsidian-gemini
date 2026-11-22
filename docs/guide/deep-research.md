@@ -155,6 +155,10 @@ You requested vault-only research but Semantic Vault Search isn't configured. Ei
 - Enable and configure [Semantic Vault Search](/guide/semantic-search), or
 - Use `web_only` or `both` scope instead
 
+### "The research agent finished without producing a report"
+
+Google reported the research as complete, but it returned no report text. Nothing is saved, and in background mode the task shows as failed instead of leaving an empty note. Try the request again, or rephrase the topic. If you used `vault_only` scope, check that your notes actually cover the topic.
+
 ### Research takes very long or seems stuck
 
 Deep Research is inherently slow — it's performing thorough multi-source investigation. If it takes more than 10 minutes, there may be an API issue. Check the developer console (Ctrl/Cmd + Shift + I) with Debug mode enabled for details.
