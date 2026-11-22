@@ -158,9 +158,7 @@ export class OllamaClient implements ModelApi {
 		const modelId = request.model || this.config.model;
 		if (!modelId) {
 			this.assertCloudKey(this.config.baseUrl);
-			throw new NonRetryableRequestError(
-				'No Ollama model selected. Pull a model with `ollama pull <name>` and choose it in settings.'
-			);
+			throw new NonRetryableRequestError(t('provider.ollama.noModelSelected'));
 		}
 		const { baseUrl, model, client } = this.route(modelId);
 		this.assertCloudKey(baseUrl);
@@ -230,9 +228,7 @@ export class OllamaClient implements ModelApi {
 			start: async (signal) => {
 				if (!modelId) {
 					this.assertCloudKey(this.config.baseUrl);
-					throw new NonRetryableRequestError(
-						'No Ollama model selected. Pull a model with `ollama pull <name>` and choose it in settings.'
-					);
+					throw new NonRetryableRequestError(t('provider.ollama.noModelSelected'));
 				}
 				const { baseUrl, model, client } = this.route(modelId);
 				this.assertCloudKey(baseUrl);
@@ -328,9 +324,7 @@ export class OllamaClient implements ModelApi {
 	 */
 	private assertCloudKey(baseUrl: string): void {
 		if (!this.config.apiKey && isOllamaCloudEndpoint(baseUrl)) {
-			throw new NonRetryableRequestError(
-				'Ollama Cloud needs an API key. Add one on the Ollama card in Settings → Providers.'
-			);
+			throw new NonRetryableRequestError(t('provider.ollama.cloudNeedsKey'));
 		}
 	}
 

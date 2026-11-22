@@ -4,7 +4,13 @@
  */
 
 import { Logger } from './logger';
-import { asRecord, extractErrorDetails, extractStatusCode, isQuotaExhausted } from './error-utils';
+import {
+	asRecord,
+	extractErrorDetails,
+	extractStatusCode,
+	getComparableErrorText,
+	isQuotaExhausted,
+} from './error-utils';
 import { NonRetryableRequestError } from './request-errors';
 
 /**
@@ -201,20 +207,17 @@ export function isRetryableHttpStatus(status: number): boolean {
  * Check if an error is a transient network error that should be retried
  */
 export function isTransientNetworkError(error: unknown): boolean {
-	if (error instanceof Error) {
-		const message = error.message.toLowerCase();
-		// Retry on connection, timeout, and DNS errors
-		return (
-			message.includes('timeout') ||
-			message.includes('econnreset') ||
-			message.includes('econnrefused') ||
-			message.includes('enotfound') ||
-			message.includes('network') ||
-			message.includes('dns') ||
-			message.includes('socket')
-		);
-	}
-	return false;
+	const message = getComparableErrorText(error);
+	// Retry on connection, timeout, and DNS errors
+	return (
+		message.includes('timeout') ||
+		message.includes('econnreset') ||
+		message.includes('econnrefused') ||
+		message.includes('enotfound') ||
+		message.includes('network') ||
+		message.includes('dns') ||
+		message.includes('socket')
+	);
 }
 
 /**
@@ -293,16 +296,13 @@ export function isRetryableApiError(error: unknown): boolean {
 
 	// For errors with rate-limit/quota messages but no status code,
 	// check if it's a permanent quota issue
-	if (error && typeof error === 'object') {
-		const message: unknown = asRecord(error).message || '';
-		const messageLower = typeof message === 'string' ? message.toLowerCase() : '';
-		if (
-			messageLower.includes('resource_exhausted') ||
-			messageLower.includes('quota') ||
-			messageLower.includes('rate limit')
-		) {
-			return !isQuotaExhausted(error);
-		}
+	const messageLower = getComparableErrorText(error);
+	if (
+		messageLower.includes('resource_exhausted') ||
+		messageLower.includes('quota') ||
+		messageLower.includes('rate limit')
+	) {
+		return !isQuotaExhausted(error);
 	}
 
 	// Default: allow retry for unknown error types

@@ -3211,6 +3211,16 @@ export const en = {
 		context:
 			'Error shown when a non-image attachment is sent to a provider that only accepts images. {provider} is a provider name (OpenAI / Ollama) and stays untranslated; {mimeType} is a MIME type such as "application/pdf". "Gemini" is a provider name and stays untranslated.',
 	},
+	'provider.ollama.noModelSelected': {
+		message: 'No Ollama model selected. Pull a model with `ollama pull <name>` and choose it in settings.',
+		context:
+			'Error shown when an Ollama-routed feature runs with no model configured. `ollama pull <name>` is a terminal command and stays untranslated. "settings" is Obsidian\'s settings window.',
+	},
+	'provider.ollama.cloudNeedsKey': {
+		message: 'Ollama Cloud needs an API key. Add one on the Ollama card in Settings → Providers.',
+		context:
+			'Error shown when the Ollama endpoint is Ollama Cloud (ollama.com) and no API key is set. "Ollama Cloud" is a product name and stays untranslated. "Settings → Providers" names the plugin settings tab.',
+	},
 	'provider.anthropic.noModelSelected': {
 		message: 'No Anthropic model selected. Choose a model in settings.',
 		context:

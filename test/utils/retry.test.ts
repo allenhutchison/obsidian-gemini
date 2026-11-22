@@ -550,4 +550,20 @@ describe('retry utilities', () => {
 			});
 		});
 	});
+
+	// #1719: the retry predicates share error-utils' input domain.
+	describe('widened input domain (#1719)', () => {
+		test('isTransientNetworkError accepts a stringified error and { message }', () => {
+			expect(isTransientNetworkError('Error: ECONNRESET')).toBe(true);
+			expect(isTransientNetworkError({ message: 'socket hang up' })).toBe(true);
+			expect(isTransientNetworkError('bad request')).toBe(false);
+			expect(isTransientNetworkError(null)).toBe(false);
+		});
+		test('a stringified free-tier quota exhaustion is not retryable', () => {
+			expect(isRetryableApiError('RESOURCE_EXHAUSTED: limit: 0 (free tier)')).toBe(false);
+		});
+		test('a stringified transient rate limit stays retryable', () => {
+			expect(isRetryableApiError('rate limit exceeded, slow down')).toBe(true);
+		});
+	});
 });
