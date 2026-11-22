@@ -348,8 +348,10 @@ describe('OllamaClient', () => {
 				{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] },
 				() => {}
 			);
-			// cancel() while `start` is still awaiting the gate — the reference
-			// does not exist yet.
+			// cancel() while `start` is still awaiting the gate — the request is
+			// out but the reference does not exist yet. (A cancel before the
+			// request goes out sends nothing at all; covered separately.)
+			await vi.waitFor(() => expect(ollamaCalls.chat).toHaveBeenCalled());
 			streaming.cancel();
 			resolveStream({
 				[Symbol.asyncIterator]: async function* () {
@@ -858,6 +860,28 @@ describe('OllamaClient transport (#1785)', () => {
 });
 
 describe('OllamaClient cancel while the request is outstanding (#1785)', () => {
+	it('sends nothing when Stop lands while the prompt is still being built', async () => {
+		ollamaCalls.chat.mockReset();
+		let releasePrompt!: (value: string) => void;
+		const prompts = {
+			buildExtendedSystemInstruction: vi.fn(() => new Promise<string>((resolve) => (releasePrompt = resolve))),
+		} as any;
+		const client = new OllamaClient(
+			{ baseUrl: 'http://localhost:11434', apiKey: 'secret', model: 'cloud::gpt-oss:120b' },
+			prompts,
+			buildPlugin()
+		);
+		const stream = client.generateStreamingResponse(
+			{ kind: 'extended', userMessage: 'hi', conversationHistory: [] } as any,
+			() => {}
+		);
+		await vi.waitFor(() => expect(prompts.buildExtendedSystemInstruction).toHaveBeenCalled());
+		stream.cancel();
+		releasePrompt('system');
+		await expect(stream.complete).resolves.toMatchObject({ markdown: '' });
+		expect(ollamaCalls.chat).not.toHaveBeenCalled();
+	});
+
 	it('settles complete on cancel and aborts the stream once it arrives late', async () => {
 		let resolveChat!: (value: unknown) => void;
 		ollamaCalls.chat.mockReset();

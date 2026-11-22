@@ -248,6 +248,9 @@ export class OllamaClient implements ModelApi {
 					)) as AsyncIterable<ChatResponse> & { abort: () => void };
 				} else {
 					const chatRequest = await this.buildChatRequest(request, model, true);
+					// Stop may have landed while the prompt was being built. Don't
+					// send a request nobody will read: a cloud one can't be called back.
+					if (signal.aborted) throw abortError();
 					stream = (await settleOnAbort(
 						client.chat(chatRequest as ChatRequest & { stream: true }),
 						signal
