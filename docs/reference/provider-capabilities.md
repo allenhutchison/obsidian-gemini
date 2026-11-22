@@ -103,6 +103,10 @@ Consequences worth knowing:
 - With the Ollama endpoint set to `https://ollama.com` and an Ollama API key (Ollama Cloud with
   no local daemon), **every** Ollama-served request goes to ollama.com. See
   [Ollama Cloud without a local install](/guide/ollama-setup#ollama-cloud-without-a-local-install).
+- With a local or custom Ollama endpoint **and** an Ollama API key, the picker lists both your
+  endpoint's models and Ollama Cloud's. Only the entries labelled `(cloud)` go to ollama.com;
+  `(local)` entries stay on your endpoint. See
+  [Local and Ollama Cloud models together](/guide/ollama-setup#local-and-ollama-cloud-models-together).
 
 ### Models
 

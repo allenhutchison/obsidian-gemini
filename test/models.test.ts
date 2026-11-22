@@ -138,6 +138,28 @@ describe('getDefaultModelForRole', () => {
 		expect(getDefaultModelForRole('image', 'openai')).toBe('openai-image');
 	});
 
+	it('skips explicit-only models for role defaults while honoring a saved selection', () => {
+		setTestModels([
+			{
+				value: 'cloud::qwen2.5:1.5b',
+				label: 'Qwen Cloud',
+				provider: 'ollama',
+				explicitOnly: true,
+				defaultForRoles: ['completions'],
+			},
+			{ value: 'llama3.2', label: 'Llama Local', provider: 'ollama' },
+		]);
+
+		expect(getDefaultModelForRole('completions', 'ollama')).toBe('llama3.2');
+		expect(getDefaultModelForRole('chat', 'ollama')).toBe('llama3.2');
+		expect(
+			resolveFeatureModel(
+				{ features: routes({ completions: { provider: 'ollama', model: 'cloud::qwen2.5:1.5b' } }) },
+				'completions'
+			)
+		).toBe('cloud::qwen2.5:1.5b');
+	});
+
 	it('returns no image default when a provider only advertises text models', () => {
 		setTestModels([{ value: 'openai-chat', label: 'OpenAI Chat', provider: 'openai' }]);
 

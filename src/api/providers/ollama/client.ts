@@ -35,14 +35,19 @@ import {
 } from '../../interfaces/model-api';
 import { GeminiPrompts } from '../../../prompts';
 import type { ObsidianGemini } from '../../../types/plugin';
-import { isOllamaCloudEndpoint, ollamaAuthHeaders, type OllamaClientConfig } from './config';
+import { isOllamaCloudEndpoint, ollamaAuthHeaders, resolveOllamaModel, type OllamaClientConfig } from './config';
 import { walkHistoryEntry } from '../history-walk';
 import { runCancellableStream } from '../../utils/cancellable-stream';
 import { t } from '../../../i18n';
 import { NonRetryableRequestError } from '../../../utils/request-errors';
 
 export class OllamaClient implements ModelApi {
-	private client: Ollama;
+	/**
+	 * One SDK client per endpoint, created on first use. A single client can
+	 * serve models from two endpoints — the user's base URL and Ollama Cloud —
+	 * because each request is routed by its model id (see `resolveOllamaModel`).
+	 */
+	private clients = new Map<string, Ollama>();
 	private config: OllamaClientConfig;
 	private prompts: GeminiPrompts;
 	private plugin?: ObsidianGemini;
@@ -51,10 +56,20 @@ export class OllamaClient implements ModelApi {
 		this.config = config;
 		this.plugin = plugin;
 		this.prompts = prompts || new GeminiPrompts(plugin);
-		this.client = new Ollama({
-			host: this.config.baseUrl,
-			headers: ollamaAuthHeaders(this.config.apiKey, this.config.baseUrl),
-		});
+	}
+
+	/**
+	 * The endpoint, bare model name, and SDK client for a stored model id. A
+	 * cloud-prefixed id goes to Ollama Cloud; anything else to the base URL.
+	 */
+	private route(modelId: string): { baseUrl: string; model: string; client: Ollama } {
+		const { baseUrl, model } = resolveOllamaModel(modelId, this.config.baseUrl);
+		let client = this.clients.get(baseUrl);
+		if (!client) {
+			client = new Ollama({ host: baseUrl, headers: ollamaAuthHeaders(this.config.apiKey, baseUrl) });
+			this.clients.set(baseUrl, client);
+		}
+		return { baseUrl, model, client };
 	}
 
 	async generateModelResponse(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
@@ -64,17 +79,19 @@ export class OllamaClient implements ModelApi {
 		// `config.model` per use case (chat / summary / completions / rewrite).
 		// We don't fall back to a chat default here — that would silently route
 		// e.g. a summary request to the chat model when `config.model` is empty.
-		const model = request.model || this.config.model;
-		this.assertCloudKey();
-		if (!model) {
+		const modelId = request.model || this.config.model;
+		if (!modelId) {
+			this.assertCloudKey(this.config.baseUrl);
 			throw new NonRetryableRequestError(
 				'No Ollama model selected. Pull a model with `ollama pull <name>` and choose it in settings.'
 			);
 		}
+		const { baseUrl, model, client } = this.route(modelId);
+		this.assertCloudKey(baseUrl);
 
 		try {
 			if (!isExtended) {
-				const generateResponse = await this.client.generate({
+				const generateResponse = await client.generate({
 					model,
 					prompt: request.prompt,
 					stream: false,
@@ -90,7 +107,7 @@ export class OllamaClient implements ModelApi {
 			}
 
 			const chatRequest = await this.buildChatRequest(request, model, false);
-			const response = await this.client.chat(chatRequest as ChatRequest & { stream: false });
+			const response = await client.chat(chatRequest as ChatRequest & { stream: false });
 			return this.toModelResponse(response);
 		} catch (error) {
 			this.plugin?.logger.error('[OllamaClient] Error generating content:', error);
@@ -105,7 +122,7 @@ export class OllamaClient implements ModelApi {
 		const isExtended = isExtendedRequest(request);
 		// See note in generateModelResponse — the factory provides the
 		// role-correct model; no chat-default fallback here.
-		const model = request.model || this.config.model;
+		const modelId = request.model || this.config.model;
 
 		const state = {
 			accumulatedText: '',
@@ -135,16 +152,18 @@ export class OllamaClient implements ModelApi {
 
 		return runCancellableStream<ChatResponse & { response?: string }>({
 			start: async (signal) => {
-				this.assertCloudKey();
-				if (!model) {
+				if (!modelId) {
+					this.assertCloudKey(this.config.baseUrl);
 					throw new NonRetryableRequestError(
 						'No Ollama model selected. Pull a model with `ollama pull <name>` and choose it in settings.'
 					);
 				}
+				const { baseUrl, model, client } = this.route(modelId);
+				this.assertCloudKey(baseUrl);
 				let stream: AsyncIterable<ChatResponse> & { abort: () => void };
 				if (!isExtended) {
 					// generate() supports streaming too; route the same way for consistency
-					stream = (await this.client.generate({
+					stream = (await client.generate({
 						model,
 						prompt: request.prompt,
 						stream: true,
@@ -152,9 +171,9 @@ export class OllamaClient implements ModelApi {
 					})) as AsyncIterable<ChatResponse> & { abort: () => void };
 				} else {
 					const chatRequest = await this.buildChatRequest(request, model, true);
-					stream = (await this.client.chat(
-						chatRequest as ChatRequest & { stream: true }
-					)) as AsyncIterable<ChatResponse> & { abort: () => void };
+					stream = (await client.chat(chatRequest as ChatRequest & { stream: true })) as AsyncIterable<ChatResponse> & {
+						abort: () => void;
+					};
 				}
 				activeStream = stream;
 				// cancel() may have fired while the await above was outstanding —
@@ -222,8 +241,8 @@ export class OllamaClient implements ModelApi {
 	 * Ollama Cloud rejects every keyless request, so fail before sending one
 	 * rather than contacting ollama.com unauthenticated (#1764).
 	 */
-	private assertCloudKey(): void {
-		if (!this.config.apiKey && isOllamaCloudEndpoint(this.config.baseUrl)) {
+	private assertCloudKey(baseUrl: string): void {
+		if (!this.config.apiKey && isOllamaCloudEndpoint(baseUrl)) {
 			throw new NonRetryableRequestError(
 				'Ollama Cloud needs an API key. Add one on the Ollama card in Settings → Providers.'
 			);
