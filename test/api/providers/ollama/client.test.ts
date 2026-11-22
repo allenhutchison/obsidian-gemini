@@ -310,6 +310,28 @@ describe('OllamaClient', () => {
 			expect(abort).toHaveBeenCalled();
 		});
 
+		it('cancel() releases the aborted stream from the SDK client (#1788)', async () => {
+			async function* slowStream() {
+				yield { message: { content: 'a' }, done: false };
+				// never reaches done, so the SDK never runs doneCallback itself
+			}
+			const stream: any = slowStream();
+			stream.abort = vi.fn();
+			stream.doneCallback = vi.fn();
+			ollamaCalls.chat.mockResolvedValue(stream);
+
+			const streaming = client.generateStreamingResponse(
+				{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] },
+				() => {}
+			);
+			await new Promise((r) => window.setTimeout(r, 0));
+			streaming.cancel();
+			await streaming.complete;
+
+			expect(stream.abort).toHaveBeenCalled();
+			expect(stream.doneCallback).toHaveBeenCalled();
+		});
+
 		it('omits usageMetadata when the stream cancels before the done chunk', async () => {
 			// Ollama only emits prompt_eval_count / eval_count on the terminal
 			// done chunk. If the user cancels first, we should not synthesize a

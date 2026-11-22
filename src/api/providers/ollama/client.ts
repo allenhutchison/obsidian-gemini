@@ -75,6 +75,29 @@ async function drain(stream: unknown): Promise<void> {
 	}
 }
 
+/**
+ * Release the SDK's reference to a stream that was aborted mid-flight (#1788).
+ *
+ * ollama-js keeps every streamed request in its client's
+ * `ongoingStreamedRequests` until iteration reaches a `done` message, which
+ * runs the iterator's `doneCallback`. An abort skips that, so each Stop would
+ * leave one iterator referenced by the cached client until the next settings
+ * change. Running `doneCallback` ourselves is the SDK's own removal, and it is
+ * idempotent: it splices only while the iterator is still listed. Probed
+ * structurally, so an SDK that renames or drops the field just keeps the old
+ * behaviour; `test/api/providers/ollama/stream-release.test.ts` pins it against
+ * the installed version.
+ */
+function releaseStream(stream: unknown): void {
+	const done = (stream as { doneCallback?: unknown } | null)?.doneCallback;
+	if (typeof done !== 'function') return;
+	try {
+		(done as () => void).call(stream);
+	} catch {
+		// Best-effort: the stream is already aborted.
+	}
+}
+
 function settleOnAbort<T extends { abort: () => void }>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
 	const discardLate = () => {
 		promise.then(
@@ -84,7 +107,7 @@ function settleOnAbort<T extends { abort: () => void }>(promise: Promise<T>, sig
 				} catch {
 					// Best-effort: the turn has already ended.
 				}
-				void drain(late);
+				void drain(late).finally(() => releaseStream(late));
 			},
 			() => {}
 		);
@@ -260,20 +283,12 @@ export class OllamaClient implements ModelApi {
 				// cancel() may have fired while the await above was outstanding —
 				// abort immediately so the daemon stops generating.
 				if (signal.aborted) {
-					try {
-						stream.abort();
-					} catch (err) {
-						this.plugin?.logger.debug('[OllamaClient] Abort failed:', err);
-					}
+					this.abortStream(stream);
 				}
 				return stream;
 			},
 			onCancel: () => {
-				try {
-					activeStream?.abort();
-				} catch (err) {
-					this.plugin?.logger.debug('[OllamaClient] Abort failed:', err);
-				}
+				if (activeStream) this.abortStream(activeStream);
 			},
 			onChunk: (chunk) => {
 				if (!isExtended) {
@@ -310,6 +325,16 @@ export class OllamaClient implements ModelApi {
 			finalize,
 			onError: (error) => this.plugin?.logger.error('[OllamaClient] Streaming error:', error),
 		});
+	}
+
+	/** Abort a stream mid-flight and release the SDK's reference to it (see `releaseStream`). */
+	private abortStream(stream: { abort: () => void }): void {
+		try {
+			stream.abort();
+		} catch (err) {
+			this.plugin?.logger.debug('[OllamaClient] Abort failed:', err);
+		}
+		releaseStream(stream);
 	}
 
 	private buildOptions(): Record<string, unknown> {
