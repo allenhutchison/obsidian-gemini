@@ -96,6 +96,8 @@ You can also skip the local daemon and point the plugin straight at Ollama's hos
 
 Every request for an Ollama-routed feature then goes to ollama.com with the key as a bearer token. Without a key, an `https://ollama.com` endpoint shows **Needs key** and the plugin sends it nothing. The key is only sent over HTTPS or to `localhost`; a plain `http://` endpoint on another host gets no key. The same key field also works for a self-hosted Ollama behind an authenticating HTTPS proxy.
 
+**Replies from ollama.com arrive all at once.** ollama.com doesn't accept requests from a browser page, so the plugin sends them through Obsidian's own network layer instead, which only hands back a reply once it is complete. A chat with a model sent straight to ollama.com therefore shows nothing until the model finishes, then the whole answer appears; tool calls work as usual. Pressing **Stop** discards the reply, but ollama.com still finishes generating it. Cloud models you pulled into your own daemon (see [Cloud models](#cloud-models)) go through the daemon and still stream.
+
 ### Local and Ollama Cloud models together
 
 If you keep the endpoint pointed at your own Ollama (the default `http://localhost:11434`, or any custom URL) **and** add an API key, the model list is the union of both: your endpoint's models plus every model Ollama Cloud offers your key. Each entry says where it runs, `(local)` or `(cloud)`, and each request goes to the endpoint that serves the model you picked: local models to your endpoint, cloud models to `https://ollama.com` with the key.
@@ -104,11 +106,12 @@ If you keep the endpoint pointed at your own Ollama (the default `http://localho
 - **One side being down doesn't hide the other.** If the local daemon isn't running, the cloud models still load (and the local ones reappear within about 30 seconds of it starting, or when you press **Refresh**); if ollama.com is unreachable, your local models still load.
 - **The key is also sent to your own endpoint**, as long as it is HTTPS or `localhost`, so an authenticating proxy keeps working. Remove the key to list only your endpoint's models again. Cloud models you pulled into the daemon (see [Cloud models](#cloud-models)) stay listed as `(cloud)` either way, and still send your notes to ollama.com.
 - **Cloud entries are never picked for you.** A feature whose model is left on the default only ever gets a `(local)` model; you have to choose a `(cloud)` entry yourself.
+- **`(cloud)` replies arrive all at once**, not word by word, for the reason in [Ollama Cloud without a local install](#ollama-cloud-without-a-local-install). `(local)` replies still stream.
 - **A `(cloud)` model sends your notes to ollama.com**, the same as a pulled cloud model. Stick to `(local)` entries if you want nothing to leave your machine.
 
 ## What works
 
-- Agent chat with streaming, tool calling, and conversation memory
+- Agent chat with streaming, tool calling, and conversation memory (replies from models sent straight to ollama.com arrive in one piece rather than streamed)
 - Drag-and-drop / paste of **image** attachments to vision models (e.g. `llava`, `moondream`, `qwen2.5-vl`); vision support is auto-detected from the model's reported capabilities via `/api/show`
 - File summarization, IDE-style completions, selection rewriting
 - Custom prompts, projects, agent skills, scheduled tasks, MCP servers

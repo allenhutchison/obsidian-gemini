@@ -2,6 +2,7 @@ import type { Mock } from 'vitest';
 import { OllamaClient } from '../../../../src/api/providers/ollama/client';
 import type { OllamaClientConfig } from '../../../../src/api/providers/ollama/config';
 import { ExtendedModelRequest } from '../../../../src/api/interfaces/model-api';
+import { proxyFetch } from '../../../../src/utils/proxy-fetch';
 
 // vitest hoists vi.mock to the top of the file; vi.hoisted() lets us share
 // fixtures with the factory while keeping initialization order safe.
@@ -812,7 +813,11 @@ describe('OllamaClient auth headers (#1764)', () => {
 		const { Ollama } = await import('ollama/browser');
 		(Ollama as unknown as Mock).mockClear();
 		await sendOnce(new OllamaClient({ baseUrl: 'https://ollama.com', apiKey: 'secret', model: 'gpt-oss:120b' }));
-		expect(Ollama).toHaveBeenCalledWith({ host: 'https://ollama.com', headers: { Authorization: 'Bearer secret' } });
+		expect(Ollama).toHaveBeenCalledWith({
+			host: 'https://ollama.com',
+			headers: { Authorization: 'Bearer secret' },
+			fetch: proxyFetch,
+		});
 	});
 
 	it('sends no auth header for a keyless local daemon', async () => {
@@ -820,6 +825,35 @@ describe('OllamaClient auth headers (#1764)', () => {
 		(Ollama as unknown as Mock).mockClear();
 		await sendOnce(new OllamaClient({ baseUrl: 'http://localhost:11434', model: 'llama3.2' }));
 		expect(Ollama).toHaveBeenCalledWith({ host: 'http://localhost:11434', headers: {} });
+	});
+});
+
+describe('OllamaClient transport (#1785)', () => {
+	it('builds the cloud client on the requestUrl-backed fetch, since ollama.com rejects CORS', async () => {
+		const { Ollama } = await import('ollama/browser');
+		(Ollama as unknown as Mock).mockClear();
+		await sendOnce(
+			new OllamaClient({ baseUrl: 'http://localhost:11434', apiKey: 'secret', model: 'cloud::gpt-oss:120b' })
+		);
+		const [config] = (Ollama as unknown as Mock).mock.calls[0];
+		expect(config.host).toBe('https://ollama.com');
+		expect(config.fetch).toBe(proxyFetch);
+	});
+
+	it('keeps the browser fetch for a local daemon so replies still stream', async () => {
+		const { Ollama } = await import('ollama/browser');
+		(Ollama as unknown as Mock).mockClear();
+		await sendOnce(new OllamaClient({ baseUrl: 'http://localhost:11434', apiKey: 'secret', model: 'llama3.2' }));
+		const [config] = (Ollama as unknown as Mock).mock.calls[0];
+		expect(config.host).toBe('http://localhost:11434');
+		expect(config).not.toHaveProperty('fetch');
+	});
+
+	it('uses the requestUrl-backed fetch for a cloud-only endpoint', async () => {
+		const { Ollama } = await import('ollama/browser');
+		(Ollama as unknown as Mock).mockClear();
+		await sendOnce(new OllamaClient({ baseUrl: 'https://ollama.com', apiKey: 'secret', model: 'gpt-oss:120b' }));
+		expect((Ollama as unknown as Mock).mock.calls[0][0].fetch).toBe(proxyFetch);
 	});
 });
 
@@ -832,7 +866,11 @@ describe('OllamaClient routing local and cloud models', () => {
 			new OllamaClient({ baseUrl: 'http://localhost:11434', apiKey: 'secret', model: 'cloud::gpt-oss:120b' })
 		);
 		expect(Ollama).toHaveBeenCalledTimes(1);
-		expect(Ollama).toHaveBeenCalledWith({ host: 'https://ollama.com', headers: { Authorization: 'Bearer secret' } });
+		expect(Ollama).toHaveBeenCalledWith({
+			host: 'https://ollama.com',
+			headers: { Authorization: 'Bearer secret' },
+			fetch: proxyFetch,
+		});
 		expect(ollamaCalls.generate).toHaveBeenCalledWith(expect.objectContaining({ model: 'gpt-oss:120b' }));
 	});
 

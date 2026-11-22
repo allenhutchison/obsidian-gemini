@@ -40,6 +40,7 @@ import { walkHistoryEntry } from '../history-walk';
 import { runCancellableStream } from '../../utils/cancellable-stream';
 import { t } from '../../../i18n';
 import { NonRetryableRequestError } from '../../../utils/request-errors';
+import { proxyFetch } from '../../../utils/proxy-fetch';
 
 export class OllamaClient implements ModelApi {
 	/**
@@ -61,12 +62,23 @@ export class OllamaClient implements ModelApi {
 	/**
 	 * The endpoint, bare model name, and SDK client for a stored model id. A
 	 * cloud-prefixed id goes to Ollama Cloud; anything else to the base URL.
+	 *
+	 * ollama.com sends no CORS headers, so the renderer's `fetch` can never
+	 * reach it (#1785). Its client therefore uses {@link proxyFetch}, which goes
+	 * through Obsidian's `requestUrl`. `requestUrl` buffers the whole response,
+	 * so a cloud reply's NDJSON chunks arrive together once generation ends
+	 * rather than token by token. Local and custom endpoints keep `fetch`,
+	 * where the daemon allows the origin and replies stream.
 	 */
 	private route(modelId: string): { baseUrl: string; model: string; client: Ollama } {
 		const { baseUrl, model } = resolveOllamaModel(modelId, this.config.baseUrl);
 		let client = this.clients.get(baseUrl);
 		if (!client) {
-			client = new Ollama({ host: baseUrl, headers: ollamaAuthHeaders(this.config.apiKey, baseUrl) });
+			client = new Ollama({
+				host: baseUrl,
+				headers: ollamaAuthHeaders(this.config.apiKey, baseUrl),
+				...(isOllamaCloudEndpoint(baseUrl) && { fetch: proxyFetch }),
+			});
 			this.clients.set(baseUrl, client);
 		}
 		return { baseUrl, model, client };
