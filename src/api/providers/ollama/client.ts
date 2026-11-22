@@ -65,8 +65,10 @@ function abortError(): Error {
 async function drain(stream: unknown): Promise<void> {
 	if (!stream || typeof (stream as AsyncIterable<unknown>)[Symbol.asyncIterator] !== 'function') return;
 	try {
-		for await (const _ of stream as AsyncIterable<unknown>) {
-			// Discard: the turn that wanted this reply was cancelled.
+		const iterator = (stream as AsyncIterable<unknown>)[Symbol.asyncIterator]();
+		// Discard every chunk: the turn that wanted this reply was cancelled.
+		while (!(await iterator.next()).done) {
+			// keep draining
 		}
 	} catch {
 		// An aborted fetch stream rejects here; nothing more to release.
