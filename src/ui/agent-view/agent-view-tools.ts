@@ -16,6 +16,19 @@ import { buildCompactionEntry } from './compaction-notice';
 import { t } from '../../i18n';
 
 /**
+ * One agent turn's view of the shared execution state (#1787, #1790). The send
+ * module hands each turn its own handle so a turn that was stopped can't read
+ * the *next* turn's cancellation flag, or clear the next turn's Stop target,
+ * while it unwinds.
+ */
+export interface TurnHandle {
+	/** True once this turn was stopped. Never reset by a later turn. */
+	isCancelled(): boolean;
+	/** Register this turn's live follow-up stream (or clear it with `null`) as the Stop target. */
+	registerStream(stream: { cancel: () => void } | null): void;
+}
+
+/**
  * Callbacks and state access that AgentViewTools needs from AgentView
  */
 export interface AgentViewContext {
@@ -99,8 +112,13 @@ export class AgentViewTools {
 		_userEntry: GeminiConversationEntry,
 		customPrompt?: CustomPrompt,
 		perTurn?: PerTurnContext,
-		precedingThoughts?: string
+		precedingThoughts?: string,
+		turn?: TurnHandle
 	) {
+		const isCancelled = turn ? () => turn.isCancelled() : () => this.context.isCancellationRequested();
+		const registerStream = turn
+			? (stream: { cancel: () => void } | null) => turn.registerStream(stream)
+			: (stream: { cancel: () => void } | null) => this.context.registerFollowUpStream?.(stream);
 		const currentSession = this.context.getCurrentSession();
 		if (!currentSession) return;
 
@@ -127,7 +145,7 @@ export class AgentViewTools {
 				options: {
 					plugin: this.plugin,
 					session: currentSession,
-					isCancelled: () => this.context.isCancellationRequested(),
+					isCancelled,
 					confirmationProvider: this.context.confirmationProvider,
 					// Give interactive sessions a high soft budget so the reminder +
 					// one-shot extension machinery applies here too, bounding runaway
@@ -173,7 +191,7 @@ export class AgentViewTools {
 						onFollowUpRequestStart: () => {
 							this.context.updateProgress(this.thinkingLabel(), 'thinking');
 						},
-						...this.followUpStreamingHooks(),
+						...this.followUpStreamingHooks(registerStream),
 						onModelReasoning: async (thoughts) => {
 							// Reasoning the model produced before deciding to call the
 							// next tool batch — render it as a row inside the current tool
@@ -269,7 +287,10 @@ export class AgentViewTools {
 	 * follow-ups through the streaming call — the plugin always streams when
 	 * the provider client supports it (there is no user-facing toggle).
 	 */
-	private followUpStreamingHooks(): Pick<AgentLoopHooks, 'onFollowUpChunk' | 'onFollowUpStreamReady'> {
+	private followUpStreamingHooks(
+		registerStream: (stream: { cancel: () => void } | null) => void = (stream) =>
+			this.context.registerFollowUpStream?.(stream)
+	): Pick<AgentLoopHooks, 'onFollowUpChunk' | 'onFollowUpStreamReady'> {
 		return {
 			onFollowUpChunk: (chunk: StreamChunk) => {
 				if (!chunk.text) return;
@@ -289,8 +310,10 @@ export class AgentViewTools {
 			},
 			onFollowUpStreamReady: (stream) => {
 				// Route the live follow-up stream to the view's Stop target so
-				// pressing Stop cancels token generation immediately.
-				this.context.registerFollowUpStream?.(stream);
+				// pressing Stop cancels token generation immediately. Routed
+				// through the turn's own handle when there is one, so a stopped
+				// turn settling late can't clear the next turn's Stop target.
+				registerStream(stream);
 			},
 		};
 	}
