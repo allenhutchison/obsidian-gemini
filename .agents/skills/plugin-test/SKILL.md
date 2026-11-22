@@ -233,7 +233,7 @@ If `dev:errors` shows anything after a fresh reload, that's a regression — not
 
 **Specific surfaces every run should cover** (in addition to whatever Phase 0 surfaces up):
 
-- **Settings panes** — open the plugin's settings tab, screenshot each section. Verify defaults match `docs/reference/settings.md` and `docs/reference/advanced-settings.md`.
+- **Settings panes** — open the plugin's settings tab, screenshot each section. Verify defaults match `docs/reference/settings.md` (the single settings reference; there is no separate advanced-settings page).
 - **Command palette** — `obsidian commands filter=gemini-scribe` and verify every documented command exists with the documented label.
 - **Agent view** — open the agent view, screenshot, verify chat input + tool list render.
 - **Scheduler modal** — open Scheduler, screenshot. For each preset (`Once`, `Daily (every 24h)`, `Daily at time`, `Weekly (every 7d)`, `Weekly on days at time`, `Custom interval`) click and screenshot. Confirm the conditional inputs (time picker, day checkboxes, custom interval text) appear/disappear as expected.

@@ -51,8 +51,8 @@ whose secret is empty (for example, settings synced from another machine) shows 
 
 ### Gemini card
 
-- **API key** (`apiKeySecretName`) — String, SecretStorage key name (the key value itself is
-  never written to `data.json`). Get one at [Google AI Studio](https://aistudio.google.com/apikey).
+- **API key** (`apiKeySecretName`) — String, SecretStorage key name, default `""` (the key value
+  itself is never written to `data.json`). Get one at [Google AI Studio](https://aistudio.google.com/apikey).
 - **Custom endpoint** (`customBaseUrl`) — String, default `""` (empty, uses the official Google
   endpoint). Overrides the Google API base URL for every Google GenAI SDK call site (chat,
   streaming, image generation, web fetch, Google Search/Maps grounding, RAG indexing, deep
@@ -151,6 +151,11 @@ plus Off) and, for features with a model, a model picker filtered to that provid
 row is a button showing the current choice; clicking it opens a searchable list, sorted
 alphabetically, that filters as you type a model's name or id — useful when an
 OpenAI-compatible endpoint such as OpenRouter lists hundreds of models.
+
+Every row starts as `{ provider: 'gemini', model: '' }` on a fresh install: Gemini serves each
+feature, and an empty model means the provider's default model for that role. Settings saved
+before a feature existed get the missing row seeded from **Default provider** when they load (or Off,
+if that provider cannot serve the feature).
 
 Rows, grouped:
 
