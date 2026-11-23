@@ -143,10 +143,6 @@ export class AgentViewSend {
 	}
 
 	/**
-	 * Build the per-turn handle the tool loop uses, bound to `turn` rather than
-	 * to whichever turn is active when it is read.
-	 */
-	/**
 	 * Hide the shared progress display for `turn`, unless a newer turn owns it
 	 * now. A stopped turn unwinding after the next one started must not hide
 	 * (and reset) that turn's progress.
@@ -155,6 +151,10 @@ export class AgentViewSend {
 		if (this.activeTurn === null || this.activeTurn === turn) this.ctx.progress.hide();
 	}
 
+	/**
+	 * Build the per-turn handle the tool loop uses, bound to `turn` rather than
+	 * to whichever turn is active when it is read.
+	 */
 	private turnHandle(turn: ActiveTurn): TurnHandle {
 		return {
 			isCancelled: () => turn.cancelled,
