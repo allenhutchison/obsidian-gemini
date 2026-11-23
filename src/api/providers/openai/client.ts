@@ -22,7 +22,7 @@
  *    (OpenRouter) that require it — see `reasoning-replay.ts`
  *
  * Responses API (#1755): models that reject function tools on Chat
- * Completions (gpt-6.1-*, gpt-6-astra) send agent turns to `/v1/responses`
+ * Completions (gpt-6.1-*, gpt-6.2-*, gpt-6-astra) send agent turns to `/v1/responses`
  * instead when the base URL is api.openai.com; the mapping lives in
  * `responses.ts`. Every other model and every compatible server stays on
  * Chat Completions. Behind a custom base URL those models still use Chat
@@ -116,11 +116,12 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 
 	/**
 	 * Models whose `/v1/chat/completions` endpoint rejects function tools
-	 * outright (400), whatever the reasoning setting: gpt-6.1-* and gpt-6-astra.
+	 * outright (400), whatever the reasoning setting: gpt-6.1-*, gpt-6.2-* and
+	 * gpt-6-astra (the gpt-6.2 cards also say the API rejects reasoning effort 'none').
 	 * On api.openai.com their agent turns go through the Responses API instead
 	 * (see `usesResponsesApi`); elsewhere their requests go out without tools.
 	 */
-	private static readonly NO_CHAT_TOOLS_PATTERN = /^gpt-(6\.1|6-astra)(-|$)/;
+	private static readonly NO_CHAT_TOOLS_PATTERN = /^gpt-(6\.[12]|6-astra)(-|$)/;
 
 	/**
 	 * Whether an extended (agent) request for `model` goes to the Responses

@@ -2,7 +2,7 @@
  * OpenAI Responses API (`/v1/responses`) request and response mapping (#1755).
  *
  * `OpenAIClient` speaks Chat Completions so it works against any
- * OpenAI-compatible server. Some current OpenAI models (gpt-6.1-*,
+ * OpenAI-compatible server. Some current OpenAI models (gpt-6.1-*, gpt-6.2-*,
  * gpt-6-astra) reject function tools on Chat Completions and only call tools
  * through the Responses API, so for those models on api.openai.com the client
  * sends tool-bearing requests here instead. This module holds the pure

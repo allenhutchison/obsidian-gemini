@@ -101,6 +101,10 @@ describe('OpenAIModelsService', () => {
 				'gpt-6.1-sol',
 				'gpt-6.1-sol-ultrafast',
 				'gpt-6.1-terra',
+				'gpt-6.2-sol',
+				'gpt-6.2-astra',
+				'gpt-image-2.6-flare',
+				'gpt-image-2.6-sunburst',
 				'gpt-5.1',
 				'gpt-4o',
 				'text-embedding-3-large',
@@ -122,6 +126,10 @@ describe('OpenAIModelsService', () => {
 				'gpt-6-astra',
 				'gpt-6.1-sol',
 				'gpt-6.1-terra',
+				'gpt-6.2-sol',
+				'gpt-6.2-astra',
+				'gpt-image-2.6-flare',
+				'gpt-image-2.6-sunburst',
 			]);
 		});
 
@@ -133,6 +141,33 @@ describe('OpenAIModelsService', () => {
 				expect(m.defaultForRoles).toBeUndefined();
 				expect(m.capabilitiesUnknown).toBeUndefined();
 			}
+		});
+
+		it('gives every GPT-6 family model the 922,000-token input limit (#1797)', async () => {
+			const ids = [
+				'gpt-6-sol',
+				'gpt-6-luna',
+				'gpt-6-astra',
+				'gpt-6.1-sol',
+				'gpt-6.1-terra',
+				'gpt-6.2-sol',
+				'gpt-6.2-astra',
+			];
+			mockModelList(ids);
+			const models = await new OpenAIModelsService(buildPlugin()).getModels();
+			expect(models.map((m) => m.value)).toEqual(ids);
+			for (const m of models) expect(m.contextWindow).toBe(922_000);
+		});
+
+		it('offers the Images 2.6 models for image generation without changing the default (#1797)', async () => {
+			mockModelList(['gpt-image-2.5-flare', 'gpt-image-2.6-flare', 'gpt-image-2.6-sunburst']);
+			const models = await new OpenAIModelsService(buildPlugin()).getModels();
+			const byId = Object.fromEntries(models.map((m) => [m.value, m]));
+			for (const id of ['gpt-image-2.6-flare', 'gpt-image-2.6-sunburst']) {
+				expect(byId[id]).toMatchObject({ supportsImageGeneration: true, supportsVision: false });
+				expect(byId[id].defaultForRoles).toBeUndefined();
+			}
+			expect(byId['gpt-image-2.5-flare'].defaultForRoles).toEqual(['image']);
 		});
 
 		it('does not filter model ids on a custom (non-api.openai.com) base URL', async () => {
