@@ -1,6 +1,7 @@
 import { App, Notice, setIcon, setTooltip } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import type { RagIndexStatus, RagProgressInfo, IndexResult, ProgressListener, RagDetailedStatus } from './rag-types';
+import type { IndexProgressCount } from './rag-run-progress';
 import { getErrorMessage } from '../utils/error-utils';
 import { openPluginSettingsTab } from '../utils/obsidian-settings';
 import { t } from '../i18n';
@@ -11,7 +12,7 @@ import { t } from '../i18n';
 export interface RagStatusProvider {
 	getStatus(): RagIndexStatus;
 	getIndexedFileCount(): number;
-	getIndexingProgress(): { current: number; total: number };
+	getIndexingProgress(): IndexProgressCount;
 	getProgressInfo(): RagProgressInfo;
 	isPaused(): boolean;
 	getRateLimitRemainingSeconds(): number;

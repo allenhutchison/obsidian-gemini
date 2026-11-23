@@ -6,7 +6,13 @@ import type { ObsidianVaultAdapter } from './obsidian-file-adapter';
 import type { RagCache } from './rag-cache';
 import type { RagRateLimiter } from './rag-rate-limiter';
 import { CACHE_VERSION } from './rag-types';
-import type { IndexProgress, IndexResult, FailedFileEntry, RagIndexStatus, RagProgressProvider } from './rag-types';
+import type { IndexProgress, IndexResult, RagIndexStatus, RagProgressProvider } from './rag-types';
+import {
+	IndexRunProgress,
+	type IndexProgressCount,
+	type IndexRunProgressSnapshot,
+	type IndexRunProgressCounts,
+} from './rag-run-progress';
 import { getErrorMessage, getRawErrorMessage, isNotFoundError, isQuotaExhausted } from '../utils/error-utils';
 import { executeWithRetry } from '../utils/retry';
 import { t } from '../i18n';
@@ -33,7 +39,7 @@ export interface VaultScannerCallbacks {
  * file as skipped rather than completed, so counting only `completedFiles`
  * would leave the progress bar stalled behind the work actually done.
  */
-function progressFromEvent(event: UploadProgressEvent): Pick<IndexProgress, 'current' | 'total'> {
+function progressFromEvent(event: UploadProgressEvent): IndexProgressCount {
 	return {
 		current: (event.completedFiles || 0) + (event.skippedFiles || 0),
 		total: event.totalFiles || 0,
@@ -52,14 +58,9 @@ export class RagVaultScanner {
 
 	// Progress tracking state
 	private _indexingPromise: Promise<IndexResult> | null = null;
-	private indexingProgress: { current: number; total: number } = { current: 0, total: 0 };
-	private currentFile?: string;
-	private indexingStartTime?: number;
-	private runningIndexed: number = 0;
-	private runningSkipped: number = 0;
-	private runningFailed: number = 0;
 	private cancelRequested: boolean = false;
-	private failedFiles: FailedFileEntry[] = [];
+	/** The current (or most recent) run's progress (#1703). */
+	private readonly progress = new IndexRunProgress();
 
 	constructor(
 		plugin: ObsidianGemini,
@@ -75,32 +76,19 @@ export class RagVaultScanner {
 
 	// ==================== Progress Getters ====================
 
-	getIndexingProgress(): { current: number; total: number } {
-		return this.indexingProgress;
+	/** The processed/total pair the status bars read. */
+	getIndexingProgress(): IndexProgressCount {
+		return this.progress.getProgress();
 	}
 
-	getCurrentFile(): string | undefined {
-		return this.currentFile;
+	/** A copy of the current (or most recent) run's progress. */
+	getRunProgress(): IndexRunProgressSnapshot {
+		return this.progress.snapshot();
 	}
 
-	getIndexingStartTime(): number | undefined {
-		return this.indexingStartTime;
-	}
-
-	getRunningIndexed(): number {
-		return this.runningIndexed;
-	}
-
-	getRunningSkipped(): number {
-		return this.runningSkipped;
-	}
-
-	getRunningFailed(): number {
-		return this.runningFailed;
-	}
-
-	getFailedFiles(): FailedFileEntry[] {
-		return this.failedFiles;
+	/** The run's counts without the failure list, for frequent progress updates. */
+	getRunCounts(): IndexRunProgressCounts {
+		return this.progress.counts();
 	}
 
 	/**
@@ -422,13 +410,7 @@ export class RagVaultScanner {
 		try {
 			// Reset progress tracking
 			this.callbacks.setStatus('indexing');
-			this.indexingProgress = { current: 0, total: 0 };
-			this.indexingStartTime = startTime;
-			this.runningIndexed = 0;
-			this.runningSkipped = 0;
-			this.runningFailed = 0;
-			this.failedFiles = [];
-			this.currentFile = undefined;
+			this.progress.reset(startTime);
 			this.cancelRequested = false;
 			this.callbacks.onUpdateStatusBar();
 			this.callbacks.onNotifyListeners();
@@ -473,19 +455,18 @@ export class RagVaultScanner {
 						// and pinning to 0 states the intent rather than trusting the uploader
 						// to have zeroed them.
 						const progress = { current: 0, total: event.totalFiles || 0 };
-						this.indexingProgress = progress;
+						this.progress.setProgress(progress);
 						this.callbacks.onNotifyListeners();
 						progressCallback?.({
 							...progress,
 							message: `Found ${event.totalFiles} files to index`,
 						});
 					} else if (event.type === 'file_start') {
-						this.currentFile = event.currentFile;
+						this.progress.setCurrentFile(event.currentFile);
 						this.callbacks.onNotifyListeners();
 					} else if (event.type === 'file_complete') {
 						result.indexed++;
-						this.runningIndexed++;
-						this.currentFile = event.currentFile;
+						this.progress.recordIndexed(event.currentFile);
 						// Update cache for newly indexed file
 						if (this.ragCache.cache && event.currentFile && vaultAdapter) {
 							const contentHash = await vaultAdapter.computeHash(event.currentFile);
@@ -496,7 +477,7 @@ export class RagVaultScanner {
 						// Incremental cache save for durability
 						filesSinceLastSave = await this.ragCache.incrementAndMaybeSaveCache(filesSinceLastSave);
 						const progress = progressFromEvent(event);
-						this.indexingProgress = progress;
+						this.progress.setProgress(progress);
 						this.callbacks.onNotifyListeners();
 						progressCallback?.({
 							...progress,
@@ -505,8 +486,7 @@ export class RagVaultScanner {
 						this.callbacks.onUpdateStatusBar();
 					} else if (event.type === 'file_skipped') {
 						result.skipped++;
-						this.runningSkipped++;
-						this.currentFile = event.currentFile;
+						this.progress.recordSkipped(event.currentFile);
 						// Skipped files are already in cache (unchanged), ensure they're tracked
 						if (
 							this.ragCache.cache &&
@@ -519,22 +499,22 @@ export class RagVaultScanner {
 						}
 						// Incremental cache save for durability (count skipped files too)
 						filesSinceLastSave = await this.ragCache.incrementAndMaybeSaveCache(filesSinceLastSave);
-						this.indexingProgress = progressFromEvent(event);
+						this.progress.setProgress(progressFromEvent(event));
 						this.callbacks.onNotifyListeners();
 						this.callbacks.onUpdateStatusBar();
 					} else if (event.type === 'file_error') {
 						result.failed++;
-						this.runningFailed++;
 
 						// Track failed file with error details
-						if (event.currentFile) {
-							const errorMessage = event.error ? getRawErrorMessage(event.error) : 'Unknown error';
-							this.failedFiles.push({
-								path: event.currentFile,
-								error: errorMessage,
-								timestamp: Date.now(),
-							});
-						}
+						this.progress.recordFailure(
+							event.currentFile
+								? {
+										path: event.currentFile,
+										error: event.error ? getRawErrorMessage(event.error) : 'Unknown error',
+										timestamp: Date.now(),
+									}
+								: undefined
+						);
 
 						this.callbacks.onNotifyListeners();
 
@@ -546,7 +526,7 @@ export class RagVaultScanner {
 						// Also not progressFromEvent: this pins the bar to 100%, which is not
 						// completed + skipped when files errored (file_error increments
 						// neither counter).
-						this.currentFile = undefined;
+						this.progress.setCurrentFile(undefined);
 						this.callbacks.onNotifyListeners();
 						progressCallback?.({
 							current: event.totalFiles || 0,
@@ -567,8 +547,7 @@ export class RagVaultScanner {
 			}
 			this.ragCache.refreshIndexedCount();
 			this.callbacks.setStatus('idle');
-			this.currentFile = undefined;
-			this.indexingStartTime = undefined;
+			this.progress.finishRun();
 			this.rateLimiter.resetTracking(); // Success - reset rate limit counter
 			this.callbacks.onUpdateStatusBar();
 			this.callbacks.onNotifyListeners();
@@ -641,8 +620,7 @@ export class RagVaultScanner {
 	 */
 	private async resetIndexingState(status: RagIndexStatus): Promise<void> {
 		this.callbacks.setStatus(status);
-		this.currentFile = undefined;
-		this.indexingStartTime = undefined;
+		this.progress.finishRun();
 		if (this.ragCache.cache) {
 			this.ragCache.cache.indexingInProgress = false;
 			this.ragCache.cache.indexingStartedAt = undefined;
@@ -658,12 +636,6 @@ export class RagVaultScanner {
 	 */
 	destroy(): void {
 		this.cancelRequested = false;
-		this.failedFiles = [];
-		this.currentFile = undefined;
-		this.indexingStartTime = undefined;
-		this.runningIndexed = 0;
-		this.runningSkipped = 0;
-		this.runningFailed = 0;
-		this.indexingProgress = { current: 0, total: 0 };
+		this.progress.reset();
 	}
 }

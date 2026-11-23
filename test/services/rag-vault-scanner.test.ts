@@ -226,24 +226,24 @@ describe('RagVaultScanner', () => {
 
 		it('should return undefined for currentFile when idle', () => {
 			const { scanner } = createScanner();
-			expect(scanner.getCurrentFile()).toBeUndefined();
+			expect(scanner.getRunProgress().currentFile).toBeUndefined();
 		});
 
 		it('should return undefined for indexingStartTime when idle', () => {
 			const { scanner } = createScanner();
-			expect(scanner.getIndexingStartTime()).toBeUndefined();
+			expect(scanner.getRunProgress().startTime).toBeUndefined();
 		});
 
 		it('should return zero for running counters when idle', () => {
 			const { scanner } = createScanner();
-			expect(scanner.getRunningIndexed()).toBe(0);
-			expect(scanner.getRunningSkipped()).toBe(0);
-			expect(scanner.getRunningFailed()).toBe(0);
+			expect(scanner.getRunProgress().indexed).toBe(0);
+			expect(scanner.getRunProgress().skipped).toBe(0);
+			expect(scanner.getRunProgress().failed).toBe(0);
 		});
 
 		it('should return empty array for failedFiles when idle', () => {
 			const { scanner } = createScanner();
-			expect(scanner.getFailedFiles()).toEqual([]);
+			expect(scanner.getRunProgress().failedFiles).toEqual([]);
 		});
 	});
 
@@ -613,23 +613,23 @@ describe('RagVaultScanner', () => {
 
 			// Manually dirty some state via cast
 			(scanner as any).cancelRequested = true;
-			(scanner as any).failedFiles = [{ path: 'fail.md', error: 'err', timestamp: 1 }];
-			(scanner as any).currentFile = 'test.md';
-			(scanner as any).indexingStartTime = 12345;
-			(scanner as any).runningIndexed = 5;
-			(scanner as any).runningSkipped = 3;
-			(scanner as any).runningFailed = 1;
-			(scanner as any).indexingProgress = { current: 5, total: 10 };
+			(scanner as any).progress.failedFiles = [{ path: 'fail.md', error: 'err', timestamp: 1 }];
+			(scanner as any).progress.currentFile = 'test.md';
+			(scanner as any).progress.startTime = 12345;
+			(scanner as any).progress.indexed = 5;
+			(scanner as any).progress.skipped = 3;
+			(scanner as any).progress.failed = 1;
+			(scanner as any).progress.progress = { current: 5, total: 10 };
 
 			scanner.destroy();
 
 			expect((scanner as any).cancelRequested).toBe(false);
-			expect(scanner.getFailedFiles()).toEqual([]);
-			expect(scanner.getCurrentFile()).toBeUndefined();
-			expect(scanner.getIndexingStartTime()).toBeUndefined();
-			expect(scanner.getRunningIndexed()).toBe(0);
-			expect(scanner.getRunningSkipped()).toBe(0);
-			expect(scanner.getRunningFailed()).toBe(0);
+			expect(scanner.getRunProgress().failedFiles).toEqual([]);
+			expect(scanner.getRunProgress().currentFile).toBeUndefined();
+			expect(scanner.getRunProgress().startTime).toBeUndefined();
+			expect(scanner.getRunProgress().indexed).toBe(0);
+			expect(scanner.getRunProgress().skipped).toBe(0);
+			expect(scanner.getRunProgress().failed).toBe(0);
 			expect(scanner.getIndexingProgress()).toEqual({ current: 0, total: 0 });
 		});
 	});
@@ -644,7 +644,7 @@ describe('RagVaultScanner', () => {
 					await opts.onProgress({ type: 'start', totalFiles: 1 });
 					await opts.onProgress({ type: 'file_start', currentFile: 'notes/hello.md' });
 					// Verify mid-stream state
-					expect(scanner.getCurrentFile()).toBe('notes/hello.md');
+					expect(scanner.getRunProgress().currentFile).toBe('notes/hello.md');
 					await opts.onProgress({ type: 'complete', totalFiles: 1 });
 				}),
 			};
@@ -690,7 +690,7 @@ describe('RagVaultScanner', () => {
 			const result = await scanner.indexVault(progressCallback);
 
 			expect(result.indexed).toBe(1);
-			expect(scanner.getRunningIndexed()).toBe(1);
+			expect(scanner.getRunProgress().indexed).toBe(1);
 			// Cache should contain the file entry with computed hash
 			expect(ragCache.cache.files['note.md']).toEqual(
 				expect.objectContaining({
@@ -739,7 +739,7 @@ describe('RagVaultScanner', () => {
 			const result = await scanner.indexVault();
 
 			expect(result.skipped).toBe(1);
-			expect(scanner.getRunningSkipped()).toBe(1);
+			expect(scanner.getRunProgress().skipped).toBe(1);
 			expect(ragCache.cache.files['cached.md']).toEqual(
 				expect.objectContaining({
 					contentHash: 'skip-hash',
@@ -811,8 +811,8 @@ describe('RagVaultScanner', () => {
 			const result = await scanner.indexVault();
 
 			expect(result.failed).toBe(1);
-			expect(scanner.getRunningFailed()).toBe(1);
-			expect(scanner.getFailedFiles()).toEqual([
+			expect(scanner.getRunProgress().failed).toBe(1);
+			expect(scanner.getRunProgress().failedFiles).toEqual([
 				expect.objectContaining({
 					path: 'broken.md',
 					error: 'File read failed',
@@ -839,7 +839,7 @@ describe('RagVaultScanner', () => {
 
 			await scanner.indexVault();
 
-			expect(scanner.getFailedFiles()[0].error).toBe('string error message');
+			expect(scanner.getRunProgress().failedFiles[0].error).toBe('string error message');
 		});
 
 		it('should handle missing error in file_error event', async () => {
@@ -860,7 +860,7 @@ describe('RagVaultScanner', () => {
 
 			await scanner.indexVault();
 
-			expect(scanner.getFailedFiles()[0].error).toBe('Unknown error');
+			expect(scanner.getRunProgress().failedFiles[0].error).toBe('Unknown error');
 		});
 
 		it('should re-throw rate limit errors from file_error to trigger cooldown', async () => {
@@ -918,8 +918,8 @@ describe('RagVaultScanner', () => {
 			expect(ragCache.refreshIndexedCount).toHaveBeenCalled();
 			expect(callbacks.setStatus).toHaveBeenCalledWith('idle');
 			expect(rateLimiter.resetTracking).toHaveBeenCalled();
-			expect(scanner.getCurrentFile()).toBeUndefined();
-			expect(scanner.getIndexingStartTime()).toBeUndefined();
+			expect(scanner.getRunProgress().currentFile).toBeUndefined();
+			expect(scanner.getRunProgress().startTime).toBeUndefined();
 		});
 	});
 
