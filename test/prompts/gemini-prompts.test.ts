@@ -183,7 +183,7 @@ describe('GeminiPrompts', () => {
 			const spy = vi.spyOn(geminiPrompts, 'getSystemPromptWithCustom');
 			await geminiPrompts.buildExtendedSystemInstruction({
 				...baseRequest,
-				availableTools: [{ name: 't', description: 'd', parameters: { type: 'object', properties: {} } }],
+				availableTools: [{ name: 't', description: 'd', parameters: { type: 'object', properties: {}, required: [] } }],
 			});
 
 			expect(mockPlugin.agentsMemory.read).toHaveBeenCalledTimes(1);

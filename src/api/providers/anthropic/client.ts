@@ -329,8 +329,8 @@ export class AnthropicClient implements ModelApi {
 			description: tool.description,
 			input_schema: {
 				type: 'object' as const,
-				properties: tool.parameters.properties ?? {},
-				required: tool.parameters.required ?? [],
+				properties: tool.parameters.properties,
+				required: tool.parameters.required,
 			},
 		}));
 	}

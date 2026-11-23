@@ -97,7 +97,8 @@ export interface ToolParameterSchema {
 			items?: { type: string };
 		}
 	>;
-	required?: string[];
+	/** Always present (`[]` when nothing is required), so mappers need no fallback (#1801). */
+	required: string[];
 }
 
 /**

@@ -39,7 +39,7 @@ function makeTool(overrides: Partial<Tool> = {}): Tool {
 		category: 'vault',
 		classification: ToolClassification.READ,
 		description: 'Read a note or attachment',
-		parameters: { type: 'object', properties: {} },
+		parameters: { type: 'object', properties: {}, required: [] },
 		execute: vi.fn(),
 		...overrides,
 	};

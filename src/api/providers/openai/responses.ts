@@ -143,9 +143,9 @@ function toResponsesTools(tools: ToolDefinition[]): FunctionTool[] {
 		name: tool.name,
 		description: tool.description,
 		parameters: {
-			type: tool.parameters.type ?? 'object',
-			properties: tool.parameters.properties ?? {},
-			required: tool.parameters.required ?? [],
+			type: tool.parameters.type,
+			properties: tool.parameters.properties,
+			required: tool.parameters.required,
 		},
 		// The plugin's schemas aren't written for strict mode (every property
 		// required, additionalProperties false), so leave it off.

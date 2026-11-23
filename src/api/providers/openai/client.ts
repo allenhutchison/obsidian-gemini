@@ -538,9 +538,9 @@ export class OpenAIClient implements ModelApi, ImageGenerationApi {
 				name: tool.name,
 				description: tool.description,
 				parameters: {
-					type: tool.parameters.type ?? 'object',
-					properties: tool.parameters.properties ?? {},
-					required: tool.parameters.required ?? [],
+					type: tool.parameters.type,
+					properties: tool.parameters.properties,
+					required: tool.parameters.required,
 				},
 			},
 		}));

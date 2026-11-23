@@ -129,11 +129,9 @@ export class ToolRegistry {
 		const schema = tool.parameters;
 
 		// Check required parameters
-		if (schema.required) {
-			for (const required of schema.required) {
-				if (!(required in params)) {
-					errors.push(`Missing required parameter: ${required}`);
-				}
+		for (const required of schema.required) {
+			if (!(required in params)) {
+				errors.push(`Missing required parameter: ${required}`);
 			}
 		}
 
