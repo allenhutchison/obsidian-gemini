@@ -66,6 +66,11 @@ vi.mock('../../src/utils/error-utils', () => ({
 		return msg.includes('404') || msg.includes('not found') || msg.includes('not_found');
 	}),
 	extractStatusCode: vi.fn((err: any) => err?.status ?? null),
+	getComparableErrorText: vi.fn((err: any) => {
+		if (err === null || err === undefined) return '';
+		if (typeof err === 'object') return typeof err.message === 'string' ? err.message.toLowerCase() : '';
+		return String(err).toLowerCase();
+	}),
 }));
 
 // Mock rag-resume-modal (dynamic import in handleInterruptedIndexing)

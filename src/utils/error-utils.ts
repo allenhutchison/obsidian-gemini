@@ -12,6 +12,7 @@
  */
 
 import { t } from '../i18n';
+import { NonRetryableRequestError } from './request-errors';
 
 /**
  * Coerce an unknown value to a string-keyed record for safe property probing.
@@ -23,6 +24,37 @@ import { t } from '../i18n';
  */
 export function asRecord(value: unknown): Record<string, unknown> {
 	return value !== null && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+}
+
+/**
+ * The lowercased text to keyword-match an unknown error value against (#1719).
+ *
+ * This is the single owner of the message half of error classification, the
+ * way `extractStatusCode` owns the structured half. Every predicate accepts the
+ * same input domain:
+ *
+ * - an `Error`, or any object, contributes its `.message` when that is a
+ *   string or a number (some SDKs report `message: 429`);
+ * - an object with no usable `.message` contributes `''`, since its base
+ *   stringification (`'[object Object]'`) could never match a keyword;
+ * - a primitive (a string persisted as `lastError`, a bare number) is
+ *   stringified;
+ * - `null` and `undefined` contribute `''`.
+ *
+ * @param error - Any thrown or stored error value.
+ * @returns The lowercased comparable text, or `''` when there is none.
+ */
+export function getComparableErrorText(error: unknown): string {
+	if (error === null || error === undefined) return '';
+	if (typeof error === 'object' || typeof error === 'function') {
+		const message: unknown = asRecord(error).message;
+		if (typeof message === 'string') return message.toLowerCase();
+		if (typeof message === 'number') return String(message);
+		return '';
+	}
+	if (typeof error === 'string') return error.toLowerCase();
+	if (typeof error === 'number' || typeof error === 'boolean' || typeof error === 'bigint') return String(error);
+	return '';
 }
 
 /**
@@ -102,6 +134,9 @@ function isAnthropicAuthError(error: Record<string, unknown>): boolean {
  * `error.response.data.error.details`, or embedded as JSON in `error.message`.
  */
 export function extractErrorDetails(error: unknown): unknown[] {
+	// An error already flattened to its message (a persisted `lastError`) can
+	// still carry the embedded JSON details (#1719).
+	if (typeof error === 'string') return detailsFromEmbeddedJson(error);
 	if (!error || typeof error !== 'object') return [];
 	const err = asRecord(error);
 
@@ -115,20 +150,24 @@ export function extractErrorDetails(error: unknown): unknown[] {
 	if (Array.isArray(responseError.details)) return responseError.details;
 
 	// Try to parse details from the error message (Google SDK sometimes embeds JSON)
-	if (typeof err.message === 'string') {
-		try {
-			const start = err.message.indexOf('{');
-			const end = err.message.lastIndexOf('}');
-			if (start !== -1 && end > start) {
-				const parsed = asRecord(JSON.parse(err.message.slice(start, end + 1)));
-				const details = parsed.details ?? asRecord(parsed.error).details;
-				if (Array.isArray(details)) return details;
-			}
-		} catch {
-			// Not parseable, that's fine
-		}
-	}
+	if (typeof err.message === 'string') return detailsFromEmbeddedJson(err.message);
 
+	return [];
+}
+
+/** The `details` array of a JSON object embedded in `text`, or `[]`. */
+function detailsFromEmbeddedJson(text: string): unknown[] {
+	try {
+		const start = text.indexOf('{');
+		const end = text.lastIndexOf('}');
+		if (start !== -1 && end > start) {
+			const parsed = asRecord(JSON.parse(text.slice(start, end + 1)));
+			const details = parsed.details ?? asRecord(parsed.error).details;
+			if (Array.isArray(details)) return details;
+		}
+	} catch {
+		// Not parseable, that's fine
+	}
 	return [];
 }
 
@@ -154,24 +193,16 @@ export function isQuotaExhausted(error: unknown): boolean {
 		}
 	}
 
-	// Fall back to message-based detection for SDK errors that flatten details
-	if (error && typeof error === 'object') {
-		// No String(error) fallback: base Object stringification ('[object Object]')
-		// can never match the keyword checks below.
-		const message: unknown = asRecord(error).message;
-		const messageLower = typeof message === 'string' ? message.toLowerCase() : '';
-		if (
-			messageLower.includes('resource_exhausted') &&
-			(messageLower.includes('freetier') ||
-				messageLower.includes('free-tier') ||
-				messageLower.includes('free tier') ||
-				messageLower.includes('limit: 0'))
-		) {
-			return true;
-		}
-	}
-
-	return false;
+	// Fall back to message-based detection for SDK errors that flatten details,
+	// and for errors already stringified (a persisted `lastError`).
+	const messageLower = getComparableErrorText(error);
+	return (
+		messageLower.includes('resource_exhausted') &&
+		(messageLower.includes('freetier') ||
+			messageLower.includes('free-tier') ||
+			messageLower.includes('free tier') ||
+			messageLower.includes('limit: 0'))
+	);
 }
 
 /**
@@ -184,22 +215,16 @@ export function isRateLimitError(error: unknown): boolean {
 	const statusCode = extractStatusCode(error);
 	if (statusCode === 429) return true;
 
-	if (typeof error === 'object') {
-		const message: unknown = asRecord(error).message || '';
-		// Numeric messages (e.g. `message: 429`) stringify to something matchable;
-		// any other non-string shape could only ever yield '[object Object]'.
-		const messageLower =
-			typeof message === 'string' ? message.toLowerCase() : typeof message === 'number' ? String(message) : '';
-		return (
-			messageLower.includes('429') ||
-			messageLower.includes('resource_exhausted') ||
-			messageLower.includes('rate limit') ||
-			messageLower.includes('quota exceeded') ||
-			messageLower.includes('too many requests')
-		);
-	}
-
-	return false;
+	// Same input domain as every other predicate, so a stringified 429 (a
+	// persisted `lastError`) still classifies (#1719).
+	const messageLower = getComparableErrorText(error);
+	return (
+		messageLower.includes('429') ||
+		messageLower.includes('resource_exhausted') ||
+		messageLower.includes('rate limit') ||
+		messageLower.includes('quota exceeded') ||
+		messageLower.includes('too many requests')
+	);
 }
 
 /**
@@ -231,7 +256,7 @@ export function isNotFoundError(error: unknown): boolean {
 	const statusCode = structuredStatusCode(error);
 	if (statusCode !== null) return statusCode === 404;
 
-	const message = getRawErrorMessage(error).toLowerCase();
+	const message = getComparableErrorText(error);
 	return message.includes('404') || message.includes('not found') || message.includes('not_found');
 }
 
@@ -283,13 +308,21 @@ export function getErrorMessage(error: unknown): string {
 		return error;
 	}
 
+	// Our own pre-flight failures (no model selected, Ollama Cloud with no key,
+	// an attachment the provider can't take) are already user-facing guidance.
+	// Pass them through rather than letting a keyword below, like "API key",
+	// swap them for generic text that misdescribes the problem (#1791).
+	if (error instanceof NonRetryableRequestError) {
+		return error.message;
+	}
+
 	// Handle Error objects
 	if (error instanceof Error) {
 		// Check for specific error patterns in the message FIRST so provider-specific
 		// guidance (e.g. Ollama 404 "try pulling it first") wins over the generic
 		// HTTP status-code mapping below.
 		const message = error.message;
-		const messageLower = message.toLowerCase();
+		const messageLower = getComparableErrorText(error);
 
 		// OpenAI/Anthropic SDK errors get provider-specific guidance for the two
 		// status codes generic wording serves poorly: 401 should point at that
