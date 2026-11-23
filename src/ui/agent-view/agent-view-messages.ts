@@ -45,7 +45,8 @@ export class AgentViewMessages {
 	private userInput: HTMLDivElement;
 	private scrollTimeout: number | null = null;
 	private autoOpenDiffTimeout: number | null = null;
-	private pendingConfirmations = new Set<(result: ConfirmationResult) => void>();
+	/** Settle-as-cancelled callbacks for the tool-permission cards still on screen. */
+	private pendingConfirmations = new Set<() => void>();
 	private pendingPlanApproval: ((approved: boolean) => void) | null = null;
 	private viewContext: Component; // For MarkdownRenderer context
 
@@ -770,7 +771,12 @@ export class AgentViewMessages {
 		diffContext?: DiffContext
 	): Promise<ConfirmationResult> {
 		return new Promise((resolve) => {
-			this.pendingConfirmations.add(resolve);
+			// Settling from outside (Stop, a new turn, view close) goes through the
+			// same path as the Cancel button, so the card shows the denial and
+			// any open diff view closes. `cancelHandler` is defined below; this
+			// closure only runs after the executor has finished.
+			const settleAsCancelled = () => cancelHandler();
+			this.pendingConfirmations.add(settleAsCancelled);
 			let resolved = false; // Prevent double-resolution race condition
 			let diffViewOpen = false; // Track whether the diff view is currently open
 			let activeDiffView: import('./gemini-diff-view').GeminiDiffView | null = null; // Reference to the open diff view
@@ -890,7 +896,7 @@ export class AgentViewMessages {
 			const handleResponse = (confirmed: boolean, finalContent?: string, userEdited?: boolean) => {
 				if (resolved) return;
 				resolved = true;
-				this.pendingConfirmations.delete(resolve);
+				this.pendingConfirmations.delete(settleAsCancelled);
 
 				// Disable buttons to prevent double-click
 				allowBtn.disabled = true;
@@ -930,6 +936,12 @@ export class AgentViewMessages {
 					ctx,
 					handleResponse,
 					(view) => {
+						// The card settled (Stop, a new turn) while the view was loading:
+						// close it rather than leave a diff open for a denied request.
+						if (resolved) {
+							view.leaf.detach();
+							return;
+						}
 						diffViewOpen = true;
 						activeDiffView = view;
 					},
@@ -973,6 +985,8 @@ export class AgentViewMessages {
 				}
 				this.autoOpenDiffTimeout = window.setTimeout(() => {
 					this.autoOpenDiffTimeout = null;
+					// The card settled before the delay elapsed; don't open a diff for it.
+					if (resolved) return;
 					// Fire-and-forget: auto-opening the diff view is a UI side effect.
 					openDiffForReview(diffContext);
 				}, 100);
@@ -1130,14 +1144,24 @@ export class AgentViewMessages {
 		}
 
 		// Settle any pending confirmation promises so tool executions don't hang
-		for (const resolve of this.pendingConfirmations) {
-			resolve({ confirmed: false, allowWithoutConfirmation: false, userEdited: false });
-		}
-		this.pendingConfirmations.clear();
+		this.settlePendingConfirmations();
 
 		// Settle a pending plan approval (view closed while the approval card is
 		// showing) so conductPlanApproval doesn't hang awaiting a button click.
 		this.settlePendingPlanApproval(false);
+	}
+
+	/**
+	 * Settle every tool-permission card still awaiting a click as cancelled —
+	 * e.g. on Stop, when a new turn replaces the one that asked, or on view
+	 * teardown. Each card shows its denial and its promise resolves with
+	 * `confirmed: false`. No-op when no card is pending.
+	 */
+	public settlePendingConfirmations(): void {
+		for (const settle of [...this.pendingConfirmations]) {
+			settle();
+		}
+		this.pendingConfirmations.clear();
 	}
 
 	/**

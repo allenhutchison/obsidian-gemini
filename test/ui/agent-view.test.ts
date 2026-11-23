@@ -198,7 +198,11 @@ describe('AgentView UI Tests', () => {
 				getUserInput: () => (agentView as any).userInput,
 				getSendButton: () => (agentView as any).sendButton,
 				progress: (agentView as any).progress || { show: vi.fn(), hide: vi.fn(), update: vi.fn() },
-				messages: (agentView as any).messages || { displayMessage: vi.fn(), settlePendingPlanApproval: vi.fn() },
+				messages: (agentView as any).messages || {
+					displayMessage: vi.fn(),
+					settlePendingPlanApproval: vi.fn(),
+					settlePendingConfirmations: vi.fn(),
+				},
 				tools: (agentView as any).tools || { handleToolCalls: vi.fn() },
 				session: (agentView as any).session || { autoLabelSessionIfNeeded: vi.fn() },
 				displayMessage: (agentView as any).displayMessage || vi.fn(),
@@ -1196,8 +1200,9 @@ describe('AgentView UI Tests', () => {
 			};
 			(sendButton as any).empty = vi.fn();
 			(agentView as any).sendButton = sendButton;
-			(agentView as any).send['isExecuting'] = true;
-			(agentView as any).send['cancellationRequested'] = false;
+			const turn = { cancelled: false, stream: null as unknown, toolCallCount: 0 };
+			(agentView as any).send['activeTurn'] = turn;
+			(agentView as any).send['lastTurn'] = turn;
 
 			// Mock chatContainer
 			const mockChatContainer = document.createElement('div');
@@ -1220,7 +1225,7 @@ describe('AgentView UI Tests', () => {
 			const mockStreamingResponse = {
 				cancel: vi.fn(),
 			};
-			(agentView as any).send['currentStreamingResponse'] = mockStreamingResponse;
+			turn.stream = mockStreamingResponse;
 
 			// Call stopAgentLoop via the send component
 			await (agentView as any).send.stopAgentLoop();
@@ -1240,8 +1245,8 @@ describe('AgentView UI Tests', () => {
 		it('should prevent further tool execution after cancellation', async () => {
 			await agentView.onOpen();
 
-			// Set cancellation flag on the send component
-			(agentView as any).send['cancellationRequested'] = true;
+			// Mark the most recent turn as stopped on the send component
+			(agentView as any).send['lastTurn'] = { cancelled: true, stream: null, toolCallCount: 0 };
 
 			// Verify flag is set
 			expect((agentView as any).send.isCancellationRequested()).toBe(true);
@@ -1261,8 +1266,9 @@ describe('AgentView UI Tests', () => {
 			};
 			(sendButton as any).empty = vi.fn();
 			(agentView as any).sendButton = sendButton;
-			(agentView as any).send['isExecuting'] = true;
-			(agentView as any).send['cancellationRequested'] = true;
+			// Stop has already released ownership of the (cancelled) turn
+			(agentView as any).send['activeTurn'] = null;
+			(agentView as any).send['lastTurn'] = { cancelled: true, stream: null, toolCallCount: 0 };
 
 			// Call resetExecutionUiState via send component
 			await (agentView as any).send['resetExecutionUiState']();
@@ -1285,7 +1291,7 @@ describe('AgentView UI Tests', () => {
 			(agentView as any).sendButton = sendButton;
 
 			// Simulate already reset state (isExecuting = false)
-			(agentView as any).send['isExecuting'] = false;
+			(agentView as any).send['activeTurn'] = null;
 
 			// Track if resetExecutionUiState was called on the send component
 			const resetSpy = vi.spyOn((agentView as any).send, 'resetExecutionUiState');
@@ -1327,7 +1333,7 @@ describe('AgentView UI Tests', () => {
 			};
 
 			// Test when not executing - should send
-			send['isExecuting'] = false;
+			send['activeTurn'] = null;
 			handleClick();
 			expect(sendMessageCalled).toBe(true);
 			expect(stopAgentLoopCalled).toBe(false);
@@ -1337,7 +1343,7 @@ describe('AgentView UI Tests', () => {
 			stopAgentLoopCalled = false;
 
 			// Test when executing - should stop
-			send['isExecuting'] = true;
+			send['activeTurn'] = { cancelled: false, stream: null, toolCallCount: 0 };
 			handleClick();
 			expect(sendMessageCalled).toBe(false);
 			expect(stopAgentLoopCalled).toBe(true);
@@ -1379,7 +1385,7 @@ describe('AgentView UI Tests', () => {
 
 			// Set cancellation flag (simulating previous stop) on the send component
 			const send = (agentView as any).send;
-			send['cancellationRequested'] = true;
+			send['lastTurn'] = { cancelled: true, stream: null, toolCallCount: 0 };
 
 			// Mock displayMessage on the send context to throw early and stop execution after flag reset
 			send['ctx'].displayMessage = vi.fn().mockRejectedValue(new Error('Stop execution here'));

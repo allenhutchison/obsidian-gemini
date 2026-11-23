@@ -828,6 +828,113 @@ describe('ContextManager', () => {
 			expect((await contextManager.getTokenUsage('gemini-2.5-flash')).estimatedTokens).toBe(result.estimatedTokens);
 		});
 
+		describe('cache revision after a rewrite (#1699)', () => {
+			function fatToolHistory() {
+				const fatResponse = { success: true, content: 'x'.repeat(600_000) };
+				const smallResponse = { success: true, files: ['a'] };
+				return [
+					{ role: 'user', parts: [{ text: 'go' }] },
+					{ role: 'model', parts: [{ functionCall: { name: 'read_file', args: { path: 'big.md' } } }] },
+					{ role: 'user', parts: [{ functionResponse: { name: 'read_file', response: fatResponse } }] },
+					{ role: 'model', parts: [{ text: 'reasoning…' }] },
+					{ role: 'user', parts: [{ text: 'now list' }] },
+					{ role: 'model', parts: [{ functionCall: { name: 'list_files', args: {} } }] },
+					{ role: 'user', parts: [{ functionResponse: { name: 'list_files', response: smallResponse } }] },
+					{ role: 'model', parts: [{ text: 'thinking' }] },
+					{ role: 'user', parts: [{ text: 'and one more' }] },
+					{ role: 'model', parts: [{ functionCall: { name: 'list_files', args: {} } }] },
+					{ role: 'user', parts: [{ functionResponse: { name: 'list_files', response: smallResponse } }] },
+				];
+			}
+
+			test('a truncation-only pass keeps thoughtsTokenCount and withholds the cached share until the next report', async () => {
+				contextManager.updateUsageMetadata({
+					promptTokenCount: 220_000,
+					totalTokenCount: 230_000,
+					cachedContentTokenCount: 100_000,
+					thoughtsTokenCount: 4_000,
+				});
+
+				const result = await contextManager.prepareHistory(fatToolHistory(), 'gemini-2.5-flash');
+				expect(result.wasCompacted).toBe(false);
+
+				const usage = await contextManager.getTokenUsage('gemini-2.5-flash');
+				expect(usage.estimatedTokens).toBe(result.estimatedTokens);
+				// The kept cached count is from the old report and the prompt count is our
+				// revised estimate, so their ratio is meaningless (and can top 100%).
+				expect(usage.cachedTokens).toBe(0);
+				expect(usage.thoughtsTokens).toBe(4_000);
+
+				// The next real report restores the cached share.
+				contextManager.updateUsageMetadata({
+					promptTokenCount: result.estimatedTokens,
+					totalTokenCount: result.estimatedTokens,
+					cachedContentTokenCount: 20_000,
+				});
+				expect((await contextManager.getTokenUsage('gemini-2.5-flash')).cachedTokens).toBe(20_000);
+			});
+
+			test('a force-set after a revision reports its cached count again', async () => {
+				contextManager.updateUsageMetadata({
+					promptTokenCount: 220_000,
+					totalTokenCount: 230_000,
+					cachedContentTokenCount: 100_000,
+				});
+				await contextManager.prepareHistory(fatToolHistory(), 'gemini-2.5-flash');
+				contextManager.setUsageMetadata({ promptTokenCount: 50_000, cachedContentTokenCount: 10_000 });
+				expect((await contextManager.getTokenUsage('gemini-2.5-flash')).cachedTokens).toBe(10_000);
+			});
+
+			test('an optimistic post-truncation estimate still accepts the next, lower real report', async () => {
+				contextManager.updateUsageMetadata({ promptTokenCount: 220_000, totalTokenCount: 230_000 });
+				const result = await contextManager.prepareHistory(fatToolHistory(), 'gemini-2.5-flash');
+
+				const real = Math.max(1, result.estimatedTokens - 10_000);
+				contextManager.updateUsageMetadata({ promptTokenCount: real, totalTokenCount: real });
+				expect((await contextManager.getTokenUsage('gemini-2.5-flash')).estimatedTokens).toBe(real);
+
+				// Only the next report is accepted lower; the high-water mark resumes after it.
+				contextManager.updateUsageMetadata({ promptTokenCount: real - 1, totalTokenCount: real - 1 });
+				expect((await contextManager.getTokenUsage('gemini-2.5-flash')).estimatedTokens).toBe(real);
+			});
+
+			test('the pass-through exits do not touch the cache', async () => {
+				contextManager.updateUsageMetadata({
+					promptTokenCount: 50_000,
+					totalTokenCount: 60_000,
+					cachedContentTokenCount: 30_000,
+				});
+				await contextManager.prepareHistory(fatToolHistory(), 'gemini-2.5-flash');
+				const usage = await contextManager.getTokenUsage('gemini-2.5-flash');
+				expect(usage.estimatedTokens).toBe(50_000);
+				expect(usage.cachedTokens).toBe(30_000);
+
+				// And a lower report is still rejected under the high-water mark.
+				contextManager.updateUsageMetadata({ promptTokenCount: 40_000, totalTokenCount: 40_000 });
+				expect((await contextManager.getTokenUsage('gemini-2.5-flash')).estimatedTokens).toBe(50_000);
+			});
+
+			test('phase 2 revises the cache itself, so callers need not', async () => {
+				contextManager.updateUsageMetadata({
+					promptTokenCount: 850_000,
+					totalTokenCount: 900_000,
+					cachedContentTokenCount: 10_000,
+				});
+				mockCountTokens.mockResolvedValue({ totalTokens: 50_000 });
+				const history = Array.from({ length: 20 }, (_, i) => ({
+					role: i % 2 === 0 ? 'user' : 'model',
+					parts: [{ text: `Message ${i} `.repeat(100) }],
+				}));
+
+				const result = await contextManager.prepareHistory(history, 'gemini-2.5-flash');
+				expect(result.wasCompacted).toBe(true);
+				const usage = await contextManager.getTokenUsage('gemini-2.5-flash');
+				expect(usage.estimatedTokens).toBe(50_000);
+				// Withheld: 10k cached was measured against the old 850k prompt.
+				expect(usage.cachedTokens).toBe(0);
+			});
+		});
+
 		test('does not truncate under threshold even when big tool results are present (cache preservation)', async () => {
 			// Modifying older history bytes invalidates Gemini's prefix cache for
 			// the rest of the prompt. So when we're still under the compaction
@@ -1117,6 +1224,20 @@ describe('ContextManager', () => {
 				expect(result.compactedHistory).toEqual(history);
 				expect(mockGenerateContent).not.toHaveBeenCalled();
 			});
+
+			test('a fully protected, unchanged history keeps the cached high-water mark (#1699)', async () => {
+				contextManager.updateUsageMetadata({ promptTokenCount: 250_000, totalTokenCount: 300_000 });
+				const history = Array.from({ length: 20 }, (_, i) => ({
+					role: i % 2 === 0 ? 'user' : 'model',
+					parts: [{ text: `Message ${i}` }],
+				}));
+
+				await contextManager.prepareHistory(history, 'gemini-2.5-flash', { protectFromIndex: 0 });
+
+				// Nothing was rewritten, so a lower report is still rejected.
+				contextManager.updateUsageMetadata({ promptTokenCount: 240_000, totalTokenCount: 240_000 });
+				expect((await contextManager.getTokenUsage('gemini-2.5-flash')).estimatedTokens).toBe(250_000);
+			});
 		});
 
 		describe('Ollama calibration seeding', () => {
@@ -1179,6 +1300,25 @@ describe('ContextManager', () => {
 				const recalibratedEstimate = await ollamaCtx.countTokens('llama3.2', history);
 				expect(recalibratedEstimate).toBeLessThan(baselineEstimate);
 			});
+		});
+
+		test('reviseCachedEstimate re-seeds calibration from the history actually sent (#1699)', async () => {
+			const ollamaCtx = new ContextManager(
+				{ ...mockPlugin, apiKey: '', settings: routedSettings(mockPlugin.settings, { chat: 'ollama' }) },
+				mockLogger
+			);
+			const big = [{ role: 'user', parts: [{ text: 'b'.repeat(40_000) }] }];
+			const sent = [{ role: 'user', parts: [{ text: 's'.repeat(4_000) }] }];
+			const baseline = await ollamaCtx.countTokens('llama3.2-baseline', sent);
+
+			// Seed from the larger pre-rewrite history, then revise to what is sent.
+			await ollamaCtx.prepareHistory(big, 'llama3.2');
+			ollamaCtx.reviseCachedEstimate('llama3.2', sent, baseline);
+
+			// The provider reports exactly the default-ratio count for `sent`, so a
+			// correctly seeded calibration leaves the ratio, and the estimate, unchanged.
+			ollamaCtx.updateUsageMetadata({ promptTokenCount: baseline, totalTokenCount: baseline }, 'llama3.2');
+			expect(await ollamaCtx.countTokens('llama3.2', sent)).toBe(baseline);
 		});
 
 		// The estimate-and-calibrate path is selected by capability (no

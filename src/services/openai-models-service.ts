@@ -24,6 +24,13 @@ interface OpenAIModelMetadata {
 const GPT56_INPUT_TOKEN_LIMIT = 922_000;
 
 /**
+ * GPT-6 family input limit, from OpenAI's model cards (1,050,000 context minus
+ * 128,000 output; the gpt-6.2 cards list 922,000 max input). Not yet measured
+ * against the live API the way GPT56_INPUT_TOKEN_LIMIT was.
+ */
+const GPT6_INPUT_TOKEN_LIMIT = 922_000;
+
+/**
  * Curated metadata for known OpenAI-hosted models, keyed by the model id
  * returned from `/v1/models`. Unknown ids — OpenAI-compatible local servers
  * (LM Studio, MLX, ...) whose catalog we have no curated data for — fall back
@@ -36,17 +43,20 @@ const KNOWN_OPENAI_MODELS: Record<string, OpenAIModelMetadata> = {
 	'gpt-5.6-sol': { contextWindow: GPT56_INPUT_TOKEN_LIMIT, supportsVision: true, defaultForRoles: ['chat'] },
 	'gpt-5.6-terra': { contextWindow: GPT56_INPUT_TOKEN_LIMIT, supportsVision: true, defaultForRoles: ['summary'] },
 	'gpt-5.6-luna': { contextWindow: GPT56_INPUT_TOKEN_LIMIT, supportsVision: true, defaultForRoles: ['completions'] },
-	// GPT-6 / GPT-6.1 (#1755). Offered for chat, summary, rewrite and
-	// completions, but not as defaults. Their input limits haven't been
-	// measured yet (see GPT56_INPUT_TOKEN_LIMIT for how), so no contextWindow
-	// is declared and compaction uses its conservative default. On Chat
-	// Completions, gpt-6-sol/luna take tools only with reasoning off, and
-	// gpt-6.1-* and gpt-6-astra take no tools at all; OpenAIClient applies both.
-	'gpt-6-sol': { supportsVision: true },
-	'gpt-6-luna': { supportsVision: true },
-	'gpt-6-astra': { supportsVision: true },
-	'gpt-6.1-sol': { supportsVision: true },
-	'gpt-6.1-terra': { supportsVision: true },
+	// GPT-6 / GPT-6.1 / GPT-6.2 (#1755, #1797). Offered for chat, summary,
+	// rewrite and completions, but not as defaults. OpenAI's model cards give
+	// every one of them a 1,050,000-token context window with 128,000 output
+	// tokens, so the same 922,000 input limit as GPT-5.6 (the gpt-6.2 cards
+	// state that input limit outright). On Chat Completions, gpt-6-sol/luna
+	// take tools only with reasoning off, and gpt-6.1-*, gpt-6.2-* and
+	// gpt-6-astra take no tools at all; OpenAIClient applies both.
+	'gpt-6-sol': { contextWindow: GPT6_INPUT_TOKEN_LIMIT, supportsVision: true },
+	'gpt-6-luna': { contextWindow: GPT6_INPUT_TOKEN_LIMIT, supportsVision: true },
+	'gpt-6-astra': { contextWindow: GPT6_INPUT_TOKEN_LIMIT, supportsVision: true },
+	'gpt-6.1-sol': { contextWindow: GPT6_INPUT_TOKEN_LIMIT, supportsVision: true },
+	'gpt-6.1-terra': { contextWindow: GPT6_INPUT_TOKEN_LIMIT, supportsVision: true },
+	'gpt-6.2-sol': { contextWindow: GPT6_INPUT_TOKEN_LIMIT, supportsVision: true },
+	'gpt-6.2-astra': { contextWindow: GPT6_INPUT_TOKEN_LIMIT, supportsVision: true },
 	// Dedicated Images API models. Flare is the everyday default; Sunburst is
 	// available when editing precision and maximum fidelity matter more.
 	'gpt-image-2.5-flare': {
@@ -55,6 +65,15 @@ const KNOWN_OPENAI_MODELS: Record<string, OpenAIModelMetadata> = {
 		supportsImageGeneration: true,
 	},
 	'gpt-image-2.5-sunburst': {
+		supportsVision: false,
+		supportsImageGeneration: true,
+	},
+	// Images 2.6 (#1797). Offered alongside 2.5; 2.5 Flare stays the default.
+	'gpt-image-2.6-flare': {
+		supportsVision: false,
+		supportsImageGeneration: true,
+	},
+	'gpt-image-2.6-sunburst': {
 		supportsVision: false,
 		supportsImageGeneration: true,
 	},

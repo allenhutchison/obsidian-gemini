@@ -2,6 +2,7 @@ import { getLanguage } from 'obsidian';
 import { locales } from '../../src/i18n';
 import {
 	describeSdkApiError,
+	getComparableErrorText,
 	getErrorMessage,
 	getRawErrorMessage,
 	getRawErrorMessageOr,
@@ -11,6 +12,7 @@ import {
 	isRateLimitError,
 	truncateStoredError,
 } from '../../src/utils/error-utils';
+import { NonRetryableRequestError } from '../../src/utils/request-errors';
 
 describe('error-utils', () => {
 	describe('getRawErrorMessage', () => {
@@ -574,6 +576,16 @@ describe('error-utils', () => {
 			expect(isQuotaExhausted(error)).toBe(true);
 		});
 
+		test('detects QuotaFailure embedded as JSON in an error already flattened to a string', () => {
+			const error =
+				'RESOURCE_EXHAUSTED: {"details":[{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"tokens","limit":0}]}]}';
+			expect(isQuotaExhausted(error)).toBe(true);
+		});
+
+		test('keeps an ordinary RESOURCE_EXHAUSTED string transient', () => {
+			expect(isQuotaExhausted('RESOURCE_EXHAUSTED: rate limit exceeded, retry later')).toBe(false);
+		});
+
 		test('returns false for embedded JSON with non-zero limit', () => {
 			const error = new Error(
 				'RESOURCE_EXHAUSTED: {"details":[{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"limit":500}]}]}'
@@ -818,6 +830,67 @@ describe('error-utils', () => {
 
 		test('uses the detail-free fallback for a non-4xx/5xx status with no message', () => {
 			expect(getErrorMessage({ status: 302 })).toBe('HTTP error 302: An unexpected error occurred.');
+		});
+	});
+
+	// #1719: one normalizer owns the message half of classification, so every
+	// predicate accepts the same input domain.
+	describe('getComparableErrorText', () => {
+		test('Error → lowercased message', () => {
+			expect(getComparableErrorText(new Error('Rate LIMIT hit'))).toBe('rate limit hit');
+		});
+		test('object with a string message → lowercased message', () => {
+			expect(getComparableErrorText({ message: 'NOT_FOUND' })).toBe('not_found');
+		});
+		test('object with a numeric message → its digits', () => {
+			expect(getComparableErrorText({ message: 429 })).toBe('429');
+		});
+		test('bare string → lowercased string', () => {
+			expect(getComparableErrorText('Plain 429 String')).toBe('plain 429 string');
+		});
+		test("object with no usable message → '' (never '[object Object]')", () => {
+			expect(getComparableErrorText({ code: 5 })).toBe('');
+			expect(getComparableErrorText({ message: { nested: true } })).toBe('');
+		});
+		test("null and undefined → ''", () => {
+			expect(getComparableErrorText(null)).toBe('');
+			expect(getComparableErrorText(undefined)).toBe('');
+		});
+	});
+
+	describe('predicate input domain (#1719)', () => {
+		test('a stringified 429 classifies as a rate limit, like a stringified 404 classifies as not-found', () => {
+			expect(isNotFoundError('plain 404 string')).toBe(true);
+			expect(isRateLimitError('plain 429 string')).toBe(true);
+			expect(isRateLimitError('Error: Too Many Requests')).toBe(true);
+		});
+		test('a stringified free-tier RESOURCE_EXHAUSTED classifies as quota exhaustion', () => {
+			expect(isQuotaExhausted('RESOURCE_EXHAUSTED: limit: 0 for free tier')).toBe(true);
+			expect(isQuotaExhausted('RESOURCE_EXHAUSTED: try again later')).toBe(false);
+		});
+		test('{ message: <number> } is inspected by every predicate', () => {
+			expect(isRateLimitError({ message: 429 })).toBe(true);
+			expect(isNotFoundError({ message: 404 })).toBe(true);
+		});
+		test('an object with no message matches nothing', () => {
+			expect(isRateLimitError({ foo: 'bar' })).toBe(false);
+			expect(isQuotaExhausted({ foo: 'bar' })).toBe(false);
+			expect(isNotFoundError({ foo: 'bar' })).toBe(false);
+		});
+		test('unrelated strings stay unclassified', () => {
+			expect(isRateLimitError('disk full')).toBe(false);
+			expect(isQuotaExhausted('disk full')).toBe(false);
+		});
+	});
+
+	// #1791: our own pre-flight messages are already user-facing.
+	describe('getErrorMessage — NonRetryableRequestError passes through', () => {
+		test('a message mentioning "API key" is not swapped for the generic invalid-key text', () => {
+			const message = 'Ollama Cloud needs an API key. Add one on the Ollama card in Settings → Providers.';
+			expect(getErrorMessage(new NonRetryableRequestError(message))).toBe(message);
+		});
+		test('a plain Error mentioning "API key" still maps to the generic text', () => {
+			expect(getErrorMessage(new Error('Invalid API key provided'))).not.toBe('Invalid API key provided');
 		});
 	});
 });

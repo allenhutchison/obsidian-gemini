@@ -114,6 +114,12 @@ describe('retry utilities', () => {
 	});
 
 	describe('isRetryableApiError', () => {
+		it('does not retry a string error carrying embedded limit-0 quota details', () => {
+			const error =
+				'RESOURCE_EXHAUSTED: {"details":[{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"tokens","limit":0}]}]}';
+			expect(isRetryableApiError(error)).toBe(false);
+		});
+
 		test('400 Bad Request is not retryable', () => {
 			const error = { status: 400, message: 'Bad request' };
 			expect(isRetryableApiError(error)).toBe(false);
@@ -548,6 +554,26 @@ describe('retry utilities', () => {
 				expect(await promise).toBe('ok');
 				expect(op).toHaveBeenCalledTimes(2);
 			});
+		});
+	});
+
+	// #1719: the retry predicates share error-utils' input domain.
+	describe('widened input domain (#1719)', () => {
+		test('isTransientNetworkError accepts a stringified error and { message }', () => {
+			expect(isTransientNetworkError('Error: ECONNRESET')).toBe(true);
+			expect(isTransientNetworkError({ message: 'socket hang up' })).toBe(true);
+			expect(isTransientNetworkError('bad request')).toBe(false);
+			expect(isTransientNetworkError(null)).toBe(false);
+		});
+		test('a stringified free-tier quota exhaustion is not retryable', () => {
+			expect(isRetryableApiError('RESOURCE_EXHAUSTED: limit: 0 (free tier)')).toBe(false);
+		});
+		test('permanent quota exhaustion wins over a network keyword in the same text', () => {
+			expect(isRetryableApiError('RESOURCE_EXHAUSTED: limit: 0 (free tier) after network reset')).toBe(false);
+			expect(isRetryableApiError(new Error('RESOURCE_EXHAUSTED: limit: 0, ECONNRESET'))).toBe(false);
+		});
+		test('a stringified transient rate limit stays retryable', () => {
+			expect(isRetryableApiError('rate limit exceeded, slow down')).toBe(true);
 		});
 	});
 });

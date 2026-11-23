@@ -342,7 +342,14 @@ function makeSendMessageCtx(chatModel: string) {
 		message: 'hi',
 		savedAttachments: [],
 	});
-	vi.spyOn(internals, 'beginExecutionUi').mockImplementation(() => {});
+	// Stand in for the Stop-button UI while still registering the turn, so
+	// the turn-scoped progress and cleanup paths run as they do for real.
+	vi.spyOn(internals, 'beginExecutionUi').mockImplementation(() => {
+		const turn = { cancelled: false, stream: null, toolCallCount: 0 };
+		internals.activeTurn = turn;
+		return turn;
+	});
+	vi.spyOn(internals, 'resetExecutionUiState').mockImplementation(() => {});
 	return { send, internals, progress, capture, addEntryToSession };
 }
 
@@ -373,7 +380,7 @@ describe('AgentViewSend.sendMessage model snapshot', () => {
 		await send.sendMessage();
 
 		expect(assemble).toHaveBeenCalledTimes(1);
-		expect(assemble.mock.calls[0][7]).toEqual({ model: 'llama3.2', provider: 'ollama' });
+		expect(assemble.mock.calls[0][8]).toEqual({ model: 'llama3.2', provider: 'ollama' });
 	});
 
 	test('hides progress when turn assembly fails', async () => {

@@ -64,7 +64,12 @@ export interface CompactionResult {
 	 *  surface a "Context Compacted" notification gate on the conjunction
 	 *  (see agent-view-send.ts) so phase 1 stays silent. */
 	wasCompacted: boolean;
-	/** Current estimated token count */
+	/** Current estimated token count, for display.
+	 *
+	 *  Callers must not persist it into the usage cache: whenever
+	 *  `prepareHistory` rewrites the history (truncation or summarization) it
+	 *  already revises the cached usage itself, via `reviseCachedEstimate`
+	 *  (#1699). */
 	estimatedTokens: number;
 	/** Summary text that was generated (only set when phase 2 ran) */
 	summaryText?: string;
@@ -110,6 +115,13 @@ function endOnUserTurn(contents: Content[]): Content[] {
 export class ContextManager {
 	private lastUsageMetadata: UsageMetadata | null = null;
 	private acceptNextLowerUpdate = false;
+	/**
+	 * True while `lastUsageMetadata.promptTokenCount` is our own revised estimate
+	 * and `cachedContentTokenCount` still comes from the provider's last report.
+	 * The two describe different observations, so the cached share is withheld
+	 * from `getTokenUsage` until the next real report (#1699).
+	 */
+	private promptIsRevisedEstimate = false;
 	private ai: GoogleGenAI | null;
 	/** Per-model chars-per-token ratio for estimate-based providers, calibrated from real usage metadata. */
 	private estimatedCharsPerToken: Map<string, number> = new Map();
@@ -188,6 +200,7 @@ export class ContextManager {
 		if (newPrompt >= cachedPrompt || this.acceptNextLowerUpdate) {
 			this.lastUsageMetadata = { ...metadata };
 			this.acceptNextLowerUpdate = false;
+			this.promptIsRevisedEstimate = false;
 			this.logger.log(`[ContextManager] Updated usage metadata: ${this.formatUsageForLog(metadata)}`);
 		} else {
 			this.logger.debug(`[ContextManager] Skipped lower metadata: prompt=${newPrompt} < cached=${cachedPrompt}`);
@@ -224,8 +237,49 @@ export class ContextManager {
 	setUsageMetadata(metadata: UsageMetadata): void {
 		if (metadata) {
 			this.lastUsageMetadata = { ...metadata };
+			this.promptIsRevisedEstimate = false;
 			this.logger.log(`[ContextManager] Force-set usage metadata: ${this.formatUsageForLog(metadata)}`);
 		}
+	}
+
+	/**
+	 * Revise the cached usage to match a history we just rewrote or measured
+	 * ourselves (#1699). This is the one owner of that invariant, and it does
+	 * three things a bare force-set did not:
+	 *
+	 * - merges the new count over the cached metadata, so
+	 *   `cachedContentTokenCount` and `thoughtsTokenCount` survive and the
+	 *   footer's cached-prefix and reasoning figures don't reset (the cached
+	 *   share is withheld until the next provider report, because the kept
+	 *   cached count and the revised prompt count come from different
+	 *   observations and their ratio can exceed 100%);
+	 * - arms the accept-next-lower one-shot, so the next real provider report
+	 *   wins even when our estimate came out higher than the truth;
+	 * - re-seeds the calibration char length from `history`, the array that is
+	 *   actually sent, so calibration doesn't divide a stale, larger length by
+	 *   the real count.
+	 *
+	 * @param modelName - The model the history is sent to.
+	 * @param history - The history as it will be sent.
+	 * @param tokens - Our estimate or count of its prompt tokens.
+	 */
+	reviseCachedEstimate(modelName: string, history: Content[], tokens: number): void {
+		this.lastUsageMetadata = {
+			...(this.lastUsageMetadata ?? {}),
+			promptTokenCount: tokens,
+			totalTokenCount: tokens,
+		};
+		this.acceptNextLowerUpdate = true;
+		this.promptIsRevisedEstimate = true;
+		if (!this.hasNativeTokenCount(modelName)) {
+			this.pendingEstimateCharLength.set(
+				modelName,
+				JSON.stringify(this.sanitizeContentsForTokenCount(history) ?? []).length
+			);
+		}
+		this.logger.log(
+			`[ContextManager] Revised cached usage after a history rewrite: ${this.formatUsageForLog(this.lastUsageMetadata)}`
+		);
 	}
 
 	/**
@@ -321,7 +375,9 @@ export class ContextManager {
 	async getTokenUsage(modelName: string): Promise<TokenUsageInfo> {
 		const inputTokenLimit = await this.getInputTokenLimit(modelName);
 		const estimatedTokens = this.lastUsageMetadata?.promptTokenCount ?? 0;
-		const cachedTokens = this.lastUsageMetadata?.cachedContentTokenCount ?? 0;
+		// A revised prompt estimate can't be the denominator for a cached count from
+		// an earlier report (#1699), so report no cached share until a real one lands.
+		const cachedTokens = this.promptIsRevisedEstimate ? 0 : (this.lastUsageMetadata?.cachedContentTokenCount ?? 0);
 		const thoughtsTokens = this.lastUsageMetadata?.thoughtsTokenCount;
 		return {
 			estimatedTokens,
@@ -493,7 +549,7 @@ export class ContextManager {
 			return {
 				compactedHistory: conversationHistory,
 				wasCompacted: false,
-				estimatedTokens: 0,
+				estimatedTokens,
 			};
 		}
 
@@ -548,12 +604,11 @@ export class ContextManager {
 			this.logger.log(
 				`[ContextManager] Phase 1 sufficient (${postPhase1Tokens} < ${compactionThreshold}); skipping summarization`
 			);
-			// Force-set even though wasCompacted is false: truncation may have
+			// Revise even though wasCompacted is false: truncation may have
 			// genuinely lowered the estimate, and updateUsageMetadata's
 			// high-water mark would otherwise reject the next (accurate, lower)
-			// API-reported count for the rest of this turn, leaving the cache
-			// stuck on the stale pre-truncation figure.
-			this.setUsageMetadata({ promptTokenCount: postPhase1Tokens, totalTokenCount: postPhase1Tokens });
+			// API-reported count for the rest of this turn.
+			this.reviseCachedEstimate(modelName, truncatedHistory, postPhase1Tokens);
 			return {
 				compactedHistory: truncatedHistory,
 				wasCompacted: false,
@@ -575,8 +630,12 @@ export class ContextManager {
 			// current agent-loop's turns) covers the whole history. Truncation
 			// (phase 1) still applies; summarization is a no-op this call.
 			this.logger.log('[ContextManager] Protected region covers entire history; skipping summarization');
-			// Same force-set rationale as the phase-1-sufficient branch above.
-			this.setUsageMetadata({ promptTokenCount: postPhase1Tokens, totalTokenCount: postPhase1Tokens });
+			// Same rationale as the phase-1-sufficient branch above, but only
+			// when truncation actually shed something: an unchanged history is a
+			// pass-through and must keep the cached high-water mark (#1699).
+			if (postPhase1Tokens < estimatedTokens) {
+				this.reviseCachedEstimate(modelName, truncatedHistory, postPhase1Tokens);
+			}
 			return {
 				compactedHistory: truncatedHistory,
 				wasCompacted: false,
@@ -589,6 +648,7 @@ export class ContextManager {
 		this.logger.log(
 			`[ContextManager] Compaction complete: ${estimatedTokens} -> ${compactedTokens} tokens (${isAggressive ? 'aggressive' : 'normal'})`
 		);
+		this.reviseCachedEstimate(modelName, result.compactedHistory, compactedTokens);
 
 		return {
 			compactedHistory: result.compactedHistory,
@@ -752,6 +812,7 @@ export class ContextManager {
 	 */
 	reset(): void {
 		this.lastUsageMetadata = null;
+		this.promptIsRevisedEstimate = false;
 		this.logger.debug('[ContextManager] Usage metadata reset');
 	}
 }

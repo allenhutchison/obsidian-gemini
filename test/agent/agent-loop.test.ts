@@ -1170,7 +1170,8 @@ describe('AgentLoop', () => {
 			const followUpRequest = (api.generateModelResponse as Mock).mock.calls[0][0];
 			expect(followUpRequest.conversationHistory).toBe(compactedStub);
 
-			expect(setUsageMetadata).toHaveBeenCalledWith({ promptTokenCount: 123, totalTokenCount: 123 });
+			// prepareHistory owns the cache revision now (#1699); the loop must not force-set it.
+			expect(setUsageMetadata).not.toHaveBeenCalled();
 			expect(onMidLoopCompaction).toHaveBeenCalledWith({
 				estimatedTokens: 123,
 				summaryText: 'summary of earlier turns',

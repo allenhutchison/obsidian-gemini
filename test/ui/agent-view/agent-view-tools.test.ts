@@ -547,6 +547,7 @@ describe('AgentViewTools.handleToolCalls — turn model snapshot (#1679)', () =>
 			undefined,
 			undefined,
 			undefined,
+			undefined,
 			snapshot
 		);
 		expect(mocks.run.mock.calls[0][0].options.modelConfig).toBe(snapshot);
@@ -556,5 +557,31 @@ describe('AgentViewTools.handleToolCalls — turn model snapshot (#1679)', () =>
 		const fallback = mocks.run.mock.calls[1][0].options.modelConfig;
 		expect(fallback).toEqual({ model: 'live-model' });
 		expect(fallback).not.toBe(session.modelConfig);
+	});
+});
+
+describe('AgentViewTools.handleToolCalls — turn-scoped progress', () => {
+	it("hides progress through the turn's handle, not the shared view, so a stopped turn can't hide the next one's", async () => {
+		const { tools, context } = makeHarness();
+		const handle = {
+			isCancelled: () => false,
+			registerStream: vi.fn(),
+			countTool: vi.fn(),
+			hideProgress: vi.fn(),
+		};
+
+		await tools.handleToolCalls(
+			[TOOL_CALL],
+			'user message',
+			[],
+			{} as GeminiConversationEntry,
+			undefined,
+			undefined,
+			undefined,
+			handle
+		);
+
+		expect(handle.hideProgress).toHaveBeenCalledTimes(1);
+		expect(context.hideProgress).not.toHaveBeenCalled();
 	});
 });

@@ -64,6 +64,19 @@ export function isOllamaCloudEndpoint(baseUrl: string): boolean {
 }
 
 /**
+ * Whether a request to `baseUrl` would go out without the API key that endpoint
+ * requires. ollama.com rejects every keyless request, so callers treat a
+ * missing key there as "not set up" and fail (or skip the probe) before
+ * contacting it; a daemon or proxy of the user's own needs no key, so it never
+ * reports one missing. The caller passes the `baseUrl` it is about to use — the
+ * configured endpoint, or the one a cloud-prefixed model id resolves to — so
+ * this never re-derives an endpoint of its own.
+ */
+export function missingOllamaCloudKey(baseUrl: string, apiKey: string | undefined): boolean {
+	return !apiKey && isOllamaCloudEndpoint(baseUrl);
+}
+
+/**
  * Whether a bearer token may be sent to `baseUrl`: only over HTTPS, or plain
  * HTTP to this machine's loopback. A key sent over plain HTTP to any other host
  * would cross the network in cleartext, so it is withheld there.

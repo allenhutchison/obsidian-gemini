@@ -21,6 +21,7 @@ import type {
 	RagProgressInfo,
 	ProgressListener,
 } from './rag-types';
+import type { IndexProgressCount } from './rag-run-progress';
 
 /**
  * Service for managing RAG indexing of vault files to Google's File Search API.
@@ -228,14 +229,15 @@ export class RagIndexingService {
 	}
 
 	getProgressInfo(): RagProgressInfo {
+		const run = this.vaultScanner?.getRunCounts();
 		return {
 			status: this.status,
-			indexedCount: this.vaultScanner?.getRunningIndexed() ?? 0,
-			skippedCount: this.vaultScanner?.getRunningSkipped() ?? 0,
-			failedCount: this.vaultScanner?.getRunningFailed() ?? 0,
-			totalCount: this.vaultScanner?.getIndexingProgress().total ?? 0,
-			currentFile: this.vaultScanner?.getCurrentFile(),
-			startTime: this.vaultScanner?.getIndexingStartTime(),
+			indexedCount: run?.indexed ?? 0,
+			skippedCount: run?.skipped ?? 0,
+			failedCount: run?.failed ?? 0,
+			totalCount: run?.progress.total ?? 0,
+			currentFile: run?.currentFile,
+			startTime: run?.startTime,
 			storeName: this.plugin.settings.ragIndexing.fileSearchStoreName,
 			lastSync: this.ragCache.cache?.lastSync || null,
 		};
@@ -249,19 +251,20 @@ export class RagIndexingService {
 					.sort((a, b) => b.lastIndexed - a.lastIndexed)
 			: [];
 
+		const failedFiles = this.vaultScanner?.getRunProgress().failedFiles ?? [];
 		return {
 			status: this.status,
 			indexedCount: this.ragCache.indexedCount,
-			failedCount: this.vaultScanner?.getFailedFiles().length ?? 0,
+			failedCount: failedFiles.length,
 			pendingCount: this.syncQueue?.getPendingCount() ?? 0,
 			storeName: this.plugin.settings.ragIndexing.fileSearchStoreName,
 			lastSync: this.ragCache.cache?.lastSync || null,
 			indexedFiles,
-			failedFiles: [...(this.vaultScanner?.getFailedFiles() ?? [])],
+			failedFiles,
 		};
 	}
 
-	getIndexingProgress(): { current: number; total: number } {
+	getIndexingProgress(): IndexProgressCount {
 		return this.vaultScanner?.getIndexingProgress() ?? { current: 0, total: 0 };
 	}
 

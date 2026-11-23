@@ -13,7 +13,7 @@ import { apiKeySecretNameFor } from './provider-credentials';
 import { featureRoute } from './feature-routing';
 import type { FeatureId } from '../types/features';
 import { DEFAULT_OPENAI_BASE_URL, isOpenAIHostedEndpoint } from './providers/openai/config';
-import { DEFAULT_OLLAMA_BASE_URL, isOllamaCloudEndpoint } from './providers/ollama/config';
+import { DEFAULT_OLLAMA_BASE_URL, missingOllamaCloudKey } from './providers/ollama/config';
 
 export type ProviderConnection = 'connected' | 'needs-key' | 'unreachable' | 'unknown';
 export type FeatureStatus = 'ok' | 'off' | 'unsupported' | 'unconfigured';
@@ -83,7 +83,7 @@ export function providerMissingKey(plugin: ObsidianGemini, p: ModelProvider): bo
 		case 'openrouter':
 			return !plugin.openrouterApiKey;
 		case 'ollama':
-			return !plugin.ollamaApiKey && isOllamaCloudEndpoint(plugin.settings.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL);
+			return missingOllamaCloudKey(plugin.settings.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL, plugin.ollamaApiKey);
 	}
 }
 

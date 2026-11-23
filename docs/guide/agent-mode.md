@@ -584,6 +584,8 @@ Parameters:
 - Confirmation message updates to show cancellation
 - The agent may explain why it cannot continue or suggest alternatives
 
+Pressing **Stop**, or sending a new message while a card is waiting, cancels the card the same way, so it never stays on screen for a turn that has ended. A diff view opened for that card closes too, and one that was still opening is not shown.
+
 **☑ Don't ask again this session** - Create session-level permission
 
 - Check this box before clicking Allow

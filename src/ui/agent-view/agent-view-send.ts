@@ -16,6 +16,7 @@ import planModeInstructionContent from '../../../prompts/planModeInstruction.hbs
 import { AgentViewProgress } from './agent-view-progress';
 import { AgentViewMessages } from './agent-view-messages';
 import { AgentViewTools } from './agent-view-tools';
+import type { TurnHandle } from './agent-view-tools';
 import { AgentViewSession } from './agent-view-session';
 import { AgentViewShelf } from './agent-view-shelf';
 import type { ObsidianGemini } from '../../types/plugin';
@@ -100,15 +101,35 @@ interface TurnRequest {
 }
 
 /**
+ * Ownership token for one agent turn (#1787, #1790). Each turn gets its own,
+ * so a stopped turn that is still unwinding only ever touches its own state.
+ */
+interface ActiveTurn {
+	/** Set by Stop. Never cleared, so the stopped turn keeps seeing it. */
+	cancelled: boolean;
+	/** This turn's live stream, which Stop cancels. */
+	stream: { cancel: () => void } | null;
+	/** Tool calls executed in this turn, reported on `turnEnd`. */
+	toolCallCount: number;
+}
+
+/**
  * Handles message sending with streaming and non-streaming paths,
  * history management, model API calls, and tool execution loops.
  */
 export class AgentViewSend {
-	// Execution state owned by this module
-	private currentStreamingResponse: { cancel: () => void } | null = null;
-	private isExecuting = false;
-	private turnToolCallCount = 0;
-	private cancellationRequested = false;
+	/**
+	 * The turn that currently owns the Send/Stop button, or `null` when idle.
+	 * Stop clears it immediately while the stopped turn keeps unwinding, so a
+	 * turn only resets shared state while it is still the owner (#1787, #1790).
+	 */
+	private activeTurn: ActiveTurn | null = null;
+	/**
+	 * The most recently started turn, kept after it ends so
+	 * `isCancellationRequested()` still reports a stop to code that checks it
+	 * after the button was reset.
+	 */
+	private lastTurn: ActiveTurn | null = null;
 	private isPlanModeActive = false;
 
 	constructor(private ctx: SendContext) {}
@@ -120,7 +141,40 @@ export class AgentViewSend {
 	 * when a streaming follow-up starts and with `null` once it settles.
 	 */
 	public setActiveStreamingResponse(stream: { cancel: () => void } | null): void {
-		this.currentStreamingResponse = stream;
+		if (this.activeTurn) this.activeTurn.stream = stream;
+	}
+
+	/**
+	 * Hide the shared progress display for `turn`, unless a newer turn owns it
+	 * now. A stopped turn unwinding after the next one started must not hide
+	 * (and reset) that turn's progress.
+	 */
+	private hideProgressFor(turn: ActiveTurn): void {
+		if (this.activeTurn === null || this.activeTurn === turn) this.ctx.progress.hide();
+	}
+
+	/**
+	 * Build the per-turn handle the tool loop uses, bound to `turn` rather than
+	 * to whichever turn is active when it is read.
+	 */
+	private turnHandle(turn: ActiveTurn): TurnHandle {
+		return {
+			isCancelled: () => turn.cancelled,
+			countTool: (count) => {
+				// Counts on the originating turn even after Stop released it, so a
+				// late tool completion is never billed to the next turn.
+				turn.toolCallCount += count;
+			},
+			hideProgress: () => this.hideProgressFor(turn),
+			registerStream: (stream) => {
+				if (stream) {
+					// A stopped turn must not take back the Stop target.
+					if (!turn.cancelled) turn.stream = stream;
+				} else {
+					turn.stream = null;
+				}
+			},
+		};
 	}
 
 	/**
@@ -152,8 +206,13 @@ export class AgentViewSend {
 		modelApi: ModelApi,
 		baseRequest: ExtendedModelRequest,
 		currentSession: ChatSession,
-		compactedHistory: Content[]
+		compactedHistory: Content[],
+		turn: ActiveTurn
 	): Promise<{ proceedMessage: string; updatedHistory: Content[] } | null> {
+		// Stop can land during an await in assembleTurnRequest, before any stream
+		// exists to cancel. Don't start the plan request for a stopped turn.
+		if (turn.cancelled) return null;
+
 		const planRequest: ExtendedModelRequest = {
 			...baseRequest,
 			availableTools: [],
@@ -173,17 +232,17 @@ export class AgentViewSend {
 					accumulated += chunk.text;
 				}
 			});
-			this.currentStreamingResponse = stream;
+			turn.stream = stream;
 			const response = await stream.complete;
-			this.currentStreamingResponse = null;
+			if (turn.stream === stream) turn.stream = null;
 			planText = response.markdown || accumulated;
 		} else {
 			const response = await modelApi.generateModelResponse(planRequest);
 			planText = response.markdown || '';
 		}
 
-		if (this.isCancellationRequested()) {
-			this.ctx.progress.hide();
+		if (turn.cancelled) {
+			this.hideProgressFor(turn);
 			return null;
 		}
 
@@ -195,7 +254,7 @@ export class AgentViewSend {
 		}
 
 		const approved = await this.ctx.messages.showPlanApproval(planText);
-		if (this.isCancellationRequested()) return null;
+		if (turn.cancelled) return null;
 		if (!approved) {
 			new Notice(t('agent.planMode.rejectedNotice'));
 			return null;
@@ -325,7 +384,7 @@ export class AgentViewSend {
 		const { turnTimestamp, message, savedAttachments } = await this.captureTurnInput(userInput, attachments);
 
 		// Set execution state, swap to Stop button, emit turnStart, show progress bar
-		this.beginExecutionUi();
+		const turn = this.beginExecutionUi();
 
 		// Emit turnStart hook
 		await this.ctx.plugin.agentEventBus?.emit('turnStart', {
@@ -351,7 +410,7 @@ export class AgentViewSend {
 		try {
 			// Assemble the full turn request: history snapshot, context files, prompts,
 			// compaction, and the model API for this session.
-			const turn = await this.assembleTurnRequest(
+			const turnRequest = await this.assembleTurnRequest(
 				turnSession,
 				turnTimestamp,
 				message,
@@ -359,14 +418,15 @@ export class AgentViewSend {
 				shelfTextFiles,
 				attachments,
 				savedAttachments,
+				turn,
 				modelConfig
 			);
 
 			// Dispatch the response: streaming or non-streaming, with or without tool calls
-			await this.dispatchResponse(turn, turnSession, userEntry);
+			await this.dispatchResponse(turnRequest, turnSession, userEntry, turn);
 		} catch (error) {
-			// Hide the progress bar whether assembly or dispatch failed
-			this.ctx.progress.hide();
+			// Hide this turn's progress bar whether assembly or dispatch failed
+			this.hideProgressFor(turn);
 			this.ctx.plugin.logger.error('Failed to send message:', error);
 			const errorMessage = getErrorMessage(error);
 			new Notice(errorMessage, 8000); // Show for 8 seconds to give user time to read
@@ -380,12 +440,14 @@ export class AgentViewSend {
 			// Always emit turnEnd so subscribers get a reliable cleanup signal
 			await this.ctx.plugin.agentEventBus?.emit('turnEnd', {
 				session: turnSession,
-				toolCallCount: this.turnToolCallCount,
+				toolCallCount: turn.toolCallCount,
 			});
 
-			// Reset execution state and button (unless already reset by stopAgentLoop)
-			// The check prevents redundant resets if user clicked stop
-			if (this.isExecuting) {
+			// Reset execution state and button only while this turn still owns
+			// them. After Stop, a newer turn may already be running; resetting
+			// here would strand it without a working Stop button (#1787, #1790).
+			if (this.activeTurn === turn) {
+				this.activeTurn = null;
 				this.resetExecutionUiState();
 			}
 
@@ -444,19 +506,31 @@ export class AgentViewSend {
 	}
 
 	/**
-	 * Set the executing state and transition the send button to "Stop".
-	 * Called once per turn, after the turn input has been captured.
+	 * Start a new turn: take ownership of the execution state and transition the
+	 * send button to "Stop". Called once per turn, after the turn input has been
+	 * captured.
+	 *
+	 * If another turn still owns the button (a programmatic send, or Enter while
+	 * a turn waits on a tool confirmation), that turn is stopped first, which
+	 * also settles its pending Allow card as cancelled instead of orphaning it
+	 * (#1780).
+	 *
+	 * @returns The new turn's ownership token.
 	 */
-	private beginExecutionUi(): void {
-		this.isExecuting = true;
-		this.cancellationRequested = false;
+	private beginExecutionUi(): ActiveTurn {
+		if (this.activeTurn) {
+			this.stopAgentLoop();
+		}
+		const turn: ActiveTurn = { cancelled: false, stream: null, toolCallCount: 0 };
+		this.activeTurn = turn;
+		this.lastTurn = turn;
 		const sendButton = this.ctx.getSendButton();
 		sendButton.empty();
 		setIcon(sendButton, 'square');
 		sendButton.addClass('gemini-agent-stop-btn');
 		sendButton.disabled = false; // Re-enable so user can click stop
 		sendButton.setAttribute('aria-label', t('agent.input.stopAria'));
-		this.turnToolCallCount = 0;
+		return turn;
 	}
 
 	/**
@@ -522,6 +596,7 @@ export class AgentViewSend {
 		shelfTextFiles: TFile[],
 		attachments: InlineAttachment[],
 		savedAttachments: Array<{ attachment: InlineAttachment; path: string }>,
+		turn: ActiveTurn,
 		modelConfig: SessionModelConfig & { model: string }
 	): Promise<TurnRequest> {
 		const modelName = modelConfig.model;
@@ -600,11 +675,7 @@ export class AgentViewSend {
 
 		// If compaction occurred, show notification and save summary to transcript
 		if (compactionResult.wasCompacted && compactionResult.summaryText) {
-			// Force-set the lower post-compaction token count (bypasses high-water mark)
-			this.ctx.plugin.contextManager.setUsageMetadata({
-				promptTokenCount: compactionResult.estimatedTokens,
-				totalTokenCount: compactionResult.estimatedTokens,
-			});
+			// prepareHistory already revised the cached usage (#1699); refresh the readout.
 			await this.ctx.updateTokenUsage();
 
 			const compactionEntry = buildCompactionEntry(compactionResult.summaryText, modelName);
@@ -654,14 +725,15 @@ export class AgentViewSend {
 					modelApi,
 					request,
 					currentSession,
-					compactionResult.compactedHistory
+					compactionResult.compactedHistory,
+					turn
 				);
 			} finally {
 				this.setPlanModeActive(false);
 			}
 			if (!planResult) {
 				// Plan rejected or empty — abort this turn
-				this.ctx.progress.hide();
+				this.hideProgressFor(turn);
 				return {
 					request,
 					messageToSend: message,
@@ -754,13 +826,15 @@ To reference an attachment in your response, use the path shown above.`;
 	 * cache).
 	 */
 	private async dispatchResponse(
-		turn: TurnRequest,
+		turnRequest: TurnRequest,
 		currentSession: ChatSession,
-		userEntry: GeminiConversationEntry
+		userEntry: GeminiConversationEntry,
+		turn: ActiveTurn
 	): Promise<void> {
-		if (turn.aborted) return;
+		if (turnRequest.aborted) return;
 
-		const { request, messageToSend, historyToSend, perTurn, modelApi, modelName, modelConfig, customPrompt } = turn;
+		const { request, messageToSend, historyToSend, perTurn, modelApi, modelName, modelConfig, customPrompt } =
+			turnRequest;
 
 		// Streaming is always used when the provider client supports it.
 		if (modelApi.generateStreamingResponse) {
@@ -807,12 +881,14 @@ To reference an attachment in your response, use the path shown above.`;
 				}
 			});
 
-			// Store the streaming response for potential cancellation
-			this.currentStreamingResponse = streamResponse;
+			// Store the streaming response for potential cancellation. If Stop
+			// already ran while the request was being assembled, cancel at once.
+			turn.stream = streamResponse;
+			if (turn.cancelled) streamResponse.cancel();
 
 			try {
 				const response = await streamResponse.complete;
-				this.currentStreamingResponse = null;
+				if (turn.stream === streamResponse) turn.stream = null;
 
 				await this.emitUsageMetadata(response, modelName, 'Streaming');
 
@@ -857,6 +933,7 @@ To reference an attachment in your response, use the path shown above.`;
 						customPrompt,
 						perTurn,
 						hadPartialText ? undefined : turnThoughts,
+						this.turnHandle(turn),
 						modelConfig
 					);
 				} else {
@@ -883,13 +960,14 @@ To reference an attachment in your response, use the path shown above.`;
 							}
 							// Ensure we're scrolled to bottom after streaming completes
 							this.ctx.messages.scrollToBottom();
-						}
+						},
+						turn
 					);
 				}
 			} catch (error) {
-				this.currentStreamingResponse = null;
+				if (turn.stream === streamResponse) turn.stream = null;
 				// Hide progress bar on error
-				this.ctx.progress.hide();
+				this.hideProgressFor(turn);
 				throw error;
 			}
 		} else {
@@ -917,15 +995,23 @@ To reference an attachment in your response, use the path shown above.`;
 					customPrompt,
 					perTurn,
 					turnThoughts,
+					this.turnHandle(turn),
 					modelConfig
 				);
 			} else {
 				// Normal response without tool calls — shared three-way finalize
 				// with the non-streaming render step (plain displayMessage, no
 				// scroll) for both the answer and reasoning-only cases.
-				await this.finalizeNoToolCallResponse(response, turnThoughts, modelName, currentSession, async (entry) => {
-					await this.ctx.displayMessage(entry);
-				});
+				await this.finalizeNoToolCallResponse(
+					response,
+					turnThoughts,
+					modelName,
+					currentSession,
+					async (entry) => {
+						await this.ctx.displayMessage(entry);
+					},
+					turn
+				);
 			}
 		}
 	}
@@ -971,8 +1057,11 @@ To reference an attachment in your response, use the path shown above.`;
 		turnThoughts: string | undefined,
 		modelName: string,
 		currentSession: ChatSession,
-		renderEntry: (entry: GeminiConversationEntry, reasoningOnly: boolean) => Promise<void>
+		renderEntry: (entry: GeminiConversationEntry, reasoningOnly: boolean) => Promise<void>,
+		turn?: ActiveTurn
 	): Promise<void> {
+		// Without a turn (unit callers) this behaves as the sole, uncancelled turn.
+		const hideProgress = () => (turn ? this.hideProgressFor(turn) : this.ctx.progress.hide());
 		// Only finalize and save if response has content
 		if (response.markdown && response.markdown.trim()) {
 			const aiEntry: GeminiConversationEntry = {
@@ -987,7 +1076,7 @@ To reference an attachment in your response, use the path shown above.`;
 			// Save AI response to history (user message already saved early)
 			await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, aiEntry);
 			// Hide progress bar after successful response
-			this.ctx.progress.hide();
+			hideProgress();
 		} else if (turnThoughts) {
 			// No answer text, but the model did reason — show and persist the
 			// reasoning instead of a bare "empty response" notice.
@@ -1001,14 +1090,19 @@ To reference an attachment in your response, use the path shown above.`;
 			};
 			await renderEntry(reasoningEntry, true);
 			await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, reasoningEntry);
-			this.ctx.progress.hide();
+			hideProgress();
+		} else if (turn?.cancelled) {
+			// A stopped stream settles with no text. That's the Stop, not an
+			// empty model reply, so don't add a second notice beside
+			// "Agent execution canceled" (#1790).
+			hideProgress();
 		} else {
 			// Empty response - might be thinking tokens.
 			// User message already saved early in sendMessage().
 			this.ctx.plugin.logger.warn('Model returned empty response');
 			new Notice(t('agent.send.emptyResponse'));
 			// Hide progress bar
-			this.ctx.progress.hide();
+			hideProgress();
 		}
 	}
 
@@ -1018,23 +1112,29 @@ To reference an attachment in your response, use the path shown above.`;
 	stopAgentLoop(): void {
 		this.ctx.plugin.logger.debug('[AgentView] stopAgentLoop called');
 
-		if (!this.isExecuting) return;
+		const turn = this.activeTurn;
+		if (!turn) return;
 
-		// Set cancellation flag
-		this.cancellationRequested = true;
+		// Mark this turn cancelled. The flag lives on the turn, so a later turn
+		// starting doesn't clear it while this one unwinds.
+		turn.cancelled = true;
 
 		// Cancel streaming response if active
-		if (this.currentStreamingResponse) {
+		if (turn.stream) {
 			this.ctx.plugin.logger.debug('[AgentView] Cancelling streaming response');
-			this.currentStreamingResponse.cancel();
-			this.currentStreamingResponse = null;
+			turn.stream.cancel();
+			turn.stream = null;
 		}
 
 		// Settle a pending plan approval so conductPlanApproval doesn't hang waiting
 		// on the approval buttons after the user pressed Stop.
 		this.ctx.messages.settlePendingPlanApproval(false);
+		// Likewise settle any pending tool-permission card as cancelled, so it
+		// doesn't stay on screen offering an Allow that resumes nothing (#1780).
+		this.ctx.messages.settlePendingConfirmations();
 
-		// Update UI immediately
+		// Release ownership and update UI immediately
+		this.activeTurn = null;
 		this.resetExecutionUiState();
 
 		// Hide progress bar
@@ -1048,10 +1148,6 @@ To reference an attachment in your response, use the path shown above.`;
 	 * Resets execution UI state after completion or cancellation
 	 */
 	private resetExecutionUiState(): void {
-		this.isExecuting = false;
-		// Note: Don't reset cancellationRequested here - it needs to stay true
-		// so that tool loops can see it. It's reset in sendMessage() when starting
-		// a new execution.
 		const sendButton = this.ctx.getSendButton();
 		sendButton.disabled = false;
 		sendButton.empty();
@@ -1062,14 +1158,15 @@ To reference an attachment in your response, use the path shown above.`;
 
 	// Public getters for state the orchestrator needs to read
 	getIsExecuting(): boolean {
-		return this.isExecuting;
+		return this.activeTurn !== null;
 	}
 
+	/** Whether the most recently started turn was stopped. */
 	isCancellationRequested(): boolean {
-		return this.cancellationRequested;
+		return this.lastTurn?.cancelled ?? false;
 	}
 
 	incrementToolCallCount(count: number): void {
-		this.turnToolCallCount += count;
+		if (this.activeTurn) this.activeTurn.toolCallCount += count;
 	}
 }

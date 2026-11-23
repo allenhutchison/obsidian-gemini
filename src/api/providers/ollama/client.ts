@@ -35,7 +35,13 @@ import {
 } from '../../interfaces/model-api';
 import { GeminiPrompts } from '../../../prompts';
 import type { ObsidianGemini } from '../../../types/plugin';
-import { isOllamaCloudEndpoint, ollamaAuthHeaders, resolveOllamaModel, type OllamaClientConfig } from './config';
+import {
+	isOllamaCloudEndpoint,
+	missingOllamaCloudKey,
+	ollamaAuthHeaders,
+	resolveOllamaModel,
+	type OllamaClientConfig,
+} from './config';
 import { walkHistoryEntry } from '../history-walk';
 import { runCancellableStream } from '../../utils/cancellable-stream';
 import { t } from '../../../i18n';
@@ -75,6 +81,29 @@ async function drain(stream: unknown): Promise<void> {
 	}
 }
 
+/**
+ * Release the SDK's reference to a stream that was aborted mid-flight (#1788).
+ *
+ * ollama-js keeps every streamed request in its client's
+ * `ongoingStreamedRequests` until iteration reaches a `done` message, which
+ * runs the iterator's `doneCallback`. An abort skips that, so each Stop would
+ * leave one iterator referenced by the cached client until the next settings
+ * change. Running `doneCallback` ourselves is the SDK's own removal, and it is
+ * idempotent: it splices only while the iterator is still listed. Probed
+ * structurally, so an SDK that renames or drops the field just keeps the old
+ * behaviour; `test/api/providers/ollama/stream-release.test.ts` pins it against
+ * the installed version.
+ */
+function releaseStream(stream: unknown): void {
+	const done = (stream as { doneCallback?: unknown } | null)?.doneCallback;
+	if (typeof done !== 'function') return;
+	try {
+		(done as () => void).call(stream);
+	} catch {
+		// Best-effort: the stream is already aborted.
+	}
+}
+
 function settleOnAbort<T extends { abort: () => void }>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
 	const discardLate = () => {
 		promise.then(
@@ -84,7 +113,7 @@ function settleOnAbort<T extends { abort: () => void }>(promise: Promise<T>, sig
 				} catch {
 					// Best-effort: the turn has already ended.
 				}
-				void drain(late);
+				void drain(late).finally(() => releaseStream(late));
 			},
 			() => {}
 		);
@@ -158,9 +187,7 @@ export class OllamaClient implements ModelApi {
 		const modelId = request.model || this.config.model;
 		if (!modelId) {
 			this.assertCloudKey(this.config.baseUrl);
-			throw new NonRetryableRequestError(
-				'No Ollama model selected. Pull a model with `ollama pull <name>` and choose it in settings.'
-			);
+			throw new NonRetryableRequestError(t('provider.ollama.noModelSelected'));
 		}
 		const { baseUrl, model, client } = this.route(modelId);
 		this.assertCloudKey(baseUrl);
@@ -230,9 +257,7 @@ export class OllamaClient implements ModelApi {
 			start: async (signal) => {
 				if (!modelId) {
 					this.assertCloudKey(this.config.baseUrl);
-					throw new NonRetryableRequestError(
-						'No Ollama model selected. Pull a model with `ollama pull <name>` and choose it in settings.'
-					);
+					throw new NonRetryableRequestError(t('provider.ollama.noModelSelected'));
 				}
 				const { baseUrl, model, client } = this.route(modelId);
 				this.assertCloudKey(baseUrl);
@@ -264,20 +289,12 @@ export class OllamaClient implements ModelApi {
 				// cancel() may have fired while the await above was outstanding —
 				// abort immediately so the daemon stops generating.
 				if (signal.aborted) {
-					try {
-						stream.abort();
-					} catch (err) {
-						this.plugin?.logger.debug('[OllamaClient] Abort failed:', err);
-					}
+					this.abortStream(stream);
 				}
 				return stream;
 			},
 			onCancel: () => {
-				try {
-					activeStream?.abort();
-				} catch (err) {
-					this.plugin?.logger.debug('[OllamaClient] Abort failed:', err);
-				}
+				if (activeStream) this.abortStream(activeStream);
 			},
 			onChunk: (chunk) => {
 				if (!isExtended) {
@@ -316,6 +333,16 @@ export class OllamaClient implements ModelApi {
 		});
 	}
 
+	/** Abort a stream mid-flight and release the SDK's reference to it (see `releaseStream`). */
+	private abortStream(stream: { abort: () => void }): void {
+		try {
+			stream.abort();
+		} catch (err) {
+			this.plugin?.logger.debug('[OllamaClient] Abort failed:', err);
+		}
+		releaseStream(stream);
+	}
+
 	private buildOptions(): Record<string, unknown> {
 		const options: Record<string, unknown> = {};
 		if (typeof this.config.maxOutputTokens === 'number') options.num_predict = this.config.maxOutputTokens;
@@ -327,10 +354,8 @@ export class OllamaClient implements ModelApi {
 	 * rather than contacting ollama.com unauthenticated (#1764).
 	 */
 	private assertCloudKey(baseUrl: string): void {
-		if (!this.config.apiKey && isOllamaCloudEndpoint(baseUrl)) {
-			throw new NonRetryableRequestError(
-				'Ollama Cloud needs an API key. Add one on the Ollama card in Settings → Providers.'
-			);
+		if (missingOllamaCloudKey(baseUrl, this.config.apiKey)) {
+			throw new NonRetryableRequestError(t('provider.ollama.cloudNeedsKey'));
 		}
 	}
 

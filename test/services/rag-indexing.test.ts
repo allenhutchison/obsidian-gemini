@@ -507,7 +507,9 @@ describe('RagIndexingService', () => {
 		it('should return comprehensive status info', () => {
 			(service as any).status = 'idle';
 			getRagCache(service).indexedCount = 10;
-			getVaultScanner(service).failedFiles = [{ path: 'failed.md', error: 'Test error', timestamp: Date.now() }];
+			getVaultScanner(service).progress.failedFiles = [
+				{ path: 'failed.md', error: 'Test error', timestamp: Date.now() },
+			];
 			getSyncQueue(service).pendingChanges = new Map([
 				['pending.md', { type: 'create', path: 'pending.md', timestamp: Date.now() }],
 			]);
@@ -876,7 +878,7 @@ describe('RagIndexingService', () => {
 			(service as any).statusBar.statusBarItem = { remove: vi.fn() };
 			(service as any).ai = {};
 			getRagCache(service).cache = {};
-			getVaultScanner(service).failedFiles = [{}];
+			getVaultScanner(service).progress.failedFiles = [{}];
 
 			await service.destroy();
 
@@ -884,7 +886,7 @@ describe('RagIndexingService', () => {
 			expect(getSyncQueue(service).pendingChanges.size).toBe(0);
 			expect((service as any).ai).toBeNull();
 			expect(getRagCache(service).cache).toBeNull();
-			expect(getVaultScanner(service).failedFiles).toEqual([]);
+			expect(getVaultScanner(service).progress.failedFiles).toEqual([]);
 			expect((service as any).status).toBe('disabled');
 		});
 
@@ -1060,12 +1062,12 @@ describe('RagIndexingService', () => {
 	describe('getProgressInfo', () => {
 		it('should return full progress info with all fields', () => {
 			(service as any).status = 'indexing';
-			getVaultScanner(service).runningIndexed = 10;
-			getVaultScanner(service).runningSkipped = 3;
-			getVaultScanner(service).runningFailed = 1;
-			getVaultScanner(service).indexingProgress = { current: 14, total: 20 };
-			getVaultScanner(service).currentFile = 'notes/current.md';
-			getVaultScanner(service).indexingStartTime = 1234567890;
+			getVaultScanner(service).progress.indexed = 10;
+			getVaultScanner(service).progress.skipped = 3;
+			getVaultScanner(service).progress.failed = 1;
+			getVaultScanner(service).progress.progress = { current: 14, total: 20 };
+			getVaultScanner(service).progress.currentFile = 'notes/current.md';
+			getVaultScanner(service).progress.startTime = 1234567890;
 			mockPlugin.settings.ragIndexing.fileSearchStoreName = 'my-store';
 			getRagCache(service).cache = { lastSync: 9999 };
 
@@ -1107,7 +1109,7 @@ describe('RagIndexingService', () => {
 
 	describe('getIndexingProgress', () => {
 		it('should return vault scanner progress', () => {
-			getVaultScanner(service).indexingProgress = { current: 7, total: 15 };
+			getVaultScanner(service).progress.progress = { current: 7, total: 15 };
 
 			expect(service.getIndexingProgress()).toEqual({ current: 7, total: 15 });
 		});
@@ -1147,7 +1149,7 @@ describe('RagIndexingService', () => {
 			expect(provider.isPaused()).toBe(true);
 
 			// Test getIndexingProgress delegation
-			getVaultScanner(service).indexingProgress = { current: 3, total: 10 };
+			getVaultScanner(service).progress.progress = { current: 3, total: 10 };
 			expect(provider.getIndexingProgress()).toEqual({ current: 3, total: 10 });
 
 			// Test getRateLimitRemainingSeconds delegation
