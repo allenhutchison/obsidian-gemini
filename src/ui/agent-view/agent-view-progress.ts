@@ -1,6 +1,7 @@
 import { App, MarkdownRenderer, Component, setIcon } from 'obsidian';
 import { ChatTimer } from '../../utils/timer-utils';
 import { t } from '../../i18n';
+import { wireActivation } from '../components/activatable';
 
 export type ProgressState = 'thinking' | 'tool' | 'waiting' | 'streaming';
 
@@ -80,19 +81,10 @@ export class AgentViewProgress {
 			},
 		});
 
-		// Click handler on the entire status container
-		this.progressStatusContainer.addEventListener('click', () => {
-			if (this.hasThinkingContent) {
-				this.toggleThinkingSection();
-			}
-		});
-
-		// Keyboard handler for accessibility (Enter/Space to toggle)
-		this.progressStatusContainer.addEventListener('keydown', (e: KeyboardEvent) => {
-			if (this.hasThinkingContent && (e.key === 'Enter' || e.key === ' ')) {
-				e.preventDefault();
-				this.toggleThinkingSection();
-			}
+		// Click / Enter / Space on the status line toggles the thinking section,
+		// but only once there is thinking content to show.
+		wireActivation(this.progressStatusContainer, () => this.toggleThinkingSection(), {
+			shouldActivate: () => this.hasThinkingContent,
 		});
 
 		// Expandable thinking section (below the status line)

@@ -8,6 +8,7 @@ import { getErrorMessage, truncateStoredError } from '../utils/error-utils';
 import { renderRagOverview, renderRagFileList, renderRagFailures } from './components/rag-status-panel';
 import { openPluginSettingsTab } from '../utils/obsidian-settings';
 import { t } from '../i18n';
+import { wireActivation } from './components/activatable';
 
 type ModalTab = 'tasks' | 'rag';
 type RagInnerTab = 'overview' | 'files' | 'failures';
@@ -160,13 +161,7 @@ export class BackgroundTasksModal extends Modal {
 				this.renderTabContent();
 			};
 
-			tab.addEventListener('click', activate);
-			tab.addEventListener('keydown', (e) => {
-				if (e.key === 'Enter' || e.key === ' ') {
-					e.preventDefault();
-					activate();
-				}
-			});
+			wireActivation(tab, activate);
 		}
 	}
 
@@ -355,13 +350,7 @@ export class BackgroundTasksModal extends Modal {
 				this.ragFileScrollTop = 0;
 				this.renderTabContent();
 			};
-			tab.addEventListener('click', activate);
-			tab.addEventListener('keydown', (e) => {
-				if (e.key === 'Enter' || e.key === ' ') {
-					e.preventDefault();
-					activate();
-				}
-			});
+			wireActivation(tab, activate);
 		};
 
 		createTab('overview', t('ragStatus.tabOverview'));

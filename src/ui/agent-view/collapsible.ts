@@ -1,4 +1,5 @@
 import { setIcon } from 'obsidian';
+import { wireActivation } from '../components/activatable';
 
 /** Elements that make up one collapsible section (a tool group, tool row, or reasoning row). */
 export interface CollapsibleRefs {
@@ -29,11 +30,5 @@ export function setCollapsibleExpanded(refs: CollapsibleRefs, expanded: boolean)
  */
 export function wireCollapsibleToggle(refs: CollapsibleRefs): void {
 	const toggle = () => setCollapsibleExpanded(refs, refs.control.getAttribute('aria-expanded') !== 'true');
-	refs.control.addEventListener('click', toggle);
-	refs.control.addEventListener('keydown', (e: KeyboardEvent) => {
-		if (e.key === 'Enter' || e.key === ' ') {
-			e.preventDefault();
-			toggle();
-		}
-	});
+	wireActivation(refs.control, toggle);
 }
