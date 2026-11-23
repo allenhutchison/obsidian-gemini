@@ -3,16 +3,7 @@ import { Tool } from '../tools/types';
 import { Logger } from '../utils/logger';
 import { getVaultTools } from '../tools/vault';
 import type { ObsidianGemini } from '../types/plugin';
-import { featureStatus } from '../api/provider-status';
-
-/**
- * Whether the Gemini key is actually available on this device. `plugin.apiKey`
- * reads SecretStorage; a settings file can name a secret that was never synced
- * here, and a tool registered on that basis would only fail when invoked.
- */
-function hasGeminiKey(plugin: ObsidianGemini): boolean {
-	return Boolean(plugin.apiKey);
-}
+import { featureStatus, providerBoundAvailable } from '../api/provider-status';
 
 interface ToolSource {
 	name: string;
@@ -35,7 +26,9 @@ interface ToolSource {
  * same routed/supported/usable-here condition the Features page shows, whose
  * truth table `src/api/provider-status.ts` owns (settings redesign — each is
  * its own feature, not one shared use case). maps is provider-bound instead:
- * gated on the Gemini key resolving on this device, regardless of routing.
+ * gated on `providerBoundAvailable`, which asks the registry which providers
+ * have the capability and whether one resolves its key on this device,
+ * regardless of routing.
  *
  * The credential half of that gate is not belt-and-braces: a tool registered
  * against a provider with no key is advertised to the model and can only fail
@@ -54,9 +47,9 @@ export class ToolRegistrar {
 		},
 		{
 			name: 'maps',
-			// Provider-bound (§2.7): registered iff the Gemini provider is
+			// Provider-bound (§2.7): registered iff a maps-capable provider is
 			// configured, regardless of which provider webSearch/chat route to.
-			gate: (plugin) => hasGeminiKey(plugin),
+			gate: (plugin) => providerBoundAvailable(plugin, 'maps'),
 			getTools: () => import('../tools/web-tools').then((m) => m.getMapsTools()),
 		},
 		{

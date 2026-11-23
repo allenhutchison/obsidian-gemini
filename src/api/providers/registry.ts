@@ -26,13 +26,29 @@
 export type ModelProvider = 'gemini' | 'ollama' | 'openai' | 'anthropic' | 'openrouter';
 
 /**
- * Capability keys a provider is asked about — kept in lockstep with `FeatureId`
- * in `src/types/features.ts` (see the module doc comment for why this is a
- * separate declaration rather than an import) plus `maps`, which is
- * provider-bound rather than a routable feature (§2.7 of the design).
+ * Provider-bound capabilities: served whenever a provider that has them is
+ * configured, with no Features row to route them (§2.7 of the design). Not part
+ * of `FeatureId`, because nothing routes them.
+ */
+export type ProviderBoundFeatureId = 'maps';
+
+/**
+ * Capability keys a provider is asked about: the routable features, kept in
+ * lockstep with `FeatureId` in `src/types/features.ts` (see the module doc
+ * comment for why this is a separate declaration rather than an import), plus
+ * the provider-bound ones above. Including `maps` lets its tool gate ask the
+ * registry instead of re-deriving the capability as a Gemini key check (#1701).
  */
 export type ProviderFeatureId =
-	'chat' | 'summary' | 'completions' | 'rewrite' | 'webSearch' | 'deepResearch' | 'rag' | 'imageGen';
+	| 'chat'
+	| 'summary'
+	| 'completions'
+	| 'rewrite'
+	| 'webSearch'
+	| 'deepResearch'
+	| 'rag'
+	| 'imageGen'
+	| ProviderBoundFeatureId;
 
 export interface ProviderCapabilities {
 	// --- Routable features. `false` means the provider cannot serve it at all. ---
