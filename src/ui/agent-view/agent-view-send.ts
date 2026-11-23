@@ -1,5 +1,5 @@
 import { Notice, setIcon, App, TFile } from 'obsidian';
-import { sessionChatModel } from '../../models';
+import { pinSessionChatModel } from '../../models';
 import type { Content } from '@google/genai';
 import { ChatSession, type PerTurnContext, type SessionModelConfig } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
@@ -579,11 +579,12 @@ export class AgentViewSend {
 			availableTools.map((t) => t.name)
 		);
 
-		// Snapshot the session's model config: the model name and the client's
-		// provider must come from the same config even if session settings are
-		// saved while the turn awaits history preparation below.
-		const modelConfig = { ...(currentSession?.modelConfig || {}) };
-		const modelName = sessionChatModel(this.ctx.plugin.settings, modelConfig);
+		// Snapshot the session's model config with the model and provider it
+		// resolves to pinned in: the client, the model name, the tool loop's
+		// follow-ups and every entry the turn saves come from this one value, even
+		// if settings are saved while the turn awaits history preparation below.
+		const modelConfig = pinSessionChatModel(this.ctx.plugin.settings, currentSession?.modelConfig);
+		const modelName = modelConfig.model;
 
 		// beginTurn() is now handled by the turnStart event bus subscriber
 

@@ -303,6 +303,26 @@ export function sessionChatModel(
 }
 
 /**
+ * A session model config with what `sessionChatModel` resolves to pinned in
+ * (#1679): the model, and the provider (the session's, else the chat route's).
+ * Without a session model the name comes from live settings, so an agent turn
+ * that re-resolved it later could name a model, or reach a provider, that
+ * didn't produce its response. A turn resolves once with this and carries the
+ * result. A provider is left unset when chat is off.
+ */
+export function pinSessionChatModel<T extends { model?: string; provider?: ModelProvider }>(
+	settings: FeatureRoutingSlice,
+	modelConfig: T | undefined
+): T & { model: string } {
+	const provider = modelConfig?.provider ?? featureProvider(settings, 'chat') ?? undefined;
+	return {
+		...(modelConfig ?? ({} as T)),
+		model: sessionChatModel(settings, modelConfig),
+		...(provider ? { provider } : {}),
+	};
+}
+
+/**
  * Stale-model reconciliation over the dense `features` table: retired models
  * migrate to their successor (`RETIRED_MODEL_SUCCESSORS`, checked before the
  * validity short-circuit — a stale persisted `remoteModelCache` can still

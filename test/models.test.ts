@@ -13,11 +13,13 @@ import {
 	resolveFeatureModelFor,
 	resolveGenerateContentModel,
 	sessionChatModel,
+	pinSessionChatModel,
 	RETIRED_MODEL_SUCCESSORS,
 	setGeminiModels,
 } from '../src/models';
 import type { FeatureRoutes, ProviderModelMemory } from '../src/types/features';
 import type { FeatureRoutingSlice } from '../src/api/feature-routing';
+import type { SessionModelConfig } from '../src/types/agent';
 
 // Helper to temporarily modify GEMINI_MODELS for specific tests
 const setTestModels = (models: GeminiModel[]) => {
@@ -318,6 +320,30 @@ describe('per-session provider model resolution (#1679)', () => {
 		expect(sessionChatModel(s, { provider: 'ollama' })).toBe('llama3.2');
 		expect(sessionChatModel(s, {})).toBe('gemini-flash-lite');
 		expect(sessionChatModel(s, undefined)).toBe('gemini-flash-lite');
+	});
+
+	it('pinSessionChatModel pins the resolved model and provider so a turn needs no re-resolve', () => {
+		const s = geminiChat();
+		expect(pinSessionChatModel(s, undefined)).toEqual({ model: 'gemini-flash-lite', provider: 'gemini' });
+		expect(pinSessionChatModel(s, { provider: 'ollama', promptTemplate: 'p.md' })).toEqual({
+			model: 'llama3.2',
+			provider: 'ollama',
+			promptTemplate: 'p.md',
+		});
+		expect(pinSessionChatModel(s, { model: 'pinned' })).toEqual({ model: 'pinned', provider: 'gemini' });
+
+		// The pinned value no longer depends on live settings.
+		const pinned = pinSessionChatModel(s, {});
+		const later: FeatureRoutingSlice = {
+			features: routes({ chat: { provider: 'gemini', model: 'changed-later' } }),
+		};
+		expect(sessionChatModel(later, pinned)).toBe('gemini-flash-lite');
+	});
+
+	it('pinSessionChatModel leaves the provider unset when chat is off', () => {
+		const off: FeatureRoutingSlice = { features: routes({ chat: { provider: 'none', model: '' } }) };
+		const empty: SessionModelConfig = {};
+		expect(pinSessionChatModel(off, empty).provider).toBeUndefined();
 	});
 });
 
