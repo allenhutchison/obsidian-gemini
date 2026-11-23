@@ -26,6 +26,15 @@ const ROUTABLE_FEATURES: ProviderFeatureId[] = [
 ];
 
 describe('capability matrix', () => {
+	it('has a boolean for every capability key, maps included, on every provider (#1701)', () => {
+		const keys: ProviderFeatureId[] = [...ROUTABLE_FEATURES, 'maps'];
+		for (const provider of PROVIDER_IDS) {
+			for (const key of keys) {
+				expect(typeof PROVIDERS[provider].capabilities[key], `${provider}.${key}`).toBe('boolean');
+			}
+		}
+	});
+
 	it('matches the documented Gemini capabilities', () => {
 		const caps = PROVIDERS.gemini.capabilities;
 		expect(caps.chat).toBe(true);
