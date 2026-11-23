@@ -84,6 +84,15 @@ describe('AgentFactory', () => {
 			expect(ModelClientFactory.createChatModel).toHaveBeenCalledWith(plugin, 'anthropic');
 		});
 
+		it("uses an explicit provider over the session's live one (#1679)", () => {
+			const plugin = createMockPlugin();
+			const session = createMockSession({ modelConfig: { provider: 'anthropic' } });
+
+			AgentFactory.createAgentModel(plugin, session, 'ollama');
+
+			expect(ModelClientFactory.createChatModel).toHaveBeenCalledWith(plugin, 'ollama');
+		});
+
 		it('should return the ModelApi instance from the factory', () => {
 			const mockApi = { generateModelResponse: vi.fn() };
 			vi.mocked(ModelClientFactory.createChatModel).mockReturnValue(mockApi);

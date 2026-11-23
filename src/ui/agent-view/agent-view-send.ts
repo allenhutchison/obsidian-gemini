@@ -577,8 +577,10 @@ export class AgentViewSend {
 			availableTools.map((t) => t.name)
 		);
 
-		// Get model config from session or use defaults
-		const modelConfig = currentSession?.modelConfig || {};
+		// Snapshot the session's model config: the model name and the client's
+		// provider must come from the same config even if session settings are
+		// saved while the turn awaits history preparation below.
+		const modelConfig = { ...(currentSession?.modelConfig || {}) };
 		const modelName = sessionChatModel(this.ctx.plugin.settings, modelConfig);
 
 		// beginTurn() is now handled by the turnStart event bus subscriber
@@ -630,7 +632,7 @@ export class AgentViewSend {
 		};
 
 		// Create model API for this session
-		const modelApi = AgentFactory.createAgentModel(this.ctx.plugin, currentSession);
+		const modelApi = AgentFactory.createAgentModel(this.ctx.plugin, currentSession, modelConfig.provider);
 
 		// Plan mode: ask for a plan first, await user approval, then execute with tools
 		let messageToSend = message;

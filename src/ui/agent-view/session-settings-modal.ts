@@ -59,6 +59,8 @@ export class SessionSettingsModal extends Modal {
 	private plugin: ObsidianGemini;
 	private onSave: (config: SessionModelConfig) => Promise<void>;
 	private modelConfig: SessionModelConfig;
+	/** Identifies the latest model-row render; a superseded render's results are discarded. */
+	private modelRenderId = 0;
 
 	constructor(
 		app: App,
@@ -86,8 +88,9 @@ export class SessionSettingsModal extends Modal {
 			.setDesc(t('agent.sessionSettings.providerDesc'));
 		const modelSettingEl = contentEl.createDiv();
 		const renderModels = async () => {
+			const renderId = ++this.modelRenderId;
 			modelSettingEl.empty();
-			await this.renderModelSetting(modelSettingEl);
+			await this.renderModelSetting(modelSettingEl, renderId);
 		};
 		providerSetting.addDropdown((dropdown: DropdownComponent) => {
 			dropdown.addOption(
@@ -131,8 +134,11 @@ export class SessionSettingsModal extends Modal {
 	}
 
 	/** The model row, listing the models of the session's provider (or the chat default's). */
-	private async renderModelSetting(containerEl: HTMLElement): Promise<void> {
+	private async renderModelSetting(containerEl: HTMLElement, renderId: number): Promise<void> {
 		const models = await this.plugin.getModelManager().getAvailableModels({}, this.modelConfig.provider);
+		// The provider changed while this list loaded: a newer render owns the
+		// container, and this row would offer the previous provider's models.
+		if (renderId !== this.modelRenderId) return;
 
 		// Model selection
 		const modelSetting = new Setting(containerEl)
