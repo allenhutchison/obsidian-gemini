@@ -111,17 +111,7 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 			featureNoun: 'hook',
 			entityLabel: 'Hook',
 		});
-		this.failureTracker = new FailurePauseTracker<HookState>({
-			getState: (slug) => this.state[slug],
-			setState: (slug, next) => {
-				this.state[slug] = next;
-				return this.saveState();
-			},
-			logger: this.plugin.logger,
-			label: '[HookManager]',
-			entityNoun: 'Hook',
-			logFailures: true,
-		});
+		this.failureTracker = this.createFailureTracker({ entityNoun: 'Hook', logFailures: true });
 	}
 
 	// ── Folder path helpers ──────────────────────────────────────────────────

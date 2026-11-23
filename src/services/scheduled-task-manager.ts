@@ -97,16 +97,7 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 			featureNoun: 'task',
 			entityLabel: 'Scheduled task',
 		});
-		this.failureTracker = new FailurePauseTracker<TaskState>({
-			getState: (slug) => this.state[slug],
-			setState: (slug, next) => {
-				this.state[slug] = next;
-				return this.saveState();
-			},
-			logger: this.plugin.logger,
-			label: '[ScheduledTaskManager]',
-			entityNoun: 'Task',
-		});
+		this.failureTracker = this.createFailureTracker({ entityNoun: 'Task' });
 		this.execDeps = {
 			plugin: this.plugin,
 			tasks: this.tasks,
