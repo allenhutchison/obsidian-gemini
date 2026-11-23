@@ -115,6 +115,13 @@ function endOnUserTurn(contents: Content[]): Content[] {
 export class ContextManager {
 	private lastUsageMetadata: UsageMetadata | null = null;
 	private acceptNextLowerUpdate = false;
+	/**
+	 * True while `lastUsageMetadata.promptTokenCount` is our own revised estimate
+	 * and `cachedContentTokenCount` still comes from the provider's last report.
+	 * The two describe different observations, so the cached share is withheld
+	 * from `getTokenUsage` until the next real report (#1699).
+	 */
+	private promptIsRevisedEstimate = false;
 	private ai: GoogleGenAI | null;
 	/** Per-model chars-per-token ratio for estimate-based providers, calibrated from real usage metadata. */
 	private estimatedCharsPerToken: Map<string, number> = new Map();
@@ -193,6 +200,7 @@ export class ContextManager {
 		if (newPrompt >= cachedPrompt || this.acceptNextLowerUpdate) {
 			this.lastUsageMetadata = { ...metadata };
 			this.acceptNextLowerUpdate = false;
+			this.promptIsRevisedEstimate = false;
 			this.logger.log(`[ContextManager] Updated usage metadata: ${this.formatUsageForLog(metadata)}`);
 		} else {
 			this.logger.debug(`[ContextManager] Skipped lower metadata: prompt=${newPrompt} < cached=${cachedPrompt}`);
@@ -229,6 +237,7 @@ export class ContextManager {
 	setUsageMetadata(metadata: UsageMetadata): void {
 		if (metadata) {
 			this.lastUsageMetadata = { ...metadata };
+			this.promptIsRevisedEstimate = false;
 			this.logger.log(`[ContextManager] Force-set usage metadata: ${this.formatUsageForLog(metadata)}`);
 		}
 	}
@@ -240,7 +249,10 @@ export class ContextManager {
 	 *
 	 * - merges the new count over the cached metadata, so
 	 *   `cachedContentTokenCount` and `thoughtsTokenCount` survive and the
-	 *   footer's cached-prefix and reasoning figures don't reset;
+	 *   footer's cached-prefix and reasoning figures don't reset (the cached
+	 *   share is withheld until the next provider report, because the kept
+	 *   cached count and the revised prompt count come from different
+	 *   observations and their ratio can exceed 100%);
 	 * - arms the accept-next-lower one-shot, so the next real provider report
 	 *   wins even when our estimate came out higher than the truth;
 	 * - re-seeds the calibration char length from `history`, the array that is
@@ -258,6 +270,7 @@ export class ContextManager {
 			totalTokenCount: tokens,
 		};
 		this.acceptNextLowerUpdate = true;
+		this.promptIsRevisedEstimate = true;
 		if (!this.hasNativeTokenCount(modelName)) {
 			this.pendingEstimateCharLength.set(
 				modelName,
@@ -362,7 +375,9 @@ export class ContextManager {
 	async getTokenUsage(modelName: string): Promise<TokenUsageInfo> {
 		const inputTokenLimit = await this.getInputTokenLimit(modelName);
 		const estimatedTokens = this.lastUsageMetadata?.promptTokenCount ?? 0;
-		const cachedTokens = this.lastUsageMetadata?.cachedContentTokenCount ?? 0;
+		// A revised prompt estimate can't be the denominator for a cached count from
+		// an earlier report (#1699), so report no cached share until a real one lands.
+		const cachedTokens = this.promptIsRevisedEstimate ? 0 : (this.lastUsageMetadata?.cachedContentTokenCount ?? 0);
 		const thoughtsTokens = this.lastUsageMetadata?.thoughtsTokenCount;
 		return {
 			estimatedTokens,
@@ -797,6 +812,7 @@ export class ContextManager {
 	 */
 	reset(): void {
 		this.lastUsageMetadata = null;
+		this.promptIsRevisedEstimate = false;
 		this.logger.debug('[ContextManager] Usage metadata reset');
 	}
 }

@@ -847,7 +847,7 @@ describe('ContextManager', () => {
 				];
 			}
 
-			test('a truncation-only pass keeps cachedContentTokenCount and thoughtsTokenCount', async () => {
+			test('a truncation-only pass keeps thoughtsTokenCount and withholds the cached share until the next report', async () => {
 				contextManager.updateUsageMetadata({
 					promptTokenCount: 220_000,
 					totalTokenCount: 230_000,
@@ -860,8 +860,29 @@ describe('ContextManager', () => {
 
 				const usage = await contextManager.getTokenUsage('gemini-2.5-flash');
 				expect(usage.estimatedTokens).toBe(result.estimatedTokens);
-				expect(usage.cachedTokens).toBe(100_000);
+				// The kept cached count is from the old report and the prompt count is our
+				// revised estimate, so their ratio is meaningless (and can top 100%).
+				expect(usage.cachedTokens).toBe(0);
 				expect(usage.thoughtsTokens).toBe(4_000);
+
+				// The next real report restores the cached share.
+				contextManager.updateUsageMetadata({
+					promptTokenCount: result.estimatedTokens,
+					totalTokenCount: result.estimatedTokens,
+					cachedContentTokenCount: 20_000,
+				});
+				expect((await contextManager.getTokenUsage('gemini-2.5-flash')).cachedTokens).toBe(20_000);
+			});
+
+			test('a force-set after a revision reports its cached count again', async () => {
+				contextManager.updateUsageMetadata({
+					promptTokenCount: 220_000,
+					totalTokenCount: 230_000,
+					cachedContentTokenCount: 100_000,
+				});
+				await contextManager.prepareHistory(fatToolHistory(), 'gemini-2.5-flash');
+				contextManager.setUsageMetadata({ promptTokenCount: 50_000, cachedContentTokenCount: 10_000 });
+				expect((await contextManager.getTokenUsage('gemini-2.5-flash')).cachedTokens).toBe(10_000);
 			});
 
 			test('an optimistic post-truncation estimate still accepts the next, lower real report', async () => {
@@ -909,7 +930,8 @@ describe('ContextManager', () => {
 				expect(result.wasCompacted).toBe(true);
 				const usage = await contextManager.getTokenUsage('gemini-2.5-flash');
 				expect(usage.estimatedTokens).toBe(50_000);
-				expect(usage.cachedTokens).toBe(10_000);
+				// Withheld: 10k cached was measured against the old 850k prompt.
+				expect(usage.cachedTokens).toBe(0);
 			});
 		});
 
