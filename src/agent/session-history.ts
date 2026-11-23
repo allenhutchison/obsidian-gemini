@@ -398,6 +398,12 @@ export class SessionHistory {
 				delete frontmatter.model;
 			}
 
+			if (session.modelConfig?.provider) {
+				frontmatter.provider = session.modelConfig.provider;
+			} else {
+				delete frontmatter.provider;
+			}
+
 			// The two legacy model-sampling frontmatter keys removed by the
 			// settings redesign are never written, read, or deleted here.
 			// Sessions saved before the redesign keep those keys on disk — they

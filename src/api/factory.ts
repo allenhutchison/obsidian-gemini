@@ -21,13 +21,13 @@ import { ModelApi } from './interfaces/model-api';
 import type { ImageGenerationApi } from './interfaces/image-generation-api';
 import { GeminiPrompts } from '../prompts';
 import { RetryDecorator } from './retry-decorator';
-import { resolveFeatureModel } from '../models';
+import { resolveFeatureModel, resolveFeatureModelFor } from '../models';
 import type { ObsidianGemini } from '../types/plugin';
 import { ModelUseCase } from './model-use-case';
 import { featureProvider, featureRoute } from './feature-routing';
 import { FeatureUnavailableError } from './feature-errors';
 import type { FeatureId } from '../types/features';
-import type { ModelProvider } from './providers/registry';
+import { providerSupports, type ModelProvider } from './providers/registry';
 import { assertNever } from '../utils/assert-never';
 
 /** Per-session config overrides accepted by `createFromPlugin`. */
@@ -110,15 +110,39 @@ export class ModelClientFactory {
 	 * @param plugin - Plugin instance with settings
 	 * @param useCase - The use case for this model (determines which model to use)
 	 * @param overrides - Optional config overrides (for per-session settings)
+	 * @param providerOverride - Optional provider that replaces the feature's
+	 *   route, for a chat session that pins its own provider (#1679).
 	 * @returns Configured ModelApi instance wrapped with retry logic
 	 * @throws {FeatureUnavailableError} when the feature this use case bills to
-	 *   is routed to `'none'` or to a provider that can't serve it. There is no
-	 *   silent fallback to another provider — the caller surfaces this as a
-	 *   Notice.
+	 *   is routed to `'none'` or to a provider that can't serve it, or when
+	 *   `providerOverride` can't serve it. There is no silent fallback to
+	 *   another provider — the caller surfaces this as a Notice.
 	 */
-	static createFromPlugin(plugin: ObsidianGemini, useCase: ModelUseCase, overrides?: ClientConfigOverrides): ModelApi {
+	static createFromPlugin(
+		plugin: ObsidianGemini,
+		useCase: ModelUseCase,
+		overrides?: ClientConfigOverrides,
+		providerOverride?: ModelProvider
+	): ModelApi {
 		const settings = plugin.settings;
 		const feature = FEATURE_FOR_USE_CASE[useCase];
+
+		if (providerOverride) {
+			if (!providerSupports(providerOverride, feature)) {
+				throw new FeatureUnavailableError(feature, 'unsupported');
+			}
+			return new RetryDecorator(
+				this.createProviderClient(
+					plugin,
+					providerOverride,
+					useCase,
+					resolveFeatureModelFor(settings, feature, providerOverride),
+					overrides
+				),
+				plugin.logger
+			);
+		}
+
 		const provider = featureProvider(settings, feature);
 		if (!provider) {
 			const route = featureRoute(settings, feature);
@@ -201,16 +225,13 @@ export class ModelClientFactory {
 	 * Create a chat model.
 	 *
 	 * @param plugin - Plugin instance
-	 * @param _legacySessionConfig - Deprecated: Unused. Kept only so
-	 *   `agent-factory.ts` (`createChatModel(plugin, session.modelConfig)`)
-	 *   keeps compiling until the settings redesign's agent-view work package
-	 *   drops the argument at that call site; the model override it used to
-	 *   carry is applied at request time via `session.modelConfig`, and its
-	 *   temperature/topP fields no longer exist.
+	 * @param provider - Optional provider a session pins (#1679), replacing the
+	 *   chat route. The session's model override itself is applied at request
+	 *   time via `session.modelConfig`.
 	 * @returns Configured ModelApi client for chat
 	 */
-	static createChatModel(plugin: ObsidianGemini, _legacySessionConfig?: unknown): ModelApi {
-		return this.createFromPlugin(plugin, ModelUseCase.CHAT);
+	static createChatModel(plugin: ObsidianGemini, provider?: ModelProvider): ModelApi {
+		return this.createFromPlugin(plugin, ModelUseCase.CHAT, undefined, provider);
 	}
 
 	/**

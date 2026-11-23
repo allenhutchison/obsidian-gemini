@@ -54,7 +54,7 @@ describe('AgentFactory', () => {
 	});
 
 	describe('createAgentModel', () => {
-		it('should delegate to ModelClientFactory.createChatModel with just the plugin', () => {
+		it('passes no provider for a session that only overrides the model (the model applies per request)', () => {
 			const plugin = createMockPlugin();
 			const modelConfig: SessionModelConfig = {
 				model: 'gemini-2.5-pro',
@@ -63,16 +63,25 @@ describe('AgentFactory', () => {
 
 			AgentFactory.createAgentModel(plugin, session);
 
-			expect(ModelClientFactory.createChatModel).toHaveBeenCalledWith(plugin);
+			expect(ModelClientFactory.createChatModel).toHaveBeenCalledWith(plugin, undefined);
 		});
 
-		it('does not thread the session through when it has no modelConfig', () => {
+		it('passes no provider when the session has no modelConfig', () => {
 			const plugin = createMockPlugin();
 			const session = createMockSession({ modelConfig: undefined });
 
 			AgentFactory.createAgentModel(plugin, session);
 
-			expect(ModelClientFactory.createChatModel).toHaveBeenCalledWith(plugin);
+			expect(ModelClientFactory.createChatModel).toHaveBeenCalledWith(plugin, undefined);
+		});
+
+		it("passes the session's pinned provider (#1679)", () => {
+			const plugin = createMockPlugin();
+			const session = createMockSession({ modelConfig: { provider: 'anthropic' } });
+
+			AgentFactory.createAgentModel(plugin, session);
+
+			expect(ModelClientFactory.createChatModel).toHaveBeenCalledWith(plugin, 'anthropic');
 		});
 
 		it('should return the ModelApi instance from the factory', () => {

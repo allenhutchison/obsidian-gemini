@@ -561,7 +561,8 @@ command.
 
 ### Model Configuration
 
-- **Model**: Override the routed model for this session
+- **Provider**: Run this session on a different connected provider than the Chat route. **Use default** follows the route. Stored as `provider` in the session file's frontmatter; an unknown value is ignored
+- **Model**: Override the routed model for this session (listed from the session's provider). Changing the provider clears it
 - **Custom Prompt**: Select a custom prompt template for this session
 
 ### Context Files

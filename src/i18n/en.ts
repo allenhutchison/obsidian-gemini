@@ -1732,6 +1732,11 @@ export const en = {
 		message: 'Loading project...',
 		context: 'Tooltip on the project badge while the project name loads.',
 	},
+	'agent.header.tooltipProvider': {
+		message: 'Provider: {value}',
+		context:
+			'Line in the session-settings badge tooltip naming the provider the session is pinned to. {value} is a provider name (untranslated).',
+	},
 	'agent.header.tooltipModel': {
 		message: 'Model: {value}',
 		context: 'Line in the session-settings badge tooltip. {value} is a model name (untranslated).',
@@ -2196,6 +2201,24 @@ export const en = {
 	'agent.sessionList.deleteFailed': {
 		message: 'Failed to delete session',
 		context: 'Error notice when deleting a session fails.',
+	},
+	'agent.sessionSettings.provider': {
+		message: 'Provider',
+		context: 'Setting name in the session settings modal: which AI provider (Gemini, Claude, …) this session runs on.',
+	},
+	'agent.sessionSettings.providerDesc': {
+		message: 'Run this session on a different connected provider than the chat default',
+		context: 'Description of the Provider setting in the session settings modal.',
+	},
+	'agent.sessionSettings.useDefaultProvider': {
+		message: 'Use default ({provider})',
+		context:
+			'Dropdown option meaning the session uses the provider set for Chat and agent in Settings. {provider} is that provider\'s name (untranslated), or "Off".',
+	},
+	'agent.sessionSettings.providerNotConnected': {
+		message: '{provider} (not connected)',
+		context:
+			'Dropdown option for the provider a session is pinned to when that provider is no longer connected. {provider} is a provider name (untranslated).',
 	},
 	'agent.sessionSettings.model': {
 		message: 'Model',

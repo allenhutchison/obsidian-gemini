@@ -1,6 +1,10 @@
 import { App, ButtonComponent, Modal, Setting, DropdownComponent } from 'obsidian';
 import { ChatSession, SessionModelConfig } from '../../types/agent';
-import { GeminiModel } from '../../models';
+import { GeminiModel, sessionChatModel, type ModelProvider } from '../../models';
+import { PROVIDER_IDS, providerSupports } from '../../api/providers/registry';
+import { PROVIDER_SHORT_LABEL_KEY } from '../settings/display-values';
+import { providerConnection } from '../../api/provider-status';
+import { featureProvider } from '../../api/feature-routing';
 import type { ObsidianGemini } from '../../types/plugin';
 import { t } from '../../i18n';
 import { STATE_SUBFOLDERS, stateFolderPath } from '../../services/state-folder';
@@ -23,6 +27,30 @@ export function buildPromptTemplateOptions(
 		.sort((a, b) => a.label.localeCompare(b.label));
 	if (currentTemplate && !options.some((o) => o.path === currentTemplate)) {
 		options.push({ path: currentTemplate, label: stripMd(currentTemplate.split('/').pop() || currentTemplate) });
+	}
+	return options;
+}
+
+/**
+ * Options for the session provider dropdown (#1679): every provider that can
+ * serve chat and is connected here, in registry order, plus the session's
+ * current provider even when it no longer qualifies (so the dropdown doesn't
+ * misreport the session as on the default). The "use default" entry is added
+ * by the caller.
+ *
+ * @param isConnected - Whether a provider is set up on this device.
+ * @param current - The provider the session is pinned to, if any.
+ */
+export function buildProviderOptions(
+	isConnected: (p: ModelProvider) => boolean,
+	current: ModelProvider | undefined
+): { provider: ModelProvider; connected: boolean }[] {
+	const options = PROVIDER_IDS.filter((p) => providerSupports(p, 'chat') && isConnected(p)).map((p) => ({
+		provider: p,
+		connected: true,
+	}));
+	if (current && !options.some((o) => o.provider === current)) {
+		options.push({ provider: current, connected: false });
 	}
 	return options;
 }
@@ -51,17 +79,77 @@ export class SessionSettingsModal extends Modal {
 
 		contentEl.createEl('h2', { text: t('agent.menu.sessionSettings') });
 
-		// Get available models first
-		const models = await this.plugin.getModelManager().getAvailableModels();
+		// Provider selection (#1679). The model list below follows it.
+		const defaultProvider = featureProvider(this.plugin.settings, 'chat');
+		const providerSetting = new Setting(contentEl)
+			.setName(t('agent.sessionSettings.provider'))
+			.setDesc(t('agent.sessionSettings.providerDesc'));
+		const modelSettingEl = contentEl.createDiv();
+		const renderModels = async () => {
+			modelSettingEl.empty();
+			await this.renderModelSetting(modelSettingEl);
+		};
+		providerSetting.addDropdown((dropdown: DropdownComponent) => {
+			dropdown.addOption(
+				'',
+				t('agent.sessionSettings.useDefaultProvider', {
+					provider: defaultProvider ? t(PROVIDER_SHORT_LABEL_KEY[defaultProvider]) : t('settings.features.off'),
+				})
+			);
+			const options = buildProviderOptions(
+				(p) => providerConnection(this.plugin, p) === 'connected',
+				this.modelConfig.provider
+			);
+			for (const { provider, connected } of options) {
+				const label = t(PROVIDER_SHORT_LABEL_KEY[provider]);
+				dropdown.addOption(
+					provider,
+					connected ? label : t('agent.sessionSettings.providerNotConnected', { provider: label })
+				);
+			}
+			dropdown.setValue(this.modelConfig.provider ?? '');
+			dropdown.onChange(async (value) => {
+				const next = options.find((o) => o.provider === value)?.provider;
+				if (next === this.modelConfig.provider) return;
+				if (next) {
+					this.modelConfig.provider = next;
+				} else {
+					delete this.modelConfig.provider;
+				}
+				// A model id belongs to one provider: switching provider drops the
+				// session's model, so it runs on the new provider's remembered or
+				// default model until the user picks one.
+				delete this.modelConfig.model;
+				await this.saveConfig();
+				await renderModels();
+			});
+		});
+
+		await renderModels();
+
+		this.renderPromptSetting(contentEl);
+	}
+
+	/** The model row, listing the models of the session's provider (or the chat default's). */
+	private async renderModelSetting(containerEl: HTMLElement): Promise<void> {
+		const models = await this.plugin.getModelManager().getAvailableModels({}, this.modelConfig.provider);
 
 		// Model selection
-		const modelSetting = new Setting(contentEl)
+		const modelSetting = new Setting(containerEl)
 			.setName(t('agent.sessionSettings.model'))
 			.setDesc(t('agent.sessionSettings.modelDesc'));
 
 		// A button opening the fuzzy-search picker rather than a native dropdown:
 		// an aggregator endpoint can list hundreds of models.
-		const defaultOption = { value: '', label: t('agent.sessionSettings.useDefault') };
+		// "Use default" names the model the session would run on, so a pinned
+		// provider without a picked model still shows what it will use.
+		const defaultModel = sessionChatModel(this.plugin.settings, { provider: this.modelConfig.provider });
+		const defaultOption = {
+			value: '',
+			label: defaultModel
+				? `${t('agent.sessionSettings.useDefault')} (${models.find((m) => m.value === defaultModel)?.label ?? defaultModel})`
+				: t('agent.sessionSettings.useDefault'),
+		};
 		const modelLabel = (value: string | undefined): string =>
 			value ? (models.find((m) => m.value === value)?.label ?? value) : defaultOption.label;
 		// `| undefined` + an explicit `!== undefined` check below: Obsidian's
@@ -97,7 +185,10 @@ export class SessionSettingsModal extends Modal {
 					.setTooltip(t('agent.sessionSettings.resetToDefault'))
 					.onClick(() => void setModel(''));
 			});
+	}
 
+	/** The prompt-template row and the info footer. */
+	private renderPromptSetting(contentEl: HTMLElement): void {
 		// Prompt template selection
 		const promptSetting = new Setting(contentEl)
 			.setName(t('agent.sessionSettings.promptTemplate'))
@@ -171,6 +262,9 @@ export class SessionSettingsModal extends Modal {
 		// The delete operations ensure these properties don't exist when set to default
 		if (this.modelConfig.model !== undefined) {
 			cleanConfig.model = this.modelConfig.model;
+		}
+		if (this.modelConfig.provider !== undefined) {
+			cleanConfig.provider = this.modelConfig.provider;
 		}
 		if (this.modelConfig.promptTemplate !== undefined) {
 			cleanConfig.promptTemplate = this.modelConfig.promptTemplate;

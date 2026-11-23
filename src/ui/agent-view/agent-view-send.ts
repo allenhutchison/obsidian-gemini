@@ -1,5 +1,5 @@
 import { Notice, setIcon, App, TFile } from 'obsidian';
-import { getActiveChatModel } from '../../models';
+import { sessionChatModel } from '../../models';
 import type { Content } from '@google/genai';
 import { ChatSession, type PerTurnContext } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
@@ -579,7 +579,7 @@ export class AgentViewSend {
 
 		// Get model config from session or use defaults
 		const modelConfig = currentSession?.modelConfig || {};
-		const modelName = modelConfig.model || getActiveChatModel(this.ctx.plugin.settings);
+		const modelName = sessionChatModel(this.ctx.plugin.settings, modelConfig);
 
 		// beginTurn() is now handled by the turnStart event bus subscriber
 

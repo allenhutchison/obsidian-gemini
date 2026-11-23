@@ -18,6 +18,8 @@ import { attachVaultBinaryFile } from './attach-vault-file';
 import { classifyFile, FileCategory, GEMINI_INLINE_DATA_LIMIT } from '../../utils/file-classification';
 import { rasterizeSvg, SvgTooLargeError } from '../../utils/svg-rasterizer';
 import { t } from '../../i18n';
+import { PROVIDERS } from '../../api/providers/registry';
+import { PROVIDER_SHORT_LABEL_KEY } from '../settings/display-values';
 
 /**
  * Callbacks interface for UI interactions
@@ -239,7 +241,10 @@ export class AgentViewUI {
 
 		// Model config badge (if non-default settings)
 		if (currentSession?.modelConfig) {
-			const hasCustomSettings = currentSession.modelConfig.model || currentSession.modelConfig.promptTemplate;
+			const hasCustomSettings =
+				currentSession.modelConfig.model ||
+				currentSession.modelConfig.provider ||
+				currentSession.modelConfig.promptTemplate;
 
 			if (hasCustomSettings) {
 				// The tooltip line and the badge label below show the same template
@@ -255,6 +260,10 @@ export class AgentViewUI {
 				// Build detailed tooltip
 				const tooltipParts: string[] = [];
 
+				const pinnedProvider = currentSession.modelConfig.provider;
+				if (pinnedProvider && PROVIDERS[pinnedProvider]) {
+					tooltipParts.push(t('agent.header.tooltipProvider', { value: t(PROVIDER_SHORT_LABEL_KEY[pinnedProvider]) }));
+				}
 				if (currentSession.modelConfig.model) {
 					tooltipParts.push(t('agent.header.tooltipModel', { value: currentSession.modelConfig.model }));
 				}

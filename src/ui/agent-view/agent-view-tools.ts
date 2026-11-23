@@ -1,5 +1,5 @@
 import type { Content } from '@google/genai';
-import { getActiveChatModel } from '../../models';
+import { sessionChatModel } from '../../models';
 import type { ObsidianGemini } from '../../types/plugin';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
@@ -191,7 +191,7 @@ export class AgentViewTools {
 							if (!summaryText) return;
 							const compactionEntry = buildCompactionEntry(
 								summaryText,
-								currentSession.modelConfig?.model || getActiveChatModel(this.plugin.settings)
+								sessionChatModel(this.plugin.settings, currentSession.modelConfig)
 							);
 							await this.context.displayMessage(compactionEntry);
 							await this.plugin.sessionHistory.addEntryToSession(currentSession, compactionEntry);
@@ -224,7 +224,7 @@ export class AgentViewTools {
 				message: result.markdown,
 				notePath: '',
 				created_at: new Date(),
-				model: currentSession.modelConfig?.model || getActiveChatModel(this.plugin.settings),
+				model: sessionChatModel(this.plugin.settings, currentSession.modelConfig),
 				...(result.thoughts ? { thoughts: result.thoughts } : {}),
 			};
 
@@ -331,7 +331,7 @@ export class AgentViewTools {
 			message: '',
 			notePath: '',
 			created_at: new Date(),
-			model: session.modelConfig?.model || getActiveChatModel(this.plugin.settings),
+			model: sessionChatModel(this.plugin.settings, session.modelConfig),
 			thoughts,
 		});
 	}

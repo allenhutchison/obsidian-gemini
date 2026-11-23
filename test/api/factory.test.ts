@@ -1,7 +1,7 @@
 import { ModelClientFactory, ModelUseCase } from '../../src/api/factory';
 import { FeatureUnavailableError } from '../../src/api/feature-errors';
 import type { FeatureRoutes } from '../../src/types/features';
-import { PROVIDER_IDS, type ModelProvider } from '../../src/api/providers/registry';
+import { PROVIDER_IDS, PROVIDERS, type ModelProvider } from '../../src/api/providers/registry';
 
 // --- Mocks ---
 
@@ -136,6 +136,39 @@ describe('ModelClientFactory', () => {
 			for (const [id, client] of Object.entries(CLIENT_FOR_PROVIDER)) {
 				expect(client, `${id} client for a ${provider} route`).toHaveBeenCalledTimes(id === provider ? 1 : 0);
 			}
+		});
+
+		describe('session provider override (#1679)', () => {
+			it("serves chat with the override provider's client instead of the route", () => {
+				const plugin = createMockPlugin({ features: { chat: { provider: 'gemini', model: 'gemini-x' } } });
+				ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT, undefined, 'anthropic');
+
+				expect(MockAnthropicClient).toHaveBeenCalledTimes(1);
+				expect(MockGeminiClient).not.toHaveBeenCalled();
+				// Never hands the routed provider's model id to another provider.
+				expect(MockAnthropicClient.mock.calls[0][0].model).not.toBe('gemini-x');
+				expect(MockRetryDecorator).toHaveBeenCalledTimes(1);
+			});
+
+			it('serves the override even when chat itself is routed to none', () => {
+				const plugin = createMockPlugin({ features: { chat: { provider: 'none', model: '' } } });
+				ModelClientFactory.createChatModel(plugin, 'ollama');
+
+				expect(MockOllamaClient).toHaveBeenCalledTimes(1);
+			});
+
+			it('throws FeatureUnavailableError when the override cannot serve the feature', () => {
+				// Every current provider serves chat, so knock the capability out for this case.
+				const caps = PROVIDERS.anthropic.capabilities;
+				caps.chat = false;
+				try {
+					const plugin = createMockPlugin();
+					expect(() => ModelClientFactory.createChatModel(plugin, 'anthropic')).toThrow(FeatureUnavailableError);
+					expect(MockAnthropicClient).not.toHaveBeenCalled();
+				} finally {
+					caps.chat = true;
+				}
+			});
 		});
 
 		it('should create a GeminiClient when chat is routed to gemini', () => {
@@ -376,15 +409,6 @@ describe('ModelClientFactory', () => {
 
 			expect(MockGeminiClient).toHaveBeenCalledTimes(1);
 			expect(MockRetryDecorator).toHaveBeenCalledTimes(1);
-		});
-
-		// The legacy second parameter (session temperature/topP) is dropped
-		// entirely as of the settings redesign, but the call must not throw when
-		// an unmigrated caller still passes one.
-		it('ignores a legacy second argument rather than throwing', () => {
-			const plugin = createMockPlugin();
-			expect(() => ModelClientFactory.createChatModel(plugin, { temperature: 0.2, topP: 0.5 })).not.toThrow();
-			expect(MockGeminiClient).toHaveBeenCalledTimes(1);
 		});
 	});
 

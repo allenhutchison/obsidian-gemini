@@ -10,7 +10,9 @@ import {
 	isInteractionsOnlyModel,
 	contextWindowForModel,
 	resolveFeatureModel,
+	resolveFeatureModelFor,
 	resolveGenerateContentModel,
+	sessionChatModel,
 	RETIRED_MODEL_SUCCESSORS,
 	setGeminiModels,
 } from '../src/models';
@@ -272,6 +274,50 @@ describe('resolveFeatureModel', () => {
 	it('returns "" for a model-less feature (deepResearch, rag)', () => {
 		const s: FeatureRoutingSlice = { features: routes({ rag: { provider: 'gemini', model: '' } }) };
 		expect(resolveFeatureModel(s, 'rag')).toBe('');
+	});
+});
+
+describe('per-session provider model resolution (#1679)', () => {
+	let originalModels: GeminiModel[];
+
+	beforeEach(() => {
+		originalModels = [...GEMINI_MODELS];
+		setTestModels([
+			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
+			{ value: 'llama3.2', label: 'Llama 3.2', provider: 'ollama' as const, defaultForRoles: ['chat'] },
+		]);
+	});
+
+	afterEach(() => {
+		setTestModels(originalModels);
+	});
+
+	const geminiChat = (): FeatureRoutingSlice => ({
+		features: routes({ chat: { provider: 'gemini', model: 'gemini-flash-lite' } }),
+	});
+
+	it('uses the routed model when the session provider is the routed one', () => {
+		expect(resolveFeatureModelFor(geminiChat(), 'chat', 'gemini')).toBe('gemini-flash-lite');
+	});
+
+	it("uses the remembered model for another provider, never the routed provider's model", () => {
+		const s: FeatureRoutingSlice = {
+			...geminiChat(),
+			providerModelMemory: { ollama: { chat: 'qwen3' } },
+		};
+		expect(resolveFeatureModelFor(s, 'chat', 'ollama')).toBe('qwen3');
+	});
+
+	it("falls back to the other provider's role default when nothing is remembered", () => {
+		expect(resolveFeatureModelFor(geminiChat(), 'chat', 'ollama')).toBe('llama3.2');
+	});
+
+	it('sessionChatModel prefers the session model, then the session provider, then the global chat model', () => {
+		const s = geminiChat();
+		expect(sessionChatModel(s, { model: 'pinned', provider: 'ollama' })).toBe('pinned');
+		expect(sessionChatModel(s, { provider: 'ollama' })).toBe('llama3.2');
+		expect(sessionChatModel(s, {})).toBe('gemini-flash-lite');
+		expect(sessionChatModel(s, undefined)).toBe('gemini-flash-lite');
 	});
 });
 

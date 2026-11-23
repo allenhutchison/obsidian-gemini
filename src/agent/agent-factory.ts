@@ -21,7 +21,7 @@ export class AgentFactory {
 	 *   (`agent-loop.ts`), which always passes the session, keeps compiling.
 	 * @returns Configured ModelApi instance
 	 */
-	static createAgentModel(plugin: ObsidianGemini, _session: ChatSession): ModelApi {
-		return ModelClientFactory.createChatModel(plugin);
+	static createAgentModel(plugin: ObsidianGemini, session: ChatSession): ModelApi {
+		return ModelClientFactory.createChatModel(plugin, session.modelConfig?.provider);
 	}
 }

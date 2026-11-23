@@ -1,5 +1,5 @@
 import type { Content } from '@google/genai';
-import { getActiveChatModel } from '../../models';
+import { sessionChatModel } from '../../models';
 import type { ObsidianGemini } from '../../types/plugin';
 import { ChatSession, type PerTurnContext } from '../../types/agent';
 import { ToolExecutionContext } from '../../tools/types';
@@ -55,7 +55,7 @@ function buildSharedRequestFields(params: RetryRequestParams): Omit<ExtendedMode
 	return {
 		kind: 'extended',
 		conversationHistory: updatedHistory,
-		model: modelConfig.model || getActiveChatModel(plugin.settings),
+		model: sessionChatModel(plugin.settings, modelConfig),
 		prompt: '', // Unused in agent pipeline — context lives in conversationHistory
 		customPrompt,
 		projectInstructions,

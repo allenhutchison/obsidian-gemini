@@ -1,5 +1,5 @@
 import type { Content } from '@google/genai';
-import { getActiveChatModel } from '../models';
+import { sessionChatModel } from '../models';
 import type { ObsidianGemini } from '../types/plugin';
 import type { ChatSession, PerTurnContext } from '../types/agent';
 import type { AgentEventMap, AgentEventName } from '../types/agent-events';
@@ -284,7 +284,7 @@ export class AgentLoop {
 		// entries strictly before it (prior, already-completed turns) are
 		// eligible. See #662.
 		let loopStartIndex = initialHistory.length;
-		const modelName = session?.modelConfig?.model || getActiveChatModel(plugin.settings);
+		const modelName = sessionChatModel(plugin.settings, session?.modelConfig);
 		// `perTurnContext` is a first-iteration input, like `userMessage`:
 		// `buildToolHistoryTurns` splices it into the user turn once, after which
 		// it lives in `conversationHistory`. Re-passing it on later iterations
