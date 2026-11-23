@@ -84,6 +84,81 @@ Open the developer console to inspect logs and errors:
 
 Filter by `[Gemini Scribe]` to isolate plugin output.
 
+## Hidden Test Environment (Windows + WSL)
+
+On Windows you can run live tests against a real Obsidian without touching your own vaults and without any Obsidian window appearing on your desktop. The scripts in `scripts/test-env/` run the official Linux build of Obsidian inside WSL on a virtual display (Xvfb), with its own profile and a throwaway vault, and you drive it from Windows over the Chrome DevTools Protocol (CDP). This is also the setup for automated or agent-driven UI checks.
+
+Why bother:
+
+- **Never test against a real vault.** The throwaway profile knows only one vault, which is deleted and recreated on every reset. The CDP client refuses to run unless the connected vault carries the throwaway marker file.
+- **No visible window.** Obsidian draws to Xvfb inside WSL. The launch script clears WSLg's `DISPLAY`/`WAYLAND_DISPLAY`, so nothing reaches the Windows desktop. No Hyper-V or Windows Sandbox needed, so it works on Windows Home.
+
+Requirements: WSL with an Ubuntu distribution (tested on Ubuntu 26.04 with Obsidian 1.15.1) and Node 22 or newer on Windows (`cdp.mjs` uses the global `fetch` and `WebSocket`).
+
+### One-time install
+
+From the repository root in PowerShell:
+
+```powershell
+wsl -d Ubuntu -u root -- bash scripts/test-env/install.sh
+```
+
+This installs Xvfb, jq, the Electron runtime libraries and the latest Obsidian `.deb` from [obsidianmd/obsidian-releases](https://github.com/obsidianmd/obsidian-releases). Pass a version to pin one, for example `... install.sh 1.15.1`.
+
+### Reset the vault and launch
+
+Build first, then reset and launch from the repository root. `wsl` starts in the same folder (translated to `/mnt/c/...`), and `reset-vault.sh` installs the build from the current directory:
+
+```powershell
+npm run build
+```
+
+```powershell
+wsl -d Ubuntu -- bash scripts/test-env/reset-vault.sh
+```
+
+```powershell
+wsl -d Ubuntu -- bash scripts/test-env/launch.sh
+```
+
+`reset-vault.sh` deletes and recreates `~/gs-test` inside WSL: a `vault/` with the plugin enabled (debug mode and hooks on), a separate `profile/`, and the marker file `.gs-throwaway-vault`. It takes an optional worktree path. Use a WSL path (`/mnt/c/...`) or forward slashes, because `wsl` strips backslashes from arguments. `launch.sh` starts Xvfb and Obsidian and prints the DevTools targets. Re-run it to restart Obsidian, for example after a rebuild (reset again to copy the new build in). `stop.sh` stops both.
+
+To run a second, independent instance (say, while another one is in use), set different values for the three settings in `scripts/test-env/env.sh`. Share them with WSL through `WSLENV`:
+
+```powershell
+$env:GS_TEST_ROOT='/home/<you>/gs-test-2'; $env:GS_TEST_DISPLAY=':98'; $env:CDP_PORT='9223'; $env:WSLENV='GS_TEST_ROOT/u:GS_TEST_DISPLAY/u:CDP_PORT/u'
+```
+
+### Drive it over CDP
+
+`scripts/test-env/cdp.mjs` connects to `127.0.0.1:$CDP_PORT` (default `9222`; WSL forwards it to Windows localhost). Code runs inside the Obsidian window, so `app`, `activeDocument` and `require('electron')` are available. A file's body runs inside an async function: it can `await` and should `return` a JSON-serialisable value.
+
+```powershell
+node scripts/test-env/cdp.mjs eval scripts/test-env/examples/smoke.js
+```
+
+```powershell
+node scripts/test-env/cdp.mjs eval -e "return app.plugins.plugins['gemini-scribe'].manifest.version"
+```
+
+`examples/smoke.js` accepts the first-open trust prompt, waits for the plugin to load and reports its state. Use it as a template for feature checks: drive commands with `app.commands.executeCommandById(...)`, fill modals through `activeDocument`, emit events on `plugin.agentEventBus`, and return what you observed.
+
+**Screenshots:** `node scripts/test-env/cdp.mjs shot out.png` captures the main window (1600×1000 by default).
+
+**Mobile width:** `examples/mobile-width.js` resizes the real window with `require('electron').remote.getCurrentWindow().setSize(390, 844)` and turns on the mobile layout with `app.emulateMobile(true)`. Take a `shot` afterwards. Undo with `app.emulateMobile(false)` and `setSize(1600, 1000)`.
+
+**Raw protocol calls:** `node scripts/test-env/cdp.mjs cdp <Method> '<json>'`, for example `Runtime.evaluate` or `Emulation.setDeviceMetricsOverride` (see the gotcha below).
+
+**No API key:** the throwaway profile has no API key, so a real agent turn fails at the model call. That is fine for UI, settings, hook and event-bus checks. For a real turn, add a key in the hidden instance's settings (it stays in that profile and is deleted on the next reset). Use a low-quota key.
+
+### Gotchas
+
+- **Trust prompt on first open.** A freshly reset vault opens with "Do you trust the author of this vault?", and community plugins stay off until it is accepted. `examples/smoke.js` clicks **Trust author and enable plugins**. Do the same before anything that needs the plugin.
+- **Settings opens in its own window (Obsidian 1.15+).** That window can become `activeDocument`, so a modal opened afterwards (for example from a settings button) may render there instead of the main window. `cdp.mjs` attaches to the main window. Query `activeDocument` rather than `document`, or close Settings first.
+- **CDP `Emulation.*` overrides are temporary.** They reset when the DevTools socket closes, and every `cdp.mjs` call opens and closes its own. Resize the real window with `setSize()` instead, as `examples/mobile-width.js` does.
+- **`app.emulateMobile()` reloads the window.** An evaluation that calls it directly is cut off with "Inspected target navigated or closed". Schedule it after returning, as the example does. The next `cdp.mjs` call waits for the reload.
+- **Don't use the `obsidian` CLI for this on Windows.** It launches the Windows Obsidian with your last-opened real vault, and `vault=` does not route to another vault. Drive the hidden instance only through `cdp.mjs`.
+
 ## Mobile Testing
 
 > See also: [Obsidian's official Mobile Development guide](https://docs.obsidian.md/Plugins/Getting+started/Mobile+development)
