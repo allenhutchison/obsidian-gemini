@@ -1,5 +1,5 @@
 import type { Content } from '@google/genai';
-import { getActiveChatModel } from '../../models';
+import { sessionChatModel } from '../../models';
 import type { ObsidianGemini } from '../../types/plugin';
 import { ChatSession, type PerTurnContext } from '../../types/agent';
 import { ToolExecutionContext } from '../../tools/types';
@@ -27,6 +27,8 @@ export interface FollowUpRequestParams extends PerTurnContext {
 	 * the headless confirmation provider.
 	 */
 	headless?: boolean;
+	/** See `RetryRequestParams.model`. */
+	model?: string;
 }
 
 export interface RetryRequestParams extends PerTurnContext {
@@ -34,6 +36,13 @@ export interface RetryRequestParams extends PerTurnContext {
 	currentSession: ChatSession;
 	updatedHistory: Content[];
 	customPrompt?: CustomPrompt;
+	/**
+	 * The turn's model. `AgentLoop` passes the name it resolved from its config
+	 * snapshot, so the request, its usage report and compaction all name the
+	 * same model even if session settings change mid-turn. Falls back to the
+	 * live session config.
+	 */
+	model?: string;
 }
 
 /**
@@ -50,12 +59,11 @@ export interface RetryRequestParams extends PerTurnContext {
 function buildSharedRequestFields(params: RetryRequestParams): Omit<ExtendedModelRequest, 'userMessage'> {
 	const { plugin, currentSession, updatedHistory, customPrompt, projectInstructions, projectSkills, sessionStartedAt } =
 		params;
-	const modelConfig = currentSession?.modelConfig || {};
 
 	return {
 		kind: 'extended',
 		conversationHistory: updatedHistory,
-		model: modelConfig.model || getActiveChatModel(plugin.settings),
+		model: params.model ?? sessionChatModel(plugin.settings, currentSession?.modelConfig),
 		prompt: '', // Unused in agent pipeline — context lives in conversationHistory
 		customPrompt,
 		projectInstructions,

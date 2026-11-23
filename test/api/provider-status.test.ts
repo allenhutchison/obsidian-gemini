@@ -7,6 +7,7 @@ import {
 	providerConnection,
 	featureStatus,
 	providerMissingKey,
+	providerSelectable,
 	providerBoundAvailable,
 } from '../../src/api/provider-status';
 import { PROVIDERS } from '../../src/api/providers/registry';
@@ -294,5 +295,25 @@ describe('Ollama Cloud (#1764)', () => {
 		expect(providerConnection(ollamaPlugin('https://ollama.com', '', 'reachable'), 'ollama')).toBe('needs-key');
 		expect(providerConnection(ollamaPlugin('https://ollama.com', 'k', 'reachable'), 'ollama')).toBe('connected');
 		expect(providerConnection(ollamaPlugin('http://localhost:11434', '', 'reachable'), 'ollama')).toBe('connected');
+	});
+	it('is selectable for a session unless it needs a key or failed its probe (#1679)', () => {
+		expect(providerSelectable(ollamaPlugin('http://localhost:11434', '', null), 'ollama')).toBe(true);
+		expect(providerSelectable(ollamaPlugin('http://localhost:11434', '', 'reachable'), 'ollama')).toBe(true);
+		expect(providerSelectable(ollamaPlugin('http://localhost:11434', '', 'unreachable'), 'ollama')).toBe(false);
+		expect(providerSelectable(ollamaPlugin('https://ollama.com', '', 'reachable'), 'ollama')).toBe(false);
+	});
+});
+
+describe('providerSelectable (#1679)', () => {
+	it('offers a keyless custom OpenAI-compatible endpoint', () => {
+		const plugin = makePlugin({ openaiBaseUrl: 'http://localhost:1234/v1', features: routes({}) });
+		expect(providerConnection(plugin, 'openai')).toBe('unknown');
+		expect(providerSelectable(plugin, 'openai')).toBe(true);
+	});
+
+	it('withholds providers missing a key they require', () => {
+		expect(providerSelectable(makePlugin({ features: routes({}) }), 'openai')).toBe(false);
+		expect(providerSelectable(makePlugin({ features: routes({}) }), 'gemini')).toBe(false);
+		expect(providerSelectable(makePlugin({ apiKeySecretName: 'k', features: routes({}) }), 'gemini')).toBe(true);
 	});
 });

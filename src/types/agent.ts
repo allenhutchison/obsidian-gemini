@@ -1,5 +1,6 @@
 import { TFile } from 'obsidian';
 import { FeatureToolPolicy, PolicyPreset } from './tool-policy';
+import type { ModelProvider } from '../api/providers/registry';
 
 /**
  * UI-only grouping label for tools (e.g. for "read-only tools" pickers).
@@ -58,6 +59,14 @@ export enum SessionType {
 export interface SessionModelConfig {
 	/** Model id to use; defaults to the plugin's chat model when omitted. */
 	model?: string;
+
+	/**
+	 * Provider this session runs on (#1679). Overrides the global chat route
+	 * for this session only; omitted means "use the chat route". The provider
+	 * must be able to serve chat, or building the client fails rather than
+	 * falling back to another provider.
+	 */
+	provider?: ModelProvider;
 
 	/** Path to custom prompt template */
 	promptTemplate?: string;

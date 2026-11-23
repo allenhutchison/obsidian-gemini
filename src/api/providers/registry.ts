@@ -224,6 +224,11 @@ export const PROVIDER_IDS: readonly ModelProvider[] = [
 	'openrouter',
 ] as const;
 
+/** Whether `value` names a known provider. Narrows, so callers can store it as a `ModelProvider`. */
+export function isModelProvider(value: string): value is ModelProvider {
+	return (PROVIDER_IDS as readonly string[]).includes(value);
+}
+
 /**
  * Capabilities for a provider, defaulting to Gemini for an unrecognized id
  * (e.g. a settings value written by a newer version and then downgraded).

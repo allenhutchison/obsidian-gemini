@@ -515,6 +515,51 @@ describe('AgentViewTools.handleToolCalls — error path', () => {
 	});
 });
 
+describe('AgentViewTools.handleToolCalls — turn model snapshot (#1679)', () => {
+	test('labels every persisted entry with the model the turn started on', async () => {
+		const { session, addEntryToSession, turn } = makeHarness();
+		scriptLoop(
+			async (hooks) => {
+				// The user saves a different session model while the turn is in flight.
+				session.modelConfig = { model: 'switched-mid-turn' };
+				await hooks.onModelReasoning?.('why these tools');
+				await hooks.onMidLoopCompaction?.({ summaryText: 'summary' } as any);
+				await hooks.onFollowUpChunk?.({ text: 'partial' });
+			},
+			loopResult({ markdown: 'final answer' })
+		);
+
+		await turn('pre-tool reasoning');
+
+		const models = addEntryToSession.mock.calls.map(([, entry]) => entry.model);
+		expect(models.length).toBeGreaterThanOrEqual(3);
+		expect(new Set(models)).toEqual(new Set([CHAT_MODEL]));
+	});
+
+	test('hands the caller snapshot to the loop, falling back to a copy of the session config', async () => {
+		const { tools, session } = makeHarness();
+		const snapshot = { model: 'snapshot-model' };
+		await tools.handleToolCalls(
+			[TOOL_CALL],
+			'm',
+			[],
+			{} as GeminiConversationEntry,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			snapshot
+		);
+		expect(mocks.run.mock.calls[0][0].options.modelConfig).toBe(snapshot);
+
+		session.modelConfig = { model: 'live-model' };
+		await tools.handleToolCalls([TOOL_CALL], 'm', [], {} as GeminiConversationEntry);
+		const fallback = mocks.run.mock.calls[1][0].options.modelConfig;
+		expect(fallback).toEqual({ model: 'live-model' });
+		expect(fallback).not.toBe(session.modelConfig);
+	});
+});
+
 describe('AgentViewTools.handleToolCalls — turn-scoped progress', () => {
 	it("hides progress through the turn's handle, not the shared view, so a stopped turn can't hide the next one's", async () => {
 		const { tools, context } = makeHarness();

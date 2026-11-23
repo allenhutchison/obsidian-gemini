@@ -302,3 +302,97 @@ describe('loadProjectInstructions', () => {
 		expect(logger.error).toHaveBeenCalledWith('Error loading project instructions:', boom);
 	});
 });
+
+// A turn resolves its chat model once (#1679). With none to resolve (a provider
+// whose model list hasn't loaded, nothing picked), an empty request model would
+// make each client re-read the model from live settings, so the send stops
+// before it clears the input, saves anything or builds a client.
+function makeSendMessageCtx(chatModel: string) {
+	const progress = { show: vi.fn(), hide: vi.fn() };
+	const none = { provider: 'none', model: '' };
+	const addEntryToSession = vi.fn();
+	const ctx = {
+		getCurrentSession: () => ({ id: 's1' }),
+		getUserInput: () => ({ innerText: 'hi' }),
+		getShelf: () => ({ getTextFiles: () => [], getPendingAttachments: () => [] }),
+		displayMessage: vi.fn().mockResolvedValue(undefined),
+		updateTokenUsage: vi.fn().mockResolvedValue(undefined),
+		progress,
+		plugin: {
+			logger: { error: vi.fn() },
+			settings: {
+				features: {
+					chat: { provider: 'ollama', model: chatModel },
+					summary: none,
+					completions: none,
+					rewrite: none,
+					webSearch: none,
+					deepResearch: none,
+					rag: none,
+					imageGen: none,
+				},
+			},
+			sessionHistory: { addEntryToSession },
+		},
+	} as any;
+	const send = new AgentViewSend(ctx);
+	const internals = send as any;
+	const capture = vi.spyOn(internals, 'captureTurnInput').mockResolvedValue({
+		turnTimestamp: new Date(),
+		message: 'hi',
+		savedAttachments: [],
+	});
+	// Stand in for the Stop-button UI while still registering the turn, so
+	// the turn-scoped progress and cleanup paths run as they do for real.
+	vi.spyOn(internals, 'beginExecutionUi').mockImplementation(() => {
+		const turn = { cancelled: false, stream: null, toolCallCount: 0 };
+		internals.activeTurn = turn;
+		return turn;
+	});
+	vi.spyOn(internals, 'resetExecutionUiState').mockImplementation(() => {});
+	return { send, internals, progress, capture, addEntryToSession };
+}
+
+describe('AgentViewSend.sendMessage model snapshot', () => {
+	beforeEach(() => {
+		NoticeMock.mockClear();
+	});
+
+	test('with no chat model, notifies and stops before touching the input or history', async () => {
+		const { send, internals, progress, capture, addEntryToSession } = makeSendMessageCtx('');
+		const assemble = vi.spyOn(internals, 'assembleTurnRequest');
+
+		await send.sendMessage();
+
+		expect(NoticeMock).toHaveBeenCalledWith(
+			'No chat model is selected. Choose a chat model in settings, or wait for the model list to load.'
+		);
+		expect(capture).not.toHaveBeenCalled();
+		expect(progress.show).not.toHaveBeenCalled();
+		expect(assemble).not.toHaveBeenCalled();
+		expect(addEntryToSession).not.toHaveBeenCalled();
+	});
+
+	test('passes the pinned model config to turn assembly', async () => {
+		const { send, internals } = makeSendMessageCtx('llama3.2');
+		const assemble = vi.spyOn(internals, 'assembleTurnRequest').mockRejectedValue(new Error('stop'));
+
+		await send.sendMessage();
+
+		expect(assemble).toHaveBeenCalledTimes(1);
+		expect(assemble.mock.calls[0][8]).toEqual({ model: 'llama3.2', provider: 'ollama' });
+	});
+
+	test('hides progress when turn assembly fails', async () => {
+		const { send, internals, progress } = makeSendMessageCtx('llama3.2');
+		vi.spyOn(internals, 'assembleTurnRequest').mockRejectedValue(new Error('boom'));
+		const dispatch = vi.spyOn(internals, 'dispatchResponse');
+
+		await send.sendMessage();
+
+		expect(progress.show).toHaveBeenCalled();
+		expect(progress.hide).toHaveBeenCalled();
+		expect(dispatch).not.toHaveBeenCalled();
+		expect(NoticeMock).toHaveBeenCalledTimes(1);
+	});
+});

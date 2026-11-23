@@ -1,5 +1,11 @@
 import { PROVIDER_IDS, type ModelProvider } from './api/providers/registry';
-import { featureModel, featureProvider, featureRoute, type FeatureRoutingSlice } from './api/feature-routing';
+import {
+	featureModel,
+	featureProvider,
+	featureRoute,
+	recallModel,
+	type FeatureRoutingSlice,
+} from './api/feature-routing';
 import {
 	FEATURE_IDS,
 	FEATURE_MODEL_ROLE,
@@ -264,6 +270,56 @@ export function geminiGroundingModel(settings: FeatureRoutingSlice): string {
  */
 export function getActiveChatModel(settings: FeatureRoutingSlice): string {
 	return resolveFeatureModel(settings, 'chat');
+}
+
+/**
+ * The model feature `f` uses when it is served by `provider`, which may differ
+ * from the routed one (a session that pins its own provider, #1679). When
+ * `provider` is the routed provider this is `resolveFeatureModel`; otherwise
+ * it is the model last picked for that provider, then the provider's role
+ * default. It never returns another provider's model id.
+ */
+export function resolveFeatureModelFor(settings: FeatureRoutingSlice, f: FeatureId, provider: ModelProvider): string {
+	if (featureProvider(settings, f) === provider) return resolveFeatureModel(settings, f);
+	const remembered = recallModel(settings, f, provider);
+	if (remembered) return remembered;
+	const role = FEATURE_MODEL_ROLE[f];
+	return role ? getDefaultModelForRole(role, provider) : '';
+}
+
+/**
+ * The model a chat session runs on (#1679): the session's own model, else its
+ * pinned provider's model (see `resolveFeatureModelFor`), else the global chat
+ * model. Every site that needs "this session's model" calls this, so they
+ * can't drift apart.
+ */
+export function sessionChatModel(
+	settings: FeatureRoutingSlice,
+	modelConfig: { model?: string; provider?: ModelProvider } | undefined
+): string {
+	if (modelConfig?.model) return modelConfig.model;
+	if (modelConfig?.provider) return resolveFeatureModelFor(settings, 'chat', modelConfig.provider);
+	return getActiveChatModel(settings);
+}
+
+/**
+ * A session model config with what `sessionChatModel` resolves to pinned in
+ * (#1679): the model, and the provider (the session's, else the chat route's).
+ * Without a session model the name comes from live settings, so an agent turn
+ * that re-resolved it later could name a model, or reach a provider, that
+ * didn't produce its response. A turn resolves once with this and carries the
+ * result. A provider is left unset when chat is off.
+ */
+export function pinSessionChatModel<T extends { model?: string; provider?: ModelProvider }>(
+	settings: FeatureRoutingSlice,
+	modelConfig: T | undefined
+): T & { model: string } {
+	const provider = modelConfig?.provider ?? featureProvider(settings, 'chat') ?? undefined;
+	return {
+		...(modelConfig ?? ({} as T)),
+		model: sessionChatModel(settings, modelConfig),
+		...(provider ? { provider } : {}),
+	};
 }
 
 /**

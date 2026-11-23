@@ -1,7 +1,7 @@
 import type { Content } from '@google/genai';
-import { getActiveChatModel } from '../../models';
+import { sessionChatModel } from '../../models';
 import type { ObsidianGemini } from '../../types/plugin';
-import { ChatSession } from '../../types/agent';
+import { ChatSession, type SessionModelConfig } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import { IConfirmationProvider, IToolHostView, ToolResult } from '../../tools/types';
 import { CustomPrompt } from '../../prompts/types';
@@ -117,7 +117,8 @@ export class AgentViewTools {
 		customPrompt?: CustomPrompt,
 		perTurn?: PerTurnContext,
 		precedingThoughts?: string,
-		turn?: TurnHandle
+		turn?: TurnHandle,
+		modelConfig?: SessionModelConfig
 	) {
 		const isCancelled = turn ? () => turn.isCancelled() : () => this.context.isCancellationRequested();
 		const registerStream = turn
@@ -127,6 +128,13 @@ export class AgentViewTools {
 		const currentSession = this.context.getCurrentSession();
 		if (!currentSession) return;
 
+		// The turn's model config, snapshotted by the caller when it built the
+		// initial request. The loop's follow-ups and every entry this turn
+		// persists use it, so a provider change saved mid-turn can't relabel a
+		// response with a model that didn't produce it.
+		const turnModelConfig: SessionModelConfig = modelConfig ?? { ...(currentSession.modelConfig ?? {}) };
+		const turnModel = sessionChatModel(this.plugin.settings, turnModelConfig);
+
 		// Fresh budget counter per user turn (this instance is reused across turns).
 		this.budgetRemaining = undefined;
 
@@ -134,7 +142,7 @@ export class AgentViewTools {
 		// the first row of the tool group (once the group exists) and persist it.
 		this.pendingReasoning = precedingThoughts?.trim() ? precedingThoughts : null;
 		if (this.pendingReasoning) {
-			await this.persistReasoning(currentSession, this.pendingReasoning);
+			await this.persistReasoning(currentSession, this.pendingReasoning, turnModel);
 		}
 
 		const activeProject = currentSession.projectPath
@@ -150,6 +158,7 @@ export class AgentViewTools {
 				options: {
 					plugin: this.plugin,
 					session: currentSession,
+					modelConfig: turnModelConfig,
 					isCancelled,
 					confirmationProvider: this.context.confirmationProvider,
 					// Give interactive sessions a high soft budget so the reminder +
@@ -203,7 +212,7 @@ export class AgentViewTools {
 							// next tool batch — render it as a row inside the current tool
 							// group (interleaved with the tool calls) and persist it.
 							await this.renderReasoningInGroup(thoughts);
-							await this.persistReasoning(currentSession, thoughts);
+							await this.persistReasoning(currentSession, thoughts, turnModel);
 						},
 						onMidLoopCompaction: async ({ summaryText }) => {
 							// Mirrors the pre-turn "Context Compacted" notice in
@@ -213,10 +222,7 @@ export class AgentViewTools {
 							// this hook, so refreshing the header just re-reads it.
 							await this.context.updateTokenUsage?.();
 							if (!summaryText) return;
-							const compactionEntry = buildCompactionEntry(
-								summaryText,
-								currentSession.modelConfig?.model || getActiveChatModel(this.plugin.settings)
-							);
+							const compactionEntry = buildCompactionEntry(summaryText, turnModel);
 							await this.context.displayMessage(compactionEntry);
 							await this.plugin.sessionHistory.addEntryToSession(currentSession, compactionEntry);
 						},
@@ -248,7 +254,7 @@ export class AgentViewTools {
 				message: result.markdown,
 				notePath: '',
 				created_at: new Date(),
-				model: currentSession.modelConfig?.model || getActiveChatModel(this.plugin.settings),
+				model: turnModel,
 				...(result.thoughts ? { thoughts: result.thoughts } : {}),
 			};
 
@@ -354,13 +360,13 @@ export class AgentViewTools {
 	 * Persist a reasoning-only entry: model thinking with an empty message, which
 	 * SessionHistory serializes as a bare `[!reasoning]` callout with no header.
 	 */
-	private async persistReasoning(session: ChatSession, thoughts: string): Promise<void> {
+	private async persistReasoning(session: ChatSession, thoughts: string, model: string): Promise<void> {
 		await this.plugin.sessionHistory.addEntryToSession(session, {
 			role: 'model',
 			message: '',
 			notePath: '',
 			created_at: new Date(),
-			model: session.modelConfig?.model || getActiveChatModel(this.plugin.settings),
+			model,
 			thoughts,
 		});
 	}

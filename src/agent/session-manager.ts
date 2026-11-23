@@ -15,6 +15,7 @@ import { formatLocalDate } from '../utils/format-utils';
 import { FeatureToolPolicy, clonePolicy } from '../types/tool-policy';
 import { resolveFeatureToolPolicy } from '../services/feature-definition';
 import { asRecord } from '../utils/error-utils';
+import { isModelProvider } from '../api/providers/registry';
 
 /** Read a frontmatter field as a non-empty string, or `undefined`. */
 function asFrontmatterString(value: unknown): string | undefined {
@@ -323,6 +324,13 @@ export class SessionManager {
 
 		if (typeof frontmatter.model === 'string' && frontmatter.model !== '') {
 			config.model = frontmatter.model;
+			hasConfig = true;
+		}
+		// A pinned provider (#1679) is kept only when it names a known provider.
+		// An unknown value (a typo, or one written by a newer version) is dropped,
+		// never substituted, so the session falls back to the chat route.
+		if (typeof frontmatter.provider === 'string' && isModelProvider(frontmatter.provider)) {
+			config.provider = frontmatter.provider;
 			hasConfig = true;
 		}
 		// Note: the two legacy model-sampling frontmatter keys removed by the

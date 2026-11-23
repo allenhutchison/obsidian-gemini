@@ -1,7 +1,7 @@
 import { Notice, setIcon, App, TFile } from 'obsidian';
-import { getActiveChatModel } from '../../models';
+import { pinSessionChatModel } from '../../models';
 import type { Content } from '@google/genai';
-import { ChatSession, type PerTurnContext } from '../../types/agent';
+import { ChatSession, type PerTurnContext, type SessionModelConfig } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import { ToolExecutionContext } from '../../tools/types';
 import { ExtendedModelRequest, ModelApi, ModelResponse, StreamChunk } from '../../api/interfaces/model-api';
@@ -93,6 +93,8 @@ interface TurnRequest {
 	perTurn: PerTurnContext;
 	modelApi: ModelApi;
 	modelName: string;
+	/** The session model config snapshot `request` and `modelApi` were built from. */
+	modelConfig: SessionModelConfig;
 	customPrompt: CustomPrompt | undefined;
 	/** True when plan mode rejected/emptied the plan — the turn ends silently. */
 	aborted: boolean;
@@ -364,6 +366,20 @@ export class AgentViewSend {
 		const attachments = shelf.getPendingAttachments();
 		if (!rawMessage && shelfTextFiles.length === 0 && attachments.length === 0) return;
 
+		// Snapshot the session's model config with the model and provider it
+		// resolves to pinned in: the client, the model name, the tool loop's
+		// follow-ups and every entry the turn saves come from this one value, even
+		// if settings are saved while the turn is in flight.
+		const modelConfig = pinSessionChatModel(this.ctx.plugin.settings, currentSession.modelConfig);
+		// No model resolved (e.g. a provider whose model list hasn't loaded and
+		// no model picked). Stop before the input is cleared, anything is saved
+		// or a client is built: an empty request model makes each client re-read
+		// the model from live settings, so the turn's requests could differ.
+		if (!modelConfig.model) {
+			new Notice(t('agent.send.noChatModel'));
+			return;
+		}
+
 		// Capture and freeze the per-turn data, persist attachments, clear the input
 		const { turnTimestamp, message, savedAttachments } = await this.captureTurnInput(userInput, attachments);
 
@@ -402,18 +418,15 @@ export class AgentViewSend {
 				shelfTextFiles,
 				attachments,
 				savedAttachments,
-				turn
+				turn,
+				modelConfig
 			);
 
-			try {
-				// Dispatch the response: streaming or non-streaming, with or without tool calls
-				await this.dispatchResponse(turnRequest, turnSession, userEntry, turn);
-			} catch (error) {
-				// Hide progress bar on error
-				this.hideProgressFor(turn);
-				throw error;
-			}
+			// Dispatch the response: streaming or non-streaming, with or without tool calls
+			await this.dispatchResponse(turnRequest, turnSession, userEntry, turn);
 		} catch (error) {
+			// Hide this turn's progress bar whether assembly or dispatch failed
+			this.hideProgressFor(turn);
 			this.ctx.plugin.logger.error('Failed to send message:', error);
 			const errorMessage = getErrorMessage(error);
 			new Notice(errorMessage, 8000); // Show for 8 seconds to give user time to read
@@ -583,8 +596,11 @@ export class AgentViewSend {
 		shelfTextFiles: TFile[],
 		attachments: InlineAttachment[],
 		savedAttachments: Array<{ attachment: InlineAttachment; path: string }>,
-		turn: ActiveTurn
+		turn: ActiveTurn,
+		modelConfig: SessionModelConfig & { model: string }
 	): Promise<TurnRequest> {
+		const modelName = modelConfig.model;
+
 		// Snapshot pre-turn history BEFORE saving user message to avoid duplication
 		const conversationHistory = await this.ctx.plugin.sessionHistory.getHistoryForSession(currentSession);
 
@@ -652,10 +668,6 @@ export class AgentViewSend {
 			availableTools.map((t) => t.name)
 		);
 
-		// Get model config from session or use defaults
-		const modelConfig = currentSession?.modelConfig || {};
-		const modelName = modelConfig.model || getActiveChatModel(this.ctx.plugin.settings);
-
 		// beginTurn() is now handled by the turnStart event bus subscriber
 
 		// Prepare history through context manager (may compact if over threshold)
@@ -701,7 +713,7 @@ export class AgentViewSend {
 		};
 
 		// Create model API for this session
-		const modelApi = AgentFactory.createAgentModel(this.ctx.plugin, currentSession);
+		const modelApi = AgentFactory.createAgentModel(this.ctx.plugin, currentSession, modelConfig);
 
 		// Plan mode: ask for a plan first, await user approval, then execute with tools
 		let messageToSend = message;
@@ -729,6 +741,7 @@ export class AgentViewSend {
 					perTurn,
 					modelApi,
 					modelName,
+					modelConfig,
 					customPrompt,
 					aborted: true,
 				};
@@ -743,6 +756,7 @@ export class AgentViewSend {
 				perTurn,
 				modelApi,
 				modelName,
+				modelConfig,
 				customPrompt,
 				aborted: false,
 			};
@@ -755,6 +769,7 @@ export class AgentViewSend {
 			perTurn,
 			modelApi,
 			modelName,
+			modelConfig,
 			customPrompt,
 			aborted: false,
 		};
@@ -818,7 +833,8 @@ To reference an attachment in your response, use the path shown above.`;
 	): Promise<void> {
 		if (turnRequest.aborted) return;
 
-		const { request, messageToSend, historyToSend, perTurn, modelApi, modelName, customPrompt } = turnRequest;
+		const { request, messageToSend, historyToSend, perTurn, modelApi, modelName, modelConfig, customPrompt } =
+			turnRequest;
 
 		// Streaming is always used when the provider client supports it.
 		if (modelApi.generateStreamingResponse) {
@@ -917,7 +933,8 @@ To reference an attachment in your response, use the path shown above.`;
 						customPrompt,
 						perTurn,
 						hadPartialText ? undefined : turnThoughts,
-						this.turnHandle(turn)
+						this.turnHandle(turn),
+						modelConfig
 					);
 				} else {
 					// Normal response without tool calls — shared three-way finalize
@@ -978,7 +995,8 @@ To reference an attachment in your response, use the path shown above.`;
 					customPrompt,
 					perTurn,
 					turnThoughts,
-					this.turnHandle(turn)
+					this.turnHandle(turn),
+					modelConfig
 				);
 			} else {
 				// Normal response without tool calls — shared three-way finalize

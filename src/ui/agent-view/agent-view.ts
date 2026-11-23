@@ -1,5 +1,5 @@
 import { ItemView, MarkdownView, Platform, WorkspaceLeaf, TFile, Notice } from 'obsidian';
-import { getActiveChatModel } from '../../models';
+import { sessionChatModel } from '../../models';
 import { ChatSession, SessionModelConfig } from '../../types/agent';
 import { isSameSession } from './session-identity';
 import { formatTokenUsageLine } from './token-usage-format';
@@ -778,7 +778,7 @@ export class AgentView extends ItemView {
 		}
 
 		try {
-			const modelName = this.currentSession?.modelConfig?.model || getActiveChatModel(this.plugin.settings);
+			const modelName = sessionChatModel(this.plugin.settings, this.currentSession?.modelConfig);
 			let usage = await this.plugin.contextManager.getTokenUsage(modelName);
 
 			// If no cached data, try counting from conversation history as fallback
@@ -834,7 +834,7 @@ export class AgentView extends ItemView {
 		}
 
 		try {
-			const modelName = this.currentSession?.modelConfig?.model || getActiveChatModel(this.plugin.settings);
+			const modelName = sessionChatModel(this.plugin.settings, this.currentSession?.modelConfig);
 			const conversationHistory = await this.plugin.sessionHistory.getHistoryForSession(this.currentSession);
 			if (conversationHistory && conversationHistory.length > 0) {
 				const tokenCount = await this.plugin.contextManager.countTokens(modelName, conversationHistory);

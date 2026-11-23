@@ -58,6 +58,18 @@ export function providerConnection(plugin: ObsidianGemini, p: ModelProvider): Pr
 }
 
 /**
+ * Whether a provider can be offered as a per-session choice (#1679). Wider than
+ * `connected`: a custom OpenAI-compatible endpoint with no key, and an Ollama
+ * daemon not probed yet, both read as `unknown` but may well serve requests,
+ * so they qualify. A provider missing a key it requires does not, and nor does
+ * an Ollama daemon the last probe could not reach.
+ */
+export function providerSelectable(plugin: ObsidianGemini, p: ModelProvider): boolean {
+	const connection = providerConnection(plugin, p);
+	return connection === 'connected' || connection === 'unknown';
+}
+
+/**
  * Whether a provider's model-list request would go out without the key it
  * requires. It reads the resolved key — the same value the models
  * services send — so a saved name pointing at a missing or empty secret

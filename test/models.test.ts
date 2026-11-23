@@ -10,12 +10,16 @@ import {
 	isInteractionsOnlyModel,
 	contextWindowForModel,
 	resolveFeatureModel,
+	resolveFeatureModelFor,
 	resolveGenerateContentModel,
+	sessionChatModel,
+	pinSessionChatModel,
 	RETIRED_MODEL_SUCCESSORS,
 	setGeminiModels,
 } from '../src/models';
 import type { FeatureRoutes, ProviderModelMemory } from '../src/types/features';
 import type { FeatureRoutingSlice } from '../src/api/feature-routing';
+import type { SessionModelConfig } from '../src/types/agent';
 
 // Helper to temporarily modify GEMINI_MODELS for specific tests
 const setTestModels = (models: GeminiModel[]) => {
@@ -272,6 +276,74 @@ describe('resolveFeatureModel', () => {
 	it('returns "" for a model-less feature (deepResearch, rag)', () => {
 		const s: FeatureRoutingSlice = { features: routes({ rag: { provider: 'gemini', model: '' } }) };
 		expect(resolveFeatureModel(s, 'rag')).toBe('');
+	});
+});
+
+describe('per-session provider model resolution (#1679)', () => {
+	let originalModels: GeminiModel[];
+
+	beforeEach(() => {
+		originalModels = [...GEMINI_MODELS];
+		setTestModels([
+			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
+			{ value: 'llama3.2', label: 'Llama 3.2', provider: 'ollama' as const, defaultForRoles: ['chat'] },
+		]);
+	});
+
+	afterEach(() => {
+		setTestModels(originalModels);
+	});
+
+	const geminiChat = (): FeatureRoutingSlice => ({
+		features: routes({ chat: { provider: 'gemini', model: 'gemini-flash-lite' } }),
+	});
+
+	it('uses the routed model when the session provider is the routed one', () => {
+		expect(resolveFeatureModelFor(geminiChat(), 'chat', 'gemini')).toBe('gemini-flash-lite');
+	});
+
+	it("uses the remembered model for another provider, never the routed provider's model", () => {
+		const s: FeatureRoutingSlice = {
+			...geminiChat(),
+			providerModelMemory: { ollama: { chat: 'qwen3' } },
+		};
+		expect(resolveFeatureModelFor(s, 'chat', 'ollama')).toBe('qwen3');
+	});
+
+	it("falls back to the other provider's role default when nothing is remembered", () => {
+		expect(resolveFeatureModelFor(geminiChat(), 'chat', 'ollama')).toBe('llama3.2');
+	});
+
+	it('sessionChatModel prefers the session model, then the session provider, then the global chat model', () => {
+		const s = geminiChat();
+		expect(sessionChatModel(s, { model: 'pinned', provider: 'ollama' })).toBe('pinned');
+		expect(sessionChatModel(s, { provider: 'ollama' })).toBe('llama3.2');
+		expect(sessionChatModel(s, {})).toBe('gemini-flash-lite');
+		expect(sessionChatModel(s, undefined)).toBe('gemini-flash-lite');
+	});
+
+	it('pinSessionChatModel pins the resolved model and provider so a turn needs no re-resolve', () => {
+		const s = geminiChat();
+		expect(pinSessionChatModel(s, undefined)).toEqual({ model: 'gemini-flash-lite', provider: 'gemini' });
+		expect(pinSessionChatModel(s, { provider: 'ollama', promptTemplate: 'p.md' })).toEqual({
+			model: 'llama3.2',
+			provider: 'ollama',
+			promptTemplate: 'p.md',
+		});
+		expect(pinSessionChatModel(s, { model: 'pinned' })).toEqual({ model: 'pinned', provider: 'gemini' });
+
+		// The pinned value no longer depends on live settings.
+		const pinned = pinSessionChatModel(s, {});
+		const later: FeatureRoutingSlice = {
+			features: routes({ chat: { provider: 'gemini', model: 'changed-later' } }),
+		};
+		expect(sessionChatModel(later, pinned)).toBe('gemini-flash-lite');
+	});
+
+	it('pinSessionChatModel leaves the provider unset when chat is off', () => {
+		const off: FeatureRoutingSlice = { features: routes({ chat: { provider: 'none', model: '' } }) };
+		const empty: SessionModelConfig = {};
+		expect(pinSessionChatModel(off, empty).provider).toBeUndefined();
 	});
 });
 
