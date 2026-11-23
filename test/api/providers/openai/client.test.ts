@@ -1041,7 +1041,7 @@ describe('OpenAIClient', () => {
 			usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15, input_tokens_details: { cached_tokens: 0 } },
 		};
 
-		it.each(['gpt-6.1-sol', 'gpt-6.1-terra', 'gpt-6-astra'])(
+		it.each(['gpt-6.1-sol', 'gpt-6.1-terra', 'gpt-6-astra', 'gpt-6.2-sol', 'gpt-6.2-astra'])(
 			'%s sends agent turns to the Responses API with tools on api.openai.com',
 			async (model) => {
 				openaiCalls.responses.mockResolvedValue(completedResponse);
