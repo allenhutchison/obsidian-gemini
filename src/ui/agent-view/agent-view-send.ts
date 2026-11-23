@@ -307,6 +307,20 @@ export class AgentViewSend {
 		const attachments = shelf.getPendingAttachments();
 		if (!rawMessage && shelfTextFiles.length === 0 && attachments.length === 0) return;
 
+		// Snapshot the session's model config with the model and provider it
+		// resolves to pinned in: the client, the model name, the tool loop's
+		// follow-ups and every entry the turn saves come from this one value, even
+		// if settings are saved while the turn is in flight.
+		const modelConfig = pinSessionChatModel(this.ctx.plugin.settings, currentSession.modelConfig);
+		// No model resolved (e.g. a provider whose model list hasn't loaded and
+		// no model picked). Stop before the input is cleared, anything is saved
+		// or a client is built: an empty request model makes each client re-read
+		// the model from live settings, so the turn's requests could differ.
+		if (!modelConfig.model) {
+			new Notice(t('agent.send.noChatModel'));
+			return;
+		}
+
 		// Capture and freeze the per-turn data, persist attachments, clear the input
 		const { turnTimestamp, message, savedAttachments } = await this.captureTurnInput(userInput, attachments);
 
@@ -344,18 +358,15 @@ export class AgentViewSend {
 				userEntry,
 				shelfTextFiles,
 				attachments,
-				savedAttachments
+				savedAttachments,
+				modelConfig
 			);
 
-			try {
-				// Dispatch the response: streaming or non-streaming, with or without tool calls
-				await this.dispatchResponse(turn, turnSession, userEntry);
-			} catch (error) {
-				// Hide progress bar on error
-				this.ctx.progress.hide();
-				throw error;
-			}
+			// Dispatch the response: streaming or non-streaming, with or without tool calls
+			await this.dispatchResponse(turn, turnSession, userEntry);
 		} catch (error) {
+			// Hide the progress bar whether assembly or dispatch failed
+			this.ctx.progress.hide();
 			this.ctx.plugin.logger.error('Failed to send message:', error);
 			const errorMessage = getErrorMessage(error);
 			new Notice(errorMessage, 8000); // Show for 8 seconds to give user time to read
@@ -510,21 +521,10 @@ export class AgentViewSend {
 		userEntry: GeminiConversationEntry,
 		shelfTextFiles: TFile[],
 		attachments: InlineAttachment[],
-		savedAttachments: Array<{ attachment: InlineAttachment; path: string }>
+		savedAttachments: Array<{ attachment: InlineAttachment; path: string }>,
+		modelConfig: SessionModelConfig & { model: string }
 	): Promise<TurnRequest> {
-		// Snapshot the session's model config with the model and provider it
-		// resolves to pinned in: the client, the model name, the tool loop's
-		// follow-ups and every entry the turn saves come from this one value, even
-		// if settings are saved while the turn awaits the steps below.
-		const modelConfig = pinSessionChatModel(this.ctx.plugin.settings, currentSession?.modelConfig);
 		const modelName = modelConfig.model;
-		// No model resolved (e.g. a provider whose model list hasn't loaded and
-		// no model picked). Stop before saving anything or building a client:
-		// an empty request model makes each client re-read the model from live
-		// settings, so the turn's requests could name different models.
-		if (!modelName) {
-			throw new Error(t('agent.send.noChatModel'));
-		}
 
 		// Snapshot pre-turn history BEFORE saving user message to avoid duplication
 		const conversationHistory = await this.ctx.plugin.sessionHistory.getHistoryForSession(currentSession);

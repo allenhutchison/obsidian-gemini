@@ -305,37 +305,87 @@ describe('loadProjectInstructions', () => {
 
 // A turn resolves its chat model once (#1679). With none to resolve (a provider
 // whose model list hasn't loaded, nothing picked), an empty request model would
-// make each client re-read the model from live settings, so the turn stops
-// before saving the user entry or building a client.
-describe('AgentViewSend.assembleTurnRequest with no chat model', () => {
-	test('fails before saving the user entry or reading history', async () => {
-		const getHistoryForSession = vi.fn();
-		const addEntryToSession = vi.fn();
-		const none = { provider: 'none', model: '' };
-		const ctx = {
-			plugin: {
-				settings: {
-					features: {
-						chat: { provider: 'ollama', model: '' },
-						summary: none,
-						completions: none,
-						rewrite: none,
-						webSearch: none,
-						deepResearch: none,
-						rag: none,
-						imageGen: none,
-					},
+// make each client re-read the model from live settings, so the send stops
+// before it clears the input, saves anything or builds a client.
+function makeSendMessageCtx(chatModel: string) {
+	const progress = { show: vi.fn(), hide: vi.fn() };
+	const none = { provider: 'none', model: '' };
+	const addEntryToSession = vi.fn();
+	const ctx = {
+		getCurrentSession: () => ({ id: 's1' }),
+		getUserInput: () => ({ innerText: 'hi' }),
+		getShelf: () => ({ getTextFiles: () => [], getPendingAttachments: () => [] }),
+		displayMessage: vi.fn().mockResolvedValue(undefined),
+		updateTokenUsage: vi.fn().mockResolvedValue(undefined),
+		progress,
+		plugin: {
+			logger: { error: vi.fn() },
+			settings: {
+				features: {
+					chat: { provider: 'ollama', model: chatModel },
+					summary: none,
+					completions: none,
+					rewrite: none,
+					webSearch: none,
+					deepResearch: none,
+					rag: none,
+					imageGen: none,
 				},
-				sessionHistory: { getHistoryForSession, addEntryToSession },
 			},
-		} as any;
-		const send = new AgentViewSend(ctx);
-		const userEntry = { role: 'user', message: 'hi', notePath: '', created_at: new Date() };
+			sessionHistory: { addEntryToSession },
+		},
+	} as any;
+	const send = new AgentViewSend(ctx);
+	const internals = send as any;
+	const capture = vi.spyOn(internals, 'captureTurnInput').mockResolvedValue({
+		turnTimestamp: new Date(),
+		message: 'hi',
+		savedAttachments: [],
+	});
+	vi.spyOn(internals, 'beginExecutionUi').mockImplementation(() => {});
+	return { send, internals, progress, capture, addEntryToSession };
+}
 
-		await expect(
-			(send as any).assembleTurnRequest({ id: 's1' }, new Date(), 'hi', userEntry, [], [], [])
-		).rejects.toThrow('No chat model is selected');
-		expect(getHistoryForSession).not.toHaveBeenCalled();
+describe('AgentViewSend.sendMessage model snapshot', () => {
+	beforeEach(() => {
+		NoticeMock.mockClear();
+	});
+
+	test('with no chat model, notifies and stops before touching the input or history', async () => {
+		const { send, internals, progress, capture, addEntryToSession } = makeSendMessageCtx('');
+		const assemble = vi.spyOn(internals, 'assembleTurnRequest');
+
+		await send.sendMessage();
+
+		expect(NoticeMock).toHaveBeenCalledWith(
+			'No chat model is selected. Choose a chat model in settings, or wait for the model list to load.'
+		);
+		expect(capture).not.toHaveBeenCalled();
+		expect(progress.show).not.toHaveBeenCalled();
+		expect(assemble).not.toHaveBeenCalled();
 		expect(addEntryToSession).not.toHaveBeenCalled();
+	});
+
+	test('passes the pinned model config to turn assembly', async () => {
+		const { send, internals } = makeSendMessageCtx('llama3.2');
+		const assemble = vi.spyOn(internals, 'assembleTurnRequest').mockRejectedValue(new Error('stop'));
+
+		await send.sendMessage();
+
+		expect(assemble).toHaveBeenCalledTimes(1);
+		expect(assemble.mock.calls[0][7]).toEqual({ model: 'llama3.2', provider: 'ollama' });
+	});
+
+	test('hides progress when turn assembly fails', async () => {
+		const { send, internals, progress } = makeSendMessageCtx('llama3.2');
+		vi.spyOn(internals, 'assembleTurnRequest').mockRejectedValue(new Error('boom'));
+		const dispatch = vi.spyOn(internals, 'dispatchResponse');
+
+		await send.sendMessage();
+
+		expect(progress.show).toHaveBeenCalled();
+		expect(progress.hide).toHaveBeenCalled();
+		expect(dispatch).not.toHaveBeenCalled();
+		expect(NoticeMock).toHaveBeenCalledTimes(1);
 	});
 });
