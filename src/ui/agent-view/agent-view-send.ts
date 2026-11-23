@@ -632,7 +632,7 @@ export class AgentViewSend {
 		};
 
 		// Create model API for this session
-		const modelApi = AgentFactory.createAgentModel(this.ctx.plugin, currentSession, modelConfig.provider);
+		const modelApi = AgentFactory.createAgentModel(this.ctx.plugin, currentSession, modelConfig);
 
 		// Plan mode: ask for a plan first, await user approval, then execute with tools
 		let messageToSend = message;

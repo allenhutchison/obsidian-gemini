@@ -1,8 +1,7 @@
 import type { ObsidianGemini } from '../types/plugin';
 import { ModelApi } from '../api/interfaces/model-api';
 import { ModelClientFactory } from '../api';
-import { ChatSession } from '../types/agent';
-import type { ModelProvider } from '../api/providers/registry';
+import { ChatSession, type SessionModelConfig } from '../types/agent';
 
 /**
  * Factory for creating agent-related components
@@ -20,17 +19,19 @@ export class AgentFactory {
 	 *   `agent-view-send.ts` / `agent-view-tool-followup.ts`). Kept as a
 	 *   parameter so `AgentLoop`'s default `createModelApi` factory
 	 *   (`agent-loop.ts`), which always passes the session, keeps compiling.
-	 * @param provider The provider to build the client for. Defaults to the
-	 *   session's override; a turn passes the provider from the same config
-	 *   snapshot it resolved its model from, so a settings save during the
-	 *   turn's setup can't pair one provider's client with another's model id.
+	 * @param modelConfig The config snapshot to take the provider from.
+	 *   Defaults to the session's live config; a turn passes the snapshot it
+	 *   resolved its model from, so a settings save during the turn's setup
+	 *   can't pair one provider's client with another's model id. A snapshot
+	 *   without a provider means the chat default, even if the live session
+	 *   has since been pinned to one.
 	 * @returns Configured ModelApi instance
 	 */
 	static createAgentModel(
 		plugin: ObsidianGemini,
 		session: ChatSession,
-		provider: ModelProvider | undefined = session.modelConfig?.provider
+		modelConfig: SessionModelConfig = session.modelConfig ?? {}
 	): ModelApi {
-		return ModelClientFactory.createChatModel(plugin, provider);
+		return ModelClientFactory.createChatModel(plugin, modelConfig.provider);
 	}
 }

@@ -84,13 +84,22 @@ describe('AgentFactory', () => {
 			expect(ModelClientFactory.createChatModel).toHaveBeenCalledWith(plugin, 'anthropic');
 		});
 
-		it("uses an explicit provider over the session's live one (#1679)", () => {
+		it("uses a config snapshot's provider over the session's live one (#1679)", () => {
 			const plugin = createMockPlugin();
 			const session = createMockSession({ modelConfig: { provider: 'anthropic' } });
 
-			AgentFactory.createAgentModel(plugin, session, 'ollama');
+			AgentFactory.createAgentModel(plugin, session, { provider: 'ollama' });
 
 			expect(ModelClientFactory.createChatModel).toHaveBeenCalledWith(plugin, 'ollama');
+		});
+
+		it('keeps the chat default when the snapshot has no provider, even if the live session gained one (#1679)', () => {
+			const plugin = createMockPlugin();
+			const session = createMockSession({ modelConfig: { provider: 'anthropic' } });
+
+			AgentFactory.createAgentModel(plugin, session, {});
+
+			expect(ModelClientFactory.createChatModel).toHaveBeenCalledWith(plugin, undefined);
 		});
 
 		it('should return the ModelApi instance from the factory', () => {
