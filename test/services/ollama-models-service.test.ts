@@ -808,6 +808,23 @@ describe('ollama auth header safety (#1764)', () => {
 	});
 });
 
+describe('missingOllamaCloudKey', () => {
+	it('reports a missing key only for the hosted endpoint', async () => {
+		const { missingOllamaCloudKey } = await import('../../src/api/providers/ollama/config');
+		// Hosted endpoint: a key is required, so its absence is "missing".
+		expect(missingOllamaCloudKey('https://ollama.com', undefined)).toBe(true);
+		expect(missingOllamaCloudKey('https://ollama.com', '')).toBe(true);
+		expect(missingOllamaCloudKey('https://api.ollama.com', undefined)).toBe(true);
+		expect(missingOllamaCloudKey('https://ollama.com', 'key')).toBe(false);
+		// A daemon or proxy of the user's own needs no key.
+		expect(missingOllamaCloudKey('http://localhost:11434', undefined)).toBe(false);
+		expect(missingOllamaCloudKey('https://ollama.example.com', undefined)).toBe(false);
+		// A look-alike host is not the hosted API (shares isOllamaCloudEndpoint's guard).
+		expect(missingOllamaCloudKey('https://ollama.com.evil.example', undefined)).toBe(false);
+		expect(missingOllamaCloudKey('not a url', undefined)).toBe(false);
+	});
+});
+
 describe('getRuntimeContextLength on keyless Ollama Cloud (#1764)', () => {
 	it('does not probe /api/ps without a key', async () => {
 		mockedRequestUrl.mockReset();

@@ -8,6 +8,7 @@ import {
 	OLLAMA_CLOUD_BASE_URL,
 	isOllamaCloudEndpoint,
 	mergesOllamaCloud,
+	missingOllamaCloudKey,
 	ollamaAuthHeaders,
 	resolveOllamaModel,
 	toOllamaCloudModelId,
@@ -235,7 +236,7 @@ export class OllamaModelsService {
 	 * Cache is invalidated when the base URL changes.
 	 */
 	async getModels(forceRefresh = false): Promise<GeminiModel[]> {
-		if (!this.plugin.ollamaApiKey && isOllamaCloudEndpoint(this.endpointBaseUrl())) {
+		if (missingOllamaCloudKey(this.endpointBaseUrl(), this.plugin.ollamaApiKey)) {
 			// ollama.com rejects every keyless request, so there is nothing to learn.
 			return [];
 		}
@@ -426,7 +427,7 @@ export class OllamaModelsService {
 	async getRuntimeContextLength(modelId: string): Promise<number | null> {
 		// A cloud-prefixed id is probed on Ollama Cloud under its bare name.
 		const { baseUrl, model: modelName } = resolveOllamaModel(modelId, this.endpointBaseUrl());
-		if (!this.plugin.ollamaApiKey && isOllamaCloudEndpoint(baseUrl)) {
+		if (missingOllamaCloudKey(baseUrl, this.plugin.ollamaApiKey)) {
 			// ollama.com rejects keyless requests, so skip the probe entirely (#1764).
 			return null;
 		}
