@@ -8,7 +8,9 @@ import {
 	featureStatus,
 	providerMissingKey,
 	providerSelectable,
+	providerBoundAvailable,
 } from '../../src/api/provider-status';
+import { PROVIDERS } from '../../src/api/providers/registry';
 import { DEFAULT_OPENAI_BASE_URL } from '../../src/api/providers/openai/config';
 import type { FeatureRoutes } from '../../src/types/features';
 import type { ObsidianGemini } from '../../src/types/plugin';
@@ -227,6 +229,40 @@ describe('providerMissingKey', () => {
 		expect(
 			providerMissingKey(makePlugin({ openrouterApiKeySecretName: 'r', features: routes({}) }), 'openrouter')
 		).toBe(false);
+	});
+});
+
+// #1701: the maps gate reads the registry's capability flag, not a hand-written Gemini key check.
+describe('providerBoundAvailable', () => {
+	it('is true when the maps-capable provider (Gemini) resolves its key', () => {
+		expect(providerBoundAvailable(makePlugin({ apiKeySecretName: 'g', features: routes({}) }), 'maps')).toBe(true);
+	});
+
+	it('is false when no maps-capable provider resolves a key', () => {
+		expect(providerBoundAvailable(makePlugin({ features: routes({}) }), 'maps')).toBe(false);
+		// Other providers being configured doesn't help: they don't have the capability.
+		expect(providerBoundAvailable(makePlugin({ anthropicApiKeySecretName: 'a', features: routes({}) }), 'maps')).toBe(
+			false
+		);
+	});
+
+	it('ignores routing: maps is not a Features row', () => {
+		const plugin = makePlugin({
+			apiKeySecretName: 'g',
+			features: routes({ webSearch: { provider: 'none', model: '' }, chat: { provider: 'anthropic', model: '' } }),
+		});
+		expect(providerBoundAvailable(plugin, 'maps')).toBe(true);
+	});
+
+	it('follows the capability flag in the registry', () => {
+		const caps = PROVIDERS.gemini.capabilities as { maps: boolean };
+		const plugin = makePlugin({ apiKeySecretName: 'g', features: routes({}) });
+		caps.maps = false;
+		try {
+			expect(providerBoundAvailable(plugin, 'maps')).toBe(false);
+		} finally {
+			caps.maps = true;
+		}
 	});
 });
 

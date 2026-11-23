@@ -8,7 +8,12 @@
  */
 
 import type { ObsidianGemini } from '../types/plugin';
-import { providerSupports, type ModelProvider } from './providers/registry';
+import {
+	providerSupports,
+	providersSupporting,
+	type ModelProvider,
+	type ProviderBoundFeatureId,
+} from './providers/registry';
 import { apiKeySecretNameFor } from './provider-credentials';
 import { featureRoute } from './feature-routing';
 import type { FeatureId } from '../types/features';
@@ -85,6 +90,18 @@ export function providerMissingKey(plugin: ObsidianGemini, p: ModelProvider): bo
 		case 'ollama':
 			return missingOllamaCloudKey(plugin.settings.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL, plugin.ollamaApiKey);
 	}
+}
+
+/**
+ * Whether a provider-bound capability (one with no Features row, such as
+ * Google Maps grounding) can be served here: true when any provider the
+ * registry says has it resolves its credentials on this device (#1701).
+ * Reads the capability flag, so flipping it in `registry.ts` moves the tool
+ * gate too, and reuses `providerMissingKey`, so a provider's no-key paths are
+ * honoured in one place.
+ */
+export function providerBoundAvailable(plugin: ObsidianGemini, capability: ProviderBoundFeatureId): boolean {
+	return providersSupporting(capability).some((p) => !providerMissingKey(plugin, p));
 }
 
 /**

@@ -11,9 +11,11 @@
  * so anything can depend on it without tripping `npm run lint:cycles`. It
  * declares its own `ProviderFeatureId` union rather than importing `FeatureId`
  * from `types/features.ts`, because `types/features.ts` imports `ModelProvider`
- * from *this* file — importing back would be a two-file cycle. The two unions
- * are kept identical by hand; `test/api/provider-registry.test.ts` and
- * `test/api/feature-routing.test.ts` both exercise the shared literal set.
+ * from *this* file — importing back would be a two-file cycle. So
+ * `ProviderFeatureId` is `FeatureId` plus `ProviderBoundFeatureId` (`maps`):
+ * its routable members are kept identical to `FeatureId` by hand, and
+ * `test/api/provider-registry.test.ts` checks every member has a boolean for
+ * every provider.
  */
 
 /**
@@ -26,13 +28,29 @@
 export type ModelProvider = 'gemini' | 'ollama' | 'openai' | 'anthropic' | 'openrouter';
 
 /**
- * Capability keys a provider is asked about — kept in lockstep with `FeatureId`
- * in `src/types/features.ts` (see the module doc comment for why this is a
- * separate declaration rather than an import) plus `maps`, which is
- * provider-bound rather than a routable feature (§2.7 of the design).
+ * Provider-bound capabilities: served whenever a provider that has them is
+ * configured, with no Features row to route them (§2.7 of the design). Not part
+ * of `FeatureId`, because nothing routes them.
+ */
+export type ProviderBoundFeatureId = 'maps';
+
+/**
+ * Capability keys a provider is asked about: the routable features, kept in
+ * lockstep with `FeatureId` in `src/types/features.ts` (see the module doc
+ * comment for why this is a separate declaration rather than an import), plus
+ * the provider-bound ones above. Including `maps` lets its tool gate ask the
+ * registry instead of re-deriving the capability as a Gemini key check (#1701).
  */
 export type ProviderFeatureId =
-	'chat' | 'summary' | 'completions' | 'rewrite' | 'webSearch' | 'deepResearch' | 'rag' | 'imageGen';
+	| 'chat'
+	| 'summary'
+	| 'completions'
+	| 'rewrite'
+	| 'webSearch'
+	| 'deepResearch'
+	| 'rag'
+	| 'imageGen'
+	| ProviderBoundFeatureId;
 
 export interface ProviderCapabilities {
 	// --- Routable features. `false` means the provider cannot serve it at all. ---
