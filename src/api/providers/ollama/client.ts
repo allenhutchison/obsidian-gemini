@@ -35,7 +35,13 @@ import {
 } from '../../interfaces/model-api';
 import { GeminiPrompts } from '../../../prompts';
 import type { ObsidianGemini } from '../../../types/plugin';
-import { isOllamaCloudEndpoint, ollamaAuthHeaders, resolveOllamaModel, type OllamaClientConfig } from './config';
+import {
+	isOllamaCloudEndpoint,
+	missingOllamaCloudKey,
+	ollamaAuthHeaders,
+	resolveOllamaModel,
+	type OllamaClientConfig,
+} from './config';
 import { walkHistoryEntry } from '../history-walk';
 import { runCancellableStream } from '../../utils/cancellable-stream';
 import { t } from '../../../i18n';
@@ -348,7 +354,7 @@ export class OllamaClient implements ModelApi {
 	 * rather than contacting ollama.com unauthenticated (#1764).
 	 */
 	private assertCloudKey(baseUrl: string): void {
-		if (!this.config.apiKey && isOllamaCloudEndpoint(baseUrl)) {
+		if (missingOllamaCloudKey(baseUrl, this.config.apiKey)) {
 			throw new NonRetryableRequestError(t('provider.ollama.cloudNeedsKey'));
 		}
 	}
