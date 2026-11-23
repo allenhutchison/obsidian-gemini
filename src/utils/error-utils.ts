@@ -134,6 +134,9 @@ function isAnthropicAuthError(error: Record<string, unknown>): boolean {
  * `error.response.data.error.details`, or embedded as JSON in `error.message`.
  */
 export function extractErrorDetails(error: unknown): unknown[] {
+	// An error already flattened to its message (a persisted `lastError`) can
+	// still carry the embedded JSON details (#1719).
+	if (typeof error === 'string') return detailsFromEmbeddedJson(error);
 	if (!error || typeof error !== 'object') return [];
 	const err = asRecord(error);
 
@@ -147,20 +150,24 @@ export function extractErrorDetails(error: unknown): unknown[] {
 	if (Array.isArray(responseError.details)) return responseError.details;
 
 	// Try to parse details from the error message (Google SDK sometimes embeds JSON)
-	if (typeof err.message === 'string') {
-		try {
-			const start = err.message.indexOf('{');
-			const end = err.message.lastIndexOf('}');
-			if (start !== -1 && end > start) {
-				const parsed = asRecord(JSON.parse(err.message.slice(start, end + 1)));
-				const details = parsed.details ?? asRecord(parsed.error).details;
-				if (Array.isArray(details)) return details;
-			}
-		} catch {
-			// Not parseable, that's fine
-		}
-	}
+	if (typeof err.message === 'string') return detailsFromEmbeddedJson(err.message);
 
+	return [];
+}
+
+/** The `details` array of a JSON object embedded in `text`, or `[]`. */
+function detailsFromEmbeddedJson(text: string): unknown[] {
+	try {
+		const start = text.indexOf('{');
+		const end = text.lastIndexOf('}');
+		if (start !== -1 && end > start) {
+			const parsed = asRecord(JSON.parse(text.slice(start, end + 1)));
+			const details = parsed.details ?? asRecord(parsed.error).details;
+			if (Array.isArray(details)) return details;
+		}
+	} catch {
+		// Not parseable, that's fine
+	}
 	return [];
 }
 

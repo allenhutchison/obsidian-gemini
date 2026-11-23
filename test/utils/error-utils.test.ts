@@ -576,6 +576,16 @@ describe('error-utils', () => {
 			expect(isQuotaExhausted(error)).toBe(true);
 		});
 
+		test('detects QuotaFailure embedded as JSON in an error already flattened to a string', () => {
+			const error =
+				'RESOURCE_EXHAUSTED: {"details":[{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"tokens","limit":0}]}]}';
+			expect(isQuotaExhausted(error)).toBe(true);
+		});
+
+		test('keeps an ordinary RESOURCE_EXHAUSTED string transient', () => {
+			expect(isQuotaExhausted('RESOURCE_EXHAUSTED: rate limit exceeded, retry later')).toBe(false);
+		});
+
 		test('returns false for embedded JSON with non-zero limit', () => {
 			const error = new Error(
 				'RESOURCE_EXHAUSTED: {"details":[{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"limit":500}]}]}'

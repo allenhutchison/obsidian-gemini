@@ -38,7 +38,11 @@ function makeSend() {
 	const settlePendingPlanApproval = vi.fn();
 	const emit = vi.fn().mockResolvedValue(undefined);
 	const ctx = {
-		plugin: { agentEventBus: { emit }, logger: { debug: vi.fn(), log: vi.fn(), warn: vi.fn(), error: vi.fn() } },
+		plugin: {
+			agentEventBus: { emit },
+			sessionHistory: { addEntryToSession: vi.fn().mockResolvedValue(undefined) },
+			logger: { debug: vi.fn(), log: vi.fn(), warn: vi.fn(), error: vi.fn() },
+		},
 		getCurrentSession: () => ({ id: 's1' }),
 		getUserInput: () => userInput,
 		getShelf: () => ({
@@ -188,11 +192,88 @@ describe('AgentViewSend turn ownership', () => {
 	test('a cancelled stream that settles empty does not add the empty-response notice (#1790)', async () => {
 		const { send, ctx } = makeSend();
 		const renderEntry = vi.fn();
-		await (send as any).finalizeNoToolCallResponse({ markdown: '' }, undefined, 'm', { id: 's1' }, renderEntry, true);
+		const stopped = { cancelled: true, stream: null, toolCallCount: 0 };
+		await (send as any).finalizeNoToolCallResponse(
+			{ markdown: '' },
+			undefined,
+			'm',
+			{ id: 's1' },
+			renderEntry,
+			stopped
+		);
 
 		expect(NoticeMock).not.toHaveBeenCalled();
 		expect(ctx.plugin.logger.warn).not.toHaveBeenCalled();
 		expect(ctx.progress.hide).toHaveBeenCalled();
 		expect(renderEntry).not.toHaveBeenCalled();
+	});
+
+	test("a stopped turn settling empty after the next turn started leaves that turn's progress alone", async () => {
+		const { send, ctx, userInput } = makeSend();
+		const turns: any[] = [];
+		const releases: Array<() => void> = [];
+		vi.spyOn(send as any, 'dispatchResponse').mockImplementation(((...args: unknown[]) => {
+			turns.push(args[3]);
+			const d = deferred();
+			releases.push(d.resolve);
+			return d.promise;
+		}) as any);
+
+		userInput.innerText = 'first';
+		const turnA = send.sendMessage();
+		await flush();
+		send.stopAgentLoop();
+		userInput.innerText = 'second';
+		const turnB = send.sendMessage();
+		await flush();
+		ctx.progress.hide.mockClear();
+
+		await (send as any).finalizeNoToolCallResponse({ markdown: '' }, undefined, 'm', { id: 's1' }, vi.fn(), turns[0]);
+		expect(ctx.progress.hide).not.toHaveBeenCalled();
+
+		await (send as any).finalizeNoToolCallResponse({ markdown: 'hi' }, undefined, 'm', { id: 's1' }, vi.fn(), turns[1]);
+		expect(ctx.progress.hide).toHaveBeenCalledTimes(1);
+
+		releases.forEach((r) => r());
+		await Promise.all([turnA, turnB]);
+	});
+
+	test('a tool that completes after Stop counts on its own turn, not the next one', async () => {
+		const { send, userInput, emit } = makeSend();
+		const turns: any[] = [];
+		const releases: Array<() => void> = [];
+		vi.spyOn(send as any, 'dispatchResponse').mockImplementation(((...args: unknown[]) => {
+			turns.push(args[3]);
+			const d = deferred();
+			releases.push(d.resolve);
+			return d.promise;
+		}) as any);
+
+		userInput.innerText = 'first';
+		const turnA = send.sendMessage();
+		await flush();
+		send.stopAgentLoop();
+		userInput.innerText = 'second';
+		const turnB = send.sendMessage();
+		await flush();
+
+		(send as any).turnHandle(turns[0]).countTool(1);
+
+		releases.forEach((r) => r());
+		await Promise.all([turnA, turnB]);
+		const turnEnds = emit.mock.calls.filter(([event]) => event === 'turnEnd').map(([, payload]) => payload);
+		expect(turnEnds.map((p: any) => p.toolCallCount)).toEqual([1, 0]);
+	});
+
+	test('a turn stopped before its plan request starts never sends it', async () => {
+		const { send } = makeSend();
+		const modelApi = { generateStreamingResponse: vi.fn(), generateModelResponse: vi.fn() };
+		const stopped = { cancelled: true, stream: null, toolCallCount: 0 };
+
+		const result = await (send as any).conductPlanApproval(modelApi, {}, { id: 's1' }, [], stopped);
+
+		expect(result).toBeNull();
+		expect(modelApi.generateStreamingResponse).not.toHaveBeenCalled();
+		expect(modelApi.generateModelResponse).not.toHaveBeenCalled();
 	});
 });

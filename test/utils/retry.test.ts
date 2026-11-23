@@ -114,6 +114,12 @@ describe('retry utilities', () => {
 	});
 
 	describe('isRetryableApiError', () => {
+		it('does not retry a string error carrying embedded limit-0 quota details', () => {
+			const error =
+				'RESOURCE_EXHAUSTED: {"details":[{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"tokens","limit":0}]}]}';
+			expect(isRetryableApiError(error)).toBe(false);
+		});
+
 		test('400 Bad Request is not retryable', () => {
 			const error = { status: 400, message: 'Bad request' };
 			expect(isRetryableApiError(error)).toBe(false);

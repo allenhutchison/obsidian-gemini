@@ -936,6 +936,12 @@ export class AgentViewMessages {
 					ctx,
 					handleResponse,
 					(view) => {
+						// The card settled (Stop, a new turn) while the view was loading:
+						// close it rather than leave a diff open for a denied request.
+						if (resolved) {
+							view.leaf.detach();
+							return;
+						}
 						diffViewOpen = true;
 						activeDiffView = view;
 					},
@@ -979,6 +985,8 @@ export class AgentViewMessages {
 				}
 				this.autoOpenDiffTimeout = window.setTimeout(() => {
 					this.autoOpenDiffTimeout = null;
+					// The card settled before the delay elapsed; don't open a diff for it.
+					if (resolved) return;
 					// Fire-and-forget: auto-opening the diff view is a UI side effect.
 					openDiffForReview(diffContext);
 				}, 100);

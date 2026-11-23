@@ -26,6 +26,8 @@ export interface TurnHandle {
 	isCancelled(): boolean;
 	/** Register this turn's live follow-up stream (or clear it with `null`) as the Stop target. */
 	registerStream(stream: { cancel: () => void } | null): void;
+	/** Count tool calls executed for this turn, even after Stop released it. */
+	countTool(count: number): void;
 }
 
 /**
@@ -181,7 +183,8 @@ export class AgentViewTools {
 							await this.display.showToolResult(toolCall.name, toolResult, executionId);
 						},
 						onToolCounted: () => {
-							this.context.incrementToolCallCount?.(1);
+							if (turn) turn.countTool(1);
+							else this.context.incrementToolCallCount?.(1);
 						},
 						onBudgetUpdate: ({ remaining }) => {
 							// Remember the latest count so the next "Thinking…" label can

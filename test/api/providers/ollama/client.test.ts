@@ -311,20 +311,42 @@ describe('OllamaClient', () => {
 		});
 
 		it('cancel() releases the aborted stream from the SDK client (#1788)', async () => {
-			async function* slowStream() {
-				yield { message: { content: 'a' }, done: false };
-				// never reaches done, so the SDK never runs doneCallback itself
-			}
-			const stream: any = slowStream();
-			stream.abort = vi.fn();
-			stream.doneCallback = vi.fn();
+			// A stream still open mid-reply: the read after the first chunk stays
+			// pending until abort() rejects it, as the SDK's AbortableAsyncIterator
+			// does, so the cancel path runs against an unfinished stream.
+			let rejectPending: (e: Error) => void = () => {};
+			let reads = 0;
+			const stream: any = {
+				[Symbol.asyncIterator]() {
+					return this;
+				},
+				next() {
+					if (reads++ === 0) return Promise.resolve({ value: { message: { content: 'a' }, done: false }, done: false });
+					return new Promise((_resolve, reject) => {
+						rejectPending = reject;
+					});
+				},
+				return() {
+					return Promise.resolve({ value: undefined, done: true });
+				},
+				abort: vi.fn(() => rejectPending(Object.assign(new Error('aborted'), { name: 'AbortError' }))),
+				doneCallback: vi.fn(),
+			};
 			ollamaCalls.chat.mockResolvedValue(stream);
 
+			const chunks: string[] = [];
 			const streaming = client.generateStreamingResponse(
 				{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] },
-				() => {}
+				(chunk) => {
+					if (chunk.text) chunks.push(chunk.text);
+				}
 			);
 			await new Promise((r) => window.setTimeout(r, 0));
+			// The first chunk arrived and the second read is still pending.
+			expect(chunks).toEqual(['a']);
+			expect(reads).toBe(2);
+			expect(stream.doneCallback).not.toHaveBeenCalled();
+
 			streaming.cancel();
 			await streaming.complete;
 

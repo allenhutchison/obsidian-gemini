@@ -146,9 +146,23 @@ export class AgentViewSend {
 	 * Build the per-turn handle the tool loop uses, bound to `turn` rather than
 	 * to whichever turn is active when it is read.
 	 */
+	/**
+	 * Hide the shared progress display for `turn`, unless a newer turn owns it
+	 * now. A stopped turn unwinding after the next one started must not hide
+	 * (and reset) that turn's progress.
+	 */
+	private hideProgressFor(turn: ActiveTurn): void {
+		if (this.activeTurn === null || this.activeTurn === turn) this.ctx.progress.hide();
+	}
+
 	private turnHandle(turn: ActiveTurn): TurnHandle {
 		return {
 			isCancelled: () => turn.cancelled,
+			countTool: (count) => {
+				// Counts on the originating turn even after Stop released it, so a
+				// late tool completion is never billed to the next turn.
+				turn.toolCallCount += count;
+			},
 			registerStream: (stream) => {
 				if (stream) {
 					// A stopped turn must not take back the Stop target.
@@ -192,6 +206,10 @@ export class AgentViewSend {
 		compactedHistory: Content[],
 		turn: ActiveTurn
 	): Promise<{ proceedMessage: string; updatedHistory: Content[] } | null> {
+		// Stop can land during an await in assembleTurnRequest, before any stream
+		// exists to cancel. Don't start the plan request for a stopped turn.
+		if (turn.cancelled) return null;
+
 		const planRequest: ExtendedModelRequest = {
 			...baseRequest,
 			availableTools: [],
@@ -221,7 +239,7 @@ export class AgentViewSend {
 		}
 
 		if (turn.cancelled) {
-			this.ctx.progress.hide();
+			this.hideProgressFor(turn);
 			return null;
 		}
 
@@ -391,7 +409,7 @@ export class AgentViewSend {
 				await this.dispatchResponse(turnRequest, turnSession, userEntry, turn);
 			} catch (error) {
 				// Hide progress bar on error
-				this.ctx.progress.hide();
+				this.hideProgressFor(turn);
 				throw error;
 			}
 		} catch (error) {
@@ -706,7 +724,7 @@ export class AgentViewSend {
 			}
 			if (!planResult) {
 				// Plan rejected or empty — abort this turn
-				this.ctx.progress.hide();
+				this.hideProgressFor(turn);
 				return {
 					request,
 					messageToSend: message,
@@ -929,13 +947,13 @@ To reference an attachment in your response, use the path shown above.`;
 							// Ensure we're scrolled to bottom after streaming completes
 							this.ctx.messages.scrollToBottom();
 						},
-						turn.cancelled
+						turn
 					);
 				}
 			} catch (error) {
 				if (turn.stream === streamResponse) turn.stream = null;
 				// Hide progress bar on error
-				this.ctx.progress.hide();
+				this.hideProgressFor(turn);
 				throw error;
 			}
 		} else {
@@ -977,7 +995,7 @@ To reference an attachment in your response, use the path shown above.`;
 					async (entry) => {
 						await this.ctx.displayMessage(entry);
 					},
-					turn.cancelled
+					turn
 				);
 			}
 		}
@@ -1025,8 +1043,10 @@ To reference an attachment in your response, use the path shown above.`;
 		modelName: string,
 		currentSession: ChatSession,
 		renderEntry: (entry: GeminiConversationEntry, reasoningOnly: boolean) => Promise<void>,
-		turnCancelled = false
+		turn?: ActiveTurn
 	): Promise<void> {
+		// Without a turn (unit callers) this behaves as the sole, uncancelled turn.
+		const hideProgress = () => (turn ? this.hideProgressFor(turn) : this.ctx.progress.hide());
 		// Only finalize and save if response has content
 		if (response.markdown && response.markdown.trim()) {
 			const aiEntry: GeminiConversationEntry = {
@@ -1041,7 +1061,7 @@ To reference an attachment in your response, use the path shown above.`;
 			// Save AI response to history (user message already saved early)
 			await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, aiEntry);
 			// Hide progress bar after successful response
-			this.ctx.progress.hide();
+			hideProgress();
 		} else if (turnThoughts) {
 			// No answer text, but the model did reason — show and persist the
 			// reasoning instead of a bare "empty response" notice.
@@ -1055,19 +1075,19 @@ To reference an attachment in your response, use the path shown above.`;
 			};
 			await renderEntry(reasoningEntry, true);
 			await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, reasoningEntry);
-			this.ctx.progress.hide();
-		} else if (turnCancelled) {
+			hideProgress();
+		} else if (turn?.cancelled) {
 			// A stopped stream settles with no text. That's the Stop, not an
 			// empty model reply, so don't add a second notice beside
 			// "Agent execution canceled" (#1790).
-			this.ctx.progress.hide();
+			hideProgress();
 		} else {
 			// Empty response - might be thinking tokens.
 			// User message already saved early in sendMessage().
 			this.ctx.plugin.logger.warn('Model returned empty response');
 			new Notice(t('agent.send.emptyResponse'));
 			// Hide progress bar
-			this.ctx.progress.hide();
+			hideProgress();
 		}
 	}
 
