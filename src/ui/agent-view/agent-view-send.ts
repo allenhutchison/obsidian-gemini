@@ -512,6 +512,20 @@ export class AgentViewSend {
 		attachments: InlineAttachment[],
 		savedAttachments: Array<{ attachment: InlineAttachment; path: string }>
 	): Promise<TurnRequest> {
+		// Snapshot the session's model config with the model and provider it
+		// resolves to pinned in: the client, the model name, the tool loop's
+		// follow-ups and every entry the turn saves come from this one value, even
+		// if settings are saved while the turn awaits the steps below.
+		const modelConfig = pinSessionChatModel(this.ctx.plugin.settings, currentSession?.modelConfig);
+		const modelName = modelConfig.model;
+		// No model resolved (e.g. a provider whose model list hasn't loaded and
+		// no model picked). Stop before saving anything or building a client:
+		// an empty request model makes each client re-read the model from live
+		// settings, so the turn's requests could name different models.
+		if (!modelName) {
+			throw new Error(t('agent.send.noChatModel'));
+		}
+
 		// Snapshot pre-turn history BEFORE saving user message to avoid duplication
 		const conversationHistory = await this.ctx.plugin.sessionHistory.getHistoryForSession(currentSession);
 
@@ -578,13 +592,6 @@ export class AgentViewSend {
 			`Available tools from registry (${availableTools.length}):`,
 			availableTools.map((t) => t.name)
 		);
-
-		// Snapshot the session's model config with the model and provider it
-		// resolves to pinned in: the client, the model name, the tool loop's
-		// follow-ups and every entry the turn saves come from this one value, even
-		// if settings are saved while the turn awaits history preparation below.
-		const modelConfig = pinSessionChatModel(this.ctx.plugin.settings, currentSession?.modelConfig);
-		const modelName = modelConfig.model;
 
 		// beginTurn() is now handled by the turnStart event bus subscriber
 

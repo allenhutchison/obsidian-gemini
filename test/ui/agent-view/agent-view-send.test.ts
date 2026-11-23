@@ -302,3 +302,40 @@ describe('loadProjectInstructions', () => {
 		expect(logger.error).toHaveBeenCalledWith('Error loading project instructions:', boom);
 	});
 });
+
+// A turn resolves its chat model once (#1679). With none to resolve (a provider
+// whose model list hasn't loaded, nothing picked), an empty request model would
+// make each client re-read the model from live settings, so the turn stops
+// before saving the user entry or building a client.
+describe('AgentViewSend.assembleTurnRequest with no chat model', () => {
+	test('fails before saving the user entry or reading history', async () => {
+		const getHistoryForSession = vi.fn();
+		const addEntryToSession = vi.fn();
+		const none = { provider: 'none', model: '' };
+		const ctx = {
+			plugin: {
+				settings: {
+					features: {
+						chat: { provider: 'ollama', model: '' },
+						summary: none,
+						completions: none,
+						rewrite: none,
+						webSearch: none,
+						deepResearch: none,
+						rag: none,
+						imageGen: none,
+					},
+				},
+				sessionHistory: { getHistoryForSession, addEntryToSession },
+			},
+		} as any;
+		const send = new AgentViewSend(ctx);
+		const userEntry = { role: 'user', message: 'hi', notePath: '', created_at: new Date() };
+
+		await expect(
+			(send as any).assembleTurnRequest({ id: 's1' }, new Date(), 'hi', userEntry, [], [], [])
+		).rejects.toThrow('No chat model is selected');
+		expect(getHistoryForSession).not.toHaveBeenCalled();
+		expect(addEntryToSession).not.toHaveBeenCalled();
+	});
+});

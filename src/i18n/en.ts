@@ -1925,6 +1925,11 @@ export const en = {
 		message: 'Elapsed time',
 		context: 'Accessibility label (aria-label) for the elapsed-time counter in the progress bar.',
 	},
+	'agent.send.noChatModel': {
+		message: 'No chat model is selected. Choose a chat model in settings, or wait for the model list to load.',
+		context:
+			'Notice when the user sends a message in the agent view but no chat model could be resolved (none chosen, and the provider\'s model list has not loaded). "settings" is Obsidian\'s settings window.',
+	},
 	'agent.send.emptyResponse': {
 		message: 'Model returned an empty response. This might happen with thinking models. Try rephrasing your question.',
 		context:
