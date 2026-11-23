@@ -123,6 +123,11 @@ export class SessionSettingsModal extends Modal {
 				// session's model, so it runs on the new provider's remembered or
 				// default model until the user picks one.
 				delete this.modelConfig.model;
+				// Drop the previous provider's row, and any list for it still
+				// loading, before the save awaits: nothing picked from it in the
+				// meantime could be saved against the new provider.
+				this.modelRenderId++;
+				modelSettingEl.empty();
 				await this.saveConfig();
 				await renderModels();
 			});
