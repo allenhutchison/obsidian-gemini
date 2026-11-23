@@ -22,7 +22,11 @@ import type { ModelProvider } from '../api/providers/registry';
  */
 export type ModelRole = 'chat' | 'summary' | 'completions' | 'rewrite' | 'image';
 
-/** A capability that is independently routed to a provider. */
+/**
+ * A capability that is independently routed to a provider. Provider-bound
+ * capabilities such as `maps` have no route and are not listed here; they are
+ * `ProviderBoundFeatureId` in `src/api/providers/registry.ts`.
+ */
 export type FeatureId =
 	| 'chat' // chat + agent
 	| 'summary'

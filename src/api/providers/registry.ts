@@ -11,9 +11,11 @@
  * so anything can depend on it without tripping `npm run lint:cycles`. It
  * declares its own `ProviderFeatureId` union rather than importing `FeatureId`
  * from `types/features.ts`, because `types/features.ts` imports `ModelProvider`
- * from *this* file — importing back would be a two-file cycle. The two unions
- * are kept identical by hand; `test/api/provider-registry.test.ts` and
- * `test/api/feature-routing.test.ts` both exercise the shared literal set.
+ * from *this* file — importing back would be a two-file cycle. So
+ * `ProviderFeatureId` is `FeatureId` plus `ProviderBoundFeatureId` (`maps`):
+ * its routable members are kept identical to `FeatureId` by hand, and
+ * `test/api/provider-registry.test.ts` checks every member has a boolean for
+ * every provider.
  */
 
 /**
