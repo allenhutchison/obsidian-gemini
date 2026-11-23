@@ -28,6 +28,8 @@ export interface TurnHandle {
 	registerStream(stream: { cancel: () => void } | null): void;
 	/** Count tool calls executed for this turn, even after Stop released it. */
 	countTool(count: number): void;
+	/** Hide the shared progress display, unless a newer turn owns it now. */
+	hideProgress(): void;
 }
 
 /**
@@ -121,6 +123,7 @@ export class AgentViewTools {
 		const registerStream = turn
 			? (stream: { cancel: () => void } | null) => turn.registerStream(stream)
 			: (stream: { cancel: () => void } | null) => this.context.registerFollowUpStream?.(stream);
+		const hideProgress = turn ? () => turn.hideProgress() : () => this.context.hideProgress();
 		const currentSession = this.context.getCurrentSession();
 		if (!currentSession) return;
 
@@ -227,7 +230,7 @@ export class AgentViewTools {
 			if (result.cancelled) {
 				this.streamingFollowUpContainer?.remove();
 				this.streamingFollowUpContainer = null;
-				this.context.hideProgress();
+				hideProgress();
 				return;
 			}
 
@@ -236,7 +239,7 @@ export class AgentViewTools {
 				// exhausted iterations without a text response). Just hide progress.
 				this.streamingFollowUpContainer?.remove();
 				this.streamingFollowUpContainer = null;
-				this.context.hideProgress();
+				hideProgress();
 				return;
 			}
 
@@ -272,13 +275,13 @@ export class AgentViewTools {
 				await this.plugin.sessionHistory.addEntryToSession(currentSession, aiEntry);
 			}
 
-			this.context.hideProgress();
+			hideProgress();
 		} catch (error) {
 			this.plugin.logger.error('[AgentViewTools] Failed to process tool results:', error);
 			this.currentGroupContainer = null;
 			this.streamingFollowUpContainer?.remove();
 			this.streamingFollowUpContainer = null;
-			this.context.hideProgress();
+			hideProgress();
 		}
 	}
 

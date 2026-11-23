@@ -568,6 +568,10 @@ describe('retry utilities', () => {
 		test('a stringified free-tier quota exhaustion is not retryable', () => {
 			expect(isRetryableApiError('RESOURCE_EXHAUSTED: limit: 0 (free tier)')).toBe(false);
 		});
+		test('permanent quota exhaustion wins over a network keyword in the same text', () => {
+			expect(isRetryableApiError('RESOURCE_EXHAUSTED: limit: 0 (free tier) after network reset')).toBe(false);
+			expect(isRetryableApiError(new Error('RESOURCE_EXHAUSTED: limit: 0, ECONNRESET'))).toBe(false);
+		});
 		test('a stringified transient rate limit stays retryable', () => {
 			expect(isRetryableApiError('rate limit exceeded, slow down')).toBe(true);
 		});

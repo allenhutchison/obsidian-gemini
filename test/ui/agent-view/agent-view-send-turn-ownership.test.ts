@@ -265,6 +265,35 @@ describe('AgentViewSend turn ownership', () => {
 		expect(turnEnds.map((p: any) => p.toolCallCount)).toEqual([1, 0]);
 	});
 
+	test("a stopped turn's handle doesn't hide the next turn's progress", async () => {
+		const { send, ctx, userInput } = makeSend();
+		const turns: any[] = [];
+		const releases: Array<() => void> = [];
+		vi.spyOn(send as any, 'dispatchResponse').mockImplementation(((...args: unknown[]) => {
+			turns.push(args[3]);
+			const d = deferred();
+			releases.push(d.resolve);
+			return d.promise;
+		}) as any);
+
+		userInput.innerText = 'first';
+		const turnA = send.sendMessage();
+		await flush();
+		send.stopAgentLoop();
+		userInput.innerText = 'second';
+		const turnB = send.sendMessage();
+		await flush();
+		ctx.progress.hide.mockClear();
+
+		(send as any).turnHandle(turns[0]).hideProgress();
+		expect(ctx.progress.hide).not.toHaveBeenCalled();
+		(send as any).turnHandle(turns[1]).hideProgress();
+		expect(ctx.progress.hide).toHaveBeenCalledTimes(1);
+
+		releases.forEach((r) => r());
+		await Promise.all([turnA, turnB]);
+	});
+
 	test('a turn stopped before its plan request starts never sends it', async () => {
 		const { send } = makeSend();
 		const modelApi = { generateStreamingResponse: vi.fn(), generateModelResponse: vi.fn() };

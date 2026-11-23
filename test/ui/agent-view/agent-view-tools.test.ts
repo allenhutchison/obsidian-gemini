@@ -514,3 +514,29 @@ describe('AgentViewTools.handleToolCalls — error path', () => {
 		expect(mocks.createToolGroup).toHaveBeenCalledTimes(2);
 	});
 });
+
+describe('AgentViewTools.handleToolCalls — turn-scoped progress', () => {
+	it("hides progress through the turn's handle, not the shared view, so a stopped turn can't hide the next one's", async () => {
+		const { tools, context } = makeHarness();
+		const handle = {
+			isCancelled: () => false,
+			registerStream: vi.fn(),
+			countTool: vi.fn(),
+			hideProgress: vi.fn(),
+		};
+
+		await tools.handleToolCalls(
+			[TOOL_CALL],
+			'user message',
+			[],
+			{} as GeminiConversationEntry,
+			undefined,
+			undefined,
+			undefined,
+			handle
+		);
+
+		expect(handle.hideProgress).toHaveBeenCalledTimes(1);
+		expect(context.hideProgress).not.toHaveBeenCalled();
+	});
+});

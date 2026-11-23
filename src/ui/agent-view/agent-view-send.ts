@@ -163,6 +163,7 @@ export class AgentViewSend {
 				// late tool completion is never billed to the next turn.
 				turn.toolCallCount += count;
 			},
+			hideProgress: () => this.hideProgressFor(turn),
 			registerStream: (stream) => {
 				if (stream) {
 					// A stopped turn must not take back the Stop target.

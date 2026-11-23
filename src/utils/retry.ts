@@ -289,6 +289,12 @@ export function isRetryableApiError(error: unknown): boolean {
 		}
 	}
 
+	// Permanent quota exhaustion wins over a network keyword in the same text:
+	// retrying a limit-0 quota is futile whatever else the message mentions.
+	if (isQuotaExhausted(error)) {
+		return false;
+	}
+
 	// Check for transient network errors
 	if (isTransientNetworkError(error)) {
 		return true;
