@@ -633,10 +633,7 @@ export class AgentLoop {
 		});
 		let loopStartIndex = state.loopStartIndex;
 		if (compactionResult.wasCompacted) {
-			plugin.contextManager.setUsageMetadata({
-				promptTokenCount: compactionResult.estimatedTokens,
-				totalTokenCount: compactionResult.estimatedTokens,
-			});
+			// prepareHistory already revised the cached usage (#1699).
 			// Summarization replaced the protected prefix with a 2-entry
 			// summary — shift the boundary left by however many entries were
 			// shed so it still points at the same logical (post-compaction)

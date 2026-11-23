@@ -788,10 +788,7 @@ export class AgentView extends ItemView {
 					this.plugin.logger.debug('[AgentView] No cached token usage, falling back to countTokens API');
 					const tokenCount = await this.plugin.contextManager.countTokens(modelName, conversationHistory);
 					if (tokenCount > 0) {
-						this.plugin.contextManager.setUsageMetadata({
-							promptTokenCount: tokenCount,
-							totalTokenCount: tokenCount,
-						});
+						this.plugin.contextManager.reviseCachedEstimate(modelName, conversationHistory, tokenCount);
 						usage = await this.plugin.contextManager.getTokenUsage(modelName);
 					}
 				}
@@ -842,6 +839,9 @@ export class AgentView extends ItemView {
 			if (conversationHistory && conversationHistory.length > 0) {
 				const tokenCount = await this.plugin.contextManager.countTokens(modelName, conversationHistory);
 				if (tokenCount > 0) {
+					// A full replace, deliberately not reviseCachedEstimate: this runs on
+					// a session switch, so the cached-prefix and reasoning figures still
+					// held belong to the previous session and must not carry over.
 					this.plugin.contextManager.setUsageMetadata({
 						promptTokenCount: tokenCount,
 						totalTokenCount: tokenCount,
