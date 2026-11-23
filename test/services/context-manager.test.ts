@@ -1202,6 +1202,20 @@ describe('ContextManager', () => {
 				expect(result.compactedHistory).toEqual(history);
 				expect(mockGenerateContent).not.toHaveBeenCalled();
 			});
+
+			test('a fully protected, unchanged history keeps the cached high-water mark (#1699)', async () => {
+				contextManager.updateUsageMetadata({ promptTokenCount: 250_000, totalTokenCount: 300_000 });
+				const history = Array.from({ length: 20 }, (_, i) => ({
+					role: i % 2 === 0 ? 'user' : 'model',
+					parts: [{ text: `Message ${i}` }],
+				}));
+
+				await contextManager.prepareHistory(history, 'gemini-2.5-flash', { protectFromIndex: 0 });
+
+				// Nothing was rewritten, so a lower report is still rejected.
+				contextManager.updateUsageMetadata({ promptTokenCount: 240_000, totalTokenCount: 240_000 });
+				expect((await contextManager.getTokenUsage('gemini-2.5-flash')).estimatedTokens).toBe(250_000);
+			});
 		});
 
 		describe('Ollama calibration seeding', () => {

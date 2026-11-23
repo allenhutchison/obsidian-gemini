@@ -615,8 +615,12 @@ export class ContextManager {
 			// current agent-loop's turns) covers the whole history. Truncation
 			// (phase 1) still applies; summarization is a no-op this call.
 			this.logger.log('[ContextManager] Protected region covers entire history; skipping summarization');
-			// Same rationale as the phase-1-sufficient branch above.
-			this.reviseCachedEstimate(modelName, truncatedHistory, postPhase1Tokens);
+			// Same rationale as the phase-1-sufficient branch above, but only
+			// when truncation actually shed something: an unchanged history is a
+			// pass-through and must keep the cached high-water mark (#1699).
+			if (postPhase1Tokens < estimatedTokens) {
+				this.reviseCachedEstimate(modelName, truncatedHistory, postPhase1Tokens);
+			}
 			return {
 				compactedHistory: truncatedHistory,
 				wasCompacted: false,
