@@ -548,7 +548,6 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'agent.attachments.imagesAttached': '{count} afbeeldingen bijgevoegd',
 	'agent.attachments.imagesSkippedUnsupportedHint':
 		'{count} afbeelding(en) overgeslagen: niet-ondersteunde indeling. Gebruik PNG, JPEG, GIF of WebP.',
-	'agent.attachments.imagesSkippedUnsupported': '{count} afbeelding(en) overgeslagen: niet-ondersteunde indeling.',
 	'agent.attachments.saveFailedOne':
 		'Opslaan van bijlage #{nums} in vault mislukt. Deze wordt nog wel naar de AI verzonden, maar niet lokaal opgeslagen.',
 	'agent.attachments.saveFailed':

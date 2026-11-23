@@ -535,7 +535,6 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'agent.attachments.imagesAttached': '이미지 {count}개가 첨부되었습니다',
 	'agent.attachments.imagesSkippedUnsupportedHint':
 		'이미지 {count}개 건너뜀: 지원되지 않는 형식입니다. PNG, JPEG, GIF 또는 WebP를 사용해 주세요.',
-	'agent.attachments.imagesSkippedUnsupported': '이미지 {count}개 건너뜀: 지원되지 않는 형식입니다.',
 	'agent.attachments.saveFailedOne':
 		'첨부 파일 #{nums}을(를) 보관함에 저장하지 못했습니다. AI에는 전송되지만 로컬에는 저장되지 않습니다.',
 	'agent.attachments.saveFailed':

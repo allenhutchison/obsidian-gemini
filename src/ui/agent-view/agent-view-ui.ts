@@ -806,6 +806,16 @@ export class AgentViewUI {
 		// Process all supported images from non-vault sources
 		const { imagesProcessed, unsupportedCount } = await this.processAttachmentFiles(fileArray, callbacks);
 
+		this.notifyAttachmentOutcome(imagesProcessed, unsupportedCount);
+	}
+
+	/**
+	 * The one notice policy for an attachment drop or paste (#1799), so the two
+	 * surfaces tell the user the same thing for the same result. Attached
+	 * images are announced; skipped ones get the format guidance, as a count
+	 * when some images were attached and as a plain sentence when none were.
+	 */
+	private notifyAttachmentOutcome(imagesProcessed: number, unsupportedCount: number): void {
 		if (imagesProcessed > 0) {
 			new Notice(
 				imagesProcessed === 1
@@ -813,9 +823,12 @@ export class AgentViewUI {
 					: t('agent.attachments.imagesAttached', { count: imagesProcessed })
 			);
 		}
-		if (unsupportedCount > 0) {
-			new Notice(t('agent.attachments.imagesSkippedUnsupportedHint', { count: unsupportedCount }));
-		}
+		if (unsupportedCount === 0) return;
+		new Notice(
+			imagesProcessed === 0
+				? t('agent.attachments.unsupportedImageFormat')
+				: t('agent.attachments.imagesSkippedUnsupportedHint', { count: unsupportedCount })
+		);
 	}
 
 	/**
@@ -837,22 +850,10 @@ export class AgentViewUI {
 					));
 				}
 
-				// Notify about unsupported formats
-				if (unsupportedCount > 0 && imagesProcessed === 0) {
-					new Notice(t('agent.attachments.unsupportedImageFormat'));
-				} else if (unsupportedCount > 0) {
-					new Notice(t('agent.attachments.imagesSkippedUnsupported', { count: unsupportedCount }));
-				}
+				this.notifyAttachmentOutcome(imagesProcessed, unsupportedCount);
 
-				// If images were processed, show notice and skip text handling
-				if (imagesProcessed > 0) {
-					new Notice(
-						imagesProcessed === 1
-							? t('agent.attachments.imageAttachedOne')
-							: t('agent.attachments.imagesAttached', { count: imagesProcessed })
-					);
-					return;
-				}
+				// If images were processed, skip text handling
+				if (imagesProcessed > 0) return;
 
 				// No images found, handle as text paste
 				e.preventDefault();

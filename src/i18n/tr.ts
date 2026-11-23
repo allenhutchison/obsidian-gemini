@@ -548,7 +548,6 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'agent.attachments.imagesAttached': '{count} görsel eklendi',
 	'agent.attachments.imagesSkippedUnsupportedHint':
 		'{count} görsel atlandı: desteklenmeyen biçim. PNG, JPEG, GIF veya WebP kullanın.',
-	'agent.attachments.imagesSkippedUnsupported': '{count} görsel atlandı: desteklenmeyen biçim.',
 	'agent.attachments.saveFailedOne':
 		"#{nums} numaralı ek vault'a kaydedilemedi. AI'a gönderilmeye devam edecek ancak yerel olarak depolanmayacak.",
 	'agent.attachments.saveFailed':

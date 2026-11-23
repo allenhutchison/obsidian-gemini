@@ -548,7 +548,6 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'agent.attachments.imagesAttached': '{count} зображень прикріплено',
 	'agent.attachments.imagesSkippedUnsupportedHint':
 		'Пропущено зображень ({count}): непідтримуваний формат. Використовуйте PNG, JPEG, GIF або WebP.',
-	'agent.attachments.imagesSkippedUnsupported': 'Пропущено зображень ({count}): непідтримуваний формат.',
 	'agent.attachments.saveFailedOne':
 		'Не вдалося зберегти вкладення №{nums} у vault. Його все одно буде надіслано ШІ, але не буде збережено локально.',
 	'agent.attachments.saveFailed':

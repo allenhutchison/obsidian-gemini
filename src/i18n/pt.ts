@@ -547,7 +547,6 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'agent.attachments.imagesAttached': '{count} imagens anexadas',
 	'agent.attachments.imagesSkippedUnsupportedHint':
 		'{count} imagem(ns) ignorada(s): formato não suportado. Use PNG, JPEG, GIF ou WebP.',
-	'agent.attachments.imagesSkippedUnsupported': '{count} imagem(ns) ignorada(s): formato não suportado.',
 	'agent.attachments.saveFailedOne':
 		'Falha ao guardar o anexo #{nums} no vault. Ainda assim será enviado para a IA, mas não será guardado localmente.',
 	'agent.attachments.saveFailed':
