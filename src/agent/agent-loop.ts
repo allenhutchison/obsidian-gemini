@@ -1,7 +1,7 @@
 import type { Content } from '@google/genai';
 import { sessionChatModel } from '../models';
 import type { ObsidianGemini } from '../types/plugin';
-import type { ChatSession, PerTurnContext } from '../types/agent';
+import type { ChatSession, PerTurnContext, SessionModelConfig } from '../types/agent';
 import type { AgentEventMap, AgentEventName } from '../types/agent-events';
 import type { FeatureToolPolicy } from '../types/tool-policy';
 import type { ToolCall, ModelResponse, ModelApi, StreamChunk } from '../api/interfaces/model-api';
@@ -152,10 +152,18 @@ export interface AgentLoopOptions {
 	hooks?: AgentLoopHooks;
 	/**
 	 * Factory for the model API used for follow-up and retry requests.
-	 * Defaults to `AgentFactory.createAgentModel(plugin, session)`. Pass a
+	 * Defaults to `AgentFactory.createAgentModel(plugin, session, modelConfig)`. Pass a
 	 * custom factory to inject a stub in tests or use a different config.
 	 */
 	createModelApi?: () => ModelApi;
+	/**
+	 * The turn's model config snapshot. Every follow-up and retry request, the
+	 * default model client, usage reports and compaction estimates resolve the
+	 * model from it, so a session-settings save mid-turn can't split them across
+	 * providers. Defaults to a copy of `session.modelConfig` taken when the run
+	 * starts; UI callers pass the snapshot the initial request was built from.
+	 */
+	modelConfig?: SessionModelConfig;
 }
 
 export interface AgentLoopResult {
@@ -284,7 +292,8 @@ export class AgentLoop {
 		// entries strictly before it (prior, already-completed turns) are
 		// eligible. See #662.
 		let loopStartIndex = initialHistory.length;
-		const modelName = sessionChatModel(plugin.settings, session?.modelConfig);
+		const turnModelConfig: SessionModelConfig = options.modelConfig ?? { ...(session?.modelConfig ?? {}) };
+		const modelName = sessionChatModel(plugin.settings, turnModelConfig);
 		// `perTurnContext` is a first-iteration input, like `userMessage`:
 		// `buildToolHistoryTurns` splices it into the user turn once, after which
 		// it lives in `conversationHistory`. Re-passing it on later iterations
@@ -315,7 +324,7 @@ export class AgentLoop {
 
 				// eslint-disable-next-line @typescript-eslint/no-require-imports -- a top-level import here would recreate that cycle
 				const { AgentFactory } = require('./agent-factory') as typeof import('./agent-factory');
-				return AgentFactory.createAgentModel(plugin, session);
+				return AgentFactory.createAgentModel(plugin, session, turnModelConfig);
 			});
 
 		while (currentToolCalls.length > 0) {
@@ -697,6 +706,7 @@ export class AgentLoop {
 			projectRootPath: state.projectRootPath,
 			featureToolPolicy: state.featureToolPolicy,
 			headless: state.headless,
+			model: modelName,
 			...perTurn,
 		});
 
@@ -782,6 +792,7 @@ export class AgentLoop {
 			currentSession: session,
 			updatedHistory: state.updatedHistory,
 			customPrompt: state.customPrompt,
+			model: state.modelName,
 			...state.perTurn,
 		});
 

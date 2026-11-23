@@ -3,7 +3,7 @@ import { ChatSession, SessionModelConfig } from '../../types/agent';
 import { GeminiModel, sessionChatModel, type ModelProvider } from '../../models';
 import { PROVIDER_IDS, providerSupports } from '../../api/providers/registry';
 import { PROVIDER_SHORT_LABEL_KEY } from '../settings/display-values';
-import { providerConnection } from '../../api/provider-status';
+import { providerSelectable } from '../../api/provider-status';
 import { featureProvider } from '../../api/feature-routing';
 import type { ObsidianGemini } from '../../types/plugin';
 import { t } from '../../i18n';
@@ -33,12 +33,12 @@ export function buildPromptTemplateOptions(
 
 /**
  * Options for the session provider dropdown (#1679): every provider that can
- * serve chat and is connected here, in registry order, plus the session's
+ * serve chat and is usable here (`providerSelectable`), in registry order, plus the session's
  * current provider even when it no longer qualifies (so the dropdown doesn't
  * misreport the session as on the default). The "use default" entry is added
  * by the caller.
  *
- * @param isConnected - Whether a provider is set up on this device.
+ * @param isConnected - Whether a provider is usable on this device.
  * @param current - The provider the session is pinned to, if any.
  */
 export function buildProviderOptions(
@@ -99,10 +99,7 @@ export class SessionSettingsModal extends Modal {
 					provider: defaultProvider ? t(PROVIDER_SHORT_LABEL_KEY[defaultProvider]) : t('settings.features.off'),
 				})
 			);
-			const options = buildProviderOptions(
-				(p) => providerConnection(this.plugin, p) === 'connected',
-				this.modelConfig.provider
-			);
+			const options = buildProviderOptions((p) => providerSelectable(this.plugin, p), this.modelConfig.provider);
 			for (const { provider, connected } of options) {
 				const label = t(PROVIDER_SHORT_LABEL_KEY[provider]);
 				dropdown.addOption(

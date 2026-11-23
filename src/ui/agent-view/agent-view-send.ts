@@ -1,7 +1,7 @@
 import { Notice, setIcon, App, TFile } from 'obsidian';
 import { sessionChatModel } from '../../models';
 import type { Content } from '@google/genai';
-import { ChatSession, type PerTurnContext } from '../../types/agent';
+import { ChatSession, type PerTurnContext, type SessionModelConfig } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import { ToolExecutionContext } from '../../tools/types';
 import { ExtendedModelRequest, ModelApi, ModelResponse, StreamChunk } from '../../api/interfaces/model-api';
@@ -92,6 +92,8 @@ interface TurnRequest {
 	perTurn: PerTurnContext;
 	modelApi: ModelApi;
 	modelName: string;
+	/** The session model config snapshot `request` and `modelApi` were built from. */
+	modelConfig: SessionModelConfig;
 	customPrompt: CustomPrompt | undefined;
 	/** True when plan mode rejected/emptied the plan — the turn ends silently. */
 	aborted: boolean;
@@ -659,6 +661,7 @@ export class AgentViewSend {
 					perTurn,
 					modelApi,
 					modelName,
+					modelConfig,
 					customPrompt,
 					aborted: true,
 				};
@@ -673,6 +676,7 @@ export class AgentViewSend {
 				perTurn,
 				modelApi,
 				modelName,
+				modelConfig,
 				customPrompt,
 				aborted: false,
 			};
@@ -685,6 +689,7 @@ export class AgentViewSend {
 			perTurn,
 			modelApi,
 			modelName,
+			modelConfig,
 			customPrompt,
 			aborted: false,
 		};
@@ -747,7 +752,7 @@ To reference an attachment in your response, use the path shown above.`;
 	): Promise<void> {
 		if (turn.aborted) return;
 
-		const { request, messageToSend, historyToSend, perTurn, modelApi, modelName, customPrompt } = turn;
+		const { request, messageToSend, historyToSend, perTurn, modelApi, modelName, modelConfig, customPrompt } = turn;
 
 		// Streaming is always used when the provider client supports it.
 		if (modelApi.generateStreamingResponse) {
@@ -843,7 +848,8 @@ To reference an attachment in your response, use the path shown above.`;
 						userEntry,
 						customPrompt,
 						perTurn,
-						hadPartialText ? undefined : turnThoughts
+						hadPartialText ? undefined : turnThoughts,
+						modelConfig
 					);
 				} else {
 					// Normal response without tool calls — shared three-way finalize
@@ -902,7 +908,8 @@ To reference an attachment in your response, use the path shown above.`;
 					userEntry,
 					customPrompt,
 					perTurn,
-					turnThoughts
+					turnThoughts,
+					modelConfig
 				);
 			} else {
 				// Normal response without tool calls — shared three-way finalize

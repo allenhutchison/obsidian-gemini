@@ -860,6 +860,40 @@ describe('AgentLoop', () => {
 		});
 	});
 
+	describe('turn model snapshot (#1679)', () => {
+		test('follow-ups, usage and compaction use the snapshot even if the session changes mid-turn', async () => {
+			const plugin = buildPlugin();
+			const session = buildSession();
+			plugin.toolExecutionEngine.executeTool.mockImplementation(async () => {
+				// A session-settings save lands while the tool runs.
+				session.modelConfig = { model: 'switched-mid-turn' };
+				return { success: true, data: 'ok' };
+			});
+			const api = makeScriptedModelApi([
+				{ markdown: 'done', rendered: '', usageMetadata: { promptTokenCount: 5, totalTokenCount: 5 } },
+			]);
+
+			await new AgentLoop().run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: {
+					plugin,
+					session,
+					confirmationProvider,
+					isCancelled: () => false,
+					createModelApi: () => api,
+					modelConfig: { model: 'snapshot-model' },
+				},
+			});
+
+			expect((api.generateModelResponse as any).mock.calls[0][0].model).toBe('snapshot-model');
+			expect(plugin.contextManager.prepareHistory.mock.calls[0][1]).toBe('snapshot-model');
+			const usage = plugin.agentEventBus.emit.mock.calls.find((c: any[]) => c[0] === 'apiResponseReceived');
+			expect(usage[1].modelName).toBe('snapshot-model');
+		});
+	});
+
 	describe('event bus emissions', () => {
 		test('emits toolExecutionComplete per tool, toolChainComplete per batch, apiResponseReceived per model call with metadata', async () => {
 			const plugin = buildPlugin();

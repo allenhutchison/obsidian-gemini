@@ -532,7 +532,7 @@ Override global settings for specific conversations:
 
 1. Open the session menu (☰) in the agent header and choose **Session settings** (or run the "Agent session settings" command)
 2. Configure:
-   - Provider (e.g., run this one conversation on Claude while chat is routed to Gemini). The list shows each connected provider that can chat; **Use default** follows the Chat route on the Features page. Changing the provider clears the session's model, so the session uses that provider's last-picked or default model until you pick one
+   - Provider (e.g., run this one conversation on Claude while chat is routed to Gemini). The list shows each provider that can chat and is set up here, including a custom OpenAI-compatible endpoint that needs no key (a provider missing a key it requires, or an Ollama server that could not be reached, is left out); **Use default** follows the Chat route on the Features page. Changing the provider clears the session's model, so the session uses that provider's last-picked or default model until you pick one
    - Model (e.g., switch to Gemini 2.5 Pro for harder reasoning) — click the model button and type to search the list. The list shows the session provider's models
    - Custom prompt template
 3. Use the reset button next to the model or prompt field to go back to the default, or pick **Use default** for the provider
