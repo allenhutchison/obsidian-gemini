@@ -34,16 +34,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">52.13% </span>
+                <span class="strong">51.74% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>208/399</span>
+                <span class='fraction'>208/402</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">45.02% </span>
+                <span class="strong">44.06% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>104/231</span>
+                <span class='fraction'>104/236</span>
             </div>
         
             
@@ -55,9 +55,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">52.48% </span>
+                <span class="strong">52.07% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>201/383</span>
+                <span class='fraction'>201/386</span>
             </div>
         
             
@@ -1126,7 +1126,18 @@
 <a name='L1050'></a><a href='#L1050'>1050</a>
 <a name='L1051'></a><a href='#L1051'>1051</a>
 <a name='L1052'></a><a href='#L1052'>1052</a>
-<a name='L1053'></a><a href='#L1053'>1053</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L1053'></a><a href='#L1053'>1053</a>
+<a name='L1054'></a><a href='#L1054'>1054</a>
+<a name='L1055'></a><a href='#L1055'>1055</a>
+<a name='L1056'></a><a href='#L1056'>1056</a>
+<a name='L1057'></a><a href='#L1057'>1057</a>
+<a name='L1058'></a><a href='#L1058'>1058</a>
+<a name='L1059'></a><a href='#L1059'>1059</a>
+<a name='L1060'></a><a href='#L1060'>1060</a>
+<a name='L1061'></a><a href='#L1061'>1061</a>
+<a name='L1062'></a><a href='#L1062'>1062</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1367,12 +1378,15 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1381,6 +1395,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -2198,6 +2216,8 @@ import { attachVaultBinaryFile } from './attach-vault-file';
 import { classifyFile, FileCategory, GEMINI_INLINE_DATA_LIMIT } from '../../utils/file-classification';
 import { rasterizeSvg, SvgTooLargeError } from '../../utils/svg-rasterizer';
 import { t } from '../../i18n';
+import { PROVIDERS } from '../../api/providers/registry';
+import { PROVIDER_SHORT_LABEL_KEY } from '../settings/display-values';
 &nbsp;
 /**
  * Callbacks interface for UI interactions
@@ -2419,7 +2439,10 @@ export class AgentViewUI {
 &nbsp;
 		// Model config badge (if non-default settings)
 <span class="cstat-no" title="statement not covered" >		if (currentSession?.modelConfig) {</span>
-			const hasCustomSettings = <span class="cstat-no" title="statement not covered" >currentSession.modelConfig.model || currentSession.modelConfig.promptTemplate;</span>
+			const hasCustomSettings =
+<span class="cstat-no" title="statement not covered" >				currentSession.modelConfig.model ||</span>
+				currentSession.modelConfig.provider ||
+				currentSession.modelConfig.promptTemplate;
 &nbsp;
 <span class="cstat-no" title="statement not covered" >			if (hasCustomSettings) {</span>
 				// The tooltip line and the badge label below show the same template
@@ -2435,6 +2458,10 @@ export class AgentViewUI {
 				// Build detailed tooltip
 				const tooltipParts: string[] = <span class="cstat-no" title="statement not covered" >[];</span>
 &nbsp;
+				const pinnedProvider = <span class="cstat-no" title="statement not covered" >currentSession.modelConfig.provider;</span>
+<span class="cstat-no" title="statement not covered" >				if (pinnedProvider &amp;&amp; PROVIDERS[pinnedProvider]) {</span>
+<span class="cstat-no" title="statement not covered" >					tooltipParts.push(t('agent.header.tooltipProvider', { value: t(PROVIDER_SHORT_LABEL_KEY[pinnedProvider]) }));</span>
+				}
 <span class="cstat-no" title="statement not covered" >				if (currentSession.modelConfig.model) {</span>
 <span class="cstat-no" title="statement not covered" >					tooltipParts.push(t('agent.header.tooltipModel', { value: currentSession.modelConfig.model }));</span>
 				}
@@ -3237,7 +3264,7 @@ export class AgentViewUI {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-23T22:55:25.314Z
+                at 2026-11-23T23:16:34.241Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
