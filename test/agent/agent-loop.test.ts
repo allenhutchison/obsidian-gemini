@@ -892,6 +892,38 @@ describe('AgentLoop', () => {
 			const usage = plugin.agentEventBus.emit.mock.calls.find((c: any[]) => c[0] === 'apiResponseReceived');
 			expect(usage[1].modelName).toBe('snapshot-model');
 		});
+
+		test('the empty-response retry uses the snapshot too', async () => {
+			const plugin = buildPlugin();
+			const session = buildSession();
+			plugin.toolExecutionEngine.executeTool.mockImplementation(async () => {
+				session.modelConfig = { model: 'switched-mid-turn' };
+				return { success: true, data: 'ok' };
+			});
+			const api = makeScriptedModelApi([
+				textResponse(''),
+				{ markdown: 'retried', rendered: '', usageMetadata: { promptTokenCount: 5, totalTokenCount: 5 } },
+			]);
+
+			const result = await new AgentLoop().run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: {
+					plugin,
+					session,
+					confirmationProvider,
+					isCancelled: () => false,
+					createModelApi: () => api,
+					modelConfig: { model: 'snapshot-model' },
+				},
+			});
+
+			expect(result.markdown).toBe('retried');
+			expect((api.generateModelResponse as any).mock.calls[1][0].model).toBe('snapshot-model');
+			const usage = plugin.agentEventBus.emit.mock.calls.find((c: any[]) => c[0] === 'apiResponseReceived');
+			expect(usage[1].modelName).toBe('snapshot-model');
+		});
 	});
 
 	describe('event bus emissions', () => {
