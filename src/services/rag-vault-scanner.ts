@@ -7,7 +7,12 @@ import type { RagCache } from './rag-cache';
 import type { RagRateLimiter } from './rag-rate-limiter';
 import { CACHE_VERSION } from './rag-types';
 import type { IndexProgress, IndexResult, RagIndexStatus, RagProgressProvider } from './rag-types';
-import { IndexRunProgress, type IndexProgressCount, type IndexRunProgressSnapshot } from './rag-run-progress';
+import {
+	IndexRunProgress,
+	type IndexProgressCount,
+	type IndexRunProgressSnapshot,
+	type IndexRunProgressCounts,
+} from './rag-run-progress';
 import { getErrorMessage, getRawErrorMessage, isNotFoundError, isQuotaExhausted } from '../utils/error-utils';
 import { executeWithRetry } from '../utils/retry';
 import { t } from '../i18n';
@@ -79,6 +84,11 @@ export class RagVaultScanner {
 	/** A copy of the current (or most recent) run's progress. */
 	getRunProgress(): IndexRunProgressSnapshot {
 		return this.progress.snapshot();
+	}
+
+	/** The run's counts without the failure list, for frequent progress updates. */
+	getRunCounts(): IndexRunProgressCounts {
+		return this.progress.counts();
 	}
 
 	/**

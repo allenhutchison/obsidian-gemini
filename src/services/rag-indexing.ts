@@ -229,7 +229,7 @@ export class RagIndexingService {
 	}
 
 	getProgressInfo(): RagProgressInfo {
-		const run = this.vaultScanner?.getRunProgress();
+		const run = this.vaultScanner?.getRunCounts();
 		return {
 			status: this.status,
 			indexedCount: run?.indexed ?? 0,

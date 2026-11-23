@@ -14,6 +14,9 @@ export interface IndexRunProgressSnapshot {
 	failedFiles: FailedFileEntry[];
 }
 
+/** A run's scalar progress without the failure list, for frequent progress updates. */
+export type IndexRunProgressCounts = Omit<IndexRunProgressSnapshot, 'failedFiles'>;
+
 /**
  * The progress of the current (or most recent) vault indexing run (#1703).
  *
@@ -88,7 +91,12 @@ export class IndexRunProgress {
 		return this.progress;
 	}
 
-	snapshot(): IndexRunProgressSnapshot {
+	/**
+	 * The run's scalars without copying the failure list. Progress listeners
+	 * fire on every file event, so copying a growing list there would be
+	 * quadratic over a run with many failures.
+	 */
+	counts(): IndexRunProgressCounts {
 		return {
 			progress: { ...this.progress },
 			currentFile: this.currentFile,
@@ -96,7 +104,10 @@ export class IndexRunProgress {
 			indexed: this.indexed,
 			skipped: this.skipped,
 			failed: this.failed,
-			failedFiles: [...this.failedFiles],
 		};
+	}
+
+	snapshot(): IndexRunProgressSnapshot {
+		return { ...this.counts(), failedFiles: [...this.failedFiles] };
 	}
 }

@@ -71,4 +71,13 @@ describe('IndexRunProgress', () => {
 		expect(p.snapshot().failedFiles).toHaveLength(1);
 		expect(p.getProgress().current).toBe(3);
 	});
+
+	test('counts() matches the snapshot without the failure list', () => {
+		const p = populated();
+		const { failedFiles, ...rest } = p.snapshot();
+		expect(failedFiles).toHaveLength(1);
+		const counts = p.counts();
+		expect(counts).toEqual(rest);
+		expect('failedFiles' in counts).toBe(false);
+	});
 });
