@@ -663,11 +663,7 @@ export class AgentViewSend {
 
 		// If compaction occurred, show notification and save summary to transcript
 		if (compactionResult.wasCompacted && compactionResult.summaryText) {
-			// Force-set the lower post-compaction token count (bypasses high-water mark)
-			this.ctx.plugin.contextManager.setUsageMetadata({
-				promptTokenCount: compactionResult.estimatedTokens,
-				totalTokenCount: compactionResult.estimatedTokens,
-			});
+			// prepareHistory already revised the cached usage (#1699); refresh the readout.
 			await this.ctx.updateTokenUsage();
 
 			const compactionEntry = buildCompactionEntry(compactionResult.summaryText, modelName);
