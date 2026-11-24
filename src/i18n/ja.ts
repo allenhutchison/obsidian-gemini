@@ -546,7 +546,6 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'agent.attachments.imagesAttached': '{count}枚の画像が添付されました',
 	'agent.attachments.imagesSkippedUnsupportedHint':
 		'{count}枚の画像がスキップされました: サポートされていない形式です。PNG、JPEG、GIF、またはWebPを使用してください。',
-	'agent.attachments.imagesSkippedUnsupported': '{count}枚の画像がスキップされました: サポートされていない形式です。',
 	'agent.attachments.saveFailedOne':
 		'添付ファイル #{nums} の保管庫への保存に失敗しました。AIには送信されますが、ローカルには保存されません。',
 	'agent.attachments.saveFailed':

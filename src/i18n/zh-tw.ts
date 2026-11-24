@@ -520,7 +520,6 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'agent.attachments.imagesAttached': '已附加 {count} 張圖片',
 	'agent.attachments.imagesSkippedUnsupportedHint':
 		'已跳過 {count} 張圖片：不支援的格式。請使用 PNG、JPEG、GIF 或 WebP。',
-	'agent.attachments.imagesSkippedUnsupported': '已跳過 {count} 張圖片：不支援的格式。',
 	'agent.attachments.saveFailedOne': '無法將附件 #{nums} 儲存至儲存庫。該附件仍會傳送給 AI，但不會儲存在本機。',
 	'agent.attachments.saveFailed': '無法將附件 #{nums} 儲存至儲存庫。這些附件仍會傳送給 AI，但不會儲存在本機。',
 	'agent.attachments.fileTooLarge': '檔案過大：{name} 超過 20MB 的累計附件限制',

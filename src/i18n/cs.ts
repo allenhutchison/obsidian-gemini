@@ -544,7 +544,6 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'agent.attachments.imagesAttached': 'Připojeno {count} obrázků',
 	'agent.attachments.imagesSkippedUnsupportedHint':
 		'Přeskočeno {count} obrázků: nepodporovaný formát. Použijte PNG, JPEG, GIF nebo WebP.',
-	'agent.attachments.imagesSkippedUnsupported': 'Přeskočeno {count} obrázků: nepodporovaný formát.',
 	'agent.attachments.saveFailedOne':
 		'Nepodařilo se uložit přílohu č. {nums} do vaultu. Stále bude odeslána AI, ale nebude uložena lokálně.',
 	'agent.attachments.saveFailed':

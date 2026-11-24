@@ -520,7 +520,6 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'agent.attachments.imagesAttached': '已添加 {count} 张图片',
 	'agent.attachments.imagesSkippedUnsupportedHint':
 		'已跳过 {count} 张图片：不支持的格式。请使用 PNG、JPEG、GIF 或 WebP。',
-	'agent.attachments.imagesSkippedUnsupported': '已跳过 {count} 张图片：不支持的格式。',
 	'agent.attachments.saveFailedOne': '无法将附件 #{nums} 保存到库。它仍会发送给 AI，但不会存储在本地。',
 	'agent.attachments.saveFailed': '无法将附件 #{nums} 保存到库。它们仍会发送给 AI，但不会存储在本地。',
 	'agent.attachments.fileTooLarge': '文件过大：{name} 超出了 20MB 的累计附件限制',

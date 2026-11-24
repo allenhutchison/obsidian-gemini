@@ -553,7 +553,6 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'agent.attachments.imagesAttached': '{count} images jointes',
 	'agent.attachments.imagesSkippedUnsupportedHint':
 		'{count} image(s) ignorée(s) : format non pris en charge. Utilisez PNG, JPEG, GIF ou WebP.',
-	'agent.attachments.imagesSkippedUnsupported': '{count} image(s) ignorée(s) : format non pris en charge.',
 	'agent.attachments.saveFailedOne':
 		"Impossible d'enregistrer la pièce jointe #{nums} dans le coffre. Elle sera tout de même envoyée à l'IA mais ne sera pas stockée localement.",
 	'agent.attachments.saveFailed':

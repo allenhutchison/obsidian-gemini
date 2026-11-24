@@ -542,7 +542,6 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'agent.attachments.imagesAttached': '{count} gambar dilampirkan',
 	'agent.attachments.imagesSkippedUnsupportedHint':
 		'{count} gambar dilewati: format tidak didukung. Gunakan PNG, JPEG, GIF, atau WebP.',
-	'agent.attachments.imagesSkippedUnsupported': '{count} gambar dilewati: format tidak didukung.',
 	'agent.attachments.saveFailedOne':
 		'Gagal menyimpan lampiran #{nums} ke vault. Lampiran akan tetap dikirim ke AI tetapi tidak akan disimpan secara lokal.',
 	'agent.attachments.saveFailed':

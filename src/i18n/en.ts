@@ -1879,11 +1879,7 @@ export const en = {
 	'agent.attachments.imagesSkippedUnsupportedHint': {
 		message: '{count} image(s) skipped: unsupported format. Use PNG, JPEG, GIF, or WebP.',
 		context:
-			'Notice when dropped images were skipped due to unsupported format. {count} may be 1 or more. Keep the format names.',
-	},
-	'agent.attachments.imagesSkippedUnsupported': {
-		message: '{count} image(s) skipped: unsupported format.',
-		context: 'Notice when pasted images were skipped due to unsupported format. {count} may be 1 or more.',
+			'Notice when some dropped or pasted images were skipped due to unsupported format while others were attached. {count} may be 1 or more. Keep the format names.',
 	},
 	'agent.attachments.saveFailedOne': {
 		message: "Failed to save attachment #{nums} to vault. It will still be sent to the AI but won't be stored locally.",

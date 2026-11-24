@@ -543,7 +543,6 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'agent.attachments.imagesAttached': '{count} bilder lagt ved',
 	'agent.attachments.imagesSkippedUnsupportedHint':
 		'{count} bilde(r) hoppet over: ustøttet format. Bruk PNG, JPEG, GIF eller WebP.',
-	'agent.attachments.imagesSkippedUnsupported': '{count} bilde(r) hoppet over: ustøttet format.',
 	'agent.attachments.saveFailedOne':
 		'Kunne ikke lagre vedlegg #{nums} til vault. Det vil fortsatt bli sendt til AI-en, men vil ikke bli lagret lokalt.',
 	'agent.attachments.saveFailed':

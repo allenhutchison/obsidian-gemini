@@ -553,7 +553,6 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'agent.attachments.imagesAttached': '{count} Bilder angehängt',
 	'agent.attachments.imagesSkippedUnsupportedHint':
 		'{count} Bild(er) übersprungen: nicht unterstütztes Format. Verwende PNG, JPEG, GIF oder WebP.',
-	'agent.attachments.imagesSkippedUnsupported': '{count} Bild(er) übersprungen: nicht unterstütztes Format.',
 	'agent.attachments.saveFailedOne':
 		'Fehler beim Speichern von Anhang #{nums} im Vault. Er wird dennoch an die KI gesendet, aber nicht lokal gespeichert.',
 	'agent.attachments.saveFailed':

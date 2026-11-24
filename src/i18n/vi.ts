@@ -545,7 +545,6 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'agent.attachments.imagesAttached': 'Đã đính kèm {count} hình ảnh',
 	'agent.attachments.imagesSkippedUnsupportedHint':
 		'Đã bỏ qua {count} hình ảnh: định dạng không được hỗ trợ. Sử dụng PNG, JPEG, GIF hoặc WebP.',
-	'agent.attachments.imagesSkippedUnsupported': 'Đã bỏ qua {count} hình ảnh: định dạng không được hỗ trợ.',
 	'agent.attachments.saveFailedOne':
 		'Không thể lưu tệp đính kèm #{nums} vào vault. Tệp vẫn sẽ được gửi đến AI nhưng không được lưu trữ cục bộ.',
 	'agent.attachments.saveFailed':

@@ -550,7 +550,6 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'agent.attachments.imagesAttached': 'Прикреплено изображений: {count}',
 	'agent.attachments.imagesSkippedUnsupportedHint':
 		'Пропущено изображений ({count}): неподдерживаемый формат. Используйте PNG, JPEG, GIF или WebP.',
-	'agent.attachments.imagesSkippedUnsupported': 'Пропущено изображений ({count}): неподдерживаемый формат.',
 	'agent.attachments.saveFailedOne':
 		'Не удалось сохранить вложение #{nums} в хранилище. Оно все равно будет отправлено ИИ, но не сохранится локально.',
 	'agent.attachments.saveFailed':
