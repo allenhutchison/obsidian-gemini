@@ -405,8 +405,8 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 	private scheduleFire(hook: Hook, trigger: HookTrigger, file: TFile, oldPath: string | undefined): void {
 		if (!this.admitEvent(hook, file.path)) return;
 		this.armDebounce(hook, file.path, () =>
-			this.fireNow(hook, file.path, `${hook.slug} → ${file.name}`, () => ({
-				hook,
+			this.fireNow(hook, file.path, `${hook.slug} → ${file.name}`, (current) => ({
+				hook: current,
 				trigger,
 				filePath: file.path,
 				fileName: file.name,
@@ -438,8 +438,8 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 			const turn = this.pendingTurns.get(hook.slug);
 			this.pendingTurns.delete(hook.slug);
 			if (!turn) return Promise.resolve();
-			return this.fireNow(hook, AGENT_TURN_FIRE_KEY, `${hook.slug} → ${t('hooks.agentTurnMeta')}`, () => ({
-				hook,
+			return this.fireNow(hook, AGENT_TURN_FIRE_KEY, `${hook.slug} → ${t('hooks.agentTurnMeta')}`, (current) => ({
+				hook: current,
 				trigger: AGENT_TURN_TRIGGER,
 				filePath: '',
 				fileName: '',
@@ -488,11 +488,24 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 	}
 
 	private async fireNow(
-		hook: Hook,
+		scheduled: Hook,
 		fireKey: string,
 		label: string,
-		buildContext: () => HookFireContext
+		buildContext: (current: Hook) => HookFireContext
 	): Promise<void> {
+		// The debounce window can outlive the Hook object captured when the
+		// event arrived: the user may disable, edit, or delete the hook (or it
+		// may pause) before the timer fires. Re-resolve by slug and re-apply
+		// the gates so the current definition, not the captured one, decides.
+		const current = this.hooks.get(scheduled.slug);
+		if (!current || current.trigger !== scheduled.trigger || !this.passesCommonGates(current)) {
+			this.plugin.logger.debug(
+				`[HookManager] Hook "${scheduled.slug}" changed, was disabled, or was removed before its debounce fired — skipping`
+			);
+			return;
+		}
+		const hook = current;
+
 		const key = `${hook.slug}::${fireKey}`;
 		const now = Date.now();
 
@@ -529,7 +542,7 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 
 		try {
 			await this.recordFire(hook.slug, fireKey, now);
-			this.submitToBackground(buildContext(), key, label);
+			this.submitToBackground(buildContext(hook), key, label);
 		} catch (error) {
 			// recordFire failed before submission could happen — treat as a
 			// hook failure and clear the inflight slot so subsequent events

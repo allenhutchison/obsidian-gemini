@@ -94,9 +94,9 @@ Hooks on the `agent-turn-ended` trigger get their own variables, listed under [A
 
 ## Agent turn trigger
 
-`trigger: agent-turn-ended` fires once each time the agent finishes responding to a message in the agent chat, whatever the turn did. It fires after a final answer, after an error, and after you press Stop. Two typical uses:
+`trigger: agent-turn-ended` fires once each time the agent finishes responding to a message in the agent chat, whatever the turn did. It fires after a final answer, after an error, and after you press Stop. Headless runs, such as scheduled tasks and `agent-task` hooks, run in unsaved (ephemeral) sessions and never fire it. Two typical uses:
 
-- **Commit after every turn.** Run Obsidian Git's `obsidian-git:commit` command, so each turn's edits land as one commit.
+- **Commit after turns.** Run Obsidian Git's `obsidian-git:commit` command so the agent's edits are committed as you go. Turns that end inside the debounce window share one run, and so one commit, and a turn that ends during the cooldown is skipped, so a commit can cover several turns.
 - **Keep a turn log.** Run an agent task that appends a line per turn to a log note.
 
 ```markdown

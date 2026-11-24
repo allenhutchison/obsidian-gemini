@@ -193,6 +193,34 @@ describe('HookManager agent-turn trigger', () => {
 		expect(runs.contexts).toHaveLength(1);
 	});
 
+	it('does not fire when the hook is disabled before its debounce expires', async () => {
+		const manager = seeded(createMockPlugin(), [makeHook()]);
+		manager.handleTurnEnd(turnEnd());
+		await vi.advanceTimersByTimeAsync(50);
+		(manager as any).hooks.set('turn-log', makeHook({ enabled: false }));
+		await vi.advanceTimersByTimeAsync(150);
+		expect(runs.contexts).toHaveLength(0);
+	});
+
+	it('does not fire when the hook is deleted before its debounce expires', async () => {
+		const manager = seeded(createMockPlugin(), [makeHook()]);
+		manager.handleTurnEnd(turnEnd());
+		await vi.advanceTimersByTimeAsync(50);
+		(manager as any).hooks.delete('turn-log');
+		await vi.advanceTimersByTimeAsync(150);
+		expect(runs.contexts).toHaveLength(0);
+	});
+
+	it('fires with the current definition when the hook is edited inside the debounce window', async () => {
+		const manager = seeded(createMockPlugin(), [makeHook()]);
+		manager.handleTurnEnd(turnEnd());
+		await vi.advanceTimersByTimeAsync(50);
+		(manager as any).hooks.set('turn-log', makeHook({ commandId: 'other:command' }));
+		await vi.advanceTimersByTimeAsync(150);
+		expect(runs.contexts).toHaveLength(1);
+		expect(runs.contexts[0].hook.commandId).toBe('other:command');
+	});
+
 	it('skips paused, disabled and desktop-only-on-mobile hooks', async () => {
 		const manager = seeded(createMockPlugin(), [
 			makeHook({ slug: 'paused' }),
