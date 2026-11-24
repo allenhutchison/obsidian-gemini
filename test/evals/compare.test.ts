@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import {
 	compareResults,
 	getBaselinePath,
@@ -73,26 +73,42 @@ describe('sanitizeModelForFilename', () => {
 });
 
 describe('getBaselinePath', () => {
+	// getBaselinePath returns a platform-native path (it feeds fs reads and
+	// writes), so build expectations with path.join. On POSIX these resolve to
+	// the same literal strings as '/tmp/evals/baselines/...'; on Windows they
+	// use backslashes, matching what the function actually returns there.
+	const evalsDir = join('/tmp', 'evals');
+	const baselinesDir = join(evalsDir, 'baselines');
+
 	it('joins provider and sanitized model under <evalsDir>/baselines', () => {
-		const path = getBaselinePath('/tmp/evals', 'ollama', 'gemma3:27b');
-		expect(path).toBe('/tmp/evals/baselines/ollama-gemma3-27b.json');
+		const path = getBaselinePath(evalsDir, 'ollama', 'gemma3:27b');
+		expect(path).toBe(join(baselinesDir, 'ollama-gemma3-27b.json'));
 	});
 
 	it('defaults provider to gemini when missing', () => {
-		const path = getBaselinePath('/tmp/evals', undefined as any, 'gemini-2.5-flash');
-		expect(path).toBe('/tmp/evals/baselines/gemini-gemini-2.5-flash.json');
+		const path = getBaselinePath(evalsDir, undefined as any, 'gemini-2.5-flash');
+		expect(path).toBe(join(baselinesDir, 'gemini-gemini-2.5-flash.json'));
 	});
 
 	it('sanitizes path-traversal attempts in provider', () => {
 		// In practice provider comes from plugin settings ('gemini' / 'ollama'),
 		// but the function must still neutralize separators so neither segment
 		// can escape evals/baselines or compose unintended paths.
-		const path = getBaselinePath('/tmp/evals', '../foo' as any, 'gemini-2.5');
-		expect(path).toBe('/tmp/evals/baselines/..-foo-gemini-2.5.json');
-		expect(path.startsWith('/tmp/evals/baselines/')).toBe(true);
+		const path = getBaselinePath(evalsDir, '../foo' as any, 'gemini-2.5');
+		expect(path).toBe(join(baselinesDir, '..-foo-gemini-2.5.json'));
+		// The result must be a direct child of baselines/ — relative() would
+		// start with '..' or contain a separator if the provider escaped it.
+		expect(dirname(path)).toBe(baselinesDir);
+		expect(relative(baselinesDir, path)).toBe('..-foo-gemini-2.5.json');
 
-		const slashy = getBaselinePath('/tmp/evals', 'a/b' as any, 'm');
-		expect(slashy).toBe('/tmp/evals/baselines/a-b-m.json');
+		const slashy = getBaselinePath(evalsDir, 'a/b' as any, 'm');
+		expect(slashy).toBe(join(baselinesDir, 'a-b-m.json'));
+		expect(dirname(slashy)).toBe(baselinesDir);
+
+		// Windows-style separators must be neutralized too.
+		const backslashy = getBaselinePath(evalsDir, '..\\foo' as any, 'm');
+		expect(backslashy).toBe(join(baselinesDir, '..-foo-m.json'));
+		expect(dirname(backslashy)).toBe(baselinesDir);
 	});
 });
 
