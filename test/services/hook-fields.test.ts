@@ -4,6 +4,8 @@ import {
 	DEFAULT_COOLDOWN_MS,
 	DEFAULT_DEBOUNCE_MS,
 	HOOK_FIELD_KEYS,
+	isActionAllowedForTrigger,
+	isFileTrigger,
 	mergeHookFields,
 	normalizeHookFields,
 	parseHookFields,
@@ -316,5 +318,27 @@ describe('mergeHookFields', () => {
 		expect(merged.maxRunsPerHour).toBeUndefined();
 		expect(merged.maxIterations).toBeUndefined();
 		expect(serializeHookFields(merged)).not.toContain("pathGlob: ''");
+	});
+});
+
+describe('agent-turn trigger helpers (#1806)', () => {
+	it('treats every trigger but agent-turn-ended as a file trigger', () => {
+		expect(isFileTrigger('file-modified')).toBe(true);
+		expect(isFileTrigger('file-renamed')).toBe(true);
+		expect(isFileTrigger('agent-turn-ended')).toBe(false);
+	});
+
+	it('allows only agent-task and command for the agent-turn trigger', () => {
+		expect(isActionAllowedForTrigger('agent-turn-ended', 'agent-task')).toBe(true);
+		expect(isActionAllowedForTrigger('agent-turn-ended', 'command')).toBe(true);
+		expect(isActionAllowedForTrigger('agent-turn-ended', 'summarize')).toBe(false);
+		expect(isActionAllowedForTrigger('agent-turn-ended', 'rewrite')).toBe(false);
+		expect(isActionAllowedForTrigger('file-modified', 'summarize')).toBe(true);
+	});
+
+	it('round-trips the trigger through parse and serialize', () => {
+		const fields = parseHookFields({ trigger: 'agent-turn-ended', action: 'command', commandId: 'a:b' });
+		expect(fields?.trigger).toBe('agent-turn-ended');
+		expect(serializeHookFields(fields!)).toContain("trigger: 'agent-turn-ended'");
 	});
 });
