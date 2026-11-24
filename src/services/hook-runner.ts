@@ -10,7 +10,7 @@ import { HOOK_RUNS_SUBFOLDER } from './state-folder';
 import { formatLocalDate } from '../utils/format-utils';
 import { GeminiSummary } from '../summary';
 import { SelectionRewriter } from '../rewrite-selection';
-import { renderPrompt } from './hook-types';
+import { isFileTrigger, renderPrompt } from './hook-types';
 import type { HookFireContext } from './hook-types';
 import { runHeadlessAgentTurn } from './headless-agent-turn';
 
@@ -126,7 +126,9 @@ export class HookRunner {
 		// we open the trigger file first so the command targets it. If the
 		// file is gone (file-deleted, renamed away, etc.) we skip the
 		// dispatch with a log entry rather than fire on the wrong file.
-		if (hook.focusFile) {
+		// The agent-turn trigger has no file, so focusFile doesn't apply there
+		// (the editor hides it; a hand-written one is ignored).
+		if (hook.focusFile && isFileTrigger(this.ctx.trigger)) {
 			const file = this.resolveTriggerFile();
 			if (!file) {
 				// Warn-level: the user explicitly opted into focusFile, so a
@@ -199,11 +201,19 @@ export class HookRunner {
 	}
 
 	private promptVars(): Record<string, string> {
+		const { turn } = this.ctx;
 		return {
+			// Empty for the agent-turn trigger, which has no file.
 			filePath: this.ctx.filePath,
 			fileName: this.ctx.fileName,
 			trigger: this.ctx.trigger,
 			oldPath: this.ctx.oldPath ?? '',
+			// Empty for the file triggers.
+			turnOutcome: turn?.outcome ?? '',
+			turnCount: turn ? String(turn.turnCount) : '',
+			toolCallCount: turn ? String(turn.toolCallCount) : '',
+			sessionTitle: turn?.sessionTitle ?? '',
+			userMessage: turn?.userMessage ?? '',
 		};
 	}
 
@@ -228,9 +238,14 @@ export class HookRunner {
 		notice?: { fellBack?: boolean; loopAborted?: boolean }
 	): Promise<string> {
 		const ranAt = new Date().toISOString();
+		const { turn } = this.ctx;
+		// An agent-turn fire has no triggering file; record the turn instead.
+		const source = turn
+			? `session: ${JSON.stringify(turn.sessionTitle)}\nturn_outcome: ${JSON.stringify(turn.outcome)}\n`
+			: `triggered_by: ${JSON.stringify(this.ctx.filePath)}\n`;
 		let header =
 			`---\nhook: ${JSON.stringify(this.ctx.hook.slug)}\n` +
-			`triggered_by: ${JSON.stringify(this.ctx.filePath)}\n` +
+			source +
 			`trigger: ${JSON.stringify(this.ctx.trigger)}\n` +
 			`ran_at: ${JSON.stringify(ranAt)}\n---\n\n`;
 		let body = content;

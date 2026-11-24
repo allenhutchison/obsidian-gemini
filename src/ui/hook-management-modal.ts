@@ -1,6 +1,11 @@
 import { Notice, Setting, setIcon } from 'obsidian';
 import type { Hook, HookAction, HookCreateParams, HookState, HookTrigger, HooksState } from '../services/hook-manager';
-import { DEFAULT_COOLDOWN_MS, DEFAULT_DEBOUNCE_MS } from '../services/hook-types';
+import {
+	DEFAULT_COOLDOWN_MS,
+	DEFAULT_DEBOUNCE_MS,
+	isActionAllowedForTrigger,
+	isFileTrigger,
+} from '../services/hook-types';
 import { HOOK_RUNS_SUBFOLDER } from '../services/state-folder';
 import type { FeatureToolPolicy } from '../types/tool-policy';
 import { ManagementModalBase } from './components/management-modal-base';
@@ -13,6 +18,7 @@ const TRIGGER_OPTIONS = [
 	{ value: 'file-created', labelKey: 'hooks.triggerFileCreated' },
 	{ value: 'file-deleted', labelKey: 'hooks.triggerFileDeleted' },
 	{ value: 'file-renamed', labelKey: 'hooks.triggerFileRenamed' },
+	{ value: 'agent-turn-ended', labelKey: 'hooks.triggerAgentTurnEnded' },
 ] as const;
 
 const ACTION_OPTIONS = [
@@ -197,7 +203,8 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 	// ── Form body ────────────────────────────────────────────────────────────
 
 	protected renderFormBody(formEl: HTMLElement, _isEdit: boolean): void {
-		// Trigger
+		// Trigger. Changing it narrows the action list (the agent-turn trigger
+		// has no file, so summarize/rewrite can't run) and the visible fields.
 		new Setting(formEl)
 			.setName(t('hooks.triggerSetting'))
 			.setDesc(t('hooks.triggerDesc'))
@@ -205,25 +212,47 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 				for (const opt of TRIGGER_OPTIONS) dd.addOption(opt.value, t(opt.labelKey));
 				dd.setValue(this.form.trigger).onChange((v) => {
 					this.form.trigger = v as HookTrigger;
+					populateActions();
+					updateActionVisibility();
 				});
 			});
 
 		// Action — what to do when the hook fires. Drives which other inputs
 		// are visible (tools/prompt for agent-task and rewrite, commandId for
 		// command, none for summarize).
+		let actionSelect: HTMLSelectElement | null = null;
 		new Setting(formEl)
 			.setName(t('hooks.actionSetting'))
 			.setDesc(t('hooks.actionDesc'))
 			.addDropdown((dd) => {
-				for (const opt of ACTION_OPTIONS) dd.addOption(opt.value, t(opt.labelKey));
-				dd.setValue(this.form.action).onChange((v) => {
+				actionSelect = dd.selectEl;
+				dd.onChange((v) => {
 					this.form.action = v as HookAction;
 					updateActionVisibility();
 				});
 			});
+		// Rebuild the action options for the current trigger, falling back to
+		// agent-task when the selected action isn't allowed for it.
+		const populateActions = () => {
+			if (!actionSelect) return;
+			actionSelect.empty();
+			for (const opt of ACTION_OPTIONS) {
+				if (!isActionAllowedForTrigger(this.form.trigger, opt.value)) continue;
+				actionSelect.createEl('option', { value: opt.value, text: t(opt.labelKey) });
+			}
+			if (!isActionAllowedForTrigger(this.form.trigger, this.form.action)) this.form.action = 'agent-task';
+			actionSelect.value = this.form.action;
+		};
+		populateActions();
 
-		// Path glob
-		new Setting(formEl)
+		// Cost warning: an agent task after every turn doubles model usage.
+		const turnCostWarning = formEl.createDiv({
+			cls: 'setting-item-description gemini-warning-text',
+			text: t('hooks.turnCostWarning'),
+		});
+
+		// Path glob — file triggers only.
+		const pathGlobSetting = new Setting(formEl)
 			.setName(t('hooks.pathGlobSetting'))
 			.setDesc(t('hooks.pathGlobDesc'))
 			.addText((text) =>
@@ -234,6 +263,7 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 						this.form.pathGlob = v.trim();
 					})
 			);
+		const pathGlobEl = pathGlobSetting.settingEl;
 
 		// Command id — only shown when action=command.
 		const commandIdSetting = new Setting(formEl)
@@ -292,24 +322,33 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 
 		const updateActionVisibility = () => {
 			const action = this.form.action;
+			const fileTrigger = isFileTrigger(this.form.trigger);
 			const showCommandId = action === 'command';
 			const showTools = action === 'agent-task';
 			const showPrompt = action === 'agent-task' || action === 'rewrite';
 
+			pathGlobEl.style.display = fileTrigger ? '' : 'none';
+			turnCostWarning.style.display = !fileTrigger && action === 'agent-task' ? '' : 'none';
+			promptSetting.setDesc(t(fileTrigger ? 'hooks.promptDesc' : 'hooks.turnPromptDesc'));
+			debounceSetting.setDesc(
+				t(fileTrigger ? 'hooks.debounceDesc' : 'hooks.turnDebounceDesc', { default: DEFAULT_DEBOUNCE_MS })
+			);
+			cooldownSetting.setDesc(
+				t(fileTrigger ? 'hooks.cooldownDesc' : 'hooks.turnCooldownDesc', { default: DEFAULT_COOLDOWN_MS })
+			);
 			commandIdEl.style.display = showCommandId ? '' : 'none';
-			focusFileEl.style.display = showCommandId ? '' : 'none';
+			focusFileEl.style.display = showCommandId && fileTrigger ? '' : 'none';
 			toolsSetting.settingEl.style.display = showTools ? '' : 'none';
 			toolsContainer.style.display = showTools ? '' : 'none';
 			promptSetting.settingEl.style.display = showPrompt ? '' : 'none';
 			promptArea.style.display = showPrompt ? '' : 'none';
 		};
-		updateActionVisibility();
 
 		// Advanced
 		const advDetails = formEl.createEl('details', { cls: 'gemini-scheduler-advanced' });
 		advDetails.createEl('summary', { text: t('hooks.advancedOptions') });
 
-		new Setting(advDetails)
+		const debounceSetting = new Setting(advDetails)
 			.setName(t('hooks.debounceSetting'))
 			.setDesc(t('hooks.debounceDesc', { default: DEFAULT_DEBOUNCE_MS }))
 			.addText((text) =>
@@ -322,7 +361,7 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 					})
 			);
 
-		new Setting(advDetails)
+		const cooldownSetting = new Setting(advDetails)
 			.setName(t('hooks.cooldownSetting'))
 			.setDesc(t('hooks.cooldownDesc', { default: DEFAULT_COOLDOWN_MS }))
 			.addText((text) =>
@@ -334,6 +373,9 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 						this.form.cooldownMs = Number.isFinite(n) && n >= 0 ? n : DEFAULT_COOLDOWN_MS;
 					})
 			);
+
+		// Every field it toggles now exists.
+		updateActionVisibility();
 
 		new Setting(advDetails)
 			.setName(t('hooks.maxRunsSetting'))
@@ -441,11 +483,14 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 		// Create and update send the identical field set; only `slug` differs
 		// (it is immutable after creation). Built once so a new form field can't
 		// be added to one branch and forgotten in the other.
+		const fileTrigger = isFileTrigger(this.form.trigger);
 		const params: Omit<HookCreateParams, 'slug'> = {
 			trigger: this.form.trigger,
 			action,
 			prompt: this.form.prompt,
-			pathGlob: this.form.pathGlob || undefined,
+			// The agent-turn trigger has no file, so the file-only fields are
+			// dropped rather than saved hidden.
+			pathGlob: fileTrigger ? this.form.pathGlob || undefined : undefined,
 			debounceMs: this.form.debounceMs,
 			cooldownMs: this.form.cooldownMs,
 			maxRunsPerHour: this.form.maxRunsPerHour > 0 ? this.form.maxRunsPerHour : undefined,
@@ -457,7 +502,7 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			enabled: this.form.enabled,
 			desktopOnly: this.form.desktopOnly,
 			commandId: this.form.commandId || undefined,
-			focusFile: this.form.focusFile === true ? true : undefined,
+			focusFile: fileTrigger && this.form.focusFile === true ? true : undefined,
 		};
 
 		try {

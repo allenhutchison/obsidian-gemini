@@ -971,3 +971,68 @@ describe('HookRunner resolveOutputPath template', () => {
 		expect(path).toContain('2026-05-04');
 	});
 });
+
+// ─── agent-turn trigger (#1806) ──────────────────────────────────────────────
+
+describe('HookRunner agent-turn trigger', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	function turnContext(hook: Hook): HookFireContext {
+		return {
+			hook,
+			trigger: 'agent-turn-ended',
+			filePath: '',
+			fileName: '',
+			turn: { outcome: 'complete', turnCount: 2, toolCallCount: 5, sessionTitle: 'My chat', userMessage: 'tidy up' },
+		};
+	}
+
+	it('renders the turn variables and leaves the file variables empty', async () => {
+		const generateModelResponse = vi.fn().mockResolvedValue({ markdown: 'logged', toolCalls: [] });
+		(ModelClientFactory.createChatModel as any).mockReturnValue({ generateModelResponse });
+		const plugin = createMockPlugin();
+		const hook = makeHook({
+			trigger: 'agent-turn-ended',
+			prompt:
+				'{{turnOutcome}}|{{turnCount}}|{{toolCallCount}}|{{sessionTitle}}|{{userMessage}}|[{{filePath}}][{{fileName}}]',
+		});
+
+		await new HookRunner(plugin as any, turnContext(hook)).run();
+
+		const request = generateModelResponse.mock.calls[0][0];
+		expect(request.userMessage).toContain('complete|2|5|My chat|tidy up|[][]');
+	});
+
+	it('records the session and outcome in the output header instead of a triggering file', async () => {
+		(ModelClientFactory.createChatModel as any).mockReturnValue({
+			generateModelResponse: vi.fn().mockResolvedValue({ markdown: 'logged', toolCalls: [] }),
+		});
+		const plugin = createMockPlugin();
+		const hook = makeHook({ trigger: 'agent-turn-ended' });
+
+		await new HookRunner(plugin as any, turnContext(hook)).run();
+
+		const [, content] = plugin.__create.mock.calls[0];
+		expect(content).toContain('session: "My chat"');
+		expect(content).toContain('turn_outcome: "complete"');
+		expect(content).not.toContain('triggered_by');
+	});
+
+	it('ignores a hand-written focusFile, since a turn has no file to focus', async () => {
+		const plugin = createMockPlugin();
+		const hook = makeHook({
+			trigger: 'agent-turn-ended',
+			action: 'command',
+			commandId: 'obsidian-git:commit',
+			focusFile: true,
+			prompt: '',
+		});
+
+		await new HookRunner(plugin as any, turnContext(hook)).run();
+
+		expect(plugin.app.workspace.openLinkText).not.toHaveBeenCalled();
+		expect(plugin.app.commands.executeCommandById).toHaveBeenCalledWith('obsidian-git:commit');
+	});
+});

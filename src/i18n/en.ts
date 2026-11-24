@@ -1243,6 +1243,16 @@ export const en = {
 		message: 'File renamed/moved',
 		context: 'Dropdown option for the hook trigger: fires when a path changes.',
 	},
+	'hooks.triggerAgentTurnEnded': {
+		message: 'Agent turn ended',
+		context:
+			'Dropdown option for the hook trigger: fires once each time the agent finishes responding to a chat message.',
+	},
+	'hooks.agentTurnMeta': {
+		message: 'agent turn',
+		context:
+			'Short label shown in place of a file name for a hook run started by the end of an agent turn, e.g. "my-hook → agent turn".',
+	},
 	'hooks.actionAgentTask': {
 		message: 'Agent task',
 		context: 'Dropdown option for the hook action: run a headless agent session.',
@@ -1331,8 +1341,31 @@ export const en = {
 	'hooks.deleteButton': { message: 'Delete', context: 'Per-row button that opens the delete confirmation for a hook.' },
 	'hooks.triggerSetting': { message: 'Trigger', context: 'Form label for the hook trigger dropdown.' },
 	'hooks.triggerDesc': {
-		message: 'The vault event that fires this hook.',
+		message: 'The vault event or agent event that fires this hook.',
 		context: 'Description under the trigger dropdown.',
+	},
+	'hooks.turnCostWarning': {
+		message:
+			'This makes a model request after every chat message, roughly doubling usage. Consider setting max runs per hour under advanced options.',
+		context:
+			'Warning shown in the hook editor when an AI agent task hook is set to run at the end of every agent turn.',
+	},
+	'hooks.turnPromptDesc': {
+		message:
+			'Instruction sent to the AI after each agent turn. Available variables: {{turnOutcome}}, {{turnCount}}, {{toolCallCount}}, {{sessionTitle}}, {{userMessage}}.',
+		context:
+			'Description of the prompt field for a hook on the agent-turn trigger. The {{...}} variable names are literal syntax; do not translate them.',
+	},
+	'hooks.turnDebounceDesc': {
+		message: 'Merge turns that end within this window into one run. Default {default}.',
+		context:
+			'Description of the debounce field for a hook on the agent-turn trigger. {default} is the default value in milliseconds.',
+	},
+	'hooks.turnCooldownDesc': {
+		message:
+			'After a run completes, skip turns that end within this window. Prevents a command that starts another turn from firing again. Default {default}.',
+		context:
+			'Description of the cooldown field for a hook on the agent-turn trigger. {default} is the default value in milliseconds.',
 	},
 	'hooks.actionSetting': { message: 'Action', context: 'Form label for the hook action dropdown.' },
 	'hooks.actionDesc': {

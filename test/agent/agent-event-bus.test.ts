@@ -38,7 +38,7 @@ describe('AgentEventBus', () => {
 			bus.on('turnEnd', handler1);
 			bus.on('turnEnd', handler2);
 
-			await bus.emit('turnEnd', { session: {} as any, toolCallCount: 3 });
+			await bus.emit('turnEnd', { session: {} as any, toolCallCount: 3, outcome: 'complete', userMessage: 'hi' });
 
 			expect(handler1).toHaveBeenCalledTimes(1);
 			expect(handler2).toHaveBeenCalledTimes(1);
@@ -48,7 +48,7 @@ describe('AgentEventBus', () => {
 			const handler = vi.fn().mockResolvedValue(undefined);
 			bus.on('turnStart', handler);
 
-			await bus.emit('turnEnd', { session: {} as any, toolCallCount: 0 });
+			await bus.emit('turnEnd', { session: {} as any, toolCallCount: 0, outcome: 'complete', userMessage: 'hi' });
 
 			expect(handler).not.toHaveBeenCalled();
 		});
@@ -158,7 +158,7 @@ describe('AgentEventBus', () => {
 			bus.removeAll('turnStart');
 
 			await bus.emit('turnStart', { session: {} as any, userMessage: 'test' });
-			await bus.emit('turnEnd', { session: {} as any, toolCallCount: 0 });
+			await bus.emit('turnEnd', { session: {} as any, toolCallCount: 0, outcome: 'complete', userMessage: 'hi' });
 
 			expect(handler1).not.toHaveBeenCalled();
 			expect(handler2).toHaveBeenCalled();

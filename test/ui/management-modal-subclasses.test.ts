@@ -301,3 +301,65 @@ describe('output path save-time check', () => {
 		expect(scheduledTaskManager.createTask).toHaveBeenCalledTimes(1);
 	});
 });
+
+// ── Agent-turn trigger save payload (#1806) ─────────────────────────────────
+
+describe('hook save payload for the agent-turn trigger', () => {
+	function makeModal() {
+		const hookManager = {
+			createHook: vi.fn().mockResolvedValue(undefined),
+			updateHook: vi.fn().mockResolvedValue(undefined),
+			getHooks: vi.fn().mockReturnValue([]),
+			getStateSnapshot: vi.fn().mockReturnValue({}),
+		};
+		const plugin = {
+			agentEventBus: null,
+			logger: { error: vi.fn(), log: vi.fn() },
+			settings: { ...CHAT_SETTINGS, historyFolder: 'gemini-scribe' },
+			app: { vault: { configDir: '.obsidian' } },
+			hookManager,
+		} as any;
+		const modal = new HookManagementModal({} as any, plugin);
+		return { modal, hookManager };
+	}
+
+	const fileOnlyFields = {
+		action: 'command',
+		commandId: 'obsidian-git:commit',
+		pathGlob: 'Daily/**/*.md',
+		focusFile: true,
+	};
+
+	it('drops the file-only fields on create, since a turn has no file', async () => {
+		const { modal, hookManager } = makeModal();
+		(modal as any).form = { ...(modal as any).form, slug: 'commit', trigger: 'agent-turn-ended', ...fileOnlyFields };
+
+		await (modal as any).handleSave(false);
+
+		const params = hookManager.createHook.mock.calls[0][0];
+		expect(params).toMatchObject({ slug: 'commit', trigger: 'agent-turn-ended', action: 'command' });
+		expect(params.pathGlob).toBeUndefined();
+		expect(params.focusFile).toBeUndefined();
+	});
+
+	it('sends the same payload on update as on create', async () => {
+		const { modal, hookManager } = makeModal();
+		(modal as any).editingSlug = 'commit';
+		(modal as any).form = { ...(modal as any).form, slug: 'commit', trigger: 'agent-turn-ended', ...fileOnlyFields };
+
+		await (modal as any).handleSave(true);
+
+		const [slug, params] = hookManager.updateHook.mock.calls[0];
+		expect(slug).toBe('commit');
+		expect(params).toMatchObject({ trigger: 'agent-turn-ended', pathGlob: undefined, focusFile: undefined });
+	});
+
+	it('keeps the file-only fields for a file trigger', async () => {
+		const { modal, hookManager } = makeModal();
+		(modal as any).form = { ...(modal as any).form, slug: 'commit', trigger: 'file-modified', ...fileOnlyFields };
+
+		await (modal as any).handleSave(false);
+
+		expect(hookManager.createHook.mock.calls[0][0]).toMatchObject({ pathGlob: 'Daily/**/*.md', focusFile: true });
+	});
+});

@@ -1,4 +1,5 @@
 import { Notice, setIcon, App, TFile } from 'obsidian';
+import type { TurnOutcome } from '../../types/agent-events';
 import { pinSessionChatModel } from '../../models';
 import type { Content } from '@google/genai';
 import { ChatSession, type PerTurnContext, type SessionModelConfig } from '../../types/agent';
@@ -111,6 +112,23 @@ interface ActiveTurn {
 	stream: { cancel: () => void } | null;
 	/** Tool calls executed in this turn, reported on `turnEnd`. */
 	toolCallCount: number;
+	/**
+	 * How the turn's response handling ended, when it ended without throwing.
+	 * Unset means no final answer was produced. Stop and a thrown error are
+	 * read separately, in `turnOutcome`.
+	 */
+	result?: Exclude<TurnOutcome, 'cancelled'>;
+}
+
+/**
+ * How `turn` ended, for its `turnEnd` event. Stop wins over everything, so a
+ * stopped turn that also throws while unwinding still reads `cancelled`. A
+ * turn that never recorded a result produced no final answer.
+ */
+function turnOutcome(turn: ActiveTurn, threw: boolean): TurnOutcome {
+	if (turn.cancelled) return 'cancelled';
+	if (threw) return 'failed';
+	return turn.result ?? 'incomplete';
 }
 
 /**
@@ -166,6 +184,9 @@ export class AgentViewSend {
 				turn.toolCallCount += count;
 			},
 			hideProgress: () => this.hideProgressFor(turn),
+			reportOutcome: (outcome) => {
+				turn.result = outcome;
+			},
 			registerStream: (stream) => {
 				if (stream) {
 					// A stopped turn must not take back the Stop target.
@@ -407,6 +428,7 @@ export class AgentViewSend {
 		};
 		await this.ctx.displayMessage(userEntry);
 
+		let threw = false;
 		try {
 			// Assemble the full turn request: history snapshot, context files, prompts,
 			// compaction, and the model API for this session.
@@ -425,6 +447,7 @@ export class AgentViewSend {
 			// Dispatch the response: streaming or non-streaming, with or without tool calls
 			await this.dispatchResponse(turnRequest, turnSession, userEntry, turn);
 		} catch (error) {
+			threw = true;
 			// Hide this turn's progress bar whether assembly or dispatch failed
 			this.hideProgressFor(turn);
 			this.ctx.plugin.logger.error('Failed to send message:', error);
@@ -441,6 +464,10 @@ export class AgentViewSend {
 			await this.ctx.plugin.agentEventBus?.emit('turnEnd', {
 				session: turnSession,
 				toolCallCount: turn.toolCallCount,
+				outcome: turnOutcome(turn, threw),
+				// As typed: hook prompts quote it, so leave out the date preamble
+				// the model sees.
+				userMessage: rawMessage,
 			});
 
 			// Reset execution state and button only while this turn still owns
@@ -521,7 +548,7 @@ export class AgentViewSend {
 		if (this.activeTurn) {
 			this.stopAgentLoop();
 		}
-		const turn: ActiveTurn = { cancelled: false, stream: null, toolCallCount: 0 };
+		const turn: ActiveTurn = { cancelled: false, stream: null, toolCallCount: 0, result: undefined };
 		this.activeTurn = turn;
 		this.lastTurn = turn;
 		const sendButton = this.ctx.getSendButton();
@@ -1075,6 +1102,7 @@ To reference an attachment in your response, use the path shown above.`;
 			await renderEntry(aiEntry, false);
 			// Save AI response to history (user message already saved early)
 			await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, aiEntry);
+			if (turn) turn.result = 'complete';
 			// Hide progress bar after successful response
 			hideProgress();
 		} else if (turnThoughts) {

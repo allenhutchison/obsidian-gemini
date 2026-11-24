@@ -1,7 +1,9 @@
 import { Platform, TAbstractFile, TFile, normalizePath } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { ensureFolderExists, shouldExcludePath } from '../utils/file-utils';
+import type { AgentEventMap } from '../types/agent-events';
 import type {
+	AgentTurnSummary,
 	Hook,
 	HookCreateParams,
 	HookFields,
@@ -13,6 +15,9 @@ import type {
 } from './hook-types';
 import { validateFeatureSlug } from '../utils/feature-slug';
 import {
+	AGENT_TURN_FIRE_KEY,
+	AGENT_TURN_TRIGGER,
+	isActionAllowedForTrigger,
 	mergeHookFields,
 	missingRequiredHookFields,
 	normalizeHookFields,
@@ -24,6 +29,7 @@ import { FileBackedFeatureManager } from './file-backed-feature-manager';
 import { FailurePauseTracker, MAX_CONSECUTIVE_FAILURES } from './failure-pause-tracker';
 import { matchesFrontmatterFilter, matchesGlob } from './hook-matcher';
 import { STATE_SUBFOLDERS } from './state-folder';
+import { t } from '../i18n';
 
 // ─── Folder / file layout ─────────────────────────────────────────────────────
 
@@ -41,6 +47,7 @@ const HARD_LOOP_WINDOW_MS = 60_000;
 // import paths keep working.
 
 export type {
+	AgentTurnSummary,
 	Hook,
 	HookAction,
 	HookCreateParams,
@@ -75,6 +82,17 @@ function validateSlug(raw: string): string {
 	return slug;
 }
 
+/**
+ * Reject an action the trigger can't run (`summarize`/`rewrite` on the
+ * agent-turn trigger) before it reaches disk, where the next load would skip
+ * the whole hook.
+ */
+function assertActionAllowed(fields: HookFields): void {
+	if (!isActionAllowedForTrigger(fields.trigger, fields.action)) {
+		throw new Error(`Action "${fields.action}" can't run for trigger "${fields.trigger}"`);
+	}
+}
+
 // ─── Manager ─────────────────────────────────────────────────────────────────
 
 /**
@@ -94,12 +112,19 @@ function validateSlug(raw: string): string {
 export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 	private hooks = new Map<string, Hook>();
 	private initialized = false;
-	/** Per-(hook, file) debounce timers, keyed by `${slug}::${filePath}`. */
+	/**
+	 * Per-(hook, file) debounce timers, keyed by `${slug}::${filePath}`.
+	 * Agent-turn fires use `AGENT_TURN_FIRE_KEY` in place of the path.
+	 */
 	private debounceTimers = new Map<string, number>();
 	/** Set of `${slug}::${filePath}` currently executing — drops re-entrant events. */
 	private inflight = new Set<string>();
 	/** Vault event handlers registered via plugin.registerEvent — kept for off(). */
 	private eventRefs: { off: () => void }[] = [];
+	/** Turns merged by an agent-turn hook's pending debounce window, keyed by slug. */
+	private pendingTurns = new Map<string, AgentTurnSummary>();
+	/** Detaches the `turnEnd` subscription; set only while some hook uses the agent-turn trigger. */
+	private turnEndUnsubscribe: (() => void) | null = null;
 	/** Shared auto-pause-after-N-failures ladder over the per-hook sidecar state. */
 	private readonly failureTracker: FailurePauseTracker<HookState>;
 
@@ -145,6 +170,7 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 		// vault subscriptions, no state file. Re-enabling later via settings
 		// will trigger a refresh that reaches this method again.
 		if (!this.plugin.settings.hooksEnabled) {
+			this.unsubscribeTurnEnd();
 			this.hooks.clear();
 			this.state = {};
 			this.initialized = true;
@@ -165,6 +191,7 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 		await this.loadState();
 		await this.discoverDefinitions();
 		this.registerEventHandlers();
+		this.syncTurnEndSubscription();
 
 		this.initialized = true;
 		this.plugin.logger.log(`[HookManager] Initialized with ${this.hooks.size} hook(s)`);
@@ -176,6 +203,7 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 	 */
 	destroy(): void {
 		this.unregisterEventHandlers();
+		this.unsubscribeTurnEnd();
 		this.clearDebounceTimers();
 		this.hooks.clear();
 		this.state = {};
@@ -226,6 +254,7 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 		// next reload. Reject it here instead, like an invalid slug.
 		const missing = missingRequiredHookFields(fields);
 		if (missing.length > 0) throw new Error(`Hook is missing or has an invalid ${missing.join(' and ')}`);
+		assertActionAllowed(fields);
 
 		const content = this.serializeHook(fields, params.prompt);
 		await this.plugin.app.vault.create(filePath, content);
@@ -236,6 +265,7 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 			this.state[slug] = {};
 			await this.saveState();
 		}
+		this.syncTurnEndSubscription();
 	}
 
 	/**
@@ -255,12 +285,14 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 		// body rather than a frontmatter field, and an omitted prompt means
 		// "leave the body alone", not "blank it".
 		const merged = mergeHookFields(hook, params);
+		assertActionAllowed(merged);
 		const prompt = params.prompt ?? hook.prompt;
 
 		const content = this.serializeHook(merged, prompt);
 		await this.plugin.app.vault.modify(file, content);
 
 		this.hooks.set(slug, { slug, ...merged, prompt, filePath: hook.filePath });
+		this.syncTurnEndSubscription();
 	}
 
 	/**
@@ -268,6 +300,22 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 	 */
 	async deleteHook(slug: string): Promise<void> {
 		await this.deleteDefinition(slug);
+		this.cancelPending(slug);
+		this.syncTurnEndSubscription();
+	}
+
+	/**
+	 * Drop a slug's armed debounce timers and merged turn summary, so a hook
+	 * re-created under the same slug inside the window doesn't inherit them.
+	 */
+	private cancelPending(slug: string): void {
+		const prefix = `${slug}::`;
+		for (const [key, timer] of this.debounceTimers) {
+			if (!key.startsWith(prefix)) continue;
+			window.clearTimeout(timer);
+			this.debounceTimers.delete(key);
+		}
+		this.pendingTurns.delete(slug);
 	}
 
 	/**
@@ -315,58 +363,155 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 		if (this.isExcludedPath(filePath)) return;
 
 		for (const hook of this.hooks.values()) {
-			if (!hook.enabled) continue;
 			if (hook.trigger !== trigger) continue;
-			if (!this.passesPlatformGate(hook)) continue;
+			if (!this.passesCommonGates(hook)) continue;
 			if (!matchesGlob(filePath, hook.pathGlob)) continue;
 
 			if (!this.passesFrontmatterFilter(hook, file)) continue;
-
-			const hookState = this.state[hook.slug];
-			if (hookState?.pausedDueToErrors) {
-				this.plugin.logger.log(
-					`[HookManager] Hook "${hook.slug}" is paused after ${MAX_CONSECUTIVE_FAILURES} consecutive failures — skipping`
-				);
-				continue;
-			}
 
 			this.scheduleFire(hook, trigger, file, oldPath);
 		}
 	}
 
+	/**
+	 * Entry point for the end of an interactive agent turn (the `turnEnd`
+	 * event). Schedules a debounced fire for each enabled hook on the
+	 * agent-turn trigger. The file filters don't apply: a turn has no file.
+	 *
+	 * Public so tests can drive the manager without a real event bus.
+	 */
+	handleTurnEnd(payload: AgentEventMap['turnEnd']): void {
+		if (!this.initialized || !this.plugin.settings.hooksEnabled) return;
+		// A headless run (scheduled task, agent-task hook) never fires this
+		// trigger, or a hook's own run could trigger it again. Headless turns
+		// don't emit turnEnd today; this keeps that true if one ever does.
+		if (payload.session.ephemeral) return;
+
+		for (const hook of this.hooks.values()) {
+			if (hook.trigger !== AGENT_TURN_TRIGGER) continue;
+			if (!this.passesCommonGates(hook)) continue;
+			this.scheduleTurnFire(hook, payload);
+		}
+	}
+
+	/** The gates every trigger shares: enabled, platform, and auto-pause. */
+	private passesCommonGates(hook: Hook): boolean {
+		if (!hook.enabled) return false;
+		if (!this.passesPlatformGate(hook)) return false;
+		if (this.state[hook.slug]?.pausedDueToErrors) {
+			this.plugin.logger.log(
+				`[HookManager] Hook "${hook.slug}" is paused after ${MAX_CONSECUTIVE_FAILURES} consecutive failures — skipping`
+			);
+			return false;
+		}
+		return true;
+	}
+
 	private scheduleFire(hook: Hook, trigger: HookTrigger, file: TFile, oldPath: string | undefined): void {
-		const key = `${hook.slug}::${file.path}`;
+		if (!this.admitEvent(hook, file.path)) return;
+		this.armDebounce(hook, file.path, () =>
+			this.fireNow(hook, file.path, `${hook.slug} → ${file.name}`, (current) => ({
+				hook: current,
+				trigger,
+				filePath: file.path,
+				fileName: file.name,
+				oldPath,
+				// Read at fire time, not at event time: the debounce exists so
+				// the note has settled.
+				frontmatter: this.readFrontmatter(file),
+			}))
+		);
+	}
+
+	/**
+	 * Merge this turn into the hook's pending window and (re)arm its debounce.
+	 * Counts are summed across merged turns; everything else is the latest's.
+	 */
+	private scheduleTurnFire(hook: Hook, payload: AgentEventMap['turnEnd']): void {
+		if (!this.admitEvent(hook, AGENT_TURN_FIRE_KEY)) return;
+
+		const prev = this.pendingTurns.get(hook.slug);
+		this.pendingTurns.set(hook.slug, {
+			outcome: payload.outcome,
+			turnCount: (prev?.turnCount ?? 0) + 1,
+			toolCallCount: (prev?.toolCallCount ?? 0) + payload.toolCallCount,
+			sessionTitle: payload.session.title,
+			userMessage: payload.userMessage,
+		});
+
+		this.armDebounce(hook, AGENT_TURN_FIRE_KEY, () => {
+			const turn = this.pendingTurns.get(hook.slug);
+			this.pendingTurns.delete(hook.slug);
+			if (!turn) return Promise.resolve();
+			return this.fireNow(hook, AGENT_TURN_FIRE_KEY, `${hook.slug} → ${t('hooks.agentTurnMeta')}`, (current) => ({
+				hook: current,
+				trigger: AGENT_TURN_TRIGGER,
+				filePath: '',
+				fileName: '',
+				turn,
+			}));
+		});
+	}
+
+	/**
+	 * The inflight and cooldown checks shared by every trigger. `fireKey` is
+	 * the file path, or `AGENT_TURN_FIRE_KEY` for an agent-turn fire.
+	 */
+	private admitEvent(hook: Hook, fireKey: string): boolean {
+		const key = `${hook.slug}::${fireKey}`;
 
 		// Drop events that arrive while a previous fire for the same key is
 		// still executing. Prevents agent-loop re-entrancy when the hook's
 		// own writes echo back through the vault before its run completes.
 		if (this.inflight.has(key)) {
-			this.plugin.logger.debug(`[HookManager] Hook "${hook.slug}" already running for ${file.path} — dropping event`);
-			return;
+			this.plugin.logger.debug(`[HookManager] Hook "${hook.slug}" already running for ${fireKey} — dropping event`);
+			return false;
 		}
 
 		// Cooldown after the most recent fire on this (hook, file).
-		const lastFireAt = this.state[hook.slug]?.lastFireAt?.[file.path];
+		const lastFireAt = this.state[hook.slug]?.lastFireAt?.[fireKey];
 		if (lastFireAt && Date.now() - lastFireAt < hook.cooldownMs) {
 			this.plugin.logger.debug(
-				`[HookManager] Hook "${hook.slug}" in cooldown for ${file.path} (${hook.cooldownMs}ms) — dropping event`
+				`[HookManager] Hook "${hook.slug}" in cooldown for ${fireKey} (${hook.cooldownMs}ms) — dropping event`
 			);
-			return;
+			return false;
 		}
+		return true;
+	}
 
-		// Reset/extend the per-(hook, file) debounce window.
+	/** Reset/extend the per-(hook, fireKey) debounce window. */
+	private armDebounce(hook: Hook, fireKey: string, fire: () => Promise<void>): void {
+		const key = `${hook.slug}::${fireKey}`;
 		const existingTimer = this.debounceTimers.get(key);
 		if (existingTimer) window.clearTimeout(existingTimer);
 
 		const timer = window.setTimeout(() => {
 			this.debounceTimers.delete(key);
-			void this.fireNow(hook, trigger, file, oldPath);
+			void fire();
 		}, hook.debounceMs);
 		this.debounceTimers.set(key, timer);
 	}
 
-	private async fireNow(hook: Hook, trigger: HookTrigger, file: TFile, oldPath: string | undefined): Promise<void> {
-		const key = `${hook.slug}::${file.path}`;
+	private async fireNow(
+		scheduled: Hook,
+		fireKey: string,
+		label: string,
+		buildContext: (current: Hook) => HookFireContext
+	): Promise<void> {
+		// The debounce window can outlive the Hook object captured when the
+		// event arrived: the user may disable, edit, or delete the hook (or it
+		// may pause) before the timer fires. Re-resolve by slug and re-apply
+		// the gates so the current definition, not the captured one, decides.
+		const current = this.hooks.get(scheduled.slug);
+		if (!current || current.trigger !== scheduled.trigger || !this.passesCommonGates(current)) {
+			this.plugin.logger.debug(
+				`[HookManager] Hook "${scheduled.slug}" changed, was disabled, or was removed before its debounce fired — skipping`
+			);
+			return;
+		}
+		const hook = current;
+
+		const key = `${hook.slug}::${fireKey}`;
 		const now = Date.now();
 
 		// Hard loop ceiling — auto-pause if too many fires for the same
@@ -394,26 +539,15 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 		}
 
 		// Reserve the inflight slot before any await so concurrent events
-		// land on the early-out branch in scheduleFire(). The slot is held
+		// land on the early-out branch in admitEvent(). The slot is held
 		// for the full duration of the background run — released in the
 		// work function's finally block — so a hook can't be re-fired for
 		// the same file while its previous run is still executing.
 		this.inflight.add(key);
 
 		try {
-			await this.recordFire(hook.slug, file.path, now);
-
-			const frontmatter = this.readFrontmatter(file);
-			const fireContext: HookFireContext = {
-				hook,
-				trigger,
-				filePath: file.path,
-				fileName: file.name,
-				oldPath,
-				frontmatter,
-			};
-
-			this.submitToBackground(fireContext, key);
+			await this.recordFire(hook.slug, fireKey, now);
+			this.submitToBackground(buildContext(hook), key, label);
 		} catch (error) {
 			// recordFire failed before submission could happen — treat as a
 			// hook failure and clear the inflight slot so subsequent events
@@ -431,7 +565,7 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 	 * and the run shows up in the unified Activity modal alongside scheduled
 	 * tasks, deep research, and image generation.
 	 */
-	private submitToBackground(ctx: HookFireContext, inflightKey: string): void {
+	private submitToBackground(ctx: HookFireContext, inflightKey: string, label: string): void {
 		const bgManager = this.plugin.backgroundTaskManager;
 		if (!bgManager) {
 			// Fall back to direct execution when the bg manager isn't
@@ -441,7 +575,6 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 			return;
 		}
 
-		const label = `${ctx.hook.slug} → ${ctx.fileName}`;
 		bgManager.submit('lifecycle-hook', label, async (isCancelled) => {
 			try {
 				return await this.executeHook(ctx, isCancelled);
@@ -485,11 +618,11 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 
 	// ── State updates ────────────────────────────────────────────────────────
 
-	private async recordFire(slug: string, filePath: string, at: number): Promise<void> {
+	private async recordFire(slug: string, fireKey: string, at: number): Promise<void> {
 		const prev = this.state[slug] ?? {};
 		const recentFires = [...(prev.recentFires ?? []).filter((t) => at - t < HARD_LOOP_WINDOW_MS), at];
 		const hourlyFires = [...(prev.hourlyFires ?? []).filter((t) => at - t < 60 * 60 * 1000), at];
-		const lastFireAt = { ...(prev.lastFireAt ?? {}), [filePath]: at };
+		const lastFireAt = { ...(prev.lastFireAt ?? {}), [fireKey]: at };
 		this.state[slug] = { ...prev, recentFires, hourlyFires, lastFireAt };
 		await this.saveState();
 	}
@@ -581,6 +714,29 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 	private clearDebounceTimers(): void {
 		for (const timer of this.debounceTimers.values()) window.clearTimeout(timer);
 		this.debounceTimers.clear();
+		this.pendingTurns.clear();
+	}
+
+	/**
+	 * Subscribe to `turnEnd` while at least one hook uses the agent-turn
+	 * trigger, and detach otherwise, so vaults without such a hook pay nothing
+	 * per turn. Called after discovery and after every create/update/delete.
+	 */
+	private syncTurnEndSubscription(): void {
+		const wanted =
+			this.plugin.settings.hooksEnabled && [...this.hooks.values()].some((h) => h.trigger === AGENT_TURN_TRIGGER);
+		if (wanted && !this.turnEndUnsubscribe) {
+			const bus = this.plugin.agentEventBus;
+			if (!bus) return;
+			this.turnEndUnsubscribe = bus.on('turnEnd', async (payload) => this.handleTurnEnd(payload));
+		} else if (!wanted) {
+			this.unsubscribeTurnEnd();
+		}
+	}
+
+	private unsubscribeTurnEnd(): void {
+		this.turnEndUnsubscribe?.();
+		this.turnEndUnsubscribe = null;
 	}
 
 	// ── Discovery / parsing ─────────────────────────────────────────────────
@@ -608,6 +764,14 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 		// command requires the commandId field — without it there's nothing
 		// to fire.
 		if (fields.action === 'command' && !fields.commandId) return null;
+		// summarize and rewrite act on the triggering file, and the agent-turn
+		// trigger has none.
+		if (!isActionAllowedForTrigger(fields.trigger, fields.action)) {
+			this.plugin.logger.warn(
+				`[HookManager] Hook "${file.basename}" skipped: action "${fields.action}" can't run for trigger "${fields.trigger}"`
+			);
+			return null;
+		}
 
 		const hook: Hook = { slug: file.basename, ...fields, prompt, filePath: file.path };
 
