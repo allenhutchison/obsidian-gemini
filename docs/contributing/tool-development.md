@@ -104,6 +104,8 @@ export class WordCountTool implements Tool {
 }
 ```
 
+`parameters.required` is mandatory. List the required parameter names, or use `required: []` when none are required. The provider mappers pass it through as-is, with no fallback.
+
 ## Registering Your Tool
 
 Add your tool to the registry in your plugin:

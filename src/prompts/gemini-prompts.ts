@@ -97,8 +97,8 @@ export class GeminiPrompts {
 		parameters: Array<{ name: string; type: string; description: string; required: boolean }>;
 	}> {
 		return tools.map((tool) => {
-			const properties = (tool.parameters?.properties ?? {}) as Record<string, { type: string; description?: string }>;
-			const requiredParams = tool.parameters?.required ?? [];
+			const properties = tool.parameters.properties as Record<string, { type: string; description?: string }>;
+			const requiredParams = tool.parameters.required;
 			return {
 				name: tool.name,
 				description: tool.description,

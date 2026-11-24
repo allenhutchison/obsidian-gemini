@@ -100,7 +100,9 @@ describe('buildResponsesBody', () => {
 		const body = buildResponsesBody(
 			'gpt-6.1-sol',
 			request({
-				availableTools: [{ name: 'read_file', description: 'reads', parameters: { type: 'object', properties: {} } }],
+				availableTools: [
+					{ name: 'read_file', description: 'reads', parameters: { type: 'object', properties: {}, required: [] } },
+				],
 			}),
 			undefined,
 			'OpenAI'

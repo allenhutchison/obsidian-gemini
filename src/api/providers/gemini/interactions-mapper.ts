@@ -133,8 +133,8 @@ export function toolsToInteractionTools(tools: ToolDefinition[]): InteractionSte
 		description: tool.description,
 		parameters: {
 			type: 'object',
-			properties: tool.parameters.properties || {},
-			required: tool.parameters.required || [],
+			properties: tool.parameters.properties,
+			required: tool.parameters.required,
 		},
 	}));
 }

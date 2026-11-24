@@ -467,14 +467,14 @@ export class OllamaClient implements ModelApi {
 				name: tool.name,
 				description: tool.description,
 				parameters: {
-					type: tool.parameters.type ?? 'object',
+					type: tool.parameters.type,
 					// `ToolDefinition.parameters.properties` is a provider-agnostic JSON-schema
 					// bag (`Record<string, unknown>`); narrow it to Ollama's property-schema map
 					// at this boundary where the shapes are known to line up.
-					properties: (tool.parameters.properties ?? {}) as NonNullable<
+					properties: tool.parameters.properties as NonNullable<
 						NonNullable<Tool['function']['parameters']>['properties']
 					>,
-					required: tool.parameters.required ?? [],
+					required: tool.parameters.required,
 				},
 			},
 		}));
