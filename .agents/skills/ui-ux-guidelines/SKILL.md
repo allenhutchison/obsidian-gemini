@@ -127,3 +127,7 @@ Key theme variables:
 - `--background-modifier-border` for borders
 - `--interactive-accent` for interactive/highlighted elements
 - `--font-ui-small`, `--font-ui-medium` for font sizes
+
+### 11. Keyboard Activation
+
+A clickable `div` with `role="button"` or `role="tab"` must also activate on Enter and Space. Wire it with `wireActivation(el, activate, { shouldActivate? })` from `src/ui/components/activatable.ts`; don't write the `keydown` handler out by hand. The helper owns the key policy and `preventDefault()`. Use `shouldActivate` when the element is only live sometimes. Keep `role`, `tabindex` and `aria-*` on the element yourself; the helper only adds listeners. An element that also handles other keys (for example the context shelf's Delete and arrow keys) keeps its own handler.

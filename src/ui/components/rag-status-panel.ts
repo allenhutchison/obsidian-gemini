@@ -2,6 +2,7 @@ import { Notice, Setting, setIcon } from 'obsidian';
 import type { RagDetailedStatus } from '../../services/rag-types';
 import { formatRelativeTime } from '../../utils/format-relative-time';
 import { t } from '../../i18n';
+import { wireActivation } from './activatable';
 
 /**
  * Shared, presenter-style rendering for the RAG-status panel.
@@ -225,13 +226,7 @@ export function renderRagFileList(container: HTMLElement, status: RagDetailedSta
 			attr: { role: 'button', tabindex: '0' },
 		});
 		more.setText(t('ragStatus.showAllFiles', { count: total.toLocaleString() }));
-		more.addEventListener('click', () => opts.onShowAll());
-		more.addEventListener('keydown', (e) => {
-			if (e.key === 'Enter' || e.key === ' ') {
-				e.preventDefault();
-				opts.onShowAll();
-			}
-		});
+		wireActivation(more, () => opts.onShowAll());
 	}
 }
 
