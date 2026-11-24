@@ -3,6 +3,7 @@ import type { ObsidianGemini } from '../types/plugin';
 import { JsonSidecarStateStore, purgeOrphanState } from './feature-definition';
 import { isPathInFolder } from '../utils/file-utils';
 import { RUNS_SUBFOLDER, stateFolderPath } from './state-folder';
+import { FailurePauseTracker, type FailurePauseState } from './failure-pause-tracker';
 
 /**
  * Minimal shape every file-backed feature definition shares: a `slug` (its
@@ -51,9 +52,15 @@ export interface FileBackedFeatureManagerConfig {
  *
  * @typeParam TDef        The manager's definition type (must expose `slug`/`filePath`).
  * @typeParam TEntryState The per-slug sidecar state value; the sidecar file is a
- *                        `Record<slug, TEntryState>`.
+ *                        `Record<slug, TEntryState>`. It embeds the
+ *                        {@link FailurePauseState} fields so the shared
+ *                        auto-pause ladder can run over it (see
+ *                        {@link createFailureTracker}).
  */
-export abstract class FileBackedFeatureManager<TDef extends FileBackedDefinition, TEntryState> {
+export abstract class FileBackedFeatureManager<
+	TDef extends FileBackedDefinition,
+	TEntryState extends FailurePauseState,
+> {
 	/** Live sidecar state map (slug → runtime state). Reassigned on load. */
 	protected state: Record<string, TEntryState> = {};
 	/** Persistence layer for {@link state}; the live object stays on this class. */
@@ -222,5 +229,30 @@ export abstract class FileBackedFeatureManager<TDef extends FileBackedDefinition
 
 	protected async saveState(): Promise<void> {
 		await this.stateStore.save(this.state);
+	}
+
+	// ── Failure tracking ─────────────────────────────────────────────────────
+
+	/**
+	 * Build the shared auto-pause-after-N-failures tracker over this manager's
+	 * sidecar state. The get/set/save wiring and the log label are identical
+	 * for every subclass, so they live here; only the user-facing noun and
+	 * whether each failure is logged differ (#1802).
+	 */
+	protected createFailureTracker(opts: {
+		entityNoun: string;
+		logFailures?: boolean;
+	}): FailurePauseTracker<TEntryState> {
+		return new FailurePauseTracker<TEntryState>({
+			getState: (slug) => this.state[slug],
+			setState: (slug, next) => {
+				this.state[slug] = next;
+				return this.saveState();
+			},
+			logger: this.plugin.logger,
+			label: this.featureConfig.logPrefix,
+			entityNoun: opts.entityNoun,
+			logFailures: opts.logFailures,
+		});
 	}
 }

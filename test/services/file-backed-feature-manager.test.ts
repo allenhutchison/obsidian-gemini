@@ -15,7 +15,13 @@ interface TestDef extends FileBackedDefinition {
 	readonly filePath: string;
 }
 
-type TestEntryState = { seededAt?: string; note?: string };
+type TestEntryState = {
+	seededAt?: string;
+	note?: string;
+	lastError?: string;
+	consecutiveFailures?: number;
+	pausedDueToErrors?: boolean;
+};
 
 function createMockPlugin(): any {
 	const disk: Record<string, string> = {};
@@ -106,6 +112,9 @@ class TestManager extends FileBackedFeatureManager<TestDef, TestEntryState> {
 	}
 	setState(next: Record<string, TestEntryState>) {
 		this.state = next;
+	}
+	makeTracker(opts: { entityNoun: string; logFailures?: boolean }) {
+		return this.createFailureTracker(opts);
 	}
 }
 
@@ -267,6 +276,43 @@ describe('FileBackedFeatureManager', () => {
 			manager.setState({ b: { note: 'saved' } });
 			await manager.runSave();
 			expect(JSON.parse(plugin._disk['gemini-scribe/Widgets/widgets-state.json'])).toEqual({ b: { note: 'saved' } });
+		});
+	});
+
+	describe('createFailureTracker', () => {
+		const STATE_PATH = 'gemini-scribe/Widgets/widgets-state.json';
+
+		it('reads live state and persists each failure through saveState', async () => {
+			manager.setState({ w: { note: 'seeded' } });
+			const tracker = manager.makeTracker({ entityNoun: 'Widget' });
+
+			const outcome = await tracker.recordFailure('w', new Error('kaput'));
+
+			expect(outcome).toEqual({ consecutiveFailures: 1, pausedDueToErrors: false });
+			const expected = { note: 'seeded', lastError: 'kaput', consecutiveFailures: 1, pausedDueToErrors: false };
+			expect(manager.getState().w).toEqual(expected);
+			expect(JSON.parse(plugin._disk[STATE_PATH])).toEqual({ w: expected });
+		});
+
+		it('reads state reassigned after construction (e.g. by loadState)', async () => {
+			const tracker = manager.makeTracker({ entityNoun: 'Widget' });
+			manager.setState({ w: { consecutiveFailures: 2 } });
+
+			const outcome = await tracker.recordFailure('w', 'third strike');
+
+			expect(outcome.pausedDueToErrors).toBe(true);
+			expect(JSON.parse(plugin._disk[STATE_PATH]).w.pausedDueToErrors).toBe(true);
+		});
+
+		it('labels log lines with the config logPrefix and the given noun', async () => {
+			manager.setState({ w: {} });
+			await manager.makeTracker({ entityNoun: 'Widget', logFailures: true }).recordFailure('w', 'nope');
+			expect(plugin.logger.error).toHaveBeenCalledWith('[TestManager] Widget "w" failed:', 'nope');
+
+			plugin.logger.error.mockClear();
+			manager.setState({ w: {} });
+			await manager.makeTracker({ entityNoun: 'Widget' }).recordFailure('w', 'quiet');
+			expect(plugin.logger.error).not.toHaveBeenCalled();
 		});
 	});
 });
