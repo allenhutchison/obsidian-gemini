@@ -36,28 +36,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/218</span>
+                <span class='fraction'>0/210</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/93</span>
+                <span class='fraction'>0/85</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/40</span>
+                <span class='fraction'>0/38</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/211</span>
+                <span class='fraction'>0/203</span>
             </div>
         
             
@@ -513,18 +513,7 @@
 <a name='L437'></a><a href='#L437'>437</a>
 <a name='L438'></a><a href='#L438'>438</a>
 <a name='L439'></a><a href='#L439'>439</a>
-<a name='L440'></a><a href='#L440'>440</a>
-<a name='L441'></a><a href='#L441'>441</a>
-<a name='L442'></a><a href='#L442'>442</a>
-<a name='L443'></a><a href='#L443'>443</a>
-<a name='L444'></a><a href='#L444'>444</a>
-<a name='L445'></a><a href='#L445'>445</a>
-<a name='L446'></a><a href='#L446'>446</a>
-<a name='L447'></a><a href='#L447'>447</a>
-<a name='L448'></a><a href='#L448'>448</a>
-<a name='L449'></a><a href='#L449'>449</a>
-<a name='L450'></a><a href='#L450'>450</a>
-<a name='L451'></a><a href='#L451'>451</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L440'></a><a href='#L440'>440</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -554,6 +543,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -686,17 +676,11 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -881,13 +865,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -984,6 +962,7 @@ import { getErrorMessage, truncateStoredError } from '../utils/error-utils';
 import { renderRagOverview, renderRagFileList, renderRagFailures } from './components/rag-status-panel';
 import { openPluginSettingsTab } from '../utils/obsidian-settings';
 import { t } from '../i18n';
+import { wireActivation } from './components/activatable';
 &nbsp;
 type ModalTab = 'tasks' | 'rag';
 type RagInnerTab = 'overview' | 'files' | 'failures';
@@ -1136,13 +1115,7 @@ export class BackgroundTasksModal extends Modal {
 <span class="cstat-no" title="statement not covered" >				this.renderTabContent();</span>
 			};
 &nbsp;
-<span class="cstat-no" title="statement not covered" >			tab.addEventListener('click', activate);</span>
-<span class="cstat-no" title="statement not covered" >			tab.addEventListener(<span class="fstat-no" title="function not covered" >'keydown', (e</span>) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >				if (e.key === 'Enter' || e.key === ' ') {</span>
-<span class="cstat-no" title="statement not covered" >					e.preventDefault();</span>
-<span class="cstat-no" title="statement not covered" >					activate();</span>
-				}
-			});
+<span class="cstat-no" title="statement not covered" >			wireActivation(tab, activate);</span>
 		}
 	}
 &nbsp;
@@ -1331,13 +1304,7 @@ export class BackgroundTasksModal extends Modal {
 <span class="cstat-no" title="statement not covered" >				this.ragFileScrollTop = 0;</span>
 <span class="cstat-no" title="statement not covered" >				this.renderTabContent();</span>
 			};
-<span class="cstat-no" title="statement not covered" >			tab.addEventListener('click', activate);</span>
-<span class="cstat-no" title="statement not covered" >			tab.addEventListener(<span class="fstat-no" title="function not covered" >'keydown', (e</span>) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >				if (e.key === 'Enter' || e.key === ' ') {</span>
-<span class="cstat-no" title="statement not covered" >					e.preventDefault();</span>
-<span class="cstat-no" title="statement not covered" >					activate();</span>
-				}
-			});
+<span class="cstat-no" title="statement not covered" >			wireActivation(tab, activate);</span>
 		};
 &nbsp;
 <span class="cstat-no" title="statement not covered" >		createTab('overview', t('ragStatus.tabOverview'));</span>
@@ -1431,7 +1398,7 @@ export class BackgroundTasksModal extends Modal {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-24T01:33:58.591Z
+                at 2026-11-24T01:34:50.753Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
