@@ -3,6 +3,7 @@ import { Notice } from 'obsidian';
 import { AgentViewSend, loadProjectInstructions } from '../../../src/ui/agent-view/agent-view-send';
 import type { GeminiConversationEntry } from '../../../src/types/conversation';
 import type { InlineAttachment } from '../../../src/ui/agent-view/inline-attachment';
+import { GEMINI_MODELS, setGeminiModels } from '../../../src/models';
 
 // Mock the vault-persistence helper so the attachment-persistence phase can be
 // driven without a real Obsidian vault. The rest of the module (types/helpers)
@@ -350,7 +351,7 @@ function makeSendMessageCtx(chatModel: string) {
 		return turn;
 	});
 	vi.spyOn(internals, 'resetExecutionUiState').mockImplementation(() => {});
-	return { send, internals, progress, capture, addEntryToSession };
+	return { send, internals, progress, capture, addEntryToSession, ctx };
 }
 
 describe('AgentViewSend.sendMessage model snapshot', () => {
@@ -381,6 +382,29 @@ describe('AgentViewSend.sendMessage model snapshot', () => {
 
 		expect(assemble).toHaveBeenCalledTimes(1);
 		expect(assemble.mock.calls[0][8]).toEqual({ model: 'llama3.2', provider: 'ollama' });
+	});
+
+	test("loads a pinned provider's models before resolving the turn model (#1679)", async () => {
+		const { send, internals, ctx } = makeSendMessageCtx('llama3.2');
+		const order: string[] = [];
+		ctx.getCurrentSession = () => ({ id: 's1', modelConfig: { provider: 'anthropic' } });
+		ctx.plugin.getModelManager = () => ({
+			ensureProviderModels: vi.fn(async (p: string) => {
+				order.push(`ensure:${p}`);
+				setGeminiModels([...original, { value: 'claude-test', label: 'Claude', provider: 'anthropic' }]);
+			}),
+		});
+		const assemble = vi.spyOn(internals, 'assembleTurnRequest').mockRejectedValue(new Error('stop'));
+		const original = [...GEMINI_MODELS];
+
+		try {
+			await send.sendMessage();
+		} finally {
+			setGeminiModels(original);
+		}
+
+		expect(order).toEqual(['ensure:anthropic']);
+		expect(assemble.mock.calls[0][8]).toEqual({ model: 'claude-test', provider: 'anthropic' });
 	});
 
 	test('hides progress when turn assembly fails', async () => {

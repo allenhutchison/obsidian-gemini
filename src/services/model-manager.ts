@@ -2,6 +2,8 @@ import type { ObsidianGemini } from '../types/plugin';
 import * as modelsModule from '../models';
 import { GeminiModel, ModelProvider, getUpdatedFeatureRoutes, isModelEligibleForRole } from '../models';
 import { activeProviders, featureProvider } from '../api/feature-routing';
+import { PROVIDER_IDS, providerSupports } from '../api/providers/registry';
+import { providerConnection } from '../api/provider-status';
 import type { ObsidianGeminiSettings } from '../types/settings';
 import { GeminiModelsService } from './gemini-models-service';
 import { OllamaModelsService } from './ollama-models-service';
@@ -73,11 +75,55 @@ export class ModelManager {
 	}
 
 	/**
-	 * The union of every active provider's models — what the global
-	 * `GEMINI_MODELS` list holds since #704, so that a mixed configuration can
-	 * look up models for either provider at the same time. Ollama tags are
-	 * best-effort: a daemon that's down contributes nothing rather than failing
-	 * the whole list.
+	 * Providers whose models go into the global list: every active provider,
+	 * plus every connected chat provider, which a session could be pinned to
+	 * (#1679). Connected rather than `providerSelectable`, so an Ollama daemon
+	 * nobody has probed (the default localhost URL on a vault that never used
+	 * Ollama) doesn't cost a failed request at every startup;
+	 * {@link ensureProviderModels} covers that case on demand. A session
+	 * pinned to a provider no feature routes to still needs that provider's
+	 * models in the list, or its role default resolves to `''` (send refused),
+	 * token counting attributes its model to the chat route's provider, and its
+	 * context window falls back to the default.
+	 */
+	private modelListProviders(): ModelProvider[] {
+		const active = new Set(activeProviders(this.plugin.settings));
+		return PROVIDER_IDS.filter(
+			(p) => active.has(p) || (providerSupports(p, 'chat') && providerConnection(this.plugin, p) === 'connected')
+		);
+	}
+
+	/**
+	 * Make sure the global list holds `provider`'s models, fetching and merging
+	 * them in when it holds none (#1679). A session can be pinned to a provider
+	 * the startup list skipped: one no feature routes to whose connection
+	 * wasn't confirmed yet (an Ollama daemon not probed this run, a custom
+	 * endpoint with no key). Without its models in the list the session's
+	 * default model resolves to `''` and its model ids can't be attributed to
+	 * it. A no-op when the list already has the provider's models, so callers
+	 * can run it before every turn. Best-effort: a list that fails to load
+	 * leaves the global list as it was.
+	 */
+	async ensureProviderModels(provider: ModelProvider): Promise<void> {
+		if (modelsModule.hasModelsFor(provider)) return;
+		let models: GeminiModel[];
+		try {
+			models = await this.getProviderModelsService(provider).getModels();
+		} catch (error) {
+			this.plugin.logger.warn(`[ModelManager] Could not load ${provider} models:`, error);
+			return;
+		}
+		// Re-check after the await: another load may have installed them meanwhile.
+		if (models.length === 0 || modelsModule.hasModelsFor(provider)) return;
+		this.updateGlobalModelsList([...modelsModule.GEMINI_MODELS, ...models]);
+	}
+
+	/**
+	 * The union of the models of every provider in {@link modelListProviders} —
+	 * what the global `GEMINI_MODELS` list holds since #704, so that a mixed
+	 * configuration can look up models for any of them at the same time. Ollama
+	 * tags are best-effort: a daemon that's down contributes nothing rather than
+	 * failing the whole list.
 	 */
 	private async collectActiveModels(forceRefresh?: boolean): Promise<GeminiModel[]> {
 		return (await this.collectActiveModelsWithCompleteness(forceRefresh)).models;
@@ -94,7 +140,7 @@ export class ModelManager {
 	): Promise<{ models: GeminiModel[]; incomplete: Set<ModelProvider> }> {
 		const models: GeminiModel[] = [];
 		const incomplete = new Set<ModelProvider>();
-		for (const provider of activeProviders(this.plugin.settings)) {
+		for (const provider of this.modelListProviders()) {
 			const service = this.getProviderModelsService(provider);
 			try {
 				models.push(...(await service.getModels(forceRefresh)));

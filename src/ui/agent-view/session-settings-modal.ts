@@ -137,7 +137,11 @@ export class SessionSettingsModal extends Modal {
 
 	/** The model row, listing the models of the session's provider (or the chat default's). */
 	private async renderModelSetting(containerEl: HTMLElement, renderId: number): Promise<void> {
-		const models = await this.plugin.getModelManager().getAvailableModels({}, this.modelConfig.provider);
+		const modelManager = this.plugin.getModelManager();
+		const models = await modelManager.getAvailableModels({}, this.modelConfig.provider);
+		// The "Use default" label below resolves through the global list, which
+		// may not hold a pinned provider's models yet.
+		if (this.modelConfig.provider) await modelManager.ensureProviderModels(this.modelConfig.provider);
 		// The provider changed while this list loaded: a newer render owns the
 		// container, and this row would offer the previous provider's models.
 		if (renderId !== this.modelRenderId) return;
