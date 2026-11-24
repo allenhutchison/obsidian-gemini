@@ -310,7 +310,22 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 	 */
 	async deleteHook(slug: string): Promise<void> {
 		await this.deleteDefinition(slug);
+		this.cancelPending(slug);
 		this.syncTurnEndSubscription();
+	}
+
+	/**
+	 * Drop a slug's armed debounce timers and merged turn summary, so a hook
+	 * re-created under the same slug inside the window doesn't inherit them.
+	 */
+	private cancelPending(slug: string): void {
+		const prefix = `${slug}::`;
+		for (const [key, timer] of this.debounceTimers) {
+			if (!key.startsWith(prefix)) continue;
+			window.clearTimeout(timer);
+			this.debounceTimers.delete(key);
+		}
+		this.pendingTurns.delete(slug);
 	}
 
 	/**

@@ -211,6 +211,16 @@ describe('HookManager agent-turn trigger', () => {
 		expect(runs.contexts).toHaveLength(0);
 	});
 
+	it('drops the pending turn when the hook is deleted and re-created under the same slug', async () => {
+		const manager = seeded(createMockPlugin(), [makeHook()]);
+		manager.handleTurnEnd(turnEnd());
+		await vi.advanceTimersByTimeAsync(50);
+		await manager.deleteHook('turn-log');
+		(manager as any).hooks.set('turn-log', makeHook());
+		await vi.advanceTimersByTimeAsync(150);
+		expect(runs.contexts).toHaveLength(0);
+	});
+
 	it('fires with the current definition when the hook is edited inside the debounce window', async () => {
 		const manager = seeded(createMockPlugin(), [makeHook()]);
 		manager.handleTurnEnd(turnEnd());
