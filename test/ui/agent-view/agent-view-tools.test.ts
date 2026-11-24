@@ -568,6 +568,7 @@ describe('AgentViewTools.handleToolCalls — turn-scoped progress', () => {
 			registerStream: vi.fn(),
 			countTool: vi.fn(),
 			hideProgress: vi.fn(),
+			reportOutcome: vi.fn(),
 		};
 
 		await tools.handleToolCalls(
@@ -583,5 +584,55 @@ describe('AgentViewTools.handleToolCalls — turn-scoped progress', () => {
 
 		expect(handle.hideProgress).toHaveBeenCalledTimes(1);
 		expect(context.hideProgress).not.toHaveBeenCalled();
+	});
+});
+
+describe('AgentViewTools.handleToolCalls — turn outcome reporting', () => {
+	async function runWith(result: AgentLoopResult | Error) {
+		const { tools } = makeHarness();
+		if (result instanceof Error) {
+			mocks.run.mockRejectedValue(result);
+		} else {
+			scriptLoop(undefined, result);
+		}
+		const handle = {
+			isCancelled: () => false,
+			registerStream: vi.fn(),
+			countTool: vi.fn(),
+			hideProgress: vi.fn(),
+			reportOutcome: vi.fn(),
+		};
+		await tools.handleToolCalls(
+			[TOOL_CALL],
+			'user message',
+			[],
+			{} as GeminiConversationEntry,
+			undefined,
+			undefined,
+			undefined,
+			handle
+		);
+		return handle.reportOutcome;
+	}
+
+	it('reports complete for a final answer', async () => {
+		expect(await runWith(loopResult())).toHaveBeenCalledWith('complete');
+	});
+
+	it.each([
+		['the iteration cap', { exhausted: true, markdown: '' }],
+		['the empty-twice fallback', { fellBack: true }],
+		['a loop-detector abort', { loopAborted: true }],
+		['no text at all', { markdown: '' }],
+	])('reports incomplete for %s', async (_label, overrides) => {
+		expect(await runWith(loopResult(overrides))).toHaveBeenCalledWith('incomplete');
+	});
+
+	it('reports failed when the tool loop throws, since the error is swallowed here', async () => {
+		expect(await runWith(new Error('boom'))).toHaveBeenCalledWith('failed');
+	});
+
+	it('reports nothing for a cancelled loop: the send side reads Stop from the turn', async () => {
+		expect(await runWith(loopResult({ cancelled: true, markdown: '' }))).not.toHaveBeenCalled();
 	});
 });

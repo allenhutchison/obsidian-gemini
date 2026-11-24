@@ -1,4 +1,5 @@
 import type { Content } from '@google/genai';
+import type { TurnOutcome } from '../../types/agent-events';
 import { sessionChatModel } from '../../models';
 import type { ObsidianGemini } from '../../types/plugin';
 import { ChatSession, type SessionModelConfig } from '../../types/agent';
@@ -30,6 +31,11 @@ export interface TurnHandle {
 	countTool(count: number): void;
 	/** Hide the shared progress display, unless a newer turn owns it now. */
 	hideProgress(): void;
+	/**
+	 * Report how the tool loop ended, for this turn's `turnEnd` outcome. Stop
+	 * is not reported here: the send side reads it from the turn itself.
+	 */
+	reportOutcome(outcome: Exclude<TurnOutcome, 'cancelled'>): void;
 }
 
 /**
@@ -240,6 +246,13 @@ export class AgentViewTools {
 				return;
 			}
 
+			// A loop that hit its iteration cap, fell back after two empty
+			// responses, or was stopped by the loop detector ended without a real
+			// final answer, even when it shows a notice in place of one.
+			turn?.reportOutcome(
+				result.exhausted || result.fellBack || result.loopAborted || !result.markdown ? 'incomplete' : 'complete'
+			);
+
 			if (!result.markdown) {
 				// Loop ran but produced nothing actionable (cancelled mid-stream or
 				// exhausted iterations without a text response). Just hide progress.
@@ -284,6 +297,9 @@ export class AgentViewTools {
 			hideProgress();
 		} catch (error) {
 			this.plugin.logger.error('[AgentViewTools] Failed to process tool results:', error);
+			// The error is handled here rather than rethrown, so the send side
+			// would otherwise never learn this turn failed.
+			turn?.reportOutcome('failed');
 			this.currentGroupContainer = null;
 			this.streamingFollowUpContainer?.remove();
 			this.streamingFollowUpContainer = null;

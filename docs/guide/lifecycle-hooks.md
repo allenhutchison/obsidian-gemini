@@ -1,6 +1,6 @@
 # Lifecycle Hooks
 
-Lifecycle Hooks let you trigger an AI agent run in response to Obsidian vault events — file created, modified, deleted, or renamed. Each hook runs as a headless agent session, the same execution model used by Scheduled tasks. A hook can summarize notes on save, run a skill when a file is created, or perform any other agent task without manual intervention.
+Lifecycle Hooks let you trigger an AI agent run in response to Obsidian vault events — file created, modified, deleted, or renamed — or when the agent finishes responding to a chat message. Each hook runs as a headless agent session, the same execution model used by Scheduled tasks. A hook can summarize notes on save, run a skill when a file is created, or perform any other agent task without manual intervention.
 
 ::: warning Opt-in
 Hooks are disabled by default. Set **Enable lifecycle hooks** in plugin settings before any hook will fire. The default is off because vault events fire continuously and an unintentionally-broad hook can drain API quota quickly.
@@ -62,7 +62,7 @@ The user just saved {{filePath}}. Read it and write a one-paragraph summary high
 
 | Field               | Required               | Default                        | Description                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------- | ---------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `trigger`           | Yes                    | —                              | Vault event. One of: `file-created`, `file-modified`, `file-deleted`, `file-renamed`.                                                                                                                                                                                                                                                                                                                                                    |
+| `trigger`           | Yes                    | —                              | What fires the hook. A vault event (`file-created`, `file-modified`, `file-deleted`, `file-renamed`) or `agent-turn-ended`. See [Agent turn trigger](#agent-turn-trigger).                                                                                                                                                                                                                                                               |
 | `action`            | Yes                    | —                              | What to do on each fire. One of: `agent-task`, `summarize`, `rewrite`, `command`. See [Actions](#actions) below.                                                                                                                                                                                                                                                                                                                         |
 | `commandId`         | When `action: command` | —                              | Command palette id to dispatch (e.g. `editor:save-file`).                                                                                                                                                                                                                                                                                                                                                                                |
 | `focusFile`         | No                     | `false`                        | When `action: command`, focus the triggering file in the workspace before dispatching so editor-scoped commands target it. Off by default — see [Actions → `command`](#command).                                                                                                                                                                                                                                                         |
@@ -89,6 +89,55 @@ The body of the hook file is a prompt template. The following placeholders are s
 | `{{fileName}}` | File name including extension.                              |
 | `{{trigger}}`  | The trigger that fired (e.g. `file-modified`).              |
 | `{{oldPath}}`  | Previous path on `file-renamed`; empty otherwise.           |
+
+Hooks on the `agent-turn-ended` trigger get their own variables, listed under [Agent turn trigger](#agent-turn-trigger). The file variables above are empty for them.
+
+## Agent turn trigger
+
+`trigger: agent-turn-ended` fires once each time the agent finishes responding to a message in the agent chat, whatever the turn did. It fires after a final answer, after an error, and after you press Stop. Two typical uses:
+
+- **Commit after every turn.** Run Obsidian Git's `obsidian-git:commit` command, so each turn's edits land as one commit.
+- **Keep a turn log.** Run an agent task that appends a line per turn to a log note.
+
+```markdown
+---
+trigger: agent-turn-ended
+action: command
+commandId: obsidian-git:commit
+---
+```
+
+Only the `agent-task` and `command` actions work with this trigger. `summarize` and `rewrite` act on one file and a turn has none, so the manager doesn't offer them, and a hand-written hook that uses them isn't loaded. `pathGlob`, `frontmatterFilter` and `focusFile` don't apply either: the editor hides them and they're ignored if written by hand.
+
+Only interactive chat turns fire this trigger. Headless runs, such as scheduled tasks and the hook's own `agent-task` runs, never do, so a hook can't trigger itself that way.
+
+The prompt template gets these variables:
+
+| Placeholder         | Value                                                                         |
+| ------------------- | ----------------------------------------------------------------------------- |
+| `{{turnOutcome}}`   | How the latest turn ended: `complete`, `incomplete`, `failed` or `cancelled`. |
+| `{{turnCount}}`     | Number of turns merged into this run by the debounce window (usually `1`).    |
+| `{{toolCallCount}}` | Tool calls across those turns.                                                |
+| `{{sessionTitle}}`  | Title of the latest turn's session.                                           |
+| `{{userMessage}}`   | The message you sent in the latest turn.                                      |
+| `{{trigger}}`       | `agent-turn-ended`.                                                           |
+
+The outcome values are fixed, so it's safe to write them into a prompt:
+
+| Outcome      | Meaning                                                                                                                                                               |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `complete`   | The agent produced a final answer.                                                                                                                                    |
+| `incomplete` | The turn ended without a final answer: the tool-iteration cap was reached, the loop detector stopped it, the model returned no answer text, or you rejected the plan. |
+| `failed`     | An error ended the turn.                                                                                                                                              |
+| `cancelled`  | You pressed Stop.                                                                                                                                                     |
+
+The safety features below apply per hook instead of per file. `debounceMs` merges turns that end close together into one run, and `cooldownMs` skips turns that end shortly after a run. A turn that ends during the cooldown doesn't fire. That's harmless for the commit case, since the next commit picks its edits up, but it leaves gaps in a turn log. Lowering `cooldownMs` closes the gaps at the cost of loop protection, and with a very low cooldown a fast conversation can reach the [hard loop ceiling](#hard-loop-ceiling).
+
+::: warning Cost
+An `agent-task` hook on this trigger makes a model request after every chat message, roughly doubling usage. Set `maxRunsPerHour` to cap it.
+:::
+
+When an `agent-task` run writes an output file, its header records `session` and `turn_outcome` in place of `triggered_by`. The `{fileName}` placeholder in `outputPath` is empty for this trigger.
 
 ## Actions
 
@@ -295,9 +344,22 @@ focusFile: true
 
 When a new file lands in `Inbox/`, focus it in the workspace and run the **Summarize active file** command against it. `focusFile: true` is the bit that ensures the command targets the trigger file rather than whatever the user happens to be looking at.
 
+### Log each agent turn
+
+```markdown
+---
+trigger: agent-turn-ended
+action: agent-task
+maxRunsPerHour: 30
+---
+
+Append one line to `Logs/agent-turns.md`: today's date, "{{turnOutcome}}", {{toolCallCount}} tool calls, and a short summary of this request: {{userMessage}}
+```
+
 ## Limitations
 
 - Hooks only fire while Obsidian is running. There's no catch-up for events missed while the app was closed (vault events don't have a "missed run" concept).
+- The `agent-turn-ended` trigger doesn't say which files a turn changed, and has no outcome filter. Check `{{turnOutcome}}` in the prompt if a run should only act on some outcomes.
 - Workspace and editor events (`file-open`, active leaf change, editor changes) are not supported — they fire too noisily and the AI features that respond to typing already exist via Completions.
 - The management UI doesn't currently include a frontmatter-filter editor — set the `frontmatterFilter:` block by hand-editing the hook's markdown file. **Wrap every key you write there in single quotes**, whatever it contains: `'type': meeting-notes`. That is one rule instead of a list of dangerous characters to remember, and it is the same rule the plugin follows when it saves a hook. It matters because an unparseable frontmatter block makes the hook disappear from the manager rather than fail loudly, and plenty of ordinary-looking keys will do it — a colon followed by a space nests a map, a leading `&` or `*` is read as a YAML anchor or alias, a leading `#` comments the line out.
   - Inside single quotes, **an apostrophe is written twice**: a key of `Allen's: notes` is `'Allen''s: notes'`.

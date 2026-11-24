@@ -12,6 +12,20 @@ export enum HandlerPriority {
 }
 
 /**
+ * How an interactive agent turn ended, reported on `turnEnd`. The words match
+ * the background task end states. Users write them into hook prompts
+ * (`{{turnOutcome}}`), so they are a fixed contract: don't rename them.
+ *
+ * - `complete`: the agent produced a final answer.
+ * - `incomplete`: the turn ended normally without a final answer (tool
+ *   iteration cap, loop detector, an empty response, or a rejected plan).
+ * - `failed`: an exception ended the turn.
+ * - `cancelled`: the user pressed Stop. Wins over `failed` when a stopped
+ *   turn also throws while unwinding.
+ */
+export type TurnOutcome = 'complete' | 'incomplete' | 'failed' | 'cancelled';
+
+/**
  * Payloads for each agent lifecycle event.
  */
 export interface AgentEventMap {
@@ -21,10 +35,20 @@ export interface AgentEventMap {
 		userMessage: string;
 	}>;
 
-	/** Entire turn complete (including all tool chains) */
+	/**
+	 * Entire turn over (including all tool chains). Emitted for every turn,
+	 * whatever its outcome, so subscribers get a reliable end signal.
+	 */
 	turnEnd: Readonly<{
 		session: ChatSession;
 		toolCallCount: number;
+		/** How the turn ended. */
+		outcome: TurnOutcome;
+		/**
+		 * The user's message as typed. Unlike `turnStart.userMessage`, it has no
+		 * date/time preamble, since hook prompts quote it.
+		 */
+		userMessage: string;
 	}>;
 
 	/** Turn failed with an error */

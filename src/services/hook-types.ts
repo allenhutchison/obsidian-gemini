@@ -1,4 +1,5 @@
 import type { FeatureToolPolicy } from '../types/tool-policy';
+import type { TurnOutcome } from '../types/agent-events';
 import { parseMaxIterations, resolveFeatureToolPolicy } from './feature-definition';
 import { formatToolPolicyYaml } from './feature-policy-yaml';
 import { yamlScalar } from './yaml-scalar';
@@ -31,8 +32,53 @@ export const DEFAULT_COOLDOWN_MS = 30_000;
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
-export type HookTrigger = 'file-created' | 'file-modified' | 'file-deleted' | 'file-renamed';
+export type HookTrigger = 'file-created' | 'file-modified' | 'file-deleted' | 'file-renamed' | 'agent-turn-ended';
 export type HookAction = 'agent-task' | 'summarize' | 'rewrite' | 'command';
+
+/** The trigger that fires on an interactive agent turn instead of a vault event. */
+export const AGENT_TURN_TRIGGER = 'agent-turn-ended' satisfies HookTrigger;
+
+/**
+ * True for the triggers driven by a vault event on one file. Only these use the
+ * file filters (`pathGlob`, `frontmatterFilter`) and `focusFile`; the agent-turn
+ * trigger has no file, so it ignores them.
+ */
+export function isFileTrigger(trigger: HookTrigger): boolean {
+	return trigger !== AGENT_TURN_TRIGGER;
+}
+
+/**
+ * Whether `action` can run for `trigger`. `summarize` and `rewrite` act on the
+ * triggering file, so they can't run for the agent-turn trigger, which has none.
+ */
+export function isActionAllowedForTrigger(trigger: HookTrigger, action: HookAction): boolean {
+	return isFileTrigger(trigger) || action === 'agent-task' || action === 'command';
+}
+
+/**
+ * Lock-key segment and `lastFireAt` key for agent-turn fires, which have no
+ * file path. A colon can't appear in an Obsidian file name, so this can never
+ * collide with a real path.
+ */
+export const AGENT_TURN_FIRE_KEY = ':agent-turn';
+
+/**
+ * What an agent-turn fire knows about the turn(s) behind it. A debounce window
+ * can merge several turns into one fire: the counts are summed and the rest
+ * comes from the latest turn.
+ */
+export interface AgentTurnSummary {
+	/** Outcome of the latest merged turn. */
+	outcome: TurnOutcome;
+	/** Number of turns merged into this fire by the debounce window. */
+	turnCount: number;
+	/** Tool calls across all merged turns. */
+	toolCallCount: number;
+	/** Title of the latest turn's session. */
+	sessionTitle: string;
+	/** The user's message in the latest turn. */
+	userMessage: string;
+}
 
 /**
  * A hook definition parsed from a markdown file at
@@ -146,10 +192,14 @@ export type HooksState = Record<string, HookState>;
 export interface HookFireContext {
 	hook: Hook;
 	trigger: HookTrigger;
+	/** Triggering file's vault path. Empty for the agent-turn trigger. */
 	filePath: string;
+	/** Triggering file's name. Empty for the agent-turn trigger. */
 	fileName: string;
 	oldPath?: string;
 	frontmatter?: Record<string, unknown>;
+	/** Set only for the agent-turn trigger. */
+	turn?: AgentTurnSummary;
 }
 
 /**
@@ -445,7 +495,13 @@ export function serializeHookFields(fields: HookFields): string[] {
 
 /** Narrow an unknown value to a `HookTrigger`, or `undefined` if it isn't one. */
 function parseTrigger(value: unknown): HookTrigger | undefined {
-	if (value === 'file-created' || value === 'file-modified' || value === 'file-deleted' || value === 'file-renamed') {
+	if (
+		value === 'file-created' ||
+		value === 'file-modified' ||
+		value === 'file-deleted' ||
+		value === 'file-renamed' ||
+		value === AGENT_TURN_TRIGGER
+	) {
 		return value;
 	}
 	return undefined;
