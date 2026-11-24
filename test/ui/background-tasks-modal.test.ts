@@ -24,8 +24,17 @@ vi.mock('obsidian', async () => {
 	return { ...original, Modal };
 });
 
+// The RAG tab's panels have their own tests; stub them so these tests can
+// open the modal on the RAG tab with a minimal status fixture.
+vi.mock('../../src/ui/components/rag-status-panel', () => ({
+	renderRagOverview: vi.fn(),
+	renderRagFileList: vi.fn(),
+	renderRagFailures: vi.fn(),
+}));
+
 // vi.mock is hoisted, so this import already sees the shimmed Modal.
 import { BackgroundTasksModal } from '../../src/ui/background-tasks-modal';
+import { t } from '../../src/i18n';
 
 function task(overrides: Partial<BackgroundTask> = {}): BackgroundTask {
 	return {
@@ -58,7 +67,13 @@ function makePlugin(opts: { active?: BackgroundTask[]; recent?: BackgroundTask[]
 		plugin: {
 			agentEventBus: bus,
 			backgroundTaskManager: manager,
-			ragIndexing: opts.rag ? { addProgressListener: vi.fn(), removeProgressListener: vi.fn() } : null,
+			ragIndexing: opts.rag
+				? {
+						addProgressListener: vi.fn(),
+						removeProgressListener: vi.fn(),
+						getDetailedStatus: vi.fn(() => ({ indexedCount: 0, failedCount: 0 })),
+					}
+				: null,
 			app: { workspace: { openLinkText: vi.fn().mockResolvedValue(undefined) } },
 		} as any,
 		bus,
@@ -73,25 +88,36 @@ function open(plugin: any, defaultTab?: 'tasks' | 'rag') {
 	return { modal, el: (modal as any).contentEl as HTMLElement };
 }
 
+// The outer tab the rendered modal marks as selected, and whether the RAG
+// tab's content (its inner tab bar) or the task list rendered.
+function selectedTab(el: HTMLElement) {
+	const selected = Array.from(el.querySelectorAll('.gemini-activity-tab')).filter(
+		(t) => t.getAttribute('aria-selected') === 'true'
+	);
+	expect(selected).toHaveLength(1);
+	const ragRendered = el.querySelector('.rag-status-tabs') !== null;
+	return { label: selected[0].textContent, ragRendered };
+}
+
 describe('BackgroundTasksModal default tab', () => {
 	it('opens on Background Tasks when a task is running, even with RAG on', () => {
 		const { plugin } = makePlugin({ active: [task()], rag: true });
-		expect((new BackgroundTasksModal({} as any, plugin) as any).activeTab).toBe('tasks');
+		expect(selectedTab(open(plugin).el)).toEqual({ label: t('backgroundTasks.tabTasks'), ragRendered: false });
 	});
 
 	it('opens on RAG when RAG is on and nothing is running', () => {
 		const { plugin } = makePlugin({ rag: true });
-		expect((new BackgroundTasksModal({} as any, plugin) as any).activeTab).toBe('rag');
+		expect(selectedTab(open(plugin).el)).toEqual({ label: t('backgroundTasks.tabRag'), ragRendered: true });
 	});
 
 	it('opens on Background Tasks when RAG is off', () => {
 		const { plugin } = makePlugin();
-		expect((new BackgroundTasksModal({} as any, plugin) as any).activeTab).toBe('tasks');
+		expect(selectedTab(open(plugin).el)).toEqual({ label: t('backgroundTasks.tabTasks'), ragRendered: false });
 	});
 
 	it('honours an explicit default tab', () => {
 		const { plugin } = makePlugin({ active: [task()], rag: true });
-		expect((new BackgroundTasksModal({} as any, plugin, 'rag') as any).activeTab).toBe('rag');
+		expect(selectedTab(open(plugin, 'rag').el)).toEqual({ label: t('backgroundTasks.tabRag'), ragRendered: true });
 	});
 });
 
