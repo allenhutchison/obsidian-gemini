@@ -434,6 +434,31 @@ describe('AgentViewSend.sendMessage model snapshot', () => {
 		expect(assemble).not.toHaveBeenCalled();
 	});
 
+	test('drops a second send while the first waits for provider models', async () => {
+		const { send, internals, ctx, capture } = makeSendMessageCtx('llama3.2');
+		const session = { id: 's1', modelConfig: { provider: 'anthropic' } };
+		ctx.getCurrentSession = () => session;
+		let release!: () => void;
+		const ensure = vi.fn(() => new Promise<void>((resolve) => (release = resolve)));
+		ctx.plugin.getModelManager = () => ({ ensureProviderModels: ensure });
+		vi.spyOn(internals, 'assembleTurnRequest').mockRejectedValue(new Error('stop'));
+
+		const first = send.sendMessage();
+		await send.sendMessage();
+		expect(ensure).toHaveBeenCalledTimes(1);
+		expect(capture).not.toHaveBeenCalled();
+
+		const original = [...GEMINI_MODELS];
+		setGeminiModels([...original, { value: 'claude-test', label: 'Claude', provider: 'anthropic' }]);
+		try {
+			release();
+			await first;
+		} finally {
+			setGeminiModels(original);
+		}
+		expect(capture).toHaveBeenCalledTimes(1);
+	});
+
 	test('hides progress when turn assembly fails', async () => {
 		const { send, internals, progress } = makeSendMessageCtx('llama3.2');
 		vi.spyOn(internals, 'assembleTurnRequest').mockRejectedValue(new Error('boom'));
