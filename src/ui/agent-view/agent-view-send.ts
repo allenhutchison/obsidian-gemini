@@ -382,7 +382,12 @@ export class AgentViewSend {
 		// await comes before the input is read, so everything below (the
 		// empty-input check, the saved message, hook payloads) reads one value.
 		const pinnedProvider = currentSession.modelConfig?.provider;
-		if (pinnedProvider) await this.ctx.plugin.getModelManager().ensureProviderModels(pinnedProvider);
+		if (pinnedProvider) {
+			await this.ctx.plugin.getModelManager().ensureProviderModels(pinnedProvider);
+			// The user switched sessions during the wait: the input now holds the
+			// other session's draft, so leave it alone and drop this send.
+			if (this.ctx.getCurrentSession() !== currentSession) return;
+		}
 
 		const userInput = this.ctx.getUserInput();
 		const shelf = this.ctx.getShelf();

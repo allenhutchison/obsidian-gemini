@@ -387,7 +387,8 @@ describe('AgentViewSend.sendMessage model snapshot', () => {
 	test("loads a pinned provider's models before resolving the turn model (#1679)", async () => {
 		const { send, internals, ctx } = makeSendMessageCtx('llama3.2');
 		const order: string[] = [];
-		ctx.getCurrentSession = () => ({ id: 's1', modelConfig: { provider: 'anthropic' } });
+		const session = { id: 's1', modelConfig: { provider: 'anthropic' } };
+		ctx.getCurrentSession = () => session;
 		ctx.getUserInput = () => {
 			order.push('read-input');
 			return { innerText: 'hi' };
@@ -411,6 +412,26 @@ describe('AgentViewSend.sendMessage model snapshot', () => {
 		expect(order[0]).toBe('ensure:anthropic');
 		expect(order.slice(1).every((o) => o === 'read-input')).toBe(true);
 		expect(assemble.mock.calls[0][8]).toEqual({ model: 'claude-test', provider: 'anthropic' });
+	});
+
+	test('drops the send when the session changes while provider models load', async () => {
+		const { send, internals, ctx, capture } = makeSendMessageCtx('llama3.2');
+		let session: any = { id: 's1', modelConfig: { provider: 'anthropic' } };
+		ctx.getCurrentSession = () => session;
+		const getUserInput = vi.fn(() => ({ innerText: 'other session draft' }));
+		ctx.getUserInput = getUserInput;
+		ctx.plugin.getModelManager = () => ({
+			ensureProviderModels: vi.fn(async () => {
+				session = { id: 's2' };
+			}),
+		});
+		const assemble = vi.spyOn(internals, 'assembleTurnRequest');
+
+		await send.sendMessage();
+
+		expect(getUserInput).not.toHaveBeenCalled();
+		expect(capture).not.toHaveBeenCalled();
+		expect(assemble).not.toHaveBeenCalled();
 	});
 
 	test('hides progress when turn assembly fails', async () => {
