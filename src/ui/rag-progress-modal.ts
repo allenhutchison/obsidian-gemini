@@ -23,6 +23,8 @@ export class RagProgressModal extends Modal {
 	private cancelBtn: HTMLButtonElement | null = null;
 	private backgroundBtn: HTMLButtonElement | null = null;
 	private timerInterval: number | null = null;
+	/** Set once the run has finished, so the completion UI and callback run only once (#1825). */
+	private completed = false;
 
 	constructor(
 		app: App,
@@ -233,6 +235,11 @@ export class RagProgressModal extends Modal {
 	}
 
 	private handleComplete(): void {
+		// Every progress event after the run ends would otherwise land here again
+		// and fire onComplete (the "Rescan complete" notice) once per event.
+		if (this.completed) return;
+		this.completed = true;
+
 		// Clear timer
 		if (this.timerInterval) {
 			window.clearInterval(this.timerInterval);

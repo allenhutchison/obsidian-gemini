@@ -75,6 +75,7 @@ export class RagIndexingService {
 			getFileUploader: () => this.fileUploader,
 			getStoreName: () => this.getStoreName(),
 			onUpdateStatusBar: () => this.updateStatusBar(),
+			isScanActive: () => this.vaultScanner.hasActivePromise(),
 		});
 
 		this.vaultScanner = new RagVaultScanner(this.plugin, this.ragCache, this.rateLimiter, {

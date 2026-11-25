@@ -99,6 +99,7 @@ describe('RagSyncQueue', () => {
 			}),
 			getStoreName: vi.fn().mockReturnValue('test-store'),
 			onUpdateStatusBar: vi.fn(),
+			isScanActive: vi.fn().mockReturnValue(false),
 		};
 
 		queue = new RagSyncQueue(mockPlugin, mockCache, mockRateLimiter, mockCallbacks);
@@ -313,6 +314,44 @@ describe('RagSyncQueue', () => {
 				await (queue as any).flushPendingChanges();
 
 				expect(mockCallbacks.setStatus).not.toHaveBeenCalled();
+			});
+		});
+
+		describe('while a vault scan is running (#1825)', () => {
+			it('keeps the changes queued, leaves the status alone, and retries after the debounce', async () => {
+				mockCallbacks.isScanActive.mockReturnValue(true);
+				(queue as any).pendingChanges = new Map([
+					['test.md', { type: 'create', path: 'test.md', timestamp: Date.now() }],
+				]);
+
+				await (queue as any).flushPendingChanges();
+
+				expect(mockCallbacks.setStatus).not.toHaveBeenCalled();
+				expect(queue.getPendingCount()).toBe(1);
+				expect((queue as any).debounceTimer).not.toBeNull();
+
+				// The scan ends; the retry flushes normally.
+				mockCallbacks.isScanActive.mockReturnValue(false);
+				mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(null);
+				await vi.advanceTimersByTimeAsync(2000);
+
+				expect(queue.getPendingCount()).toBe(0);
+				expect(mockCallbacks.setStatus).toHaveBeenCalledWith('idle');
+			});
+
+			it('does not write idle when a scan started while the flush was running', async () => {
+				mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(null);
+				// The scan starts after the flush has begun: the first status write
+				// ('indexing') goes through, the closing 'idle' must not.
+				mockCallbacks.isScanActive.mockReturnValueOnce(false).mockReturnValueOnce(false).mockReturnValue(true);
+				(queue as any).pendingChanges = new Map([
+					['test.md', { type: 'create', path: 'test.md', timestamp: Date.now() }],
+				]);
+
+				await (queue as any).flushPendingChanges();
+
+				expect(mockCallbacks.setStatus).toHaveBeenCalledWith('indexing');
+				expect(mockCallbacks.setStatus).not.toHaveBeenCalledWith('idle');
 			});
 		});
 
