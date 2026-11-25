@@ -1,6 +1,13 @@
 import { App, Modal, Setting, setIcon } from 'obsidian';
-import type { RagProgressInfo, ProgressListener, RagProgressProvider } from '../services/rag-types';
+import type { RagIndexStatus, RagProgressInfo, ProgressListener, RagProgressProvider } from '../services/rag-types';
 import { t } from '../i18n';
+
+/**
+ * Statuses during which a run is still going. Every other status ends it.
+ * `rate_limited` is a cooldown the scanner resumes from; `paused` is not here
+ * because a pause is only allowed from `idle`, never mid-scan.
+ */
+const IN_PROGRESS_STATUSES: ReadonlySet<RagIndexStatus> = new Set<RagIndexStatus>(['indexing', 'rate_limited']);
 
 /**
  * Modal showing live progress during RAG indexing operations
@@ -44,8 +51,9 @@ export class RagProgressModal extends Modal {
 			this.progressInfo = progress;
 			this.updateUI();
 
-			// Check if complete
-			if (progress.status !== 'indexing') {
+			// A rate-limit cooldown is a pause inside the run, not its end: the
+			// scanner resumes with 'indexing' afterwards (#1829 review).
+			if (!IN_PROGRESS_STATUSES.has(progress.status)) {
 				this.handleComplete();
 			}
 		};

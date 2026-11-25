@@ -1,8 +1,8 @@
 /**
  * Tests for RagProgressModal's completion handling (#1825).
  *
- * The modal treats any progress event whose status isn't 'indexing' as the end
- * of the run. Without a once-only guard, every later event re-ran the
+ * The modal treats a terminal status (anything but 'indexing' or
+ * 'rate_limited') as the end of the run. Without a once-only guard, every later event re-ran the
  * completion path and fired onComplete again, one "Rescan complete" notice per
  * event.
  */
@@ -87,5 +87,23 @@ describe('RagProgressModal completion', () => {
 		listener(info({ status: 'indexing', skippedCount: 5 }));
 
 		expect(onComplete).not.toHaveBeenCalled();
+	});
+
+	test('a rate-limit cooldown does not end the run; the final result still shows', () => {
+		const onComplete = vi.fn();
+		const modal = new RagProgressModal({} as any, makeProvider(), onComplete);
+		const progressText = document.createElement('div');
+		(progressText as any).setText = (text: string) => (progressText.textContent = text);
+		(modal as any).progressText = progressText;
+		const listener = (modal as any).progressListener as ProgressListener;
+
+		listener(info({ status: 'rate_limited', skippedCount: 3 }));
+		listener(info({ status: 'indexing', skippedCount: 6 }));
+		expect(onComplete).not.toHaveBeenCalled();
+
+		listener(info({ status: 'idle', indexedCount: 2, skippedCount: 8 }));
+		expect(onComplete).toHaveBeenCalledTimes(1);
+		expect(onComplete).toHaveBeenCalledWith({ indexed: 2, skipped: 8, failed: 0 });
+		expect(progressText.textContent).toBe('100% (10 / 10)');
 	});
 });
