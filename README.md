@@ -12,9 +12,19 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 >
 > Then route each feature to a provider on the **Features** page. See the [provider capability matrix](docs/reference/provider-capabilities.md) for what's supported on each.
 
-## What's New in v4.14.0
+## What's New in v4.15.0
 
-**🌐 Gemini Scribe 4.14.0 - OpenRouter, Ollama Cloud, GPT-6 & live Gemini models**
+**🔀 Gemini Scribe 4.15.0 - Per-session provider, agent-turn hooks & GPT-6.2**
+
+- **🔀 Per-session provider** - Session settings now has a Provider dropdown above Model, so one conversation can run on Claude, Ollama, OpenAI or OpenRouter while Chat stays routed to Gemini. The choice is saved in the session file, survives a reload, and the header badge shows it. Tools with their own routes, such as Google Search, keep them. (#1796, #1816)
+- **🪝 Agent-turn-ended hook** - A new lifecycle hook trigger runs a command or an agent task each time the agent finishes a chat turn, for example to commit the agent's edits with Obsidian Git. The prompt can use {{turnOutcome}} (complete, incomplete, failed or cancelled), {{turnCount}}, {{toolCallCount}}, {{sessionTitle}} and {{userMessage}}. Hook and scheduled-task runs never fire it. (#1812, #1820)
+- **🤖 GPT-6.2 and Images 2.6** - The OpenAI model list adds gpt-6.2-sol and gpt-6.2-astra, with tool calling through the Responses API, gpt-image-2.6-flare and gpt-image-2.6-sunburst are offered for image generation, and the GPT-6 family's context limit is now about 922k tokens instead of 128k, so compaction no longer fires early. (#1805)
+- **⏹️ Reliable Stop** - Pressing Stop and sending again right away no longer leaves the button out of step or lets late text from the stopped turn appear, stopping on an Allow card reads as cancelled rather than a tool failure, Ollama streams close cleanly on Stop, and Ollama Cloud without a key now asks for one instead of saying the key is invalid. (#1792, #1828)
+- **🧮 Accurate token counter** - The count stays at the compacted size after Context Compacted instead of bouncing back up, and hook and scheduled-task runs no longer change the chat's token counter. (#1794, #1827)
+- **🩹 Fixes** - Semantic Search shows one Rescan complete notice instead of dozens when background syncing overlaps a rescan (#1829), the maps tool follows the provider capability matrix (#1795), and attachment drop and paste share one set of size and type notices (#1808).
+- **🧰 Maintenance** - Internal refactors with no behavior change (#1793, #1798, #1802, #1809, #1810), new tests for the settings modals (#1813), eval tests that pass on Windows (#1819), and refreshed translations.
+
+**Previous Updates (v4.14.0):**
 
 - **🌐 OpenRouter provider** - OpenRouter now has its own card and API key. One key reaches hundreds of models from many companies, with tool calling, reasoning that carries across tool rounds, image input, image generation, and real model metadata in the picker. (#1736)
 - **☁️ Ollama Cloud** - Add an optional API key on the Ollama card and point the endpoint at https://ollama.com to use Ollama's hosted models with no local install. With a key and a local endpoint, the picker lists local and cloud models together, labelled (local) and (cloud), and each request goes to the right place. Replies from models served directly by ollama.com arrive all at once rather than streaming. (#1765, #1767, #1777, #1786)
@@ -130,7 +140,7 @@ _The full 4.12 feature set is unchanged — the multi-provider release, with two
 - **Data Privacy:** Requests for a feature go straight to whichever provider serves it — Google for Gemini, your Ollama server (local by default, but configurable to a remote host), OpenAI (or a compatible server) for OpenAI, Anthropic for Claude, or OpenRouter (which forwards each request to the company serving the model you picked) — with no intermediate server unless you configure one yourself (e.g. a custom Gemini API endpoint). See [Provider Capabilities](docs/reference/provider-capabilities.md#privacy-semantics) for the full breakdown. Agent session history is stored locally in your Obsidian vault as markdown files.
 - **Robust Session Management:**
   - Persistent agent sessions that survive restarts
-  - Session-specific permissions and settings
+  - Session-specific permissions and settings, including a per-session provider and model
   - Context files that persist across the session
   - Full conversation history with tool execution logs
   - Easy backup and version control of sessions
