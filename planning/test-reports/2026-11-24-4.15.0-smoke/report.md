@@ -8,6 +8,8 @@ Note: Obsidian 1.15.1 opens Settings and the hook modal in a pop-out window; dri
 ## VERDICT: BLOCKED. One release-blocking failure (2.3). Part 1 and part 10 pass.
 
 > **Update 2026-11-25:** PR #1816 fixes 2.3, 2.4 and 4.3. A retest of those steps (plus Ollama and regression checks) passed on 8e847d3. See [retest-1816.md](retest-1816.md). Once #1816 merges, 2.3 no longer blocks the release.
+>
+> **Update 2026-11-25:** PR #1820 (agent-turn hook tool-failure outcome, `{fileName}` refused in turn output paths) retested on fe4becf: all steps pass, including the part 1 hook editor checks. See [retest-1820.md](retest-1820.md).
 
 | Part                                           | Result                                                                                                                         |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
