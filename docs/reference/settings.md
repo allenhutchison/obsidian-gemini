@@ -450,7 +450,8 @@ _(unnamed group)_
   occurs. See [Context management](#context-management) below.
 - **Stop the agent when a tool fails** (`stopOnToolError`) — Boolean, default `true`. When
   enabled, the agent stops immediately if any tool fails; when disabled, it continues executing
-  subsequent tools despite failures.
+  subsequent tools despite failures. Pressing **Stop** while a tool is waiting for your approval
+  cancels the turn; it isn't counted as a tool failure.
 - **Summary frontmatter key** (`summaryFrontmatterKey`) — String, default `"summary"`.
   Frontmatter key used when storing document summaries.
 - **Record tool calls in session history** (`logToolExecution`) — Boolean, default `true`.

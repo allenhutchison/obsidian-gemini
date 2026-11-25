@@ -419,6 +419,55 @@ describe('AgentLoop', () => {
 			expect(result.cancelled).toBe(true);
 			expect(api.calls).toBe(0); // never reached the follow-up
 		});
+		test('a Stop that declines a pending confirmation ends as cancelled, not as a tool failure (#1824)', async () => {
+			// stopOnToolError is on by default. Stop resolves the Allow card as
+			// declined, so the tool comes back failed — the cancel must win.
+			const plugin = buildPlugin();
+			const session = buildSession();
+			const api = makeScriptedModelApi([textResponse('never')]);
+
+			let cancelled = false;
+			plugin.toolExecutionEngine.executeTool = vi.fn().mockImplementation(() => {
+				cancelled = true;
+				return Promise.resolve({ success: false, error: 'User declined tool execution' });
+			});
+
+			const loop = new AgentLoop();
+			const result = await loop.run({
+				initialResponse: toolResponse([tc('google_search', { query: 'q' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: { plugin, session, confirmationProvider, isCancelled: () => cancelled, createModelApi: () => api },
+			});
+
+			expect(result.cancelled).toBe(true);
+			expect(result.markdown).toBe('');
+			expect(api.calls).toBe(0);
+			// The batch's call/response pair is still in history.
+			const parts = result.history.flatMap((c: any) => c.parts ?? []);
+			expect(parts.some((p: any) => p.functionCall?.name === 'google_search')).toBe(true);
+			expect(parts.some((p: any) => p.functionResponse?.name === 'google_search')).toBe(true);
+		});
+
+		test('a declined confirmation without Stop still ends the turn on stopOnToolError', async () => {
+			const plugin = buildPlugin();
+			const session = buildSession();
+			const api = makeScriptedModelApi([textResponse('never')]);
+			plugin.toolExecutionEngine.executeTool = vi
+				.fn()
+				.mockResolvedValue({ success: false, error: 'User declined tool execution' });
+
+			const loop = new AgentLoop();
+			const result = await loop.run({
+				initialResponse: toolResponse([tc('google_search', { query: 'q' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
+			});
+
+			expect(result.cancelled).toBe(false);
+			expect(result.markdown).not.toBe('');
+		});
 	});
 
 	describe('empty-response handling', () => {

@@ -371,6 +371,24 @@ export class AgentLoop {
 				if (tr.result.loopDetected) loopFireCount++;
 			}
 
+			// A Stop during the batch wins over the escalation checks below. Stop
+			// resolves a pending confirmation card as declined, so the tool comes
+			// back failed; checking stopOnToolError first would report the user's
+			// Stop as a tool failure (#1824). The history keeps this batch's turns
+			// (a synthetic response stands in for any call that didn't run).
+			if (isCancelled()) {
+				return this.cancelledResult(
+					buildToolHistoryTurns({
+						conversationHistory,
+						userMessage,
+						perTurnContext,
+						toolCalls: currentToolCalls,
+						toolResults,
+					}),
+					iterations
+				);
+			}
+
 			// Escalation checks after the batch: loop-detector threshold and
 			// stopOnToolError. Either can end the turn here.
 			const escalation = this.checkBatchEscalations(plugin, toolResults, {
