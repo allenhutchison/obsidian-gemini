@@ -56,6 +56,18 @@ export function isActionAllowedForTrigger(trigger: HookTrigger, action: HookActi
 }
 
 /**
+ * Whether `outputPath` can be resolved for `trigger`. The agent-turn trigger
+ * has no file, so `{fileName}` would resolve to an empty name and the usual
+ * `Runs/{slug}/{fileName}.md` would write a hidden `.md` dotfile.
+ */
+export function isOutputPathAllowedForTrigger(trigger: HookTrigger, outputPath: string | undefined): boolean {
+	if (isFileTrigger(trigger)) return true;
+
+	const pathNeedsFileName = outputPath?.includes('{fileName}') ?? false;
+	return !pathNeedsFileName;
+}
+
+/**
  * Lock-key segment and `lastFireAt` key for agent-turn fires, which have no
  * file path. A colon can't appear in an Obsidian file name, so this can never
  * collide with a real path.

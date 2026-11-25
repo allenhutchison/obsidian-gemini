@@ -137,7 +137,7 @@ The safety features below apply per hook instead of per file. `debounceMs` merge
 An `agent-task` hook on this trigger makes a model request after every chat message, roughly doubling usage. Set `maxRunsPerHour` to cap it.
 :::
 
-When an `agent-task` run writes an output file, its header records `session` and `turn_outcome` in place of `triggered_by`. The `{fileName}` placeholder in `outputPath` is empty for this trigger.
+When an `agent-task` run writes an output file, its header records `session` and `turn_outcome` in place of `triggered_by`. Its `outputPath` can use `{slug}` and `{date}` but not `{fileName}`: a turn has no file, so the name would come out empty (`Hooks/Runs/<slug>/.md`, a hidden file). The editor won't save such a path, and a hand-written hook that uses one isn't loaded. Use a path like `Hooks/Runs/{slug}/{date}.md` instead; a second run on the same day gets a `-1`, `-2`, … suffix.
 
 ## Actions
 
@@ -231,6 +231,7 @@ A hook's `outputPath` can point anywhere in your vault, with these exceptions:
 - It must name a file and stay inside the vault — a path containing `..` is refused.
 - It cannot be inside Obsidian's configuration folder (`.obsidian` by default, or a renamed one).
 - It cannot be inside the plugin state folder, **except** `[state-folder]/Hooks/Runs/`. This keeps a fire from planting files among hook definitions (a markdown file written into `Hooks/` would itself be read as a hook), agent sessions, skills, or other plugin state.
+- On the `agent-turn-ended` trigger, it cannot use `{fileName}`, because a turn has no file. A hand-written hook that does isn't loaded at all, rather than failing on each fire. See [Agent turn trigger](#agent-turn-trigger).
 
 The create/edit form rejects such a path when you save. A path written by hand into a hook file is checked on every fire, after placeholders are substituted: the fire fails **before** the model is called, nothing is written, and it counts as a failed run (see [Auto-Pause on Repeated Failure](#auto-pause-on-repeated-failure)). The hook definition is left untouched — fix the `outputPath` and later fires proceed normally.
 

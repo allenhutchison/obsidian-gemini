@@ -5,6 +5,7 @@ import {
 	DEFAULT_DEBOUNCE_MS,
 	isActionAllowedForTrigger,
 	isFileTrigger,
+	isOutputPathAllowedForTrigger,
 } from '../services/hook-types';
 import { HOOK_RUNS_SUBFOLDER } from '../services/state-folder';
 import type { FeatureToolPolicy } from '../types/tool-policy';
@@ -336,6 +337,8 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			cooldownSetting.setDesc(
 				t(fileTrigger ? 'hooks.cooldownDesc' : 'hooks.turnCooldownDesc', { default: DEFAULT_COOLDOWN_MS })
 			);
+			// A turn has no file, so don't offer {fileName}.
+			outputPathSetting.setDesc(t(fileTrigger ? 'hooks.outputPathDesc' : 'hooks.turnOutputPathDesc'));
 			commandIdEl.style.display = showCommandId ? '' : 'none';
 			focusFileEl.style.display = showCommandId && fileTrigger ? '' : 'none';
 			toolsSetting.settingEl.style.display = showTools ? '' : 'none';
@@ -374,9 +377,6 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 					})
 			);
 
-		// Every field it toggles now exists.
-		updateActionVisibility();
-
 		new Setting(advDetails)
 			.setName(t('hooks.maxRunsSetting'))
 			.setDesc(t('hooks.maxRunsDesc'))
@@ -405,7 +405,7 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 					})
 			);
 
-		this.addSharedAdvancedFields(advDetails, {
+		const { outputPathSetting } = this.addSharedAdvancedFields(advDetails, {
 			keyPrefix: 'hooks',
 			getModel: () => this.form.model,
 			setModel: (v) => {
@@ -420,6 +420,9 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 				this.form.maxIterations = v;
 			},
 		});
+
+		// Every field it toggles now exists.
+		updateActionVisibility();
 
 		new Setting(advDetails)
 			.setName(t('hooks.desktopOnlySetting'))
@@ -471,6 +474,10 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 		}
 		if (!this.isOutputPathFieldAllowed(this.form.outputPath, HOOK_RUNS_SUBFOLDER)) {
 			new Notice(t('hooks.invalidOutputPath'));
+			return;
+		}
+		if (!isOutputPathAllowedForTrigger(this.form.trigger, this.form.outputPath)) {
+			new Notice(t('hooks.turnOutputPathFileName'));
 			return;
 		}
 
