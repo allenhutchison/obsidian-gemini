@@ -959,6 +959,70 @@ describe('AgentLoop', () => {
 			expect(eventNames.filter((n: string) => n === 'apiResponseReceived')).toHaveLength(1);
 		});
 
+		test('a headless run with its own context manager keeps usage and compaction off the chat (#1823)', async () => {
+			const plugin = buildPlugin();
+			// Headless follow-ups expose only auto-approved tools.
+			plugin.toolRegistry.getAutoApprovedTools = vi.fn().mockReturnValue([]);
+			const session = buildSession();
+			const usage = { promptTokenCount: 42, totalTokenCount: 50 };
+			const api = makeScriptedModelApi([
+				toolResponse([tc('read_file', { path: 'b' })]),
+				{ markdown: 'done', rendered: '', usageMetadata: usage },
+			]);
+			const own = {
+				prepareHistory: vi
+					.fn()
+					.mockImplementation((history: any[]) =>
+						Promise.resolve({ compactedHistory: history, wasCompacted: false, estimatedTokens: 0 })
+					),
+				updateUsageMetadata: vi.fn(),
+			};
+
+			await new AgentLoop().run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: {
+					plugin,
+					session,
+					confirmationProvider,
+					isCancelled: () => false,
+					createModelApi: () => api,
+					headless: true,
+					contextManager: own as any,
+				},
+			});
+
+			// Compaction ran on the run's own manager, never the chat's.
+			expect(own.prepareHistory).toHaveBeenCalledTimes(2);
+			expect(plugin.contextManager.prepareHistory).not.toHaveBeenCalled();
+			// The run's manager got the usage directly...
+			expect(own.updateUsageMetadata).toHaveBeenCalledWith(usage, expect.any(String));
+			// ...and the event is tagged so the chat's subscriber skips it.
+			const emitted = plugin.agentEventBus.emit.mock.calls.filter((c: any[]) => c[0] === 'apiResponseReceived');
+			expect(emitted).toHaveLength(1);
+			expect(emitted[0][1].headless).toBe(true);
+		});
+
+		test('an interactive run leaves the usage event untagged', async () => {
+			const plugin = buildPlugin();
+			const session = buildSession();
+			const api = makeScriptedModelApi([
+				{ markdown: 'done', rendered: '', usageMetadata: { promptTokenCount: 1, totalTokenCount: 1 } },
+			]);
+
+			await new AgentLoop().run({
+				initialResponse: toolResponse([tc('read_file')]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
+			});
+
+			const emitted = plugin.agentEventBus.emit.mock.calls.find((c: any[]) => c[0] === 'apiResponseReceived');
+			expect(emitted[1]).not.toHaveProperty('headless');
+			expect(plugin.contextManager.prepareHistory).toHaveBeenCalledTimes(1);
+		});
+
 		test('does not emit apiResponseReceived when model response has no usageMetadata', async () => {
 			const plugin = buildPlugin();
 			const session = buildSession();

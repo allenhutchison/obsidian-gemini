@@ -84,6 +84,13 @@ describe('ContextTrackingSubscriber', () => {
 		expect(plugin.contextManager.updateUsageMetadata).toHaveBeenCalledWith(usageMetadata, 'llama3.2');
 	});
 
+	it('ignores usage from headless runs (hooks, scheduled tasks) (#1823)', async () => {
+		const usageMetadata = { totalTokenCount: 100, promptTokenCount: 50, candidatesTokenCount: 50 };
+
+		await bus.emit('apiResponseReceived', { usageMetadata, modelName: 'llama3.2', headless: true });
+		expect(plugin.contextManager.updateUsageMetadata).not.toHaveBeenCalled();
+	});
+
 	it('should call contextManager.reset() on sessionCreated and sessionLoaded', async () => {
 		const session = createMockSession();
 

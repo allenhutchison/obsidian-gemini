@@ -9,6 +9,7 @@ import { formatLocalTimestamp } from '../utils/format-utils';
 import { buildTurnPreamble } from '../utils/turn-preamble';
 import { AgentLoop, DEFAULT_HEADLESS_MAX_ITERATIONS } from '../agent/agent-loop';
 import { HeadlessConfirmationProvider } from './headless-confirmation-provider';
+import { ContextManager } from './context-manager';
 
 /**
  * Shared driver for a single headless agent turn, used by both
@@ -153,9 +154,17 @@ export async function runHeadlessAgentTurn(
 			projectSkills: spec.projectSkills?.length ? spec.projectSkills : undefined,
 		};
 
+		// This run's own token tracking. Sharing the agent view's manager would put
+		// the run's request sizes in the chat's token footer and let them drive the
+		// chat's compaction and estimate calibration (#1823).
+		const contextManager = new ContextManager(plugin, plugin.logger);
+
 		if (isCancelled()) return undefined;
 		const initialResponse = await modelApi.generateModelResponse(initialRequest);
 		if (isCancelled()) return undefined;
+		if (initialResponse.usageMetadata) {
+			contextManager.updateUsageMetadata(initialResponse.usageMetadata, model);
+		}
 
 		if (!initialResponse.toolCalls?.length) {
 			return { text: initialResponse.markdown ?? '' };
@@ -179,6 +188,7 @@ export async function runHeadlessAgentTurn(
 				maxIterations,
 				featureToolPolicy: spec.toolPolicy,
 				headless: true,
+				contextManager,
 			},
 		});
 

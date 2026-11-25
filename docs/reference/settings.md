@@ -465,7 +465,8 @@ _(unnamed group)_
 - **Show token usage** (`showTokenUsage`) — Boolean, default `false`. Displays estimated token
   count in the agent input area as `Tokens: ~N / M (X%)`, with `· Y% cached` and `· Z reasoning`
   suffixes when applicable. Visual indicators: normal (well under threshold), yellow (≥80% of the
-  compaction threshold), orange/red (at or above it).
+  compaction threshold), orange/red (at or above it). It counts only the open chat: lifecycle
+  hooks and scheduled tasks track their own usage and never change it.
 - **Log API calls to a file** (`fileLogging`) — Boolean, default `false`. Writes log entries to
   `debug.log` in the plugin folder. Errors and warnings are always written when enabled;
   debug-level entries only when Debug mode is also on. Rotated at 1 MB (`debug.log.old` keeps the

@@ -96,6 +96,12 @@ export interface AgentEventMap {
 		usageMetadata?: UsageMetadata;
 		/** Model that produced this response — used to calibrate per-model Ollama token estimates. */
 		modelName?: string;
+		/**
+		 * True when the response came from an unattended run (lifecycle hook,
+		 * scheduled task). Those track usage in their own context manager, so the
+		 * chat's token counter ignores them (#1823).
+		 */
+		headless?: boolean;
 	}>;
 
 	/** After a new agent session is created */

@@ -5,6 +5,7 @@ import type { ChatSession, PerTurnContext, SessionModelConfig } from '../types/a
 import type { AgentEventMap, AgentEventName } from '../types/agent-events';
 import type { FeatureToolPolicy } from '../types/tool-policy';
 import type { ToolCall, ModelResponse, ModelApi, StreamChunk } from '../api/interfaces/model-api';
+import type { UsageMetadata } from '../api/interfaces/usage-metadata';
 import type { CustomPrompt } from '../prompts/types';
 import type { IConfirmationProvider, IToolHostView, ToolExecutionContext, ToolResult } from '../tools/types';
 import { generateToolDescription } from '../utils/text-generation';
@@ -164,6 +165,15 @@ export interface AgentLoopOptions {
 	 * starts; UI callers pass the snapshot the initial request was built from.
 	 */
 	modelConfig?: SessionModelConfig;
+	/**
+	 * The context manager that tracks this turn's token usage and runs mid-loop
+	 * compaction. Defaults to `plugin.contextManager`, the agent view's, which
+	 * the chat's token footer reads. Headless callers pass their own so a hook
+	 * or scheduled task's requests don't land in the chat's counter or its
+	 * compaction decisions (#1823). When set, the loop feeds it each response's
+	 * usage directly, since the chat's event subscriber skips headless events.
+	 */
+	contextManager?: ObsidianGemini['contextManager'];
 }
 
 export interface AgentLoopResult {
@@ -274,6 +284,11 @@ export class AgentLoop {
 			headless,
 			viewActions,
 		} = options;
+		// Who tracks this turn's usage: a caller-owned manager (headless runs), or
+		// the agent view's. `ownContextManager` is fed usage directly; the view's
+		// is fed through the apiResponseReceived subscriber.
+		const ownContextManager = options.contextManager;
+		const contextManager = ownContextManager ?? plugin.contextManager;
 		const maxIterations = options.maxIterations;
 
 		const toolContext: ToolExecutionContext = {
@@ -427,6 +442,7 @@ export class AgentLoop {
 				budgetNotice,
 				loopStartIndex,
 				modelName,
+				contextManager,
 			});
 			if (postBatch.cancelled) {
 				return this.cancelledResult(postBatch.history, iterations);
@@ -448,6 +464,7 @@ export class AgentLoop {
 				toolResults,
 				modelName,
 				createModel,
+				ownContextManager,
 			});
 
 			if (outcome.toolCalls && outcome.toolCalls.length > 0) {
@@ -485,6 +502,8 @@ export class AgentLoop {
 				toolResults,
 				modelName,
 				createModel,
+				headless,
+				ownContextManager,
 			});
 			if (retry) {
 				return this.makeResult({
@@ -620,6 +639,7 @@ export class AgentLoop {
 			budgetNotice: string | undefined;
 			loopStartIndex: number;
 			modelName: string;
+			contextManager: ObsidianGemini['contextManager'];
 		}
 	): Promise<
 		{ cancelled: true; history: Content[] } | { cancelled: false; history: Content[]; loopStartIndex: number }
@@ -643,7 +663,7 @@ export class AgentLoop {
 		// so the current tool chain's functionCall/thoughtSignature turns are
 		// never summarized away. Gated internally on cached token usage, so
 		// this is a no-op on most iterations. See #662.
-		const compactionResult = await plugin.contextManager.prepareHistory(updatedHistory, state.modelName, {
+		const compactionResult = await state.contextManager.prepareHistory(updatedHistory, state.modelName, {
 			protectFromIndex: state.loopStartIndex,
 		});
 		let loopStartIndex = state.loopStartIndex;
@@ -694,6 +714,7 @@ export class AgentLoop {
 			toolResults: ToolCallResultPair[];
 			modelName: string;
 			createModel: () => ModelApi;
+			ownContextManager?: ObsidianGemini['contextManager'];
 		}
 	): Promise<ModelResponse> {
 		const { updatedHistory, perTurn, customPrompt, modelName, createModel } = state;
@@ -752,10 +773,7 @@ export class AgentLoop {
 		}
 
 		if (followUpResponse.usageMetadata) {
-			await this.safeEmit(plugin, 'apiResponseReceived', {
-				usageMetadata: followUpResponse.usageMetadata,
-				modelName,
-			});
+			await this.reportUsage(plugin, followUpResponse.usageMetadata, modelName, state);
 		}
 
 		if (followUpResponse.toolCalls && followUpResponse.toolCalls.length > 0) {
@@ -786,6 +804,8 @@ export class AgentLoop {
 			toolResults: ToolCallResultPair[];
 			modelName: string;
 			createModel: () => ModelApi;
+			headless?: boolean;
+			ownContextManager?: ObsidianGemini['contextManager'];
 		}
 	): Promise<{ markdown: string; thoughts?: string } | null> {
 		plugin.logger.warn('[AgentLoop] Model returned empty response after tool execution');
@@ -803,10 +823,7 @@ export class AgentLoop {
 		const retryResponse = await retryModelApi.generateModelResponse(retryRequest);
 
 		if (retryResponse.usageMetadata) {
-			await this.safeEmit(plugin, 'apiResponseReceived', {
-				usageMetadata: retryResponse.usageMetadata,
-				modelName: state.modelName,
-			});
+			await this.reportUsage(plugin, retryResponse.usageMetadata, state.modelName, state);
 		}
 
 		if (retryResponse.markdown && retryResponse.markdown.trim()) {
@@ -816,6 +833,26 @@ export class AgentLoop {
 			};
 		}
 		return null;
+	}
+
+	/**
+	 * Publish a response's usage. Every response is emitted as
+	 * `apiResponseReceived` (tagged `headless` for unattended runs, which the
+	 * chat's context subscriber skips), and a caller-owned context manager gets
+	 * the usage directly (#1823).
+	 */
+	private async reportUsage(
+		plugin: ObsidianGemini,
+		usageMetadata: UsageMetadata,
+		modelName: string,
+		tracking: { headless?: boolean; ownContextManager?: ObsidianGemini['contextManager'] }
+	): Promise<void> {
+		await this.safeEmit(plugin, 'apiResponseReceived', {
+			usageMetadata,
+			modelName,
+			...(tracking.headless && { headless: true }),
+		});
+		tracking.ownContextManager?.updateUsageMetadata(usageMetadata, modelName);
 	}
 
 	/**
