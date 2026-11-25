@@ -377,6 +377,9 @@ export class AgentLoop {
 			// Stop as a tool failure (#1824). The history keeps this batch's turns
 			// (a synthetic response stands in for any call that didn't run).
 			if (isCancelled()) {
+				// The tools that did run still count: subscribers (accessed-files
+				// tracker, tool-execution logger) only see a batch through this event.
+				await this.emitToolChainComplete(plugin, session, toolResults);
 				return this.cancelledResult(
 					buildToolHistoryTurns({
 						conversationHistory,
@@ -402,14 +405,7 @@ export class AgentLoop {
 			if (escalation) return escalation;
 
 			// Emit toolChainComplete so subscribers (accessed-files tracker, etc.) see this batch.
-			await this.safeEmit(plugin, 'toolChainComplete', {
-				session,
-				toolResults: toolResults.map((tr) => ({
-					toolName: tr.toolName,
-					toolArguments: tr.toolArguments,
-					result: tr.result,
-				})),
-			});
+			await this.emitToolChainComplete(plugin, session, toolResults);
 
 			plugin.logger.debug(
 				`[AgentLoop] Building tool call parts: ${currentToolCalls.length} calls, ` +
@@ -828,6 +824,22 @@ export class AgentLoop {
 			};
 		}
 		return null;
+	}
+
+	/** Tell subscribers (accessed-files tracker, tool-execution logger) a batch finished. */
+	private async emitToolChainComplete(
+		plugin: ObsidianGemini,
+		session: ChatSession,
+		toolResults: ToolCallResultPair[]
+	): Promise<void> {
+		await this.safeEmit(plugin, 'toolChainComplete', {
+			session,
+			toolResults: toolResults.map((tr) => ({
+				toolName: tr.toolName,
+				toolArguments: tr.toolArguments,
+				result: tr.result,
+			})),
+		});
 	}
 
 	/**

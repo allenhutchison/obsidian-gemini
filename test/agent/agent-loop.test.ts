@@ -447,6 +447,10 @@ describe('AgentLoop', () => {
 			const parts = result.history.flatMap((c: any) => c.parts ?? []);
 			expect(parts.some((p: any) => p.functionCall?.name === 'google_search')).toBe(true);
 			expect(parts.some((p: any) => p.functionResponse?.name === 'google_search')).toBe(true);
+			// Subscribers still see the batch that ran.
+			const chain = plugin.agentEventBus.emit.mock.calls.filter((c: any[]) => c[0] === 'toolChainComplete');
+			expect(chain).toHaveLength(1);
+			expect(chain[0][1].toolResults.map((r: any) => r.toolName)).toEqual(['google_search']);
 		});
 
 		test('a declined confirmation without Stop still ends the turn on stopOnToolError', async () => {
