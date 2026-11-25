@@ -38,6 +38,9 @@ export class RagProgressModal extends Modal {
 
 		// Create listener for progress updates
 		this.progressListener = (progress: RagProgressInfo) => {
+			// Once the run has finished, later events (e.g. a sync that overlapped
+			// the scan) must not repaint the completed display with partial counts.
+			if (this.completed) return;
 			this.progressInfo = progress;
 			this.updateUI();
 

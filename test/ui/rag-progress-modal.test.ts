@@ -64,6 +64,20 @@ describe('RagProgressModal completion', () => {
 		expect(onComplete).toHaveBeenCalledWith({ indexed: 0, skipped: 3, failed: 0 });
 	});
 
+	test('later events do not repaint the completed display with partial counts', () => {
+		const modal = new RagProgressModal({} as any, makeProvider(), vi.fn());
+		const progressText = document.createElement('div');
+		(progressText as any).setText = (text: string) => (progressText.textContent = text);
+		(modal as any).progressText = progressText;
+		const listener = (modal as any).progressListener as ProgressListener;
+
+		listener(info({ status: 'idle', skippedCount: 10 }));
+		expect(progressText.textContent).toBe('100% (10 / 10)');
+
+		listener(info({ status: 'idle', skippedCount: 4 }));
+		expect(progressText.textContent).toBe('100% (10 / 10)');
+	});
+
 	test('does not complete while the run is still indexing', () => {
 		const onComplete = vi.fn();
 		const modal = new RagProgressModal({} as any, makeProvider(), onComplete);
