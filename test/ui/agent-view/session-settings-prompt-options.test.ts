@@ -69,6 +69,7 @@ describe('SessionSettingsModal model row (#1679)', () => {
 			settings: { features: {} },
 			getModelManager: () => ({
 				getAvailableModels: vi.fn(() => new Promise((resolve) => (resolveList = resolve))),
+				ensureProviderModels: vi.fn(async () => {}),
 			}),
 		};
 		const modal = new SessionSettingsModal(

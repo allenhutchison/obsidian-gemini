@@ -127,6 +127,11 @@ function getModelProvider(model: GeminiModel): ModelProvider {
 	return model.provider ?? 'gemini';
 }
 
+/** Whether the global model list holds any model served by `provider`. */
+export function hasModelsFor(provider: ModelProvider): boolean {
+	return GEMINI_MODELS.some((m) => getModelProvider(m) === provider);
+}
+
 /** Whether a model is eligible for a role without treating unknown capabilities as known text-only metadata. */
 export function isModelEligibleForRole(model: GeminiModel, role: ModelRole): boolean {
 	if (model.capabilitiesUnknown) return true;

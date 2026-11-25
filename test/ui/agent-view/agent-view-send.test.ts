@@ -3,6 +3,7 @@ import { Notice } from 'obsidian';
 import { AgentViewSend, loadProjectInstructions } from '../../../src/ui/agent-view/agent-view-send';
 import type { GeminiConversationEntry } from '../../../src/types/conversation';
 import type { InlineAttachment } from '../../../src/ui/agent-view/inline-attachment';
+import { GEMINI_MODELS, setGeminiModels } from '../../../src/models';
 
 // Mock the vault-persistence helper so the attachment-persistence phase can be
 // driven without a real Obsidian vault. The rest of the module (types/helpers)
@@ -350,7 +351,7 @@ function makeSendMessageCtx(chatModel: string) {
 		return turn;
 	});
 	vi.spyOn(internals, 'resetExecutionUiState').mockImplementation(() => {});
-	return { send, internals, progress, capture, addEntryToSession };
+	return { send, internals, progress, capture, addEntryToSession, ctx };
 }
 
 describe('AgentViewSend.sendMessage model snapshot', () => {
@@ -381,6 +382,81 @@ describe('AgentViewSend.sendMessage model snapshot', () => {
 
 		expect(assemble).toHaveBeenCalledTimes(1);
 		expect(assemble.mock.calls[0][8]).toEqual({ model: 'llama3.2', provider: 'ollama' });
+	});
+
+	test("loads a pinned provider's models before resolving the turn model (#1679)", async () => {
+		const { send, internals, ctx } = makeSendMessageCtx('llama3.2');
+		const order: string[] = [];
+		const session = { id: 's1', modelConfig: { provider: 'anthropic' } };
+		ctx.getCurrentSession = () => session;
+		ctx.getUserInput = () => {
+			order.push('read-input');
+			return { innerText: 'hi' };
+		};
+		ctx.plugin.getModelManager = () => ({
+			ensureProviderModels: vi.fn(async (p: string) => {
+				order.push(`ensure:${p}`);
+				setGeminiModels([...original, { value: 'claude-test', label: 'Claude', provider: 'anthropic' }]);
+			}),
+		});
+		const assemble = vi.spyOn(internals, 'assembleTurnRequest').mockRejectedValue(new Error('stop'));
+		const original = [...GEMINI_MODELS];
+
+		try {
+			await send.sendMessage();
+		} finally {
+			setGeminiModels(original);
+		}
+
+		// The input is read only after the wait, so one value feeds the whole turn.
+		expect(order[0]).toBe('ensure:anthropic');
+		expect(order.slice(1).every((o) => o === 'read-input')).toBe(true);
+		expect(assemble.mock.calls[0][8]).toEqual({ model: 'claude-test', provider: 'anthropic' });
+	});
+
+	test('drops the send when the session changes while provider models load', async () => {
+		const { send, internals, ctx, capture } = makeSendMessageCtx('llama3.2');
+		let session: any = { id: 's1', modelConfig: { provider: 'anthropic' } };
+		ctx.getCurrentSession = () => session;
+		const getUserInput = vi.fn(() => ({ innerText: 'other session draft' }));
+		ctx.getUserInput = getUserInput;
+		ctx.plugin.getModelManager = () => ({
+			ensureProviderModels: vi.fn(async () => {
+				session = { id: 's2' };
+			}),
+		});
+		const assemble = vi.spyOn(internals, 'assembleTurnRequest');
+
+		await send.sendMessage();
+
+		expect(getUserInput).not.toHaveBeenCalled();
+		expect(capture).not.toHaveBeenCalled();
+		expect(assemble).not.toHaveBeenCalled();
+	});
+
+	test('drops a second send while the first waits for provider models', async () => {
+		const { send, internals, ctx, capture } = makeSendMessageCtx('llama3.2');
+		const session = { id: 's1', modelConfig: { provider: 'anthropic' } };
+		ctx.getCurrentSession = () => session;
+		let release!: () => void;
+		const ensure = vi.fn(() => new Promise<void>((resolve) => (release = resolve)));
+		ctx.plugin.getModelManager = () => ({ ensureProviderModels: ensure });
+		vi.spyOn(internals, 'assembleTurnRequest').mockRejectedValue(new Error('stop'));
+
+		const first = send.sendMessage();
+		await send.sendMessage();
+		expect(ensure).toHaveBeenCalledTimes(1);
+		expect(capture).not.toHaveBeenCalled();
+
+		const original = [...GEMINI_MODELS];
+		setGeminiModels([...original, { value: 'claude-test', label: 'Claude', provider: 'anthropic' }]);
+		try {
+			release();
+			await first;
+		} finally {
+			setGeminiModels(original);
+		}
+		expect(capture).toHaveBeenCalledTimes(1);
 	});
 
 	test('hides progress when turn assembly fails', async () => {

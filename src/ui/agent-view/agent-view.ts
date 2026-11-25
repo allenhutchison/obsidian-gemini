@@ -765,6 +765,16 @@ export class AgentView extends ItemView {
 	}
 
 	/**
+	 * Load the models of the provider the current session is pinned to, when the
+	 * global list doesn't hold them yet (#1679), so the session's model resolves
+	 * and token counting reaches that provider rather than the chat route's.
+	 */
+	private async ensureSessionProviderModels(): Promise<void> {
+		const provider = this.currentSession?.modelConfig?.provider;
+		if (provider) await this.plugin.getModelManager().ensureProviderModels(provider);
+	}
+
+	/**
 	 * Updates the token usage display if the setting is enabled.
 	 * Uses cached usageMetadata from the latest API response for fast, reliable updates.
 	 * Falls back to countTokens API if no cached metadata is available.
@@ -778,6 +788,7 @@ export class AgentView extends ItemView {
 		}
 
 		try {
+			await this.ensureSessionProviderModels();
 			const modelName = sessionChatModel(this.plugin.settings, this.currentSession?.modelConfig);
 			let usage = await this.plugin.contextManager.getTokenUsage(modelName);
 
@@ -834,6 +845,7 @@ export class AgentView extends ItemView {
 		}
 
 		try {
+			await this.ensureSessionProviderModels();
 			const modelName = sessionChatModel(this.plugin.settings, this.currentSession?.modelConfig);
 			const conversationHistory = await this.plugin.sessionHistory.getHistoryForSession(this.currentSession);
 			if (conversationHistory && conversationHistory.length > 0) {

@@ -143,6 +143,12 @@ export class AgentViewSend {
 	 */
 	private activeTurn: ActiveTurn | null = null;
 	/**
+	 * Set while a send waits for a pinned provider's models, before it has read
+	 * the input or registered a turn. A second Send in that window would read
+	 * the same draft, so it is dropped.
+	 */
+	private awaitingProviderModels = false;
+	/**
 	 * The most recently started turn, kept after it ends so
 	 * `isCancellationRequested()` still reports a stop to code that checks it
 	 * after the button was reset.
@@ -376,6 +382,24 @@ export class AgentViewSend {
 		// Snapshot session so all hook emissions use the same reference
 		// even if currentSession changes during async operations
 		const turnSession = currentSession;
+
+		// A session pinned to a provider the startup model list skipped needs that
+		// provider's models loaded before its default model can resolve. This
+		// await comes before the input is read, so everything below (the
+		// empty-input check, the saved message, hook payloads) reads one value.
+		const pinnedProvider = currentSession.modelConfig?.provider;
+		if (this.awaitingProviderModels) return;
+		if (pinnedProvider) {
+			this.awaitingProviderModels = true;
+			try {
+				await this.ctx.plugin.getModelManager().ensureProviderModels(pinnedProvider);
+			} finally {
+				this.awaitingProviderModels = false;
+			}
+			// The user switched sessions during the wait: the input now holds the
+			// other session's draft, so leave it alone and drop this send.
+			if (this.ctx.getCurrentSession() !== currentSession) return;
+		}
 
 		const userInput = this.ctx.getUserInput();
 		const shelf = this.ctx.getShelf();
