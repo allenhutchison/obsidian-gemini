@@ -19,6 +19,13 @@ export interface SyncQueueCallbacks {
 	getFileUploader: () => FileUploader | null;
 	getStoreName: () => string | null;
 	onUpdateStatusBar: () => void;
+	/**
+	 * Whether a full vault scan (`RagVaultScanner.indexVault`) is running. The
+	 * scan owns the shared index status while it runs, so the queue neither
+	 * flushes nor writes the status then; otherwise its `idle` lands mid-scan
+	 * and the progress modal reads the scan as finished (#1825).
+	 */
+	isScanActive: () => boolean;
 }
 
 /**
@@ -157,16 +164,30 @@ export class RagSyncQueue {
 			return;
 		}
 
-		// Reset debounce timer
+		this.scheduleFlush();
+	}
+
+	/** (Re)start the debounce timer that flushes pending changes. */
+	private scheduleFlush(): void {
 		if (this.debounceTimer) {
 			window.clearTimeout(this.debounceTimer);
 		}
 
 		this.debounceTimer = window.setTimeout(() => {
+			this.debounceTimer = null;
 			this.flushPendingChanges().catch((error) => {
 				this.plugin.logger.error('RAG Indexing: Error in debounced flush', error);
 			});
 		}, DEBOUNCE_MS);
+	}
+
+	/**
+	 * Write the shared index status unless a vault scan owns it right now — a
+	 * scan that started while this flush was running reports its own status.
+	 */
+	private setStatus(status: RagIndexStatus): void {
+		if (this.callbacks.isScanActive()) return;
+		this.callbacks.setStatus(status);
 	}
 
 	/**
@@ -204,12 +225,19 @@ export class RagSyncQueue {
 		const storeName = this.callbacks.getStoreName();
 		if (!storeName) return;
 
+		// A vault scan is running and owns the status; it also re-uploads any
+		// changed file. Keep the changes queued and try again after it ends.
+		if (this.callbacks.isScanActive()) {
+			this.scheduleFlush();
+			return;
+		}
+
 		this.isProcessing = true;
 		const changes = Array.from(this.pendingChanges.values());
 		this.pendingChanges.clear();
 
 		// Update status to show syncing activity
-		this.callbacks.setStatus('indexing');
+		this.setStatus('indexing');
 		this.callbacks.onUpdateStatusBar();
 
 		// Track changes since last cache save for incremental durability
@@ -255,7 +283,7 @@ export class RagSyncQueue {
 				await this.ragCache.saveCache();
 			}
 			this.ragCache.refreshIndexedCount();
-			this.callbacks.setStatus('idle');
+			this.setStatus('idle');
 			this.rateLimiter.resetTracking(); // Success - reset rate limit counter
 			this.callbacks.onUpdateStatusBar();
 		} catch (error) {
@@ -265,7 +293,7 @@ export class RagSyncQueue {
 				if (isQuotaExhausted(error)) {
 					this.plugin.logger.error('RAG Indexing: Permanent quota exhaustion detected, stopping sync');
 					this.rateLimiter.resetTracking();
-					this.callbacks.setStatus('error');
+					this.setStatus('error');
 					this.callbacks.onUpdateStatusBar();
 					new Notice(getErrorMessage(error), 8000);
 				} else {
@@ -283,12 +311,12 @@ export class RagSyncQueue {
 					// Wait for cooldown (pass error so API-provided delay can be used)
 					await this.rateLimiter.handleRateLimit(error);
 
-					this.callbacks.setStatus('idle');
+					this.setStatus('idle');
 					this.callbacks.onUpdateStatusBar();
 				}
 			} else {
 				this.plugin.logger.error('RAG Indexing: Failed to process changes', error);
-				this.callbacks.setStatus('error');
+				this.setStatus('error');
 				this.callbacks.onUpdateStatusBar();
 			}
 		} finally {

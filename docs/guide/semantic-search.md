@@ -7,7 +7,7 @@ Semantic Vault Search lets you search your vault by _meaning_, not just keywords
 ## How It Works
 
 1. **Indexing** — The plugin uploads your vault files to a private Google File Search Store tied to your API key
-2. **Change tracking** — File creates, edits, and deletes are automatically synced (with a 2-second debounce)
+2. **Change tracking** — File creates, edits, and deletes are automatically synced (with a 2-second debounce). Changes made while a full reindex is running wait until it finishes
 3. **Semantic search** — When the agent needs to find relevant notes, it queries the store using meaning-based search rather than keyword matching
 4. **Results** — The agent receives text excerpts from matching files along with an AI-generated summary
 
