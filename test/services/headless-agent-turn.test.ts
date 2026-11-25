@@ -473,6 +473,29 @@ describe('runHeadlessAgentTurn', () => {
 		});
 	});
 
+	describe('token tracking (#1823)', () => {
+		it("gives the loop the run's own context manager, not the chat's, and feeds it the initial usage", async () => {
+			const usage = { promptTokenCount: 321, totalTokenCount: 400 };
+			(ModelClientFactory.createChatModel as Mock).mockReturnValue({
+				generateModelResponse: vi.fn().mockResolvedValue({
+					markdown: '',
+					toolCalls: [{ name: 'list_files', arguments: {} }],
+					usageMetadata: usage,
+				}),
+			});
+			const plugin = createMockPlugin();
+			plugin.contextManager = { updateUsageMetadata: vi.fn() };
+
+			await runHeadlessAgentTurn(plugin, makeSpec(), () => false);
+
+			const own = mockAgentLoopRun.mock.calls[0][0].options.contextManager;
+			expect(own).toBeDefined();
+			expect(own).not.toBe(plugin.contextManager);
+			expect((await own.getTokenUsage('plugin-default-model')).estimatedTokens).toBe(321);
+			expect(plugin.contextManager.updateUsageMetadata).not.toHaveBeenCalled();
+		});
+	});
+
 	describe('HeadlessConfirmationProvider wiring', () => {
 		it('auto-approves confirmations and reports all tools allowed', async () => {
 			(ModelClientFactory.createChatModel as Mock).mockReturnValue(
