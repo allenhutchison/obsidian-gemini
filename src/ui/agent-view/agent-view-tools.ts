@@ -246,12 +246,17 @@ export class AgentViewTools {
 				return;
 			}
 
-			// A loop that hit its iteration cap, fell back after two empty
-			// responses, or was stopped by the loop detector ended without a real
-			// final answer, even when it shows a notice in place of one.
-			turn?.reportOutcome(
-				result.exhausted || result.fellBack || result.loopAborted || !result.markdown ? 'incomplete' : 'complete'
-			);
+			// A loop stopped by a failed tool call (stopOnToolError) failed, even
+			// though it shows the stop notice in place of an answer. One that hit
+			// its iteration cap, fell back after two empty responses, or was
+			// stopped by the loop detector ended without a real final answer.
+			if (result.toolFailedStop) {
+				turn?.reportOutcome('failed');
+			} else {
+				turn?.reportOutcome(
+					result.exhausted || result.fellBack || result.loopAborted || !result.markdown ? 'incomplete' : 'complete'
+				);
+			}
 
 			if (!result.markdown) {
 				// Loop ran but produced nothing actionable (cancelled mid-stream or

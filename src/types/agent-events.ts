@@ -19,7 +19,8 @@ export enum HandlerPriority {
  * - `complete`: the agent produced a final answer.
  * - `incomplete`: the turn ended normally without a final answer (tool
  *   iteration cap, loop detector, an empty response, or a rejected plan).
- * - `failed`: an exception ended the turn.
+ * - `failed`: an exception ended the turn, or a failed tool call stopped it
+ *   (the `stopOnToolError` setting).
  * - `cancelled`: the user pressed Stop. Wins over `failed` when a stopped
  *   turn also throws while unwinding.
  */

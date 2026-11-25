@@ -128,7 +128,7 @@ The outcome values are fixed, so it's safe to write them into a prompt:
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `complete`   | The agent produced a final answer.                                                                                                                                    |
 | `incomplete` | The turn ended without a final answer: the tool-iteration cap was reached, the loop detector stopped it, the model returned no answer text, or you rejected the plan. |
-| `failed`     | An error ended the turn.                                                                                                                                              |
+| `failed`     | An error ended the turn, or a failed tool call stopped it (the **Stop the agent when a tool fails** setting, on by default).                                          |
 | `cancelled`  | You pressed Stop.                                                                                                                                                     |
 
 The safety features below apply per hook instead of per file. `debounceMs` merges turns that end close together into one run, and `cooldownMs` skips turns that end shortly after a run. A turn that ends during the cooldown doesn't fire. That's harmless for the commit case, since the next commit picks its edits up, but it leaves gaps in a turn log. Lowering `cooldownMs` closes the gaps at the cost of loop protection, and with a very low cooldown a fast conversation can reach the [hard loop ceiling](#hard-loop-ceiling).

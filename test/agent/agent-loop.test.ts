@@ -1001,6 +1001,9 @@ describe('AgentLoop', () => {
 			expect(plugin.toolExecutionEngine.executeTool).toHaveBeenCalledTimes(1);
 			expect(result.markdown).toContain('stopped because a tool call failed');
 			expect(result.markdown).toContain('a');
+			// The stop notice fills `markdown`, so the flag is how callers tell
+			// this stop apart from a real final answer (#1817).
+			expect(result.toolFailedStop).toBe(true);
 			expect(plugin.logger.error).toHaveBeenCalledWith(
 				expect.stringContaining('[AgentLoop] Tool execution error'),
 				expect.any(Error)
@@ -1693,6 +1696,7 @@ describe('AgentLoop', () => {
 			});
 
 			expect(result.loopAborted).toBe(false);
+			expect(result.toolFailedStop).toBe(false);
 			expect(result.markdown).toBe('recovered');
 			expect(plugin.toolExecutionEngine.executeTool).toHaveBeenCalledTimes(2);
 		});
