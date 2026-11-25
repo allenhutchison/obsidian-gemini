@@ -45,22 +45,32 @@ describe('runWithTimeout — timeout escalation', () => {
 		expect(elapsed).toBeLessThan(200 + SIGKILL_GRACE_MS + 1500);
 	});
 
-	it('escalates to SIGKILL when the child ignores SIGTERM (this is the #776 case)', async () => {
-		// Install a SIGTERM handler that does nothing — process stays alive
-		// after SIGTERM. Only SIGKILL can stop it, which is exactly the
-		// behavior we observed against the obsidian CLI in #776.
-		const [bin, args] = nodeScript(`process.on("SIGTERM", () => {}); setInterval(() => {}, 1000);`);
-		const start = Date.now();
-		await expect(runWithTimeout(bin, args, { timeoutMs: 200 })).rejects.toThrow(/escalated to SIGKILL/);
-		const elapsed = Date.now() - start;
-		// Must settle within the SIGTERM deadline + grace window (with
-		// reasonable margin for process startup + event-loop scheduling).
-		expect(elapsed).toBeLessThan(200 + SIGKILL_GRACE_MS + 1500);
-		// And the bound is tight enough that the previous (no-escalation)
-		// behavior would have hung indefinitely; assert we're well under
-		// any time it would have taken to "naturally" exit.
-		expect(elapsed).toBeLessThan(5_000);
-	}, 10_000);
+	// POSIX-only: on Windows, Node's child.kill('SIGTERM') calls
+	// TerminateProcess, which ends the child unconditionally — a
+	// process.on('SIGTERM') handler never runs, so a child cannot ignore
+	// SIGTERM and the SIGKILL escalation is never needed. runWithTimeout
+	// still settles there (the previous test covers the plain timeout
+	// rejection, which is what Windows produces for this child too).
+	it.skipIf(process.platform === 'win32')(
+		'escalates to SIGKILL when the child ignores SIGTERM (this is the #776 case)',
+		async () => {
+			// Install a SIGTERM handler that does nothing — process stays alive
+			// after SIGTERM. Only SIGKILL can stop it, which is exactly the
+			// behavior we observed against the obsidian CLI in #776.
+			const [bin, args] = nodeScript(`process.on("SIGTERM", () => {}); setInterval(() => {}, 1000);`);
+			const start = Date.now();
+			await expect(runWithTimeout(bin, args, { timeoutMs: 200 })).rejects.toThrow(/escalated to SIGKILL/);
+			const elapsed = Date.now() - start;
+			// Must settle within the SIGTERM deadline + grace window (with
+			// reasonable margin for process startup + event-loop scheduling).
+			expect(elapsed).toBeLessThan(200 + SIGKILL_GRACE_MS + 1500);
+			// And the bound is tight enough that the previous (no-escalation)
+			// behavior would have hung indefinitely; assert we're well under
+			// any time it would have taken to "naturally" exit.
+			expect(elapsed).toBeLessThan(5_000);
+		},
+		10_000
+	);
 });
 
 describe('runWithTimeout — readyWhen early settle', () => {
