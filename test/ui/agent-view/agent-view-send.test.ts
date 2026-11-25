@@ -388,6 +388,10 @@ describe('AgentViewSend.sendMessage model snapshot', () => {
 		const { send, internals, ctx } = makeSendMessageCtx('llama3.2');
 		const order: string[] = [];
 		ctx.getCurrentSession = () => ({ id: 's1', modelConfig: { provider: 'anthropic' } });
+		ctx.getUserInput = () => {
+			order.push('read-input');
+			return { innerText: 'hi' };
+		};
 		ctx.plugin.getModelManager = () => ({
 			ensureProviderModels: vi.fn(async (p: string) => {
 				order.push(`ensure:${p}`);
@@ -403,7 +407,9 @@ describe('AgentViewSend.sendMessage model snapshot', () => {
 			setGeminiModels(original);
 		}
 
-		expect(order).toEqual(['ensure:anthropic']);
+		// The input is read only after the wait, so one value feeds the whole turn.
+		expect(order[0]).toBe('ensure:anthropic');
+		expect(order.slice(1).every((o) => o === 'read-input')).toBe(true);
 		expect(assemble.mock.calls[0][8]).toEqual({ model: 'claude-test', provider: 'anthropic' });
 	});
 

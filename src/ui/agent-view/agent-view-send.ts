@@ -377,6 +377,13 @@ export class AgentViewSend {
 		// even if currentSession changes during async operations
 		const turnSession = currentSession;
 
+		// A session pinned to a provider the startup model list skipped needs that
+		// provider's models loaded before its default model can resolve. This
+		// await comes before the input is read, so everything below (the
+		// empty-input check, the saved message, hook payloads) reads one value.
+		const pinnedProvider = currentSession.modelConfig?.provider;
+		if (pinnedProvider) await this.ctx.plugin.getModelManager().ensureProviderModels(pinnedProvider);
+
 		const userInput = this.ctx.getUserInput();
 		const shelf = this.ctx.getShelf();
 
@@ -391,10 +398,6 @@ export class AgentViewSend {
 		// resolves to pinned in: the client, the model name, the tool loop's
 		// follow-ups and every entry the turn saves come from this one value, even
 		// if settings are saved while the turn is in flight.
-		// A session pinned to a provider the startup model list skipped needs that
-		// provider's models loaded before its default model can resolve.
-		const pinnedProvider = currentSession.modelConfig?.provider;
-		if (pinnedProvider) await this.ctx.plugin.getModelManager().ensureProviderModels(pinnedProvider);
 		const modelConfig = pinSessionChatModel(this.ctx.plugin.settings, currentSession.modelConfig);
 		// No model resolved (e.g. a provider whose model list hasn't loaded and
 		// no model picked). Stop before the input is cleared, anything is saved
