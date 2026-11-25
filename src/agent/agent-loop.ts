@@ -199,6 +199,11 @@ export interface AgentLoopResult {
 	 * model response.
 	 */
 	loopAborted: boolean;
+	/**
+	 * True if the turn ended because a tool call failed and `stopOnToolError`
+	 * is on. `markdown` is the user-visible "agent stopped" notice.
+	 */
+	toolFailedStop: boolean;
 	/** Number of tool-execution batches that ran. */
 	iterations: number;
 }
@@ -587,6 +592,7 @@ export class AgentLoop {
 					tool: toolResults.find((tr) => !tr.result.success && !tr.result.loopDetected)?.toolName ?? '',
 				}),
 				history: updatedHistory,
+				toolFailedStop: true,
 				iterations: state.iterations,
 			});
 		}
@@ -848,7 +854,7 @@ export class AgentLoop {
 	}
 
 	/**
-	 * Assemble an {@link AgentLoopResult}, defaulting the four status flags to
+	 * Assemble an {@link AgentLoopResult}, defaulting the five status flags to
 	 * `false` so each terminal path only spells out the flags that are true for
 	 * it. Every return site — including {@link cancelledResult} and
 	 * {@link loopAbortedResult} — routes through here so the default flag block
@@ -862,6 +868,7 @@ export class AgentLoop {
 			fellBack: false,
 			exhausted: false,
 			loopAborted: false,
+			toolFailedStop: false,
 			...fields,
 		};
 	}

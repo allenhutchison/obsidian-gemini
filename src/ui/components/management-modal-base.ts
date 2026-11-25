@@ -301,8 +301,14 @@ export abstract class ManagementModalBase<TEntity, TEntityState> extends Modal {
 	 * over `TEntity`/`TEntityState` and knows nothing about the subclasses'
 	 * form shapes, so each field is read/written through a callback and the
 	 * form state stays entirely in the subclass.
+	 *
+	 * @returns The output-path row, for a subclass whose help text depends on
+	 *   other form state (the hook modal swaps it per trigger).
 	 */
-	protected addSharedAdvancedFields(advDetails: HTMLElement, opts: SharedAdvancedFieldOpts): void {
+	protected addSharedAdvancedFields(
+		advDetails: HTMLElement,
+		opts: SharedAdvancedFieldOpts
+	): { outputPathSetting: Setting } {
 		new Setting(advDetails)
 			.setName(t(`${opts.keyPrefix}.modelOverrideSetting`))
 			.setDesc(t(`${opts.keyPrefix}.modelOverrideDesc`))
@@ -317,7 +323,7 @@ export abstract class ManagementModalBase<TEntity, TEntityState> extends Modal {
 					})
 			);
 
-		new Setting(advDetails)
+		const outputPathSetting = new Setting(advDetails)
 			.setName(t(`${opts.keyPrefix}.outputPathSetting`))
 			.setDesc(t(`${opts.keyPrefix}.outputPathDesc`, opts.outputPathDescParams ?? {}))
 			.addText((text) =>
@@ -337,6 +343,8 @@ export abstract class ManagementModalBase<TEntity, TEntityState> extends Modal {
 						opts.setMaxIterations(v.trim());
 					})
 			);
+
+		return { outputPathSetting };
 	}
 
 	/** The shared enabled toggle. Called separately so it stays last. */

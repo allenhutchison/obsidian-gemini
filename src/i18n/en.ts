@@ -1479,6 +1479,11 @@ export const en = {
 		context:
 			'Description of the output path field. "{slug}", "{date}", "{fileName}" are literal template tokens the user can type — keep them verbatim.',
 	},
+	'hooks.turnOutputPathDesc': {
+		message: 'Where to write the agent response. Supports {slug} and {date}. Leave blank to skip writing a file.',
+		context:
+			'Description of the output path field for a hook on the agent-turn trigger. A turn has no file, so {fileName} is not offered. "{slug}" and "{date}" are literal template tokens the user can type — keep them verbatim.',
+	},
 	'hooks.desktopOnlySetting': { message: 'Desktop only', context: 'Toggle label: skip the hook on mobile platforms.' },
 	'hooks.desktopOnlyDesc': {
 		message: 'Skip this hook on mobile platforms. Headless agent runs can be heavy on phones.',
@@ -1510,6 +1515,12 @@ export const en = {
 			'Output path is not allowed. It must include a filename, stay inside the vault, and avoid the Obsidian configuration folder and the plugin state folder (other than its Runs folder).',
 		context:
 			'Validation notice when the hook form\'s output path points somewhere the plugin refuses to write. "Runs" is a literal folder name — keep it verbatim.',
+	},
+	'hooks.turnOutputPathFileName': {
+		message:
+			"The output path can't use {fileName} for the agent turn trigger, because a turn has no file. Use {slug} or {date} instead.",
+		context:
+			'Validation notice when a hook on the agent-turn trigger uses the {fileName} token in its output path. "{fileName}", "{slug}" and "{date}" are literal template tokens — keep them verbatim.',
 	},
 	'hooks.managerUnavailable': {
 		message: 'Hook manager not available.',

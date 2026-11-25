@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { TFile } from 'obsidian';
 import { HookManager, type Hook } from '../../src/services/hook-manager';
 import { AgentEventBus } from '../../src/agent/agent-event-bus';
 import type { AgentEventMap, TurnOutcome } from '../../src/types/agent-events';
@@ -332,6 +333,64 @@ describe('HookManager agent-turn subscription and validation', () => {
 			expect(plugin.logger.warn).toHaveBeenCalled();
 		}
 	);
+
+	// A turn has no file, so {fileName} would resolve to an empty name and
+	// write a hidden `.md` (#1817).
+	const FILE_NAME_OUTPUT = 'Hooks/Runs/{slug}/{fileName}.md';
+
+	it('rejects {fileName} in the output path with the agent-turn trigger on create', async () => {
+		const plugin = pluginWithBus();
+		const manager = new HookManager(plugin as any);
+		await expect(
+			manager.createHook({
+				slug: 'bad',
+				trigger: 'agent-turn-ended',
+				action: 'agent-task',
+				prompt: 'Log the turn',
+				outputPath: FILE_NAME_OUTPUT,
+			})
+		).rejects.toThrow(/can't use \{fileName\}/);
+		expect(plugin.app.vault.create).not.toHaveBeenCalled();
+	});
+
+	it('accepts {fileName} in the output path with a file trigger', async () => {
+		const plugin = pluginWithBus();
+		const manager = new HookManager(plugin as any);
+		await manager.createHook({
+			slug: 'ok',
+			trigger: 'file-modified',
+			action: 'agent-task',
+			prompt: 'Summarize it',
+			outputPath: FILE_NAME_OUTPUT,
+		});
+		expect(plugin.app.vault.create).toHaveBeenCalled();
+	});
+
+	it('rejects an update that adds {fileName} to an agent-turn hook', async () => {
+		const plugin = pluginWithBus();
+		const hook = makeHook({ action: 'agent-task', prompt: 'Log the turn', commandId: undefined });
+		plugin.app.vault.getAbstractFileByPath = vi
+			.fn()
+			.mockReturnValue(Object.assign(new TFile(), { path: hook.filePath }));
+		const manager = seeded(plugin, [hook]);
+		await expect(manager.updateHook(hook.slug, { outputPath: FILE_NAME_OUTPUT })).rejects.toThrow(
+			/can't use \{fileName\}/
+		);
+		expect(plugin.app.vault.modify).not.toHaveBeenCalled();
+		expect(manager.getHooks().find((h) => h.slug === hook.slug)?.outputPath).toBeUndefined();
+	});
+
+	it('skips a hand-written agent-turn hook whose output path uses {fileName}', async () => {
+		const plugin = pluginWithBus();
+		const file = { path: 'gemini-scribe/Hooks/bad.md', basename: 'bad', extension: 'md' };
+		plugin.app.metadataCache.getFileCache = vi.fn().mockReturnValue({
+			frontmatter: { trigger: 'agent-turn-ended', action: 'agent-task', outputPath: FILE_NAME_OUTPUT },
+		});
+		plugin.app.vault.read = vi.fn().mockResolvedValue('---\n---\nLog the turn');
+		const manager = new HookManager(plugin as any);
+		expect(await (manager as any).parseDefinitionFile(file)).toBeNull();
+		expect(plugin.logger.warn).toHaveBeenCalledWith(expect.stringContaining('{fileName}'));
+	});
 
 	it('loads a hand-written command hook on the agent-turn trigger', async () => {
 		const plugin = pluginWithBus();

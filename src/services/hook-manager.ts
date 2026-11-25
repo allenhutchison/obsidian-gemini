@@ -18,6 +18,7 @@ import {
 	AGENT_TURN_FIRE_KEY,
 	AGENT_TURN_TRIGGER,
 	isActionAllowedForTrigger,
+	isOutputPathAllowedForTrigger,
 	mergeHookFields,
 	missingRequiredHookFields,
 	normalizeHookFields,
@@ -90,6 +91,17 @@ function validateSlug(raw: string): string {
 function assertActionAllowed(fields: HookFields): void {
 	if (!isActionAllowedForTrigger(fields.trigger, fields.action)) {
 		throw new Error(`Action "${fields.action}" can't run for trigger "${fields.trigger}"`);
+	}
+}
+
+/**
+ * Reject an output path that uses `{fileName}` on the agent-turn trigger,
+ * which has no file. It would resolve to an empty name: a hidden `.md` that
+ * every run writes to.
+ */
+function assertOutputPathAllowed(fields: HookFields): void {
+	if (!isOutputPathAllowedForTrigger(fields.trigger, fields.outputPath)) {
+		throw new Error(`Output path can't use {fileName} for trigger "${fields.trigger}", which has no file`);
 	}
 }
 
@@ -255,6 +267,7 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 		const missing = missingRequiredHookFields(fields);
 		if (missing.length > 0) throw new Error(`Hook is missing or has an invalid ${missing.join(' and ')}`);
 		assertActionAllowed(fields);
+		assertOutputPathAllowed(fields);
 
 		const content = this.serializeHook(fields, params.prompt);
 		await this.plugin.app.vault.create(filePath, content);
@@ -286,6 +299,7 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 		// "leave the body alone", not "blank it".
 		const merged = mergeHookFields(hook, params);
 		assertActionAllowed(merged);
+		assertOutputPathAllowed(merged);
 		const prompt = params.prompt ?? hook.prompt;
 
 		const content = this.serializeHook(merged, prompt);
@@ -769,6 +783,13 @@ export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 		if (!isActionAllowedForTrigger(fields.trigger, fields.action)) {
 			this.plugin.logger.warn(
 				`[HookManager] Hook "${file.basename}" skipped: action "${fields.action}" can't run for trigger "${fields.trigger}"`
+			);
+			return null;
+		}
+		// {fileName} in the output path would resolve to an empty name.
+		if (!isOutputPathAllowedForTrigger(fields.trigger, fields.outputPath)) {
+			this.plugin.logger.warn(
+				`[HookManager] Hook "${file.basename}" skipped: outputPath can't use {fileName} for trigger "${fields.trigger}", which has no file`
 			);
 			return null;
 		}

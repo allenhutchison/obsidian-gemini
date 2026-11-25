@@ -94,6 +94,7 @@ function loopResult(overrides: Partial<AgentLoopResult> = {}): AgentLoopResult {
 		fellBack: false,
 		exhausted: false,
 		loopAborted: false,
+		toolFailedStop: false,
 		iterations: 1,
 		...overrides,
 	};
@@ -626,6 +627,14 @@ describe('AgentViewTools.handleToolCalls — turn outcome reporting', () => {
 		['no text at all', { markdown: '' }],
 	])('reports incomplete for %s', async (_label, overrides) => {
 		expect(await runWith(loopResult(overrides))).toHaveBeenCalledWith('incomplete');
+	});
+
+	it('reports failed when a failed tool call stopped the turn, despite the stop notice', async () => {
+		// stopOnToolError fills `markdown` with the stop notice, which would
+		// otherwise read as a final answer (#1817).
+		const report = await runWith(loopResult({ toolFailedStop: true, markdown: 'The agent stopped.' }));
+		expect(report).toHaveBeenCalledWith('failed');
+		expect(report).toHaveBeenCalledTimes(1);
 	});
 
 	it('reports failed when the tool loop throws, since the error is swallowed here', async () => {

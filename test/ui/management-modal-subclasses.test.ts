@@ -1,5 +1,7 @@
+import { Notice } from 'obsidian';
 import { HookManagementModal } from '../../src/ui/hook-management-modal';
 import { SchedulerManagementModal } from '../../src/ui/scheduler-management-modal';
+import { t } from '../../src/i18n';
 
 /**
  * Regression coverage for the shared advanced rows extracted into
@@ -45,6 +47,7 @@ vi.mock('obsidian', async () => {
 	class Setting extends original.Setting {
 		public components: any[] = [];
 		public nameEl: any = { textContent: '' };
+		public desc = '';
 		constructor(container: any) {
 			super(container);
 			settingRegistry.push(this);
@@ -53,7 +56,8 @@ vi.mock('obsidian', async () => {
 			this.nameEl.textContent = name;
 			return this;
 		}
-		setDesc() {
+		setDesc(desc: string) {
+			this.desc = desc;
 			return this;
 		}
 		addText(cb: (text: any) => any) {
@@ -86,7 +90,10 @@ vi.mock('obsidian', async () => {
 			const component: any = {
 				addOption: vi.fn().mockReturnThis(),
 				setValue: vi.fn().mockReturnThis(),
-				onChange: vi.fn().mockReturnThis(),
+				onChange: vi.fn((cb: (v: string) => void) => {
+					component.changeCb = cb;
+					return component;
+				}),
 			};
 			cb(component);
 			this.components.push(component);
@@ -159,6 +166,21 @@ describe('HookManagementModal advanced section', () => {
 		// Simulate user input and confirm the accessor wrote the trimmed value.
 		component.changeCb(' 7 ');
 		expect((modal as any).form.maxIterations).toBe('7');
+	});
+
+	// A turn has no file, so the agent-turn trigger's help text must not offer
+	// {fileName} (#1817).
+	it('swaps the output-path help text when the trigger changes to the agent-turn trigger', () => {
+		const outputPathSetting = settingRegistry.find((s) => s.nameEl?.textContent.includes('Output path'));
+		expect(outputPathSetting.desc).toBe(t('hooks.outputPathDesc'));
+
+		const triggerSetting = settingRegistry.find((s) => s.nameEl?.textContent === t('hooks.triggerSetting'));
+		triggerSetting.components[0].changeCb('agent-turn-ended');
+		expect(outputPathSetting.desc).toBe(t('hooks.turnOutputPathDesc'));
+		expect(outputPathSetting.desc).not.toContain('{fileName}');
+
+		triggerSetting.components[0].changeCb('file-modified');
+		expect(outputPathSetting.desc).toBe(t('hooks.outputPathDesc'));
 	});
 
 	it("uses the plugin's current chat model as the model-override placeholder", () => {
@@ -352,6 +374,24 @@ describe('hook save payload for the agent-turn trigger', () => {
 		const [slug, params] = hookManager.updateHook.mock.calls[0];
 		expect(slug).toBe('commit');
 		expect(params).toMatchObject({ trigger: 'agent-turn-ended', pathGlob: undefined, focusFile: undefined });
+	});
+
+	// A turn has no file, so {fileName} would resolve to an empty name (#1817).
+	it('refuses {fileName} in the output path with a notice, without touching the manager', async () => {
+		const { modal, hookManager } = makeModal();
+		(modal as any).form = {
+			...(modal as any).form,
+			slug: 'log',
+			trigger: 'agent-turn-ended',
+			action: 'agent-task',
+			prompt: 'Log the turn',
+			outputPath: 'Hooks/Runs/{slug}/{fileName}.md',
+		};
+
+		await (modal as any).handleSave(false);
+
+		expect(Notice).toHaveBeenCalledWith(t('hooks.turnOutputPathFileName'));
+		expect(hookManager.createHook).not.toHaveBeenCalled();
 	});
 
 	it('keeps the file-only fields for a file trigger', async () => {

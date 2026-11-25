@@ -6,6 +6,7 @@ import {
 	HOOK_FIELD_KEYS,
 	isActionAllowedForTrigger,
 	isFileTrigger,
+	isOutputPathAllowedForTrigger,
 	mergeHookFields,
 	normalizeHookFields,
 	parseHookFields,
@@ -334,6 +335,13 @@ describe('agent-turn trigger helpers (#1806)', () => {
 		expect(isActionAllowedForTrigger('agent-turn-ended', 'summarize')).toBe(false);
 		expect(isActionAllowedForTrigger('agent-turn-ended', 'rewrite')).toBe(false);
 		expect(isActionAllowedForTrigger('file-modified', 'summarize')).toBe(true);
+	});
+
+	it('refuses {fileName} in the output path only for the agent-turn trigger, which has no file', () => {
+		expect(isOutputPathAllowedForTrigger('agent-turn-ended', 'Hooks/Runs/{slug}/{fileName}.md')).toBe(false);
+		expect(isOutputPathAllowedForTrigger('agent-turn-ended', 'Hooks/Runs/{slug}/{date}.md')).toBe(true);
+		expect(isOutputPathAllowedForTrigger('agent-turn-ended', undefined)).toBe(true);
+		expect(isOutputPathAllowedForTrigger('file-modified', 'Hooks/Runs/{slug}/{fileName}.md')).toBe(true);
 	});
 
 	it('round-trips the trigger through parse and serialize', () => {
