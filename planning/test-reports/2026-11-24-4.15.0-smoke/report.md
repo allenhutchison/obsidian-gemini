@@ -10,6 +10,8 @@ Note: Obsidian 1.15.1 opens Settings and the hook modal in a pop-out window; dri
 > **Update 2026-11-25:** PR #1816 fixes 2.3, 2.4 and 4.3. A retest of those steps (plus Ollama and regression checks) passed on 8e847d3. See [retest-1816.md](retest-1816.md). Once #1816 merges, 2.3 no longer blocks the release.
 >
 > **Update 2026-11-25:** PR #1820 (agent-turn hook tool-failure outcome, `{fileName}` refused in turn output paths) retested on fe4becf: all steps pass, including the part 1 hook editor checks. See [retest-1820.md](retest-1820.md).
+>
+> **Update 2026-11-25:** The 4.15 follow-ups #1827 (hook and scheduled-task usage kept out of the chat token counter), #1828 (Stop on an Allow card) and #1829 (one "Rescan complete" notice) were retested together on one combined branch: all pass. See [retest-followups.md](retest-followups.md). Filed #1831 (empty notes log upload errors on rescan, not a regression).
 
 | Part                                           | Result                                                                                                                         |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
